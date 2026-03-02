@@ -1,18 +1,13 @@
-import { useState } from 'react';
-import Login from './components/Login';
-import MainMenu from './components/MainMenu';
 import CPanel from './components/CPanel';
 
 export default function App() {
-  // Estado de la PWA
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [currentPanel, setCurrentPanel] = useState<'menu' | 'cpanel' | 'pacientes'>('menu');
-
-  // Función para manejar login
-  const handleLogin = () => {
-    setLoggedIn(true);
-    setCurrentPanel('menu');
-  };
+  return (
+    <div>
+      <h1>Turnos PWA Demo</h1>
+      <CPanel />
+    </div>
+  );
+}
 
   // Función para manejar selección del menú
   const handleMenuSelect = (panel: 'cpanel' | 'pacientes') => {
