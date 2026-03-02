@@ -1,15 +1,19 @@
-iimport express from 'express';
+import express from 'express';
 import path from 'path';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4173;
 
-app.use(express.static(path.join(__dirname, 'dist')));
+// Servir archivos compilados de Vite
+const distPath = path.resolve(__dirname, 'dist');
+app.use(express.static(distPath));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Redirigir todas las rutas al index.html para SPA
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`PWA corriendo en http://localhost:${port}`);
+// Arrancar el servidor
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor PWA corriendo en puerto ${PORT}`);
 });
