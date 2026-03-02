@@ -8,6 +8,7 @@ interface Filial {
   usuario_alta?: string;
 }
 
+// URL base del backend desde variable de entorno
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const FILIALES_URL = `${API_BASE_URL}/filiales`;
 
@@ -54,7 +55,6 @@ export default function CPanel() {
   };
 
   const eliminarFilial = async (id: number) => {
-    // Opcional: si tu backend soporta DELETE
     try {
       const res = await fetch(`${FILIALES_URL}/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar filial');
@@ -69,7 +69,6 @@ export default function CPanel() {
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Gestión de Filiales</h2>
 
-      {/* Formulario de nueva filial */}
       <div className="mb-4">
         <input
           type="text"
@@ -93,7 +92,6 @@ export default function CPanel() {
         </button>
       </div>
 
-      {/* Listado de filiales */}
       {loading ? (
         <p>Cargando...</p>
       ) : (
