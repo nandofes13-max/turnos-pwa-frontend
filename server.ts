@@ -1,13 +1,11 @@
-import express from 'express';
+iimport express from 'express';
 import path from 'path';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Servir archivos estáticos de dist
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// SPA: cualquier ruta devuelve index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
