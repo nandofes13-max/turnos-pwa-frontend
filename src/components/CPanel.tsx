@@ -38,7 +38,7 @@ export default function CPanel() {
   });
 
   const codigosUnicos = [...new Set(filiales.map(f => f.codigo))].sort();
-  const tiposMovimiento = ['ALTA', 'BAJA', 'MODIFICACIÓN'];
+  const tiposMovimiento = ['Altas', 'Bajas', 'Modificación']; // ✅ Minúsculas
 
   useEffect(() => {
     fetchFiliales();
@@ -58,12 +58,12 @@ export default function CPanel() {
   };
 
   const obtenerTipoMovimiento = (f: Filial): string => {
-    if (f.fecha_baja) return 'BAJA';
+    if (f.fecha_baja) return 'Bajas';
     if (f.fecha_modificacion && f.fecha_alta && 
         new Date(f.fecha_modificacion).getTime() !== new Date(f.fecha_alta).getTime()) {
-      return 'MODIFICACIÓN';
+      return 'Modificación';
     }
-    return 'ALTA';
+    return 'Altas';
   };
 
   const filtrarFiliales = (filiales: Filial[]): Filial[] => {
@@ -170,7 +170,6 @@ export default function CPanel() {
     try {
       let res;
       if (modalMode === 'add') {
-        // Crear nueva filial
         res = await fetch(FILIALES_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -181,7 +180,6 @@ export default function CPanel() {
           }),
         });
       } else if (modalMode === 'edit' && selectedFilial) {
-        // Actualizar filial existente
         res = await fetch(`${FILIALES_URL}/${selectedFilial.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -209,16 +207,8 @@ export default function CPanel() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Título con botón AGREGAR */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-medium text-[#0056b3]">Gestión de Filiales</h1>
-        <ActionIcons 
-          onAdd={handleAgregar}
-          showEdit={false}
-          showDelete={false}
-          size="md"
-        />
-      </div>
+      {/* Título principal */}
+      <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
       {/* Contenedor de Filtros */}
       <div className="filters-container relative">
@@ -226,10 +216,10 @@ export default function CPanel() {
           <span className="text-sm font-medium text-[#0056b3]">Filtros</span>
         </div>
         
-        <div className="flex flex-wrap gap-6 items-start pt-2">
+        <div className="flex flex-wrap gap-4 items-start pt-2">
           
-          {/* Código */}
-          <div className="w-48 relative">
+          {/* Código - ANCHO REDUCIDO */}
+          <div className="w-36 relative">
             <label className="block text-center text-sm font-medium text-[#0056b3] mb-2">Código</label>
             <button
               onClick={() => setFiltroExpandido(prev => ({ ...prev, codigo: !prev.codigo }))}
@@ -307,7 +297,7 @@ export default function CPanel() {
             </div>
           </div>
 
-          {/* Movimiento */}
+          {/* Movimiento - con texto en minúsculas */}
           <div className="w-48 relative">
             <label className="block text-center text-sm font-medium text-[#0056b3] mb-2">Movimiento</label>
             <button
@@ -350,8 +340,8 @@ export default function CPanel() {
             )}
           </div>
 
-          {/* Limpiar filtros */}
-          <div className="self-end ml-auto">
+          {/* Limpiar filtros - ahora justificado */}
+          <div className="self-end">
             <button
               onClick={() => {
                 setFiltroCodigo([]);
@@ -368,7 +358,7 @@ export default function CPanel() {
         </div>
       </div>
 
-      {/* Contenedor de Tabla */}
+      {/* Contenedor de Tabla con botón AGREGAR */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -376,24 +366,56 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative mt-6">
-          <div className="absolute -top-3 left-4 bg-white px-2">
+          {/* Título "Filiales" con botón AGREGAR */}
+          <div className="absolute -top-3 left-4 bg-white px-2 flex items-center gap-2">
             <span className="text-sm font-medium text-[#0056b3]">Filiales</span>
+            {/* Botón AGREGAR azul al lado del título */}
+            <button
+              onClick={handleAgregar}
+              onMouseEnter={(e) => {
+                const tooltip = document.createElement('span');
+                tooltip.className = 'absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10';
+                tooltip.textContent = 'Agregar';
+                e.currentTarget.appendChild(tooltip);
+              }}
+              onMouseLeave={(e) => {
+                const tooltip = e.currentTarget.querySelector('span');
+                if (tooltip) tooltip.remove();
+              }}
+              className="relative ml-2 p-1 rounded hover:bg-blue-50 transition-colors duration-200"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="w-4 h-4 text-[#0056b3]"
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+            </button>
           </div>
           
+          {/* Tabla con dimensiones ajustadas */}
           <table className="osde-table pt-4">
             <thead>
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Código</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Nombre</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Acción</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Código</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Nombre</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filialesPaginadas.map((f) => (
                 <tr key={f.id} className="hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{f.codigo}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{f.nombre}</td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-4 py-2 text-sm font-medium text-gray-900">{f.codigo}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">{f.nombre}</td>
+                  <td className="px-4 py-2 text-sm">
                     <ActionIcons 
                       onEdit={() => handleEditar(f)}
                       onDelete={() => handleEliminar(f)}
@@ -415,44 +437,54 @@ export default function CPanel() {
             </tbody>
           </table>
           
-          <div className="px-6 py-3 text-sm text-gray-500 border-t border-gray-100 bg-gray-50">
+          <div className="px-4 py-2 text-sm text-gray-500 border-t border-gray-100 bg-gray-50">
             Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
       )}
 
-      {/* MODAL para AGREGAR/EDITAR */}
+      {/* MODAL para AGREGAR/EDITAR - CORREGIDO */}
       {(modalMode === 'add' || modalMode === 'edit') && (
         <div className="osde-modal" onClick={() => setModalMode(null)}>
           <div className="osde-modal-form" onClick={(e) => e.stopPropagation()}>
-            <h3>{modalMode === 'add' ? 'Agregar Filial' : 'Editar Filial'}</h3>
+            <h3 className="text-lg font-medium text-gray-800 mb-4">
+              {modalMode === 'add' ? 'Agregar Filial' : 'Editar Filial'}
+            </h3>
             
-            <div className="form-group">
-              <label>Código</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-1">Código</label>
               <input
                 type="text"
                 value={formData.codigo}
                 onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                 placeholder="Ingrese código"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                 autoFocus
               />
             </div>
 
-            <div className="form-group">
-              <label>Nombre</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
               <input
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ingrese nombre"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
               />
             </div>
 
-            <div className="form-actions">
-              <button onClick={() => setModalMode(null)} className="button-secondary">
+            <div className="flex justify-end gap-2 mt-6">
+              <button 
+                onClick={() => setModalMode(null)} 
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium text-sm"
+              >
                 Cancelar
               </button>
-              <button onClick={guardarFilial} className="button-primary">
+              <button 
+                onClick={guardarFilial} 
+                className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] transition-colors duration-200 font-medium text-sm"
+              >
                 {modalMode === 'add' ? 'Agregar' : 'Guardar'}
               </button>
             </div>
@@ -493,7 +525,7 @@ export default function CPanel() {
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setModalMode(null)}
-                className="osde-button-secondary text-sm py-1.5"
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium text-sm"
               >
                 Cerrar
               </button>
@@ -506,14 +538,20 @@ export default function CPanel() {
       {confirmDelete && (
         <div className="confirm-dialog" onClick={() => setConfirmDelete(null)}>
           <div className="confirm-dialog-content" onClick={(e) => e.stopPropagation()}>
-            <p>¿Está seguro que desea eliminar la filial <strong>{confirmDelete.nombre}</strong>?</p>
-            <p className="text-sm text-gray-500 mt-1">Esta acción no se puede deshacer.</p>
+            <p className="text-gray-700 mb-2">¿Está seguro que desea eliminar la filial <strong>{confirmDelete.nombre}</strong>?</p>
+            <p className="text-sm text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
             
-            <div className="confirm-dialog-actions">
-              <button onClick={() => setConfirmDelete(null)} className="button-secondary">
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setConfirmDelete(null)} 
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium text-sm"
+              >
                 Cancelar
               </button>
-              <button onClick={confirmarEliminar} className="button-danger">
+              <button 
+                onClick={confirmarEliminar} 
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium text-sm"
+              >
                 Eliminar
               </button>
             </div>
