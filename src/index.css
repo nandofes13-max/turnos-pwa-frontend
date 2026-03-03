@@ -1,0 +1,95 @@
+/* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50;
+  }
+
+  h1 {
+    @apply text-3xl font-light text-[#0056b3] tracking-tight;
+  }
+
+  h2 {
+    @apply text-2xl font-medium text-gray-800 mb-6;
+  }
+}
+
+@layer components {
+  /* Estilo para tarjetas como las de OSDE */
+  .osde-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200;
+  }
+
+  /* Estilo para inputs */
+  .osde-input {
+    @apply w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all duration-200;
+  }
+
+  /* Estilo para botones primarios */
+  .osde-button-primary {
+    @apply bg-[#0056b3] text-white px-6 py-2 rounded-full hover:bg-[#004494] transition-colors duration-200 font-medium text-sm shadow-sm;
+  }
+
+  /* Estilo para botones secundarios */
+  .osde-button-secondary {
+    @apply bg-white text-[#0056b3] border border-[#0056b3] px-6 py-2 rounded-full hover:bg-blue-50 transition-colors duration-200 font-medium text-sm;
+  }
+
+  /* Estilo para selects/combos */
+  .osde-select-trigger {
+    @apply w-full border border-gray-200 rounded-lg p-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm;
+  }
+
+  /* Estilo para tablas */
+  .osde-table {
+    @apply min-w-full divide-y divide-gray-200;
+  }
+
+  .osde-table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+  }
+
+  .osde-table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-700;
+  }
+
+  .osde-table tr {
+    @apply hover:bg-gray-50 transition-colors duration-150;
+  }
+
+  /* Badges para tipos de movimiento */
+  .badge-alta {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800;
+  }
+
+  .badge-modificacion {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-baja {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800;
+  }
+
+  /* Contenedor de filtros */
+  .filters-container {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8;
+  }
+
+  /* Modal */
+  .osde-modal {
+    @apply fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm;
+  }
+
+  .osde-modal-content {
+    @apply bg-white rounded-2xl shadow-xl max-w-md w-full p-6;
+  }
+}
