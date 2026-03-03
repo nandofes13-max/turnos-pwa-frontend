@@ -319,45 +319,43 @@ export default function CPanel() {
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => setSelectedFilial(f)}
                 >
-                  <td className="px-4 py-3 text-sm">{f.codigo}</td>
-                  <td className="px-4 py-3 text-sm">{f.nombre}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex gap-3 items-center">
-                      {/* ALTA */}
-                      <img 
-                        src="https://cdn-icons-png.flaticon.com/512/3804/3804279.png" 
-                        alt="ALTA"
-                        className="w-5 h-5"
-                        style={{ 
-                          opacity: obtenerTipoMovimiento(f) === 'ALTA' ? 1 : 0.3,
-                          filter: obtenerTipoMovimiento(f) === 'ALTA' ? 'none' : 'grayscale(100%)'
-                        }}
-                        title="ALTA"
-                      />
-                      {/* MODIFICACIÓN */}
-                      <img 
-                        src="https://img.freepik.com/icono-gratis/editar_2921179.png" 
-                        alt="MODIFICACIÓN"
-                        className="w-5 h-5"
-                        style={{ 
-                          opacity: obtenerTipoMovimiento(f) === 'MODIFICACIÓN' ? 1 : 0.3,
-                          filter: obtenerTipoMovimiento(f) === 'MODIFICACIÓN' ? 'none' : 'grayscale(100%)'
-                        }}
-                        title="MODIFICACIÓN"
-                      />
-                      {/* BAJA */}
-                      <img 
-                        src="https://thumbs.dreamstime.com/b/marca-cruz-roja-vector-de-iconos-ilustraci%C3%B3n-del-s%C3%ADmbolo-cruzamiento-icono-para-error-y-cancelar-acci%C3%B3n-394756876.jpg" 
-                        alt="BAJA"
-                        className="w-5 h-5"
-                        style={{ 
-                          opacity: obtenerTipoMovimiento(f) === 'BAJA' ? 1 : 0.3,
-                          filter: obtenerTipoMovimiento(f) === 'BAJA' ? 'none' : 'grayscale(100%)'
-                        }}
-                        title="BAJA"
-                      />
-                    </div>
-                  </td>
+                  <td className="px-4 py-2 text-sm">
+  <div className="flex gap-1 items-center justify-start">
+    {/* ALTA */}
+    <img 
+      src="https://cdn-icons-png.flaticon.com/512/3804/3804279.png" 
+      alt="ALTA"
+      className="w-4 h-4"
+      style={{ 
+        opacity: obtenerTipoMovimiento(f) === 'ALTA' ? 1 : 0.2,
+        filter: obtenerTipoMovimiento(f) === 'ALTA' ? 'none' : 'grayscale(100%)'
+      }}
+      title="ALTA"
+    />
+    {/* MODIFICACIÓN */}
+    <img 
+      src="https://img.freepik.com/icono-gratis/editar_2921179.png" 
+      alt="MODIFICACIÓN"
+      className="w-4 h-4"
+      style={{ 
+        opacity: obtenerTipoMovimiento(f) === 'MODIFICACIÓN' ? 1 : 0.2,
+        filter: obtenerTipoMovimiento(f) === 'MODIFICACIÓN' ? 'none' : 'grayscale(100%)'
+      }}
+      title="MODIFICACIÓN"
+    />
+    {/* BAJA */}
+    <img 
+      src="https://thumbs.dreamstime.com/b/marca-cruz-roja-vector-de-iconos-ilustraci%C3%B3n-del-s%C3%ADmbolo-cruzamiento-icono-para-error-y-cancelar-acci%C3%B3n-394756876.jpg" 
+      alt="BAJA"
+      className="w-4 h-4"
+      style={{ 
+        opacity: obtenerTipoMovimiento(f) === 'BAJA' ? 1 : 0.2,
+        filter: obtenerTipoMovimiento(f) === 'BAJA' ? 'none' : 'grayscale(100%)'
+      }}
+      title="BAJA"
+    />
+  </div>
+</td>
                 </tr>
               ))}
               {filialesPaginadas.length === 0 && (
