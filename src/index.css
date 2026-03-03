@@ -96,3 +96,45 @@
     @apply bg-white rounded-2xl shadow-xl max-w-md w-full p-6;
   }
 }
+/* ===== MEJORAS RESPONSIVE ===== */
+
+/* Para móviles chicos */
+@media (max-width: 640px) {
+  .filters-container {
+    @apply p-3;
+  }
+  
+  .filters-container .flex {
+    @apply gap-2;
+  }
+  
+  /* Ocultar algunas columnas en móvil si es necesario */
+  .hide-on-mobile {
+    display: none;
+  }
+  
+  /* Botón limpiar filtros que ocupe todo el ancho en móvil */
+  .filters-container .self-end {
+    @apply w-full mt-2;
+  }
+  
+  .filters-container .self-end button {
+    @apply w-full;
+  }
+}
+
+/* Scroll horizontal para tablas en móvil */
+.osde-table-container {
+  @apply overflow-x-auto;
+}
+
+/* Ajuste de inputs date en móvil */
+input[type="date"] {
+  @apply text-sm;
+  min-height: 38px;
+}
+
+/* Tooltips que no se salgan de pantalla */
+.tooltip {
+  @apply whitespace-normal max-w-[200px] text-center;
+}
