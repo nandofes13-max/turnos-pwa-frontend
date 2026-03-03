@@ -1,11 +1,11 @@
-import React from 'react';
 import CPanel from './components/CPanel';
 
-export default function App() {
+function App() {
   return (
-    <div>
-      <h1>Turnos PWA Demo</h1>
+    <div className="App">
       <CPanel />
     </div>
   );
 }
+
+export default App;
