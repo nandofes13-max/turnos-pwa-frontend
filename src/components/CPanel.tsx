@@ -450,7 +450,7 @@ export default function CPanel() {
         </button>
       </div>
 
-      {/* Tabla de Filiales - CON ANCHOS FIJOS */}
+      {/* Tabla de Filiales - VERSIÓN FINAL */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -469,8 +469,8 @@ export default function CPanel() {
                 <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[250px]">
                   NOMBRE
                 </th>
-                {/* Acciones: ancho fijo 80px */}
-                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[80px]">
+                {/* Acciones: SIN ancho fijo (se ajusta al contenido) */}
+                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">
                   ACCIONES
                 </th>
               </tr>
@@ -489,9 +489,9 @@ export default function CPanel() {
                   <td className={`px-3 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
                     {f.nombre}
                   </td>
-                  {/* Acciones - con íconos centrados */}
+                  {/* Acciones - alineadas a la izquierda (sin centrar) */}
                   <td className="px-3 py-1 text-sm">
-                    <div className="flex justify-center gap-1">
+                    <div className="flex gap-1">
                       {/* Alta */}
                       <button
                         onClick={() => f.fecha_baja ? handleReactivar(f) : null}
