@@ -299,9 +299,6 @@ export default function CPanel() {
 
       {/* Filtros - con medidas exactas */}
       <div className="filters-container relative border border-gray-200 rounded-2xl p-5 pt-7">
-        <div className="absolute -top-3 left-4">
-          <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filtros</span>
-        </div>
         
         <div className="flex flex-wrap items-end gap-4 justify-center">
           
