@@ -448,18 +448,7 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative mt-6">
-          {/* Título "Filiales" */}
-          <div className="absolute -top-3 left-4">
-            <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filiales</span>
-          </div>
-          
-          {/* Botón AGREGAR */}
-          <div className="absolute -top-3 left-24">
-            <button
-              onClick={handleAgregar}
-              className="flex items-center gap-1 text-[#0056b3] hover:text-blue-700 text-xs font-medium bg-white px-2 py-0.5 rounded-full border border-[#0056b3]"
-              title="Agregar filial"
-            >
+        
               <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="16"/>
