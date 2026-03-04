@@ -441,18 +441,18 @@ export default function CPanel() {
 
       {/* Botón Agregar Filial (fuera del recuadro) */}
       <div className="mb-3">
-        <button
-          onClick={handleAgregar}
-          className="text-[#0056b3] hover:text-blue-700 text-sm font-medium flex items-center gap-1"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          Agregar Filial
-        </button>
-      </div>
+  <button
+    onClick={handleAgregar}
+    className="text-[#0056b3] hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+  >
+    Agregar Filial
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="16"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+  </button>
+</div>
 
       {/* Tabla de Filiales */}
       {loading ? (
