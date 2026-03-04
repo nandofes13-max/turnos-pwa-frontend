@@ -271,7 +271,6 @@ export default function CPanel() {
     if (!confirmReactivar) return;
 
     try {
-      // Para reactivar, hacemos un PUT con fecha_baja = null
       const res = await fetch(`${FILIALES_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -298,49 +297,49 @@ export default function CPanel() {
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
-      {/* Filtros - con título BIEN DENTRO */}
+      {/* Filtros - con medidas exactas */}
       <div className="filters-container relative border border-gray-200 rounded-2xl p-5 pt-7">
         <div className="absolute -top-3 left-4">
           <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filtros</span>
         </div>
         
-        <div className="grid grid-cols-5 gap-3 items-end">
+        <div className="flex flex-wrap items-end gap-4">
           
-          {/* Código */}
-          <div>
+          {/* CÓDIGO - ANCHO JUSTO PARA "TODOS" */}
+          <div style={{ width: '90px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Código</label>
             <div className="relative">
               <button
                 onClick={() => setFiltroExpandido(prev => ({ ...prev, codigo: !prev.codigo }))}
-                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm h-10"
+                className="w-full border border-gray-200 rounded-lg px-1 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-xs h-10"
               >
                 <span className="text-gray-700">
-                  {filtroCodigo.length === 0 ? 'Todos' : `${filtroCodigo.length} sel`}
+                  {filtroCodigo.length === 0 ? 'Todos' : `${filtroCodigo.length}`}
                 </span>
                 <span className="text-gray-400">▼</span>
               </button>
               
               {filtroExpandido.codigo && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-                  <label className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-1 text-xs">
+                  <label className="flex items-center p-1 hover:bg-gray-50 rounded">
                     <input
                       type="checkbox"
                       checked={filtroCodigo.length === codigosUnicos.length}
                       onChange={toggleTodosCodigos}
-                      className="mr-2 rounded text-[#0056b3]"
+                      className="mr-1 rounded text-[#0056b3] scale-75"
                     />
                     <span className="font-medium text-gray-700">Todos</span>
                   </label>
                   <div className="max-h-40 overflow-y-auto border-t mt-1 pt-1">
                     {codigosUnicos.map(cod => (
-                      <label key={cod} className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                      <label key={cod} className="flex items-center p-1 hover:bg-gray-50 rounded">
                         <input
                           type="checkbox"
                           checked={filtroCodigo.includes(cod)}
                           onChange={() => toggleCodigo(cod)}
-                          className="mr-2 rounded text-[#0056b3]"
+                          className="mr-1 rounded text-[#0056b3] scale-75"
                         />
-                        <span className="text-gray-700">{cod}</span>
+                        <span className="text-gray-700 text-xs">{cod}</span>
                       </label>
                     ))}
                   </div>
@@ -349,8 +348,8 @@ export default function CPanel() {
             </div>
           </div>
 
-          {/* Nombre */}
-          <div>
+          {/* NOMBRE */}
+          <div style={{ width: '200px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Nombre</label>
             <input
               type="text"
@@ -361,8 +360,8 @@ export default function CPanel() {
             />
           </div>
 
-          {/* Fecha Desde */}
-          <div>
+          {/* FECHA DESDE - ANCHO JUSTO PARA DD/MM/AAAA */}
+          <div style={{ width: '140px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Desde</label>
             <input
               type="date"
@@ -372,8 +371,8 @@ export default function CPanel() {
             />
           </div>
 
-          {/* Fecha Hasta */}
-          <div>
+          {/* FECHA HASTA - ANCHO JUSTO PARA DD/MM/AAAA */}
+          <div style={{ width: '140px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Hasta</label>
             <input
               type="date"
@@ -383,13 +382,13 @@ export default function CPanel() {
             />
           </div>
 
-          {/* Movimiento */}
-          <div>
+          {/* MOVIMIENTO */}
+          <div style={{ width: '150px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Movimiento</label>
             <div className="relative">
               <button
                 onClick={() => setFiltroExpandido(prev => ({ ...prev, movimiento: !prev.movimiento }))}
-                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm h-10"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm h-10"
               >
                 <span className="text-gray-700">
                   {filtroTipoMovimiento.length === 0 ? 'Todos' : `${filtroTipoMovimiento.length} sel`}
@@ -425,22 +424,22 @@ export default function CPanel() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Botón Limpiar Filtros - centrado y con texto completo */}
-        <div className="flex justify-center mt-4">
-          <button
-            onClick={() => {
-              setFiltroCodigo([]);
-              setFiltroTipoMovimiento([]);
-              setFiltroNombre('');
-              setFechaDesde('');
-              setFechaHasta('');
-            }}
-            className="text-sm text-[#0056b3] border border-[#0056b3] px-6 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
-          >
-            Limpiar Filtros
-          </button>
+          {/* Botón Limpiar Filtros */}
+          <div className="flex items-end" style={{ height: '68px' }}>
+            <button
+              onClick={() => {
+                setFiltroCodigo([]);
+                setFiltroTipoMovimiento([]);
+                setFiltroNombre('');
+                setFechaDesde('');
+                setFechaHasta('');
+              }}
+              className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap"
+            >
+              Limpiar Filtros
+            </button>
+          </div>
         </div>
       </div>
 
@@ -452,12 +451,12 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative mt-6">
-          {/* Título "Filiales" BIEN DENTRO */}
+          {/* Título "Filiales" */}
           <div className="absolute -top-3 left-4">
             <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filiales</span>
           </div>
           
-          {/* Botón AGREGAR al lado del título */}
+          {/* Botón AGREGAR */}
           <div className="absolute -top-3 left-24">
             <button
               onClick={handleAgregar}
@@ -473,7 +472,7 @@ export default function CPanel() {
             </button>
           </div>
           
-          {/* Tabla con columnas distribuidas uniformemente */}
+          {/* Tabla */}
           <table className="w-full mt-6">
             <thead>
               <tr>
@@ -497,7 +496,6 @@ export default function CPanel() {
                   <td className="px-4 py-2 text-sm">
                     <div className="flex gap-2">
                       {f.fecha_baja ? (
-                        // Si está de baja, mostrar solo botón para reactivar
                         <button
                           onClick={() => handleReactivar(f)}
                           className="p-1 rounded hover:bg-green-50 text-green-600"
@@ -510,7 +508,6 @@ export default function CPanel() {
                           </svg>
                         </button>
                       ) : (
-                        // Si está activo, mostrar lápiz y cruz
                         <>
                           <button
                             onClick={() => handleEditar(f)}
@@ -554,7 +551,7 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL AGREGAR/EDITAR (igual que antes) */}
+      {/* MODALES (sin cambios) */}
       {(modalMode === 'add' || modalMode === 'edit') && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -619,7 +616,6 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL VER DETALLE (igual que antes) */}
       {modalMode === 'view' && selectedFilial && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -663,7 +659,6 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -688,7 +683,6 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVACIÓN (ALTA) */}
       {confirmReactivar && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmReactivar(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
