@@ -192,7 +192,8 @@ export default function CPanel() {
       return;
     }
 
-    if (!validarCodigo(formData.codigo)) {
+    // Solo validar el formato del código si es una nueva creación
+    if (modalMode === 'add' && !validarCodigo(formData.codigo)) {
       setErrorMessage('El código debe contener solo letras y no más de 2 caracteres');
       return;
     }
@@ -201,12 +202,9 @@ export default function CPanel() {
     const nombreUpper = formData.nombre.toUpperCase();
 
     try {
-      if (modalMode === 'add' || modalMode === 'edit') {
-        const esValido = await verificarExistente(
-          codigoUpper, 
-          nombreUpper, 
-          modalMode === 'edit' ? selectedFilial?.id : undefined
-        );
+      // Solo verificar existencia si es alta o si cambió el código en edición (no debería pasar porque está disabled)
+      if (modalMode === 'add') {
+        const esValido = await verificarExistente(codigoUpper, nombreUpper);
         if (!esValido) return;
       }
 
@@ -226,7 +224,7 @@ export default function CPanel() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            codigo: codigoUpper, 
+            codigo: selectedFilial.codigo, // Usamos el código original, no el del form (por si acaso)
             nombre: nombreUpper,
             usuario_modificacion: 'DEMO'
           }),
@@ -297,7 +295,7 @@ export default function CPanel() {
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
-      {/* Filtros - sin título y centrados */}
+      {/* Filtros */}
       <div className="filters-container relative border border-gray-200 rounded-2xl py-4 px-5 mb-6">
         <div className="flex flex-wrap items-end gap-4 justify-center">
           
@@ -439,20 +437,20 @@ export default function CPanel() {
         </div>
       </div>
 
-      {/* Botón Agregar Filial (fuera del recuadro) */}
+      {/* Botón Agregar Filial */}
       <div className="mb-4 flex justify-start">
-  <button
-    onClick={handleAgregar}
-    className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap flex items-center gap-1"
-  >
-    Agregar Filial
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="12" y1="8" x2="12" y2="16"/>
-      <line x1="8" y1="12" x2="16" y2="12"/>
-    </svg>
-  </button>
-</div>
+        <button
+          onClick={handleAgregar}
+          className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap flex items-center gap-1"
+        >
+          Agregar Filial
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </button>
+      </div>
 
       {/* Tabla de Filiales */}
       {loading ? (
@@ -467,7 +465,7 @@ export default function CPanel() {
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Código</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/2">Nombre</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Acción</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -484,42 +482,45 @@ export default function CPanel() {
                   </td>
                   <td className="px-4 py-2 text-sm">
                     <div className="flex gap-2">
-                      {f.fecha_baja ? (
-                        <button
-                          onClick={() => handleReactivar(f)}
-                          className="p-1 rounded hover:bg-green-50 text-green-600"
-                          title="Reactivar (Dar de ALTA)"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="16"/>
-                            <line x1="8" y1="12" x2="16" y2="12"/>
-                          </svg>
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleEditar(f)}
-                            className="p-1 rounded hover:bg-blue-50 text-blue-600"
-                            title="Editar / Ver Detalles"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleEliminar(f)}
-                            className="p-1 rounded hover:bg-red-50 text-red-600"
-                            title="BAJA"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10"/>
-                              <line x1="15" y1="9" x2="9" y2="15"/>
-                              <line x1="9" y1="9" x2="15" y2="15"/>
-                            </svg>
-                          </button>
-                        </>
-                      )}
+                      {/* Alta - siempre visible pero habilitado solo si está de baja */}
+                      <button
+                        onClick={() => f.fecha_baja ? handleReactivar(f) : null}
+                        className={`p-1 rounded ${f.fecha_baja ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        title={f.fecha_baja ? "Alta" : "Ya está activo"}
+                        disabled={!f.fecha_baja}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="8" x2="12" y2="16"/>
+                          <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                      </button>
+
+                      {/* Modificación - solo si está activo */}
+                      <button
+                        onClick={() => !f.fecha_baja && handleEditar(f)}
+                        className={`p-1 rounded ${!f.fecha_baja ? 'text-blue-600 hover:bg-blue-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
+                        disabled={!!f.fecha_baja}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                        </svg>
+                      </button>
+
+                      {/* Baja - solo si está activo */}
+                      <button
+                        onClick={() => !f.fecha_baja && handleEliminar(f)}
+                        className={`p-1 rounded ${!f.fecha_baja ? 'text-red-600 hover:bg-red-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
+                        disabled={!!f.fecha_baja}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="15" y1="9" x2="9" y2="15"/>
+                          <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -540,13 +541,11 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODALES (sin cambios) */}
-      {(modalMode === 'add' || modalMode === 'edit') && (
+      {/* MODAL AGREGAR */}
+      {modalMode === 'add' && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
-              {modalMode === 'add' ? 'Agregar Filial' : 'Editar Filial'}
-            </h3>
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Agregar Filial</h3>
             
             {errorMessage && (
               <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
@@ -578,7 +577,59 @@ export default function CPanel() {
               />
             </div>
 
-            {modalMode === 'edit' && selectedFilial?.ultimoMovimiento && (
+            <div className="flex justify-end gap-2 mt-6">
+              <button 
+                onClick={() => setModalMode(null)} 
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={guardarFilial} 
+                className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR - con código deshabilitado */}
+      {modalMode === 'edit' && selectedFilial && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Editar Filial</h3>
+            
+            {errorMessage && (
+              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                {errorMessage}
+              </div>
+            )}
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-1">Código</label>
+              <input
+                type="text"
+                value={selectedFilial.codigo}
+                disabled
+                className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm uppercase cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 mt-1">El código no puede modificarse</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                placeholder="Ingrese nombre"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase"
+              />
+            </div>
+
+            {selectedFilial.ultimoMovimiento && (
               <div className="mb-4 p-2 bg-blue-50 rounded border border-blue-100">
                 <span className="text-xs font-medium text-blue-600">Último Movimiento</span>
                 <p className="text-sm text-blue-900 mt-1">
@@ -598,13 +649,14 @@ export default function CPanel() {
                 onClick={guardarFilial} 
                 className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm"
               >
-                {modalMode === 'add' ? 'Agregar' : 'Guardar'}
+                Guardar
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedFilial && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -648,6 +700,7 @@ export default function CPanel() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -672,6 +725,7 @@ export default function CPanel() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR REACTIVACIÓN (ALTA) */}
       {confirmReactivar && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmReactivar(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
