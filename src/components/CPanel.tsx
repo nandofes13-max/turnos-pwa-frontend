@@ -435,22 +435,7 @@ export default function CPanel() {
         </div>
       </div>
 
-      {/* Botón Agregar Filial + */}
-      <div className="mb-4 flex justify-start">
-        <button
-          onClick={handleAgregar}
-          className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap flex items-center gap-1"
-        >
-          Agregar Filial
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* Tabla de Filiales - CENTRADA */}
+      {/* Tabla de Filiales - CON BOTÓN ALINEADO A COLUMNA CÓDIGO */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -458,7 +443,22 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex justify-center py-4">
+          {/* Botón Agregar Filial + - ALINEADO CON CÓDIGO */}
+          <div className="pt-4 pl-4">
+            <button
+              onClick={handleAgregar}
+              className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap flex items-center gap-1"
+            >
+              Agregar Filial
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex justify-center pb-4">
             <table className="w-auto" style={{ minWidth: '500px' }}>
               <thead>
                 <tr>
