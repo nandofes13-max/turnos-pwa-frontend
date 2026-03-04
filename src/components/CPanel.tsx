@@ -435,7 +435,7 @@ export default function CPanel() {
         </div>
       </div>
 
-      {/* Botón Agregar Filial */}
+      {/* Botón Agregar Filial + */}
       <div className="mb-4 flex justify-start">
         <button
           onClick={handleAgregar}
@@ -450,7 +450,7 @@ export default function CPanel() {
         </button>
       </div>
 
-      {/* Tabla de Filiales - VERSIÓN FINAL */}
+      {/* Tabla de Filiales - CENTRADA */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -458,94 +458,96 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr>
-                {/* Código: ancho fijo 70px */}
-                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[70px]">
-                  CÓDIGO
-                </th>
-                {/* Nombre: ancho fijo 250px */}
-                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[250px]">
-                  NOMBRE
-                </th>
-                {/* Acciones: SIN ancho fijo (se ajusta al contenido) */}
-                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">
-                  ACCIONES
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filialesPaginadas.map((f) => (
-                <tr 
-                  key={f.id} 
-                  className={`hover:bg-gray-50 transition-colors duration-150 ${f.fecha_baja ? 'bg-red-50' : ''}`}
-                >
-                  {/* Código */}
-                  <td className={`px-3 py-1 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
-                    {f.codigo}
-                  </td>
-                  {/* Nombre */}
-                  <td className={`px-3 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
-                    {f.nombre}
-                  </td>
-                  {/* Acciones - alineadas a la izquierda (sin centrar) */}
-                  <td className="px-3 py-1 text-sm">
-                    <div className="flex gap-1">
-                      {/* Alta */}
-                      <button
-                        onClick={() => f.fecha_baja ? handleReactivar(f) : null}
-                        className={`p-0.5 rounded ${f.fecha_baja ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                        title={f.fecha_baja ? "Alta" : "Ya está activo"}
-                        disabled={!f.fecha_baja}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="12" y1="8" x2="12" y2="16"/>
-                          <line x1="8" y1="12" x2="16" y2="12"/>
-                        </svg>
-                      </button>
-
-                      {/* Modificación */}
-                      <button
-                        onClick={() => !f.fecha_baja && handleEditar(f)}
-                        className={`p-0.5 rounded ${!f.fecha_baja ? 'text-blue-600 hover:bg-blue-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                        title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
-                        disabled={!!f.fecha_baja}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                        </svg>
-                      </button>
-
-                      {/* Baja */}
-                      <button
-                        onClick={() => !f.fecha_baja && handleEliminar(f)}
-                        className={`p-0.5 rounded ${!f.fecha_baja ? 'text-red-600 hover:bg-red-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                        title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
-                        disabled={!!f.fecha_baja}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="15" y1="9" x2="9" y2="15"/>
-                          <line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filialesPaginadas.length === 0 && (
+          <div className="flex justify-center py-4">
+            <table className="w-auto" style={{ minWidth: '500px' }}>
+              <thead>
                 <tr>
-                  <td colSpan={3} className="text-center py-8 text-gray-500 text-sm">
-                    No hay filiales que coincidan
-                  </td>
+                  {/* Código: ancho fijo 70px */}
+                  <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[70px]">
+                    CÓDIGO
+                  </th>
+                  {/* Nombre: ancho fijo 250px */}
+                  <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[250px]">
+                    NOMBRE
+                  </th>
+                  {/* Acciones: SIN ancho fijo (se ajusta al contenido) */}
+                  <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">
+                    ACCIONES
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filialesPaginadas.map((f) => (
+                  <tr 
+                    key={f.id} 
+                    className={`hover:bg-gray-50 transition-colors duration-150 ${f.fecha_baja ? 'bg-red-50' : ''}`}
+                  >
+                    {/* Código */}
+                    <td className={`px-3 py-1 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
+                      {f.codigo}
+                    </td>
+                    {/* Nombre */}
+                    <td className={`px-3 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
+                      {f.nombre}
+                    </td>
+                    {/* Acciones - alineadas a la izquierda */}
+                    <td className="px-3 py-1 text-sm">
+                      <div className="flex gap-1">
+                        {/* Alta */}
+                        <button
+                          onClick={() => f.fecha_baja ? handleReactivar(f) : null}
+                          className={`p-0.5 rounded ${f.fecha_baja ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                          title={f.fecha_baja ? "Alta" : "Ya está activo"}
+                          disabled={!f.fecha_baja}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                          </svg>
+                        </button>
+
+                        {/* Modificación */}
+                        <button
+                          onClick={() => !f.fecha_baja && handleEditar(f)}
+                          className={`p-0.5 rounded ${!f.fecha_baja ? 'text-blue-600 hover:bg-blue-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                          title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
+                          disabled={!!f.fecha_baja}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                          </svg>
+                        </button>
+
+                        {/* Baja */}
+                        <button
+                          onClick={() => !f.fecha_baja && handleEliminar(f)}
+                          className={`p-0.5 rounded ${!f.fecha_baja ? 'text-red-600 hover:bg-red-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                          title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
+                          disabled={!!f.fecha_baja}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filialesPaginadas.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="text-center py-8 text-gray-500 text-sm">
+                      No hay filiales que coincidan
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           
-          <div className="px-3 py-1 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
+          <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-100 bg-gray-50 text-center">
             Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
