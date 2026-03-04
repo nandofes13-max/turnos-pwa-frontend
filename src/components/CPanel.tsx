@@ -192,7 +192,6 @@ export default function CPanel() {
       return;
     }
 
-    // Solo validar el formato del código si es una nueva creación
     if (modalMode === 'add' && !validarCodigo(formData.codigo)) {
       setErrorMessage('El código debe contener solo letras y no más de 2 caracteres');
       return;
@@ -202,7 +201,6 @@ export default function CPanel() {
     const nombreUpper = formData.nombre.toUpperCase();
 
     try {
-      // Solo verificar existencia si es alta o si cambió el código en edición (no debería pasar porque está disabled)
       if (modalMode === 'add') {
         const esValido = await verificarExistente(codigoUpper, nombreUpper);
         if (!esValido) return;
@@ -224,7 +222,7 @@ export default function CPanel() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            codigo: selectedFilial.codigo, // Usamos el código original, no el del form (por si acaso)
+            codigo: selectedFilial.codigo,
             nombre: nombreUpper,
             usuario_modificacion: 'DEMO'
           }),
@@ -452,7 +450,7 @@ export default function CPanel() {
         </button>
       </div>
 
-      {/* Tabla de Filiales */}
+      {/* Tabla de Filiales - VERSIÓN COMPACTA */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -463,9 +461,12 @@ export default function CPanel() {
           <table className="w-full">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Código</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/2">Nombre</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Acciones</th>
+                {/* Código: ancho fijo 70px */}
+                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[70px]">Código</th>
+                {/* Nombre: flexible (ocupa el resto) */}
+                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Nombre</th>
+                {/* Acciones: ancho fijo 80px (justo para 3 iconos) */}
+                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[80px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -474,18 +475,21 @@ export default function CPanel() {
                   key={f.id} 
                   className={`hover:bg-gray-50 transition-colors duration-150 ${f.fecha_baja ? 'bg-red-50' : ''}`}
                 >
-                  <td className={`px-4 py-2 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
+                  {/* Código */}
+                  <td className={`px-2 py-1 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
                     {f.codigo}
                   </td>
-                  <td className={`px-4 py-2 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
+                  {/* Nombre */}
+                  <td className={`px-2 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
                     {f.nombre}
                   </td>
-                  <td className="px-4 py-2 text-sm">
-                    <div className="flex gap-2">
-                      {/* Alta - siempre visible pero habilitado solo si está de baja */}
+                  {/* Acciones - con íconos centrados */}
+                  <td className="px-2 py-1 text-sm">
+                    <div className="flex justify-center gap-1">
+                      {/* Alta */}
                       <button
                         onClick={() => f.fecha_baja ? handleReactivar(f) : null}
-                        className={`p-1 rounded ${f.fecha_baja ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        className={`p-0.5 rounded ${f.fecha_baja ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
                         title={f.fecha_baja ? "Alta" : "Ya está activo"}
                         disabled={!f.fecha_baja}
                       >
@@ -496,10 +500,10 @@ export default function CPanel() {
                         </svg>
                       </button>
 
-                      {/* Modificación - solo si está activo */}
+                      {/* Modificación */}
                       <button
                         onClick={() => !f.fecha_baja && handleEditar(f)}
-                        className={`p-1 rounded ${!f.fecha_baja ? 'text-blue-600 hover:bg-blue-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        className={`p-0.5 rounded ${!f.fecha_baja ? 'text-blue-600 hover:bg-blue-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
                         title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
                         disabled={!!f.fecha_baja}
                       >
@@ -508,10 +512,10 @@ export default function CPanel() {
                         </svg>
                       </button>
 
-                      {/* Baja - solo si está activo */}
+                      {/* Baja */}
                       <button
                         onClick={() => !f.fecha_baja && handleEliminar(f)}
-                        className={`p-1 rounded ${!f.fecha_baja ? 'text-red-600 hover:bg-red-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                        className={`p-0.5 rounded ${!f.fecha_baja ? 'text-red-600 hover:bg-red-50 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
                         title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
                         disabled={!!f.fecha_baja}
                       >
@@ -535,216 +539,103 @@ export default function CPanel() {
             </tbody>
           </table>
           
-          <div className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
+          <div className="px-2 py-1 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
             Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
       )}
 
-      {/* MODAL AGREGAR */}
+      {/* MODALES (sin cambios) */}
       {modalMode === 'add' && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-medium text-gray-800 mb-4">Agregar Filial</h3>
-            
-            {errorMessage && (
-              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                {errorMessage}
-              </div>
-            )}
-            
+            {errorMessage && (<div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">{errorMessage}</div>)}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-600 mb-1">Código (máx 2 letras)</label>
-              <input
-                type="text"
-                value={formData.codigo}
-                onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-                placeholder="Ej: CF"
-                maxLength={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase"
-                autoFocus
-              />
+              <input type="text" value={formData.codigo} onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })} placeholder="Ej: CF" maxLength={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase" autoFocus />
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ingrese nombre"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} placeholder="Ingrese nombre" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase" />
             </div>
-
             <div className="flex justify-end gap-2 mt-6">
-              <button 
-                onClick={() => setModalMode(null)} 
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={guardarFilial} 
-                className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm"
-              >
-                Agregar
-              </button>
+              <button onClick={() => setModalMode(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={guardarFilial} className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm">Agregar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL EDITAR - con código deshabilitado */}
       {modalMode === 'edit' && selectedFilial && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-medium text-gray-800 mb-4">Editar Filial</h3>
-            
-            {errorMessage && (
-              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-                {errorMessage}
-              </div>
-            )}
-            
+            {errorMessage && (<div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">{errorMessage}</div>)}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-600 mb-1">Código</label>
-              <input
-                type="text"
-                value={selectedFilial.codigo}
-                disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm uppercase cursor-not-allowed"
-              />
+              <input type="text" value={selectedFilial.codigo} disabled className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm uppercase cursor-not-allowed" />
               <p className="text-xs text-gray-500 mt-1">El código no puede modificarse</p>
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ingrese nombre"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} placeholder="Ingrese nombre" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm uppercase" />
             </div>
-
             {selectedFilial.ultimoMovimiento && (
               <div className="mb-4 p-2 bg-blue-50 rounded border border-blue-100">
                 <span className="text-xs font-medium text-blue-600">Último Movimiento</span>
-                <p className="text-sm text-blue-900 mt-1">
-                  {selectedFilial.ultimoMovimiento.replace('demo', 'DEMO')}
-                </p>
+                <p className="text-sm text-blue-900 mt-1">{selectedFilial.ultimoMovimiento.replace('demo', 'DEMO')}</p>
               </div>
             )}
-
             <div className="flex justify-end gap-2 mt-6">
-              <button 
-                onClick={() => setModalMode(null)} 
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={guardarFilial} 
-                className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm"
-              >
-                Guardar
-              </button>
+              <button onClick={() => setModalMode(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={guardarFilial} className="px-4 py-2 bg-[#0056b3] text-white rounded-lg hover:bg-[#004494] text-sm">Guardar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedFilial && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-medium text-gray-800 mb-4">Detalle de Filial</h3>
-            
             <div className="space-y-3">
-              <div className="bg-gray-50 p-3 rounded">
-                <span className="text-xs font-medium text-gray-500">ID</span>
-                <p className="text-sm font-medium text-[#0056b3]">{selectedFilial.id}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded">
-                <span className="text-xs font-medium text-gray-500">Código</span>
-                <p className="text-sm font-medium text-[#0056b3]">{selectedFilial.codigo}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded">
-                <span className="text-xs font-medium text-gray-500">Nombre</span>
-                <p className="text-sm font-medium text-[#0056b3]">{selectedFilial.nombre}</p>
-              </div>
-              
+              <div className="bg-gray-50 p-3 rounded"><span className="text-xs font-medium text-gray-500">ID</span><p className="text-sm font-medium text-[#0056b3]">{selectedFilial.id}</p></div>
+              <div className="bg-gray-50 p-3 rounded"><span className="text-xs font-medium text-gray-500">Código</span><p className="text-sm font-medium text-[#0056b3]">{selectedFilial.codigo}</p></div>
+              <div className="bg-gray-50 p-3 rounded"><span className="text-xs font-medium text-gray-500">Nombre</span><p className="text-sm font-medium text-[#0056b3]">{selectedFilial.nombre}</p></div>
               <div className={`p-3 rounded border ${selectedFilial.fecha_baja ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-100'}`}>
-                <span className={`text-xs font-medium ${selectedFilial.fecha_baja ? 'text-red-600' : 'text-blue-600'}`}>
-                  Último Movimiento
-                </span>
-                <p className={`text-sm mt-1 ${selectedFilial.fecha_baja ? 'text-red-900' : 'text-blue-900'}`}>
-                  {selectedFilial.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}
-                </p>
+                <span className={`text-xs font-medium ${selectedFilial.fecha_baja ? 'text-red-600' : 'text-blue-600'}`}>Último Movimiento</span>
+                <p className={`text-sm mt-1 ${selectedFilial.fecha_baja ? 'text-red-900' : 'text-blue-900'}`}>{selectedFilial.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}</p>
               </div>
             </div>
-            
             <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setModalMode(null)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-              >
-                Cerrar
-              </button>
+              <button onClick={() => setModalMode(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Cerrar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
             <p className="text-gray-700 mb-2 text-sm">¿Dar de BAJA <strong>{confirmDelete.nombre}</strong>?</p>
             <p className="text-xs text-gray-500 mb-4">El registro pasará a estado inactivo.</p>
-            
             <div className="flex justify-end gap-2">
-              <button 
-                onClick={() => setConfirmDelete(null)} 
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={confirmarEliminar} 
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-              >
-                Confirmar BAJA
-              </button>
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={confirmarEliminar} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">Confirmar BAJA</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVACIÓN (ALTA) */}
       {confirmReactivar && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmReactivar(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
             <p className="text-gray-700 mb-2 text-sm">¿Reactivar <strong>{confirmReactivar.nombre}</strong>?</p>
             <p className="text-xs text-gray-500 mb-4">El registro volverá a estado activo.</p>
-            
             <div className="flex justify-end gap-2">
-              <button 
-                onClick={() => setConfirmReactivar(null)} 
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={confirmarReactivar} 
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-              >
-                Confirmar ALTA
-              </button>
+              <button onClick={() => setConfirmReactivar(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={confirmarReactivar} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">Confirmar ALTA</button>
             </div>
           </div>
         </div>
