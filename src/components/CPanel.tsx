@@ -297,12 +297,11 @@ export default function CPanel() {
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
-      {/* Filtros - con medidas exactas */}
-      <div className="filters-container relative border border-gray-200 rounded-2xl py-4 px-5">
-        
+      {/* Filtros - sin título y centrados */}
+      <div className="filters-container relative border border-gray-200 rounded-2xl py-4 px-5 mb-6">
         <div className="flex flex-wrap items-end gap-4 justify-center">
           
-          {/* CÓDIGO - ANCHO JUSTO PARA "TODOS" */}
+          {/* CÓDIGO */}
           <div style={{ width: '90px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Código</label>
             <div className="relative">
@@ -357,7 +356,7 @@ export default function CPanel() {
             />
           </div>
 
-          {/* FECHA DESDE - ANCHO JUSTO PARA DD/MM/AAAA */}
+          {/* FECHA DESDE */}
           <div style={{ width: '140px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Desde</label>
             <input
@@ -368,7 +367,7 @@ export default function CPanel() {
             />
           </div>
 
-          {/* FECHA HASTA - ANCHO JUSTO PARA DD/MM/AAAA */}
+          {/* FECHA HASTA */}
           <div style={{ width: '140px' }}>
             <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Hasta</label>
             <input
@@ -440,6 +439,21 @@ export default function CPanel() {
         </div>
       </div>
 
+      {/* Botón Agregar Filial (fuera del recuadro) */}
+      <div className="mb-3">
+        <button
+          onClick={handleAgregar}
+          className="text-[#0056b3] hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          Agregar Filial
+        </button>
+      </div>
+
       {/* Tabla de Filiales */}
       {loading ? (
         <div className="text-center py-12">
@@ -447,19 +461,8 @@ export default function CPanel() {
           <p className="mt-2 text-gray-500">Cargando...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative mt-6">
-        
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-              </svg>
-              <span>Agregar</span>
-            </button>
-          </div>
-          
-          {/* Tabla */}
-          <table className="w-full mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full">
             <thead>
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Código</th>
