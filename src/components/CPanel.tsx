@@ -440,10 +440,10 @@ export default function CPanel() {
       </div>
 
       {/* Botón Agregar Filial (fuera del recuadro) */}
-      <div className="mb-3">
+      <div className="mb-4 flex justify-start">
   <button
     onClick={handleAgregar}
-    className="text-[#0056b3] hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+    className="text-sm text-[#0056b3] border border-[#0056b3] px-4 py-2 rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap flex items-center gap-1"
   >
     Agregar Filial
     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
