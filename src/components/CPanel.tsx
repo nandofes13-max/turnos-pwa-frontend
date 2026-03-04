@@ -450,7 +450,7 @@ export default function CPanel() {
         </button>
       </div>
 
-      {/* Tabla de Filiales - VERSIÓN COMPACTA */}
+      {/* Tabla de Filiales - CON ANCHOS FIJOS */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-[#0056b3]"></div>
@@ -462,11 +462,17 @@ export default function CPanel() {
             <thead>
               <tr>
                 {/* Código: ancho fijo 70px */}
-                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[70px]">Código</th>
-                {/* Nombre: flexible (ocupa el resto) */}
-                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Nombre</th>
-                {/* Acciones: ancho fijo 80px (justo para 3 iconos) */}
-                <th className="px-2 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[80px]">Acciones</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[70px]">
+                  CÓDIGO
+                </th>
+                {/* Nombre: ancho fijo 250px */}
+                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[250px]">
+                  NOMBRE
+                </th>
+                {/* Acciones: ancho fijo 80px */}
+                <th className="px-3 py-3 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-[80px]">
+                  ACCIONES
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -476,15 +482,15 @@ export default function CPanel() {
                   className={`hover:bg-gray-50 transition-colors duration-150 ${f.fecha_baja ? 'bg-red-50' : ''}`}
                 >
                   {/* Código */}
-                  <td className={`px-2 py-1 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`px-3 py-1 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
                     {f.codigo}
                   </td>
                   {/* Nombre */}
-                  <td className={`px-2 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
+                  <td className={`px-3 py-1 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
                     {f.nombre}
                   </td>
                   {/* Acciones - con íconos centrados */}
-                  <td className="px-2 py-1 text-sm">
+                  <td className="px-3 py-1 text-sm">
                     <div className="flex justify-center gap-1">
                       {/* Alta */}
                       <button
@@ -539,7 +545,7 @@ export default function CPanel() {
             </tbody>
           </table>
           
-          <div className="px-2 py-1 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
+          <div className="px-3 py-1 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
             Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
