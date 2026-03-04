@@ -298,7 +298,7 @@ export default function CPanel() {
       <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
       {/* Filtros - con medidas exactas */}
-      <div className="filters-container relative border border-gray-200 rounded-2xl p-5 pt-7">
+      <div className="filters-container relative border border-gray-200 rounded-2xl py-4 px-5">
         
         <div className="flex flex-wrap items-end gap-4 justify-center">
           
