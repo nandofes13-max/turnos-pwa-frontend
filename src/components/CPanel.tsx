@@ -21,9 +21,10 @@ export default function CPanel() {
   const [filiales, setFiliales] = useState<Filial[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedFilial, setSelectedFilial] = useState<Filial | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ codigo: '', nombre: '' });
   const [confirmDelete, setConfirmDelete] = useState<Filial | null>(null);
+  const [confirmReactivar, setConfirmReactivar] = useState<Filial | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Estados para filtros
@@ -39,7 +40,6 @@ export default function CPanel() {
   });
 
   const codigosUnicos = [...new Set(filiales.map(f => f.codigo))].sort();
-  // ✅ Solo ALTAS y BAJAS en el filtro
   const tiposMovimiento = ['Altas', 'Bajas'];
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function CPanel() {
 
   const obtenerTipoMovimiento = (f: Filial): string => {
     if (f.fecha_baja) return 'Bajas';
-    return 'Altas'; // Si no está dada de baja, es Altas (aunque tenga modificaciones)
+    return 'Altas';
   };
 
   const filtrarFiliales = (filiales: Filial[]): Filial[] => {
@@ -118,7 +118,7 @@ export default function CPanel() {
     }
   };
 
-  // ===== FUNCIONES CRUD CON VALIDACIONES =====
+  // ===== FUNCIONES CRUD =====
 
   const handleAgregar = () => {
     setFormData({ codigo: '', nombre: '' });
@@ -127,11 +127,6 @@ export default function CPanel() {
   };
 
   const handleEditar = (filial: Filial) => {
-    // Verificar si está de baja
-    if (filial.fecha_baja) {
-      alert('No se puede editar un registro dado de baja');
-      return;
-    }
     setFormData({ codigo: filial.codigo, nombre: filial.nombre });
     setSelectedFilial(filial);
     setErrorMessage(null);
@@ -144,49 +139,43 @@ export default function CPanel() {
   };
 
   const handleEliminar = (filial: Filial) => {
-    // Verificar si ya está de baja
-    if (filial.fecha_baja) {
-      alert('Este registro ya está dado de baja');
-      return;
-    }
     setConfirmDelete(filial);
   };
 
-  // Validar código (solo letras, máximo 2 caracteres)
+  const handleReactivar = (filial: Filial) => {
+    setConfirmReactivar(filial);
+  };
+
   const validarCodigo = (codigo: string): boolean => {
     const soloLetras = /^[A-Za-z]{1,2}$/.test(codigo);
     return soloLetras;
   };
 
-  // Verificar si ya existe un registro con mismo código o nombre (y no está de baja)
   const verificarExistente = async (codigo: string, nombre: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(FILIALES_URL);
       const data: Filial[] = await res.json();
       
-      // Filtrar registros activos (no dados de baja) y excluir el actual si es edición
       const activos = data.filter(f => 
         !f.fecha_baja && 
         (id ? f.id !== id : true)
       );
       
-      // Verificar código duplicado
       const codigoExistente = activos.some(f => 
         f.codigo.toUpperCase() === codigo.toUpperCase()
       );
       
-      // Verificar nombre duplicado
       const nombreExistente = activos.some(f => 
         f.nombre.toUpperCase() === nombre.toUpperCase()
       );
       
       if (codigoExistente) {
-        setErrorMessage('Ya existe un registro con ese código');
+        setErrorMessage('Ya existe un registro activo con ese código');
         return false;
       }
       
       if (nombreExistente) {
-        setErrorMessage('Ya existe un registro con ese nombre');
+        setErrorMessage('Ya existe un registro activo con ese nombre');
         return false;
       }
       
@@ -198,24 +187,20 @@ export default function CPanel() {
   };
 
   const guardarFilial = async () => {
-    // Validar campos obligatorios
     if (!formData.codigo || !formData.nombre) {
       setErrorMessage('Completar código y nombre');
       return;
     }
 
-    // Validar código (solo letras, máx 2)
     if (!validarCodigo(formData.codigo)) {
       setErrorMessage('El código debe contener solo letras y no más de 2 caracteres');
       return;
     }
 
-    // Convertir a mayúsculas
     const codigoUpper = formData.codigo.toUpperCase();
     const nombreUpper = formData.nombre.toUpperCase();
 
     try {
-      // Validar si ya existe (solo para altas y ediciones)
       if (modalMode === 'add' || modalMode === 'edit') {
         const esValido = await verificarExistente(
           codigoUpper, 
@@ -282,151 +267,180 @@ export default function CPanel() {
     }
   };
 
+  const confirmarReactivar = async () => {
+    if (!confirmReactivar) return;
+
+    try {
+      // Para reactivar, hacemos un PUT con fecha_baja = null
+      const res = await fetch(`${FILIALES_URL}/${confirmReactivar.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          codigo: confirmReactivar.codigo,
+          nombre: confirmReactivar.nombre,
+          usuario_modificacion: 'DEMO',
+          fecha_baja: null,
+          usuario_baja: null
+        }),
+      });
+
+      if (!res.ok) throw new Error('Error al reactivar filial');
+
+      setConfirmReactivar(null);
+      fetchFiliales();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo reactivar la filial');
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-medium text-[#0056b3] mb-8">Gestión de Filiales</h1>
 
-      {/* Filtros - con títulos DENTRO del recuadro */}
-      <div className="filters-container relative pt-6">
-        <div className="absolute -top-3 left-4 bg-white px-2 z-10">
-          <span className="text-sm font-medium text-[#0056b3] bg-white px-1">Filtros</span>
+      {/* Filtros - con título BIEN DENTRO */}
+      <div className="filters-container relative border border-gray-200 rounded-2xl p-5 pt-7">
+        <div className="absolute -top-3 left-4">
+          <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filtros</span>
         </div>
         
-        <div className="flex flex-wrap gap-4 items-start">
+        <div className="grid grid-cols-5 gap-3 items-end">
           
-          {/* Código - ANCHO REDUCIDO al mínimo */}
-          <div className="w-24 relative">
-            <label className="block text-center text-xs font-medium text-[#0056b3] mb-1">Código</label>
-            <button
-              onClick={() => setFiltroExpandido(prev => ({ ...prev, codigo: !prev.codigo }))}
-              className="osde-select-trigger text-xs px-2 py-1"
-            >
-              <span className="text-gray-700">
-                {filtroCodigo.length === 0 ? 'Todos' : `${filtroCodigo.length}`}
-              </span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </button>
-            
-            {filtroExpandido.codigo && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-1 text-xs">
-                <label className="flex items-center p-1 hover:bg-gray-50 rounded">
-                  <input
-                    type="checkbox"
-                    checked={filtroCodigo.length === codigosUnicos.length}
-                    onChange={toggleTodosCodigos}
-                    className="mr-1 rounded text-[#0056b3] scale-75"
-                  />
-                  <span className="font-medium text-gray-700">Todos</span>
-                </label>
-                <div className="max-h-40 overflow-y-auto border-t mt-1 pt-1">
-                  {codigosUnicos.map(cod => (
-                    <label key={cod} className="flex items-center p-1 hover:bg-gray-50 rounded">
-                      <input
-                        type="checkbox"
-                        checked={filtroCodigo.includes(cod)}
-                        onChange={() => toggleCodigo(cod)}
-                        className="mr-1 rounded text-[#0056b3] scale-75"
-                      />
-                      <span className="text-gray-700 text-xs">{cod}</span>
-                    </label>
-                  ))}
+          {/* Código */}
+          <div>
+            <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Código</label>
+            <div className="relative">
+              <button
+                onClick={() => setFiltroExpandido(prev => ({ ...prev, codigo: !prev.codigo }))}
+                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm h-10"
+              >
+                <span className="text-gray-700">
+                  {filtroCodigo.length === 0 ? 'Todos' : `${filtroCodigo.length} sel`}
+                </span>
+                <span className="text-gray-400">▼</span>
+              </button>
+              
+              {filtroExpandido.codigo && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                  <label className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                    <input
+                      type="checkbox"
+                      checked={filtroCodigo.length === codigosUnicos.length}
+                      onChange={toggleTodosCodigos}
+                      className="mr-2 rounded text-[#0056b3]"
+                    />
+                    <span className="font-medium text-gray-700">Todos</span>
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border-t mt-1 pt-1">
+                    {codigosUnicos.map(cod => (
+                      <label key={cod} className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                        <input
+                          type="checkbox"
+                          checked={filtroCodigo.includes(cod)}
+                          onChange={() => toggleCodigo(cod)}
+                          className="mr-2 rounded text-[#0056b3]"
+                        />
+                        <span className="text-gray-700">{cod}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Nombre */}
-          <div className="w-48">
-            <label className="block text-center text-xs font-medium text-[#0056b3] mb-1">Nombre</label>
+          <div>
+            <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Nombre</label>
             <input
               type="text"
               value={filtroNombre}
               onChange={(e) => setFiltroNombre(e.target.value)}
               placeholder="Buscar..."
-              className="osde-input text-xs px-2 py-1"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm h-10"
             />
           </div>
 
-          {/* Fecha Desde - Hasta */}
-          <div className="w-64">
-            <div className="flex gap-1">
-              <div className="flex-1">
-                <label className="block text-center text-xs font-medium text-[#0056b3] mb-1">Desde</label>
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  className="osde-input text-xs px-2 py-1"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-center text-xs font-medium text-[#0056b3] mb-1">Hasta</label>
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  className="osde-input text-xs px-2 py-1"
-                />
-              </div>
+          {/* Fecha Desde */}
+          <div>
+            <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm h-10"
+            />
+          </div>
+
+          {/* Fecha Hasta */}
+          <div>
+            <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Fecha Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm h-10"
+            />
+          </div>
+
+          {/* Movimiento */}
+          <div>
+            <label className="block text-xs font-medium text-[#0056b3] mb-1 text-center">Movimiento</label>
+            <div className="relative">
+              <button
+                onClick={() => setFiltroExpandido(prev => ({ ...prev, movimiento: !prev.movimiento }))}
+                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-left bg-white hover:bg-gray-50 flex justify-between items-center text-sm h-10"
+              >
+                <span className="text-gray-700">
+                  {filtroTipoMovimiento.length === 0 ? 'Todos' : `${filtroTipoMovimiento.length} sel`}
+                </span>
+                <span className="text-gray-400">▼</span>
+              </button>
+              
+              {filtroExpandido.movimiento && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                  <label className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                    <input
+                      type="checkbox"
+                      checked={filtroTipoMovimiento.length === tiposMovimiento.length}
+                      onChange={toggleTodosMovimientos}
+                      className="mr-2 rounded text-[#0056b3]"
+                    />
+                    <span className="font-medium text-gray-700">Todos</span>
+                  </label>
+                  <div className="border-t mt-1 pt-1">
+                    {tiposMovimiento.map(mov => (
+                      <label key={mov} className="flex items-center text-xs p-1 hover:bg-gray-50 rounded">
+                        <input
+                          type="checkbox"
+                          checked={filtroTipoMovimiento.includes(mov)}
+                          onChange={() => toggleMovimiento(mov)}
+                          className="mr-2 rounded text-[#0056b3]"
+                        />
+                        <span className={mov === 'Altas' ? 'text-green-600' : 'text-red-600'}>{mov}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Movimiento - solo Altas/Bajas */}
-          <div className="w-24 relative">
-            <label className="block text-center text-xs font-medium text-[#0056b3] mb-1">Mov.</label>
-            <button
-              onClick={() => setFiltroExpandido(prev => ({ ...prev, movimiento: !prev.movimiento }))}
-              className="osde-select-trigger text-xs px-2 py-1"
-            >
-              <span className="text-gray-700">
-                {filtroTipoMovimiento.length === 0 ? 'Todos' : `${filtroTipoMovimiento.length}`}
-              </span>
-              <span className="text-gray-400 text-xs">▼</span>
-            </button>
-            
-            {filtroExpandido.movimiento && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-1 text-xs">
-                <label className="flex items-center p-1 hover:bg-gray-50 rounded">
-                  <input
-                    type="checkbox"
-                    checked={filtroTipoMovimiento.length === tiposMovimiento.length}
-                    onChange={toggleTodosMovimientos}
-                    className="mr-1 rounded text-[#0056b3] scale-75"
-                  />
-                  <span className="font-medium text-gray-700">Todos</span>
-                </label>
-                <div className="border-t mt-1 pt-1">
-                  {tiposMovimiento.map(mov => (
-                    <label key={mov} className="flex items-center p-1 hover:bg-gray-50 rounded">
-                      <input
-                        type="checkbox"
-                        checked={filtroTipoMovimiento.includes(mov)}
-                        onChange={() => toggleMovimiento(mov)}
-                        className="mr-1 rounded text-[#0056b3] scale-75"
-                      />
-                      <span className={mov === 'Altas' ? 'text-green-600' : 'text-red-600'}>{mov}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Limpiar filtros */}
-          <div className="self-end">
-            <button
-              onClick={() => {
-                setFiltroCodigo([]);
-                setFiltroTipoMovimiento([]);
-                setFiltroNombre('');
-                setFechaDesde('');
-                setFechaHasta('');
-              }}
-              className="text-xs text-[#0056b3] border border-[#0056b3] px-3 py-1 rounded-full hover:bg-blue-50"
-            >
-              Limpiar
-            </button>
-          </div>
+        {/* Botón Limpiar Filtros - centrado y con texto completo */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => {
+              setFiltroCodigo([]);
+              setFiltroTipoMovimiento([]);
+              setFiltroNombre('');
+              setFechaDesde('');
+              setFechaHasta('');
+            }}
+            className="text-sm text-[#0056b3] border border-[#0056b3] px-6 py-1.5 rounded-full hover:bg-blue-50 transition-colors"
+          >
+            Limpiar Filtros
+          </button>
         </div>
       </div>
 
@@ -437,17 +451,17 @@ export default function CPanel() {
           <p className="mt-2 text-gray-500">Cargando...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative mt-6">
-          {/* Título "Filiales" DENTRO del recuadro */}
-          <div className="absolute -top-3 left-4 bg-white px-2 z-10">
-            <span className="text-sm font-medium text-[#0056b3] bg-white px-1">Filiales</span>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative mt-6">
+          {/* Título "Filiales" BIEN DENTRO */}
+          <div className="absolute -top-3 left-4">
+            <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filiales</span>
           </div>
           
           {/* Botón AGREGAR al lado del título */}
-          <div className="absolute -top-3 left-24 bg-white px-2 z-10">
+          <div className="absolute -top-3 left-24">
             <button
               onClick={handleAgregar}
-              className="flex items-center gap-1 text-[#0056b3] hover:text-blue-700 text-xs font-medium"
+              className="flex items-center gap-1 text-[#0056b3] hover:text-blue-700 text-xs font-medium bg-white px-2 py-0.5 rounded-full border border-[#0056b3]"
               title="Agregar filial"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -459,13 +473,13 @@ export default function CPanel() {
             </button>
           </div>
           
-          {/* Tabla con columnas ajustadas */}
-          <table className="w-full pt-6">
+          {/* Tabla con columnas distribuidas uniformemente */}
+          <table className="w-full mt-6">
             <thead>
               <tr>
-                <th className="px-2 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-16">Código</th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50">Nombre</th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-20">Acción</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Código</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/2">Nombre</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-[#0056b3] uppercase tracking-wider bg-gray-50 w-1/4">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -474,43 +488,59 @@ export default function CPanel() {
                   key={f.id} 
                   className={`hover:bg-gray-50 transition-colors duration-150 ${f.fecha_baja ? 'bg-red-50' : ''}`}
                 >
-                  <td className={`px-2 py-1 text-xs font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
+                  <td className={`px-4 py-2 text-sm font-medium ${f.fecha_baja ? 'text-red-600' : 'text-gray-900'}`}>
                     {f.codigo}
                   </td>
-                  <td className={`px-2 py-1 text-xs ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
+                  <td className={`px-4 py-2 text-sm ${f.fecha_baja ? 'text-red-600' : 'text-gray-600'}`}>
                     {f.nombre}
                   </td>
-                  <td className="px-2 py-1 text-xs">
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleEditar(f)}
-                        disabled={!!f.fecha_baja}
-                        className={`p-0.5 rounded ${f.fecha_baja ? 'opacity-30 cursor-not-allowed' : 'hover:bg-blue-50'}`}
-                        title="Editar / Ver Detalles"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleEliminar(f)}
-                        disabled={!!f.fecha_baja}
-                        className={`p-0.5 rounded ${f.fecha_baja ? 'opacity-30 cursor-not-allowed' : 'hover:bg-red-50'}`}
-                        title="Eliminar"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="15" y1="9" x2="9" y2="15"/>
-                          <line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                      </button>
+                  <td className="px-4 py-2 text-sm">
+                    <div className="flex gap-2">
+                      {f.fecha_baja ? (
+                        // Si está de baja, mostrar solo botón para reactivar
+                        <button
+                          onClick={() => handleReactivar(f)}
+                          className="p-1 rounded hover:bg-green-50 text-green-600"
+                          title="Reactivar (Dar de ALTA)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                          </svg>
+                        </button>
+                      ) : (
+                        // Si está activo, mostrar lápiz y cruz
+                        <>
+                          <button
+                            onClick={() => handleEditar(f)}
+                            className="p-1 rounded hover:bg-blue-50 text-blue-600"
+                            title="Editar / Ver Detalles"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleEliminar(f)}
+                            className="p-1 rounded hover:bg-red-50 text-red-600"
+                            title="BAJA"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="15" y1="9" x2="9" y2="15"/>
+                              <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))}
               {filialesPaginadas.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="text-center py-8 text-gray-500 text-xs">
+                  <td colSpan={3} className="text-center py-8 text-gray-500 text-sm">
                     No hay filiales que coincidan
                   </td>
                 </tr>
@@ -518,13 +548,13 @@ export default function CPanel() {
             </tbody>
           </table>
           
-          <div className="px-2 py-1 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
-            Mostrando {filialesPaginadas.length} de {filialesFiltradas.length}
+          <div className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100 bg-gray-50">
+            Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
       )}
 
-      {/* MODAL AGREGAR/EDITAR */}
+      {/* MODAL AGREGAR/EDITAR (igual que antes) */}
       {(modalMode === 'add' || modalMode === 'edit') && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -533,13 +563,13 @@ export default function CPanel() {
             </h3>
             
             {errorMessage && (
-              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-xs">
+              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
                 {errorMessage}
               </div>
             )}
             
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Código (máx 2 letras)</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Código (máx 2 letras)</label>
               <input
                 type="text"
                 value={formData.codigo}
@@ -552,7 +582,7 @@ export default function CPanel() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
               <input
                 type="text"
                 value={formData.nombre}
@@ -562,11 +592,10 @@ export default function CPanel() {
               />
             </div>
 
-            {/* Mostrar último movimiento en vistas de edición */}
             {modalMode === 'edit' && selectedFilial?.ultimoMovimiento && (
               <div className="mb-4 p-2 bg-blue-50 rounded border border-blue-100">
                 <span className="text-xs font-medium text-blue-600">Último Movimiento</span>
-                <p className="text-xs text-blue-900 mt-1">
+                <p className="text-sm text-blue-900 mt-1">
                   {selectedFilial.ultimoMovimiento.replace('demo', 'DEMO')}
                 </p>
               </div>
@@ -590,7 +619,7 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL VER DETALLE */}
+      {/* MODAL VER DETALLE (igual que antes) */}
       {modalMode === 'view' && selectedFilial && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setModalMode(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -634,12 +663,12 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR ELIMINACIÓN */}
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmDelete(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-gray-700 mb-2 text-sm">¿Eliminar <strong>{confirmDelete.nombre}</strong>?</p>
-            <p className="text-xs text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
+            <p className="text-gray-700 mb-2 text-sm">¿Dar de BAJA <strong>{confirmDelete.nombre}</strong>?</p>
+            <p className="text-xs text-gray-500 mb-4">El registro pasará a estado inactivo.</p>
             
             <div className="flex justify-end gap-2">
               <button 
@@ -652,7 +681,32 @@ export default function CPanel() {
                 onClick={confirmarEliminar} 
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
               >
-                Eliminar
+                Confirmar BAJA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAR REACTIVACIÓN (ALTA) */}
+      {confirmReactivar && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setConfirmReactivar(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <p className="text-gray-700 mb-2 text-sm">¿Reactivar <strong>{confirmReactivar.nombre}</strong>?</p>
+            <p className="text-xs text-gray-500 mb-4">El registro volverá a estado activo.</p>
+            
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setConfirmReactivar(null)} 
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmarReactivar} 
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+              >
+                Confirmar ALTA
               </button>
             </div>
           </div>
