@@ -303,7 +303,7 @@ export default function CPanel() {
           <span className="text-sm font-medium text-[#0056b3] bg-white px-2">Filtros</span>
         </div>
         
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-wrap items-end gap-4 justify-center">
           
           {/* CÓDIGO - ANCHO JUSTO PARA "TODOS" */}
           <div style={{ width: '90px' }}>
