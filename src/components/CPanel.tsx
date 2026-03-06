@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
-import '../styles/tablas-maestras.css'; // <-- IMPORTANTE: importar los estilos
+import '../styles/tablas-maestras.css';
 
 interface Filial {
   id: number;
@@ -35,10 +35,15 @@ export default function CPanel() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   
+  // Estados para filtros expandidos
   const [filtroExpandido, setFiltroExpandido] = useState({
     codigo: false,
     movimiento: false
   });
+
+  // ===== NUEVOS ESTADOS PARA PAGINACIÓN =====
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [itemsPorPagina, setItemsPorPagina] = useState(10);
 
   const codigosUnicos = [...new Set(filiales.map(f => f.codigo))].sort();
   const tiposMovimiento = ['Altas', 'Bajas'];
@@ -53,6 +58,7 @@ export default function CPanel() {
       const res = await fetch(FILIALES_URL);
       const data = await res.json();
       setFiliales(data);
+      setPaginaActual(1); // Reset a primera página al cargar nuevos datos
     } catch (err) {
       console.error('Error al cargar filiales:', err);
     } finally {
@@ -87,20 +93,34 @@ export default function CPanel() {
   };
 
   const filialesFiltradas = filtrarFiliales(filiales);
+  
+  // ===== LÓGICA DE PAGINACIÓN =====
+  const totalPaginas = Math.ceil(filialesFiltradas.length / itemsPorPagina);
+  
+  const indiceUltimoItem = paginaActual * itemsPorPagina;
+  const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
+  
   const filialesPaginadas = filialesFiltradas
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
-    .slice(0, 10);
+    .slice(indicePrimerItem, indiceUltimoItem);
+
+  // Cambiar de página
+  const irAPagina = (pagina: number) => {
+    setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
+  };
 
   const toggleCodigo = (cod: string) => {
     setFiltroCodigo(prev => 
       prev.includes(cod) ? prev.filter(c => c !== cod) : [...prev, cod]
     );
+    setPaginaActual(1); // Reset a primera página al filtrar
   };
 
   const toggleMovimiento = (mov: string) => {
     setFiltroTipoMovimiento(prev => 
       prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]
     );
+    setPaginaActual(1); // Reset a primera página al filtrar
   };
 
   const toggleTodosCodigos = () => {
@@ -109,6 +129,7 @@ export default function CPanel() {
     } else {
       setFiltroCodigo([...codigosUnicos]);
     }
+    setPaginaActual(1);
   };
 
   const toggleTodosMovimientos = () => {
@@ -117,10 +138,10 @@ export default function CPanel() {
     } else {
       setFiltroTipoMovimiento([...tiposMovimiento]);
     }
+    setPaginaActual(1);
   };
 
   // ===== FUNCIONES CRUD =====
-
   const handleAgregar = () => {
     setFormData({ codigo: '', nombre: '' });
     setErrorMessage(null);
@@ -290,6 +311,16 @@ export default function CPanel() {
     }
   };
 
+  // Función para limpiar filtros
+  const limpiarFiltros = () => {
+    setFiltroCodigo([]);
+    setFiltroTipoMovimiento([]);
+    setFiltroNombre('');
+    setFechaDesde('');
+    setFechaHasta('');
+    setPaginaActual(1);
+  };
+
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Filiales</h1>
@@ -345,7 +376,10 @@ export default function CPanel() {
             <input
               type="text"
               value={filtroNombre}
-              onChange={(e) => setFiltroNombre(e.target.value)}
+              onChange={(e) => {
+                setFiltroNombre(e.target.value);
+                setPaginaActual(1);
+              }}
               placeholder="Buscar..."
               className="tm-filtro-input"
             />
@@ -357,7 +391,10 @@ export default function CPanel() {
             <input
               type="date"
               value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
+              onChange={(e) => {
+                setFechaDesde(e.target.value);
+                setPaginaActual(1);
+              }}
               className="tm-filtro-input"
             />
           </div>
@@ -368,7 +405,10 @@ export default function CPanel() {
             <input
               type="date"
               value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
+              onChange={(e) => {
+                setFechaHasta(e.target.value);
+                setPaginaActual(1);
+              }}
               className="tm-filtro-input"
             />
           </div>
@@ -417,13 +457,7 @@ export default function CPanel() {
           {/* Botón Limpiar Filtros */}
           <div className="tm-filtro-accion">
             <button
-              onClick={() => {
-                setFiltroCodigo([]);
-                setFiltroTipoMovimiento([]);
-                setFiltroNombre('');
-                setFechaDesde('');
-                setFechaHasta('');
-              }}
+              onClick={limpiarFiltros}
               className="tm-btn-limpiar"
             >
               Limpiar Filtros
@@ -477,7 +511,7 @@ export default function CPanel() {
                         {/* Alta */}
                         <button
                           onClick={() => f.fecha_baja ? handleReactivar(f) : null}
-                          className={`tm-accion-btn tm-accion-alta`}
+                          className="tm-accion-btn tm-accion-alta"
                           title={f.fecha_baja ? "Alta" : "Ya está activo"}
                           disabled={!f.fecha_baja}
                         >
@@ -491,7 +525,7 @@ export default function CPanel() {
                         {/* Modificación */}
                         <button
                           onClick={() => !f.fecha_baja && handleEditar(f)}
-                          className={`tm-accion-btn tm-accion-editar`}
+                          className="tm-accion-btn tm-accion-editar"
                           title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
                           disabled={!!f.fecha_baja}
                         >
@@ -503,7 +537,7 @@ export default function CPanel() {
                         {/* Baja */}
                         <button
                           onClick={() => !f.fecha_baja && handleEliminar(f)}
-                          className={`tm-accion-btn tm-accion-baja`}
+                          className="tm-accion-btn tm-accion-baja"
                           title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
                           disabled={!!f.fecha_baja}
                         >
@@ -528,13 +562,39 @@ export default function CPanel() {
             </table>
           </div>
           
+          {/* ===== NUEVA PAGINACIÓN ===== */}
+          {filialesFiltradas.length > 0 && (
+            <div className="tm-paginacion">
+              <button
+                onClick={() => irAPagina(paginaActual - 1)}
+                disabled={paginaActual === 1}
+                className="tm-paginacion-btn"
+              >
+                ←
+              </button>
+              
+              <span className="tm-paginacion-info">
+                Página {paginaActual} de {totalPaginas} 
+                ({filialesFiltradas.length} registros)
+              </span>
+              
+              <button
+                onClick={() => irAPagina(paginaActual + 1)}
+                disabled={paginaActual === totalPaginas}
+                className="tm-paginacion-btn"
+              >
+                →
+              </button>
+            </div>
+          )}
+
           <div className="tm-tabla-footer">
             Mostrando {filialesPaginadas.length} de {filialesFiltradas.length} filiales
           </div>
         </div>
       )}
 
-      {/* MODALES */}
+      {/* MODALES (sin cambios) - los mismos que tenías antes */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
