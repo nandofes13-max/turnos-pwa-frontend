@@ -41,9 +41,9 @@ export default function CPanel() {
     movimiento: false
   });
 
-  // ===== NUEVOS ESTADOS PARA PAGINACIÓN =====
+  // Estados para paginación
   const [paginaActual, setPaginaActual] = useState(1);
-  const [itemsPorPagina, setItemsPorPagina] = useState(10);
+  const [itemsPorPagina] = useState(10);
 
   const codigosUnicos = [...new Set(filiales.map(f => f.codigo))].sort();
   const tiposMovimiento = ['Altas', 'Bajas'];
@@ -58,7 +58,7 @@ export default function CPanel() {
       const res = await fetch(FILIALES_URL);
       const data = await res.json();
       setFiliales(data);
-      setPaginaActual(1); // Reset a primera página al cargar nuevos datos
+      setPaginaActual(1);
     } catch (err) {
       console.error('Error al cargar filiales:', err);
     } finally {
@@ -94,7 +94,7 @@ export default function CPanel() {
 
   const filialesFiltradas = filtrarFiliales(filiales);
   
-  // ===== LÓGICA DE PAGINACIÓN =====
+  // Lógica de paginación
   const totalPaginas = Math.ceil(filialesFiltradas.length / itemsPorPagina);
   
   const indiceUltimoItem = paginaActual * itemsPorPagina;
@@ -104,7 +104,6 @@ export default function CPanel() {
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
 
-  // Cambiar de página
   const irAPagina = (pagina: number) => {
     setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
   };
@@ -113,14 +112,14 @@ export default function CPanel() {
     setFiltroCodigo(prev => 
       prev.includes(cod) ? prev.filter(c => c !== cod) : [...prev, cod]
     );
-    setPaginaActual(1); // Reset a primera página al filtrar
+    setPaginaActual(1);
   };
 
   const toggleMovimiento = (mov: string) => {
     setFiltroTipoMovimiento(prev => 
       prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]
     );
-    setPaginaActual(1); // Reset a primera página al filtrar
+    setPaginaActual(1);
   };
 
   const toggleTodosCodigos = () => {
@@ -311,7 +310,6 @@ export default function CPanel() {
     }
   };
 
-  // Función para limpiar filtros
   const limpiarFiltros = () => {
     setFiltroCodigo([]);
     setFiltroTipoMovimiento([]);
@@ -474,21 +472,24 @@ export default function CPanel() {
         </div>
       ) : (
         <div className="tm-tabla-wrapper">
-          {/* Botón Agregar */}
+          {/* Botón Agregar - AHORA ALINEADO CORRECTAMENTE */}
           <div className="tm-tabla-header-contenedor">
-            <button
-              onClick={handleAgregar}
-              className="tm-btn-agregar"
-            >
-              Agregar Filial
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-              </svg>
-            </button>
+            <div className="tm-tabla-header-inner">
+              <button
+                onClick={handleAgregar}
+                className="tm-btn-agregar"
+              >
+                Agregar Filial
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
+          {/* TABLA (solo visible en desktop) */}
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
@@ -561,8 +562,62 @@ export default function CPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* CARDS PARA MÓVIL (se muestran solo en pantallas chicas) */}
+          <div className="tm-cards">
+            {filialesPaginadas.map((f) => (
+              <div 
+                key={`card-${f.id}`}
+                className={`tm-card-item ${f.fecha_baja ? 'inactiva' : ''}`}
+              >
+                <div className="tm-card-codigo">{f.codigo}</div>
+                <div className="tm-card-nombre">{f.nombre}</div>
+                <div className="tm-card-acciones">
+                  {/* Alta */}
+                  <button
+                    onClick={() => f.fecha_baja ? handleReactivar(f) : null}
+                    className="tm-accion-btn tm-accion-alta"
+                    title={f.fecha_baja ? "Alta" : "Ya está activo"}
+                    disabled={!f.fecha_baja}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="16"/>
+                      <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                  </button>
+
+                  {/* Modificación */}
+                  <button
+                    onClick={() => !f.fecha_baja && handleEditar(f)}
+                    className="tm-accion-btn tm-accion-editar"
+                    title={!f.fecha_baja ? "Modificación" : "Registro inactivo"}
+                    disabled={!!f.fecha_baja}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                  </button>
+
+                  {/* Baja */}
+                  <button
+                    onClick={() => !f.fecha_baja && handleEliminar(f)}
+                    className="tm-accion-btn tm-accion-baja"
+                    title={!f.fecha_baja ? "Baja" : "Registro inactivo"}
+                    disabled={!!f.fecha_baja}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="15" y1="9" x2="9" y2="15"/>
+                      <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
           
-          {/* ===== NUEVA PAGINACIÓN ===== */}
+          {/* PAGINACIÓN */}
           {filialesFiltradas.length > 0 && (
             <div className="tm-paginacion">
               <button
@@ -594,7 +649,7 @@ export default function CPanel() {
         </div>
       )}
 
-      {/* MODALES (sin cambios) - los mismos que tenías antes */}
+      {/* MODALES (sin cambios) */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
