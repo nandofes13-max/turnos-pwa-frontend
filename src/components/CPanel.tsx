@@ -574,7 +574,7 @@ export default function CPanel() {
               </button>
               
               <span className="tm-paginacion-info">
-                Página {paginaActual} de {totalPaginas} 
+                Página {paginaActual} de {totalPaginas} &nbsp;
                 ({filialesFiltradas.length} registros)
               </span>
               
