@@ -724,3 +724,36 @@
     display: none;
   }
 }
+
+/* Agregar al final del archivo CSS */
+
+/* Anchos fijos para filtros (como los que usa el componente) */
+.tm-filtro-codigo { width: 90px; }
+.tm-filtro-nombre { width: 200px; }
+.tm-filtro-fecha { width: 140px; }
+.tm-filtro-movimiento { width: 150px; }
+
+/* Para el contenedor de botón limpiar */
+.tm-filtro-accion {
+  display: flex;
+  align-items: flex-end;
+  height: 68px;
+}
+
+/* Para el header de la tabla con botón alineado */
+.tm-tabla-header-contenedor {
+  padding: 1rem 1rem 0 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Para el contenedor de la tabla (centrado) */
+.tm-tabla-centrado {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+
+/* Anchos de columnas (como los del componente) */
+.tm-col-codigo { width: 70px; }
+.tm-col-nombre { width: 250px; }
