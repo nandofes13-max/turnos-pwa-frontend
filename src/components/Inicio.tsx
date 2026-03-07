@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 👈 AGREGADO
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple, FaMicrosoft } from 'react-icons/fa';
 import { MdPhoneIphone, MdEmail } from 'react-icons/md';
 import styles from '../styles/Inicio.module.css';
 
 export default function Inicio() {
+  const navigate = useNavigate(); // 👈 AGREGADO
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export default function Inicio() {
   }, []);
 
   const handleDemo = () => {
-    window.location.href = '/cpanel';
+    navigate('/cpanel'); // 👈 MODIFICADO (antes window.location.href)
   };
 
   const handleAyuda = () => {
