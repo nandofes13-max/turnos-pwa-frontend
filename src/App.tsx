@@ -1,10 +1,9 @@
-import CPanel from './components/CPanel';
+import Inicio from './components/Inicio';
+import './App.css'
 
 function App() {
   return (
-    <div className="App">
-      <CPanel />
-    </div>
+    <Inicio />
   );
 }
 
