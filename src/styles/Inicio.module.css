@@ -1,0 +1,132 @@
+@import './tablas-maestras.css';
+
+.inicio-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
+}
+
+.inicio-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid var(--color-gray-200);
+}
+
+.inicio-logo {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.inicio-logo-img {
+  max-width: 180px;
+  height: auto;
+  margin-bottom: 0.5rem;
+}
+
+.inicio-titulo {
+  font-size: var(--font-2xl);
+  font-weight: 500;
+  color: var(--color-gray-800);
+  margin-bottom: 0.25rem;
+}
+
+.inicio-subtitulo {
+  font-size: var(--font-sm);
+  color: var(--color-gray-500);
+  margin-bottom: 2rem;
+}
+
+.inicio-botones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.inicio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--color-gray-200);
+  background: white;
+  color: var(--color-gray-700);
+}
+
+.inicio-btn:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.inicio-btn-demo {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+}
+
+.inicio-btn-demo:hover {
+  background: var(--color-primary-dark);
+}
+
+.inicio-btn-icon {
+  font-size: 1.25rem;
+}
+
+.inicio-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.inicio-footer-link {
+  font-size: var(--font-xs);
+  color: var(--color-gray-500);
+  text-decoration: none;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.inicio-footer-link:hover {
+  color: var(--color-primary);
+}
+
+.inicio-version {
+  font-size: var(--font-xs);
+  color: var(--color-gray-400);
+  margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .inicio-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .inicio-btn {
+    padding: 0.7rem 0.75rem;
+    font-size: var(--font-xs);
+  }
+}
