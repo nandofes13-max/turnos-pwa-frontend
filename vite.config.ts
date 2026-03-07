@@ -6,4 +6,10 @@ export default defineConfig({
   build: {
     outDir: 'dist'
   },
+  server: {
+    historyApiFallback: true,  // Para desarrollo local
+  },
+  preview: {
+    historyApiFallback: true,  // Para el preview local
+  }
 });
