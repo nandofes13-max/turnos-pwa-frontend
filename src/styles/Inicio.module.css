@@ -1,37 +1,82 @@
 @import './tablas-maestras.css';
 
+/* =============================================
+   LAYOUT PRINCIPAL - DOS COLUMNAS
+   ============================================= */
+
 .inicio-container {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
   background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
 }
 
-.inicio-card {
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 2.5rem 2rem;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  border: 1px solid var(--color-gray-200);
-}
-
-.inicio-logo {
-  margin-bottom: 1.5rem;
+/* Columna izquierda - LOGIN */
+.inicio-left {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
+  padding: 2rem;
+  background: white;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.02);
 }
 
-.inicio-logo-img {
+.inicio-left-content {
+  max-width: 400px;
+  width: 100%;
+}
+
+/* Columna derecha - LOGO */
+.inicio-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: var(--color-primary-light);
+}
+
+.inicio-right-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.inicio-logo-desktop {
+  max-width: 80%;
+  max-height: 80vh;
+  object-fit: contain;
+  padding: 2rem;
+}
+
+/* =============================================
+   TARJETA DE LOGIN (hereda de la anterior)
+   ============================================= */
+
+.inicio-card {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+  border: none;
+}
+
+/* Logo solo visible en móvil */
+.inicio-logo-mobile {
+  display: none;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.inicio-logo-mobile-img {
   max-width: 180px;
   height: auto;
-  margin-bottom: 0.5rem;
 }
 
 .inicio-titulo {
@@ -39,12 +84,14 @@
   font-weight: 500;
   color: var(--color-gray-800);
   margin-bottom: 0.25rem;
+  text-align: left;
 }
 
 .inicio-subtitulo {
   font-size: var(--font-sm);
   color: var(--color-gray-500);
   margin-bottom: 2rem;
+  text-align: left;
 }
 
 .inicio-botones {
@@ -92,6 +139,12 @@
   font-size: 1.25rem;
 }
 
+/* Botón teléfono - solo visible en móvil (por CSS) */
+.inicio-btn-phone {
+  display: none;
+}
+
+/* Footer alineado a la izquierda (bajo los botones) */
 .inicio-footer {
   display: flex;
   flex-direction: column;
@@ -99,6 +152,7 @@
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-gray-100);
+  text-align: left;
 }
 
 .inicio-footer-link {
@@ -107,6 +161,8 @@
   text-decoration: none;
   transition: color 0.2s;
   cursor: pointer;
+  display: inline-block;
+  width: fit-content;
 }
 
 .inicio-footer-link:hover {
@@ -119,14 +175,56 @@
   margin-top: 0.5rem;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .inicio-card {
-    padding: 2rem 1.5rem;
+/* =============================================
+   RESPONSIVE - MÓVIL
+   ============================================= */
+
+@media (max-width: 768px) {
+  .inicio-container {
+    flex-direction: column;
+    background: white;
   }
-  
-  .inicio-btn {
-    padding: 0.7rem 0.75rem;
-    font-size: var(--font-xs);
+
+  .inicio-left {
+    padding: 2rem 1.5rem;
+    box-shadow: none;
+  }
+
+  .inicio-right {
+    display: none; /* Ocultar columna derecha en móvil */
+  }
+
+  .inicio-logo-mobile {
+    display: block; /* Mostrar logo arriba en móvil */
+  }
+
+  .inicio-titulo,
+  .inicio-subtitulo,
+  .inicio-footer {
+    text-align: center;
+  }
+
+  .inicio-footer {
+    align-items: center;
+  }
+
+  .inicio-footer-link {
+    width: auto;
+  }
+
+  /* Botón teléfono visible en móvil */
+  .inicio-btn-phone {
+    display: flex;
+  }
+
+  .inicio-card {
+    text-align: center;
+  }
+}
+
+/* Detección de dispositivo táctil para botón teléfono */
+@media (hover: none) and (pointer: coarse) {
+  .inicio-btn-phone {
+    display: flex; /* Visible en táctiles */
   }
 }
