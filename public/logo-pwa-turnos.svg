@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <style>
+    .pwa { font: 900 140px Arial, Helvetica, sans-serif; fill:#1f4fbf; }
+    .turnos { font: 700 70px Arial, Helvetica, sans-serif; fill:#7ab51d; letter-spacing:8px; }
+    .sub { font: 400 36px Arial, Helvetica, sans-serif; fill:#777; }
+  </style>
+  <text x="40" y="150" class="pwa">pwa</text>
+  <path d="M120 170 Q200 220 280 170" stroke="#1f4fbf" stroke-width="10" fill="none"/>
+  <text x="60" y="250" class="turnos">TURNOS</text>
+  <text x="60" y="295" class="sub">Aplicación Web Progresiva</text>
+  <g transform="translate(650,40)">
+    <rect x="0" y="40" width="260" height="200" rx="30" fill="#1f4fbf"/>
+    <rect x="20" y="80" width="220" height="140" rx="20" fill="#dfe6f2"/>
+    <rect x="60" y="0" width="40" height="60" rx="15" fill="#7ab51d"/>
+    <rect x="160" y="0" width="40" height="60" rx="15" fill="#7ab51d"/>
+    <path d="M80 150 L120 190 L190 120" stroke="#7ab51d" stroke-width="18" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
