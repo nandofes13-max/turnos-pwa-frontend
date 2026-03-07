@@ -82,14 +82,14 @@
 .inicio-titulo {
   font-size: var(--font-2xl);
   font-weight: 500;
-  color: var(--color-gray-800);
+  color: var(--color-primary);  /* 👈 NUEVO: azul principal */
   margin-bottom: 0.25rem;
   text-align: left;
 }
 
 .inicio-subtitulo {
   font-size: var(--font-sm);
-  color: var(--color-gray-500);
+  color: var(--color-gray-800);  /* 👈 NUEVO: gris oscuro */
   margin-bottom: 2rem;
   text-align: left;
 }
