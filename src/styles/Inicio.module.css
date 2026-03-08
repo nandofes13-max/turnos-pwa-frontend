@@ -34,8 +34,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
-  background: var(--color-primary-light);
+  padding: 0;
+  background: transparent;
 }
 
 .inicio-right-content {
@@ -47,12 +47,11 @@
 }
 
 .inicio-logo-desktop {
-  max-width: 80%;
+  max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
-  padding: 2rem;
+  padding: 0;
 }
-
 /* =============================================
    TARJETA DE LOGIN (hereda de la anterior)
    ============================================= */
