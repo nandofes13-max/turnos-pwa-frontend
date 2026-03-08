@@ -116,7 +116,7 @@ export default function Inicio() {
       <div className={styles['inicio-right']}>
         <div className={styles['inicio-right-content']}>
           <img 
-            src="/logo-pwa-turnos.svg" 
+            src="/20260308_Logo.png" 
             alt="PWA Turnos" 
             className={styles['inicio-logo-desktop']}
           />
