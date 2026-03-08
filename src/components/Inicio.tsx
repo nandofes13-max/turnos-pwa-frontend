@@ -55,44 +55,44 @@ export default function Inicio() {
             <h1 className={styles['inicio-titulo']}>Te damos la bienvenida</h1>
             <p className={styles['inicio-subtitulo']}>Inicia sesión o suscríbete</p>
 
-            {/* Botones */}
-            <div className={styles['inicio-botones']}>
-              <button 
-                onClick={handleDemo}
-                className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
-              >
-                Demo
-              </button>
+          {/* Botones */}
+<div className={styles['inicio-botones']}>
+  {/* 1. Demo */}
+  <button 
+    onClick={handleDemo}
+    className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
+  >
+    Demo
+  </button>
 
-              <button className={styles['inicio-btn']}>
-                <FcGoogle className={styles['inicio-btn-icon']} />
-                Continuar con Google
-              </button>
+  {/* 2. Dirección Correo Electrónico */}
+  <button className={styles['inicio-btn']}>
+    <MdEmail className={styles['inicio-btn-icon']} />
+    Dirección Correo Electrónico
+  </button>
 
-              <button className={styles['inicio-btn']}>
-                <FaApple className={styles['inicio-btn-icon']} />
-                Continuar con Apple
-              </button>
+  {/* 3. Continuar con Google */}
+  <button className={styles['inicio-btn']}>
+    <FcGoogle className={styles['inicio-btn-icon']} />
+    Continuar con Google
+  </button>
 
-              <button className={styles['inicio-btn']}>
-                <FaMicrosoft className={styles['inicio-btn-icon']} />
-                Continuar con Microsoft
-              </button>
+  {/* 4. Continuar con Apple - Solo en dispositivos táctiles/móviles */}
+  {isTouchDevice && (
+    <button className={styles['inicio-btn']}>
+      <FaApple className={styles['inicio-btn-icon']} />
+      Continuar con Apple
+    </button>
+  )}
 
-              {/* Botón teléfono condicional */}
-              {isTouchDevice && (
-                <button className={`${styles['inicio-btn']} ${styles['inicio-btn-phone']}`}>
-                  <MdPhoneIphone className={styles['inicio-btn-icon']} />
-                  Continuar con el teléfono
-                </button>
-              )}
-
-              <button className={styles['inicio-btn']}>
-                <MdEmail className={styles['inicio-btn-icon']} />
-                Dirección Correo Electrónico
-              </button>
-            </div>
-
+  {/* 5. Continuar con el teléfono - Solo en dispositivos táctiles/móviles */}
+  {isTouchDevice && (
+    <button className={`${styles['inicio-btn']} ${styles['inicio-btn-phone']}`}>
+      <MdPhoneIphone className={styles['inicio-btn-icon']} />
+      Continuar con el teléfono
+    </button>
+  )}
+</div>
             {/* Footer */}
             <div className={styles['inicio-footer']}>
               <a onClick={handleAyuda} className={styles['inicio-footer-link']}>
