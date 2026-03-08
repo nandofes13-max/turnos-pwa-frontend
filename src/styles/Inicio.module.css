@@ -195,7 +195,7 @@
   }
 
   .inicio-logo-mobile {
-    display: block; /* Mostrar logo arriba en móvil */
+    display: none; /* Mostrar logo arriba en móvil - none no muestra el logo */
   }
 
   .inicio-titulo,
