@@ -1,0 +1,46 @@
+/* Importamos todos los estilos base desde Inicio */
+@import './Inicio.module.css';
+
+/* =============================================
+   SOLO LO QUE CAMBIA EN ACTIVIDAD
+   ============================================= */
+
+/* El título tiene menos margen inferior (ajuste específico) */
+.actividad-titulo {
+  margin-bottom: 2rem;
+}
+
+/* Grilla de 2 columnas para los botones principales */
+.actividad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Contenedor para botón Otros Servicios (centrado) */
+.actividad-otros-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 2rem 0;
+}
+
+/* Botón Otros Servicios más angosto */
+.actividad-btn-otros {
+  max-width: 250px;
+}
+
+/* =============================================
+   RESPONSIVE - MÓVIL
+   ============================================= */
+@media (max-width: 768px) {
+  /* En móvil, los botones se apilan verticalmente */
+  .actividad-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Otros Servicios ocupa todo el ancho en móvil */
+  .actividad-btn-otros {
+    max-width: 100%;
+  }
+}
