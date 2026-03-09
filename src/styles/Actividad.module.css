@@ -2,10 +2,6 @@
    SOLO LO QUE CAMBIA EN ACTIVIDAD
    ============================================= */
 
-.actividad-titulo {
-  margin-bottom: 2rem;
-}
-
 .actividad-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
