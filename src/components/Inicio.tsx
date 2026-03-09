@@ -20,7 +20,7 @@ export default function Inicio() {
   }, []);
 
   const handleDemo = () => {
-    navigate('/cpanel');
+    navigate('/actividad');
   };
 
   const handleAyuda = () => {
