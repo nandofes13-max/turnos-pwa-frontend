@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { FaHeartbeat, FaDog, FaCut, FaBriefcase } from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -36,7 +37,6 @@ export default function Actividad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* 👈 CAMBIADO: ahora usa la clase de inicio para el título */}
             <h1 className={inicioStyles['inicio-titulo']}>¿Cuál es tu Actividad?</h1>
             
             {/* Botones en grilla 2 columnas */}
@@ -47,14 +47,14 @@ export default function Actividad() {
                 onClick={() => handleActividadSeleccionada('Salud')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
-                Salud
+                <FaHeartbeat className={inicioStyles['inicio-btn-icon']} /> Salud
               </button>
               
               <button 
                 onClick={() => handleActividadSeleccionada('Veterinarias')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
-                Veterinarias
+                <FaDog className={inicioStyles['inicio-btn-icon']} /> Veterinarias
               </button>
 
               {/* Fila 2 */}
@@ -62,14 +62,14 @@ export default function Actividad() {
                 onClick={() => handleActividadSeleccionada('Peluquerías')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
-                Peluquerías
+                <FaCut className={inicioStyles['inicio-btn-icon']} /> Peluquerías
               </button>
               
               <button 
                 onClick={() => handleActividadSeleccionada('Barberías')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
-                Barberías
+                <FaCut className={inicioStyles['inicio-btn-icon']} /> Barberías
               </button>
             </div>
 
@@ -79,7 +79,7 @@ export default function Actividad() {
                 onClick={() => handleActividadSeleccionada('Otros Servicios')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']} ${styles['actividad-btn-otros']}`}
               >
-                Otros Servicios
+                <FaBriefcase className={inicioStyles['inicio-btn-icon']} /> Otros Servicios
               </button>
             </div>
 
