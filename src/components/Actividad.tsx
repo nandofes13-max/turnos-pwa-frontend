@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import styles from '../styles/Actividad.module.css';
-import inicioStyles from '../styles/Inicio.module.css'; // 👈 IMPORTAMOS ESTILOS DE INICIO
+import inicioStyles from '../styles/Inicio.module.css';
 
 export default function Actividad() {
   const handleAyuda = () => {
@@ -36,7 +36,8 @@ export default function Actividad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            <h1 className={styles['actividad-titulo']}>¿Cuál es tu Actividad?</h1>
+            {/* 👈 CAMBIADO: ahora usa la clase de inicio para el título */}
+            <h1 className={inicioStyles['inicio-titulo']}>¿Cuál es tu Actividad?</h1>
             
             {/* Botones en grilla 2 columnas */}
             <div className={styles['actividad-grid']}>
