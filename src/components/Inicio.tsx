@@ -119,7 +119,7 @@ export default function Inicio() {
           {/* 👇 AGREGAMOS Link alrededor de la imagen */}
           <Link to="/">
             <img 
-              src="/20260308_Logo.png" 
+              src="/1000133565.png" 
               alt="PWA Turnos" 
               className={styles['inicio-logo-desktop']}
             />
