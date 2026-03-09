@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaHeartbeat, FaDog, FaCut, FaScissors, FaBriefcase } from 'react-icons/fa';
+import { FaHeartbeat, FaDog, FaCut, FaCrown, FaBriefcase } from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -69,7 +69,7 @@ export default function Actividad() {
                 onClick={() => handleActividadSeleccionada('Barberías')}
                 className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
-                <FaScissors className={inicioStyles['inicio-btn-icon']} /> Barberías  {/* 👈 CORREGIDO */}
+                <FaCrown className={inicioStyles['inicio-btn-icon']} /> Barberías  {/* 👈 CAMBIADO A FaCrown */}
               </button>
             </div>
 
