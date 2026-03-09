@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 👈 AGREGADO
+import { useNavigate, Link } from 'react-router-dom'; // 👈 AGREGADO Link
 import { FcGoogle } from 'react-icons/fc';
-import { FaApple, FaMicrosoft } from 'react-icons/fa';
+import { FaApple } from 'react-icons/fa'; // 👈 SACAMOS FaMicrosoft
 import { MdPhoneIphone, MdEmail } from 'react-icons/md';
 import styles from '../styles/Inicio.module.css';
 
 export default function Inicio() {
-  const navigate = useNavigate(); // 👈 AGREGADO
+  const navigate = useNavigate();
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function Inicio() {
   }, []);
 
   const handleDemo = () => {
-    navigate('/cpanel'); // 👈 MODIFICADO (antes window.location.href)
+    navigate('/cpanel');
   };
 
   const handleAyuda = () => {
@@ -55,44 +55,45 @@ export default function Inicio() {
             <h1 className={styles['inicio-titulo']}>Te damos la bienvenida</h1>
             <p className={styles['inicio-subtitulo']}>Inicia sesión o suscríbete</p>
 
-          {/* Botones */}
-<div className={styles['inicio-botones']}>
-  {/* 1. Demo */}
-  <button 
-    onClick={handleDemo}
-    className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
-  >
-    Demo
-  </button>
+            {/* Botones */}
+            <div className={styles['inicio-botones']}>
+              {/* 1. Demo */}
+              <button 
+                onClick={handleDemo}
+                className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
+              >
+                Demo
+              </button>
 
-  {/* 2. Dirección Correo Electrónico */}
-  <button className={styles['inicio-btn']}>
-    <MdEmail className={styles['inicio-btn-icon']} />
-    Dirección Correo Electrónico
-  </button>
+              {/* 2. Dirección Correo Electrónico */}
+              <button className={styles['inicio-btn']}>
+                <MdEmail className={styles['inicio-btn-icon']} />
+                Dirección Correo Electrónico
+              </button>
 
-  {/* 3. Continuar con Google */}
-  <button className={styles['inicio-btn']}>
-    <FcGoogle className={styles['inicio-btn-icon']} />
-    Continuar con Google
-  </button>
+              {/* 3. Continuar con Google */}
+              <button className={styles['inicio-btn']}>
+                <FcGoogle className={styles['inicio-btn-icon']} />
+                Continuar con Google
+              </button>
 
-  {/* 4. Continuar con Apple - Solo en dispositivos táctiles/móviles */}
-  {isTouchDevice && (
-    <button className={styles['inicio-btn']}>
-      <FaApple className={styles['inicio-btn-icon']} />
-      Continuar con Apple
-    </button>
-  )}
+              {/* 4. Continuar con Apple - Solo en dispositivos táctiles/móviles */}
+              {isTouchDevice && (
+                <button className={styles['inicio-btn']}>
+                  <FaApple className={styles['inicio-btn-icon']} />
+                  Continuar con Apple
+                </button>
+              )}
 
-  {/* 5. Continuar con el teléfono - Solo en dispositivos táctiles/móviles */}
-  {isTouchDevice && (
-    <button className={`${styles['inicio-btn']} ${styles['inicio-btn-phone']}`}>
-      <MdPhoneIphone className={styles['inicio-btn-icon']} />
-      Continuar con el teléfono
-    </button>
-  )}
-</div>
+              {/* 5. Continuar con el teléfono - Solo en dispositivos táctiles/móviles */}
+              {isTouchDevice && (
+                <button className={`${styles['inicio-btn']} ${styles['inicio-btn-phone']}`}>
+                  <MdPhoneIphone className={styles['inicio-btn-icon']} />
+                  Continuar con el teléfono
+                </button>
+              )}
+            </div>
+
             {/* Footer */}
             <div className={styles['inicio-footer']}>
               <a onClick={handleAyuda} className={styles['inicio-footer-link']}>
@@ -115,11 +116,14 @@ export default function Inicio() {
       {/* Columna derecha - LOGO (solo desktop) */}
       <div className={styles['inicio-right']}>
         <div className={styles['inicio-right-content']}>
-          <img 
-            src="/1000133565.png" 
-            alt="PWA Turnos" 
-            className={styles['inicio-logo-desktop']}
-          />
+          {/* 👇 AGREGAMOS Link alrededor de la imagen */}
+          <Link to="/">
+            <img 
+              src="/20260308_Logo.png" 
+              alt="PWA Turnos" 
+              className={styles['inicio-logo-desktop']}
+            />
+          </Link>
         </div>
       </div>
 
