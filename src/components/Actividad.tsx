@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import styles from '../styles/Actividad.module.css';
+import inicioStyles from '../styles/Inicio.module.css'; // 👈 IMPORTAMOS ESTILOS DE INICIO
 
 export default function Actividad() {
   const handleAyuda = () => {
@@ -16,26 +17,25 @@ export default function Actividad() {
 
   const handleActividadSeleccionada = (actividad: string) => {
     alert(`Has seleccionado: ${actividad} - (Demo)`);
-    // Acá después navegaremos a la siguiente pantalla
   };
 
   return (
-    <div className={styles['actividad-container']}>
+    <div className={inicioStyles['inicio-container']}>
       
       {/* Columna izquierda - BOTONES */}
-      <div className={styles['actividad-left']}>
-        <div className={styles['actividad-left-content']}>
+      <div className={inicioStyles['inicio-left']}>
+        <div className={inicioStyles['inicio-left-content']}>
           
           {/* Logo solo visible en móvil */}
-          <div className={styles['actividad-logo-mobile']}>
+          <div className={inicioStyles['inicio-logo-mobile']}>
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
-              className={styles['actividad-logo-mobile-img']}
+              className={inicioStyles['inicio-logo-mobile-img']}
             />
           </div>
 
-          <div className={styles['actividad-card']}>
+          <div className={inicioStyles['inicio-card']}>
             <h1 className={styles['actividad-titulo']}>¿Cuál es tu Actividad?</h1>
             
             {/* Botones en grilla 2 columnas */}
@@ -44,14 +44,14 @@ export default function Actividad() {
               {/* Fila 1 */}
               <button 
                 onClick={() => handleActividadSeleccionada('Salud')}
-                className={`${styles['actividad-btn']} ${styles['actividad-btn-demo']}`}
+                className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
                 Salud
               </button>
               
               <button 
                 onClick={() => handleActividadSeleccionada('Veterinarias')}
-                className={`${styles['actividad-btn']} ${styles['actividad-btn-demo']}`}
+                className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
                 Veterinarias
               </button>
@@ -59,14 +59,14 @@ export default function Actividad() {
               {/* Fila 2 */}
               <button 
                 onClick={() => handleActividadSeleccionada('Peluquerías')}
-                className={`${styles['actividad-btn']} ${styles['actividad-btn-demo']}`}
+                className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
                 Peluquerías
               </button>
               
               <button 
                 onClick={() => handleActividadSeleccionada('Barberías')}
-                className={`${styles['actividad-btn']} ${styles['actividad-btn-demo']}`}
+                className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
               >
                 Barberías
               </button>
@@ -76,24 +76,24 @@ export default function Actividad() {
             <div className={styles['actividad-otros-container']}>
               <button 
                 onClick={() => handleActividadSeleccionada('Otros Servicios')}
-                className={`${styles['actividad-btn']} ${styles['actividad-btn-demo']} ${styles['actividad-btn-otros']}`}
+                className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']} ${styles['actividad-btn-otros']}`}
               >
                 Otros Servicios
               </button>
             </div>
 
             {/* Footer */}
-            <div className={styles['actividad-footer']}>
-              <a onClick={handleAyuda} className={styles['actividad-footer-link']}>
+            <div className={inicioStyles['inicio-footer']}>
+              <a onClick={handleAyuda} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
               </a>
-              <a onClick={handleTerminos} className={styles['actividad-footer-link']}>
+              <a onClick={handleTerminos} className={inicioStyles['inicio-footer-link']}>
                 Términos y Condiciones
               </a>
-              <a onClick={handlePoliticas} className={styles['actividad-footer-link']}>
+              <a onClick={handlePoliticas} className={inicioStyles['inicio-footer-link']}>
                 Políticas de Privacidad
               </a>
-              <div className={styles['actividad-version']}>
+              <div className={inicioStyles['inicio-version']}>
                 v.0.10
               </div>
             </div>
@@ -102,13 +102,13 @@ export default function Actividad() {
       </div>
 
       {/* Columna derecha - LOGO (solo desktop) */}
-      <div className={styles['actividad-right']}>
-        <div className={styles['actividad-right-content']}>
+      <div className={inicioStyles['inicio-right']}>
+        <div className={inicioStyles['inicio-right-content']}>
           <Link to="/">
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
-              className={styles['actividad-logo-desktop']}
+              className={inicioStyles['inicio-logo-desktop']}
             />
           </Link>
         </div>
