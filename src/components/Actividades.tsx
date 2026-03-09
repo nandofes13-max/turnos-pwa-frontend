@@ -419,9 +419,9 @@ export default function Actividades() {
                         onAdd={() => a.fecha_baja ? handleReactivar(a) : null}
                         onEdit={() => !a.fecha_baja && handleEditar(a)}
                         onDelete={() => !a.fecha_baja && handleEliminar(a)}
-                        showAdd={!!a.fecha_baja}
-                        showEdit={!a.fecha_baja}
-                        showDelete={!a.fecha_baja}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
                         disabledAdd={!a.fecha_baja}
                         disabledEdit={!!a.fecha_baja}
                         disabledDelete={!!a.fecha_baja}
@@ -454,9 +454,9 @@ export default function Actividades() {
                     onAdd={() => a.fecha_baja ? handleReactivar(a) : null}
                     onEdit={() => !a.fecha_baja && handleEditar(a)}
                     onDelete={() => !a.fecha_baja && handleEliminar(a)}
-                    showAdd={!!a.fecha_baja}
-                    showEdit={!a.fecha_baja}
-                    showDelete={!a.fecha_baja}
+                    showAdd={true}
+                    showEdit={true}
+                    showDelete={true}
                     disabledAdd={!a.fecha_baja}
                     disabledEdit={!!a.fecha_baja}
                     disabledDelete={!!a.fecha_baja}
