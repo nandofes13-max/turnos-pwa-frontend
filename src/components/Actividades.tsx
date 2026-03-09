@@ -10,8 +10,8 @@ interface Actividad {
   usuario_alta?: string;
   fecha_modificacion?: string;
   usuario_modificacion?: string;
-  fecha_baja?: string;
-  usuario_baja?: string;
+  fecha_baja?: string | null; // 👈 PERMITIR NULL EXPLÍCITAMENTE
+  usuario_baja?: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -143,7 +143,12 @@ export default function Actividades() {
   };
 
   const handleReactivar = (actividad: Actividad) => {
-    setConfirmReactivar(actividad);
+    console.log('Intentando reactivar:', actividad);
+    if (actividad.fecha_baja) {
+      setConfirmReactivar(actividad);
+    } else {
+      console.warn('La actividad ya está activa');
+    }
   };
 
   const verificarExistente = async (nombre: string, id?: number): Promise<boolean> => {
@@ -242,16 +247,24 @@ export default function Actividades() {
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
 
+    console.log('Reactivando:', confirmReactivar);
+
     try {
       const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          nombre: confirmReactivar.nombre
+          nombre: confirmReactivar.nombre,
+          fecha_baja: null,
+          usuario_baja: null
         }),
       });
 
-      if (!res.ok) throw new Error('Error al reactivar actividad');
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Error response:', errorText);
+        throw new Error('Error al reactivar actividad');
+      }
 
       setConfirmReactivar(null);
       fetchActividades();
@@ -499,7 +512,7 @@ export default function Actividades() {
         </div>
       )}
 
-      {/* MODALES */}
+      {/* MODALES (sin cambios) */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
