@@ -229,3 +229,14 @@
     display: flex; /* Visible en táctiles */
   }
 }
+
+/* Efecto hover para el logo clickeable */
+.inicio-logo-desktop {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.inicio-logo-desktop:hover {
+  transform: scale(1.05);  /* Agranda un 5% - más notorio */
+  opacity: 0.85;           /* Baja la opacidad */
+  cursor: pointer;
+}
