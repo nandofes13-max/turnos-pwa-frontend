@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Inicio from './components/Inicio';
 import Actividad from './components/Actividad';
 import CPanel from './components/CPanel';
-import Actividades from './components/Actividades'; // 👈 AGREGADO
+import Actividades from './components/Actividades';
+import Usuarios from './components/Usuarios'; // 👈 AGREGADO
 import './App.css';
 
 function App() {
@@ -12,7 +13,8 @@ function App() {
         <Route path="/" element={<Inicio />} />
         <Route path="/actividad" element={<Actividad />} />
         <Route path="/cpanel" element={<CPanel />} />
-        <Route path="/actividades" element={<Actividades />} /> {/* 👈 AGREGADO */}
+        <Route path="/actividades" element={<Actividades />} />
+        <Route path="/usuarios" element={<Usuarios />} /> {/* 👈 AGREGADO */}
       </Routes>
     </BrowserRouter>
   );
