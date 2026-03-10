@@ -1,0 +1,13 @@
+/* =============================================
+   ESTILOS ESPECÍFICOS DE USUARIOS
+   ============================================= */
+
+/* Si en el futuro necesitamos algo específico para 
+   la pantalla de usuarios, lo agregamos acá */
+
+/* Por ahora, todo se maneja desde tablas-maestras.css */
+
+/* Ajuste para el ancho de la columna email en desktop */
+.tm-col-email {
+  width: 250px;
+}
