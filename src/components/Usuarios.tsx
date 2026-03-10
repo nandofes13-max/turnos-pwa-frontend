@@ -169,6 +169,11 @@ export default function Usuarios() {
     }
   };
 
+  const validarEmail = (email: string): boolean => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const verificarExistente = async (email: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(USUARIOS_URL);
@@ -198,6 +203,12 @@ export default function Usuarios() {
   const guardarUsuario = async () => {
     if (!formData.email || !formData.apellido || !formData.nombre) {
       setErrorMessage('Email, apellido y nombre son obligatorios');
+      return;
+    }
+
+    // Validar formato de email
+    if (!validarEmail(formData.email)) {
+      setErrorMessage('El email ingresado no tiene un formato válido');
       return;
     }
 
@@ -234,7 +245,11 @@ export default function Usuarios() {
         return;
       }
 
-      if (!res.ok) throw new Error('Error al guardar usuario');
+      if (!res.ok) {
+        // Si el backend devuelve error de validación
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al guardar usuario');
+      }
 
       setModalMode(null);
       setSelectedUsuario(null);
@@ -243,7 +258,7 @@ export default function Usuarios() {
       fetchUsuarios();
     } catch (err) {
       console.error(err);
-      setErrorMessage('No se pudo guardar el usuario');
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el usuario');
     }
   };
 
@@ -451,7 +466,7 @@ export default function Usuarios() {
             <table className="tm-tabla">
               <thead>
                 <tr>
-                  <th>EMAIL</th>
+                  <th className="tm-col-email">EMAIL</th>
                   <th>APELLIDO Y NOMBRE</th>
                   <th>TELÉFONO</th>
                   <th>ACCIONES</th>
@@ -553,7 +568,7 @@ export default function Usuarios() {
         </div>
       )}
 
-      {/* MODALES (similares a Actividades pero adaptados) */}
+      {/* MODALES */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
