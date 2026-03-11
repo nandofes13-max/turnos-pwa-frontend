@@ -200,8 +200,8 @@ export default function Roles() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: formData.nombre.toUpperCase(),
-            descripcion: formData.descripcion || null
+            nombre: formData.nombre.toUpperCase(), // ✅ Nombre en mayúsculas (identificador)
+            descripcion: formData.descripcion      // ✅ Descripción tal cual la ingresó el usuario
           }),
         });
       } else if (modalMode === 'edit' && selectedRol) {
@@ -210,7 +210,7 @@ export default function Roles() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: formData.nombre.toUpperCase(),
-            descripcion: formData.descripcion || null
+            descripcion: formData.descripcion      // ✅ Descripción tal cual
           }),
         });
       } else {
