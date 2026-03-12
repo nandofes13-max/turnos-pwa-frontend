@@ -200,8 +200,8 @@ export default function Roles() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: formData.nombre.toUpperCase(), // ✅ Solo el nombre se fuerza a mayúsculas
-            descripcion: formData.descripcion      // ✅ La descripción se envía tal cual
+            nombre: formData.nombre.toUpperCase(),
+            descripcion: formData.descripcion
           }),
         });
       } else if (modalMode === 'edit' && selectedRol) {
@@ -518,7 +518,7 @@ export default function Roles() {
         </div>
       )}
 
-      {/* MODALES */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -539,13 +539,13 @@ export default function Roles() {
             </div>
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Descripción</label>
-             <textarea
-  value={formData.descripcion}
-  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} // 👈 SIN toUpperCase
-  placeholder="Opcional - Descripción del rol"
-  className="tm-modal-input"
-  rows={3}
-/>
+              <textarea
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                placeholder="Opcional - Descripción del rol"
+                className="tm-modal-input"
+                rows={3}
+              />
             </div>
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
@@ -559,6 +559,7 @@ export default function Roles() {
         </div>
       )}
 
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedRol && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -578,11 +579,11 @@ export default function Roles() {
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Descripción</label>
               <textarea
-  value={formData.descripcion}
-  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} // 👈 SIN toUpperCase
-  className="tm-modal-input"
-  rows={3}
-/>
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                className="tm-modal-input"
+                rows={3}
+              />
             </div>
             {selectedRol.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
@@ -604,6 +605,7 @@ export default function Roles() {
         </div>
       )}
 
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedRol && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -637,6 +639,7 @@ export default function Roles() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -658,6 +661,7 @@ export default function Roles() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
