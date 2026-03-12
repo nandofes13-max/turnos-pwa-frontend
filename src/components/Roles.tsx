@@ -200,8 +200,8 @@ export default function Roles() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: formData.nombre.toUpperCase(), // ✅ Nombre en mayúsculas (identificador)
-            descripcion: formData.descripcion      // ✅ Descripción tal cual la ingresó el usuario
+            nombre: formData.nombre.toUpperCase(), // ✅ Solo el nombre se fuerza a mayúsculas
+            descripcion: formData.descripcion      // ✅ La descripción se envía tal cual
           }),
         });
       } else if (modalMode === 'edit' && selectedRol) {
@@ -210,7 +210,7 @@ export default function Roles() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: formData.nombre.toUpperCase(),
-            descripcion: formData.descripcion      // ✅ Descripción tal cual
+            descripcion: formData.descripcion
           }),
         });
       } else {
@@ -541,7 +541,7 @@ export default function Roles() {
               <label className="tm-modal-label">Descripción</label>
               <textarea
                 value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} // 👈 ELIMINADO .toUpperCase()
                 placeholder="Opcional - Descripción del rol"
                 className="tm-modal-input"
                 rows={3}
@@ -579,7 +579,7 @@ export default function Roles() {
               <label className="tm-modal-label">Descripción</label>
               <textarea
                 value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} // 👈 ELIMINADO .toUpperCase()
                 className="tm-modal-input"
                 rows={3}
               />
