@@ -540,13 +540,18 @@ export default function Roles() {
             </div>
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Descripción</label>
-              <textarea
-                value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                placeholder="Opcional - Descripción del rol"
-                className="tm-modal-input"
-                rows={3}
-              />
+              {/* MODAL AGREGAR - SOLO EL TEXTAREA DE DESCRIPCIÓN */}
+<textarea
+  value={formData.descripcion}
+  onChange={(e) => {
+    const valorOriginal = e.target.value;
+    console.log('Valor escrito:', valorOriginal);
+    setFormData({ ...formData, descripcion: valorOriginal });
+  }}
+  placeholder="Opcional - Descripción del rol"
+  className="tm-modal-input"
+  rows={3}
+/>
             </div>
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
@@ -579,12 +584,18 @@ export default function Roles() {
             </div>
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Descripción</label>
-              <textarea
-                value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="tm-modal-input"
-                rows={3}
-              />
+              {/* MODAL AGREGAR - SOLO EL TEXTAREA DE DESCRIPCIÓN */}
+<textarea
+  value={formData.descripcion}
+  onChange={(e) => {
+    const valorOriginal = e.target.value;
+    console.log('Valor escrito:', valorOriginal);
+    setFormData({ ...formData, descripcion: valorOriginal });
+  }}
+  placeholder="Opcional - Descripción del rol"
+  className="tm-modal-input"
+  rows={3}
+/>
             </div>
             {selectedRol.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
