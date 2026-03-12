@@ -4,7 +4,8 @@ import Actividad from './components/Actividad';
 import CPanel from './components/CPanel';
 import Actividades from './components/Actividades';
 import Usuarios from './components/Usuarios';
-import Roles from './components/Roles'; // 👈 AGREGADO
+import Roles from './components/Roles';
+import Negocios from './components/Negocios'; // 👈 AGREGADO
 import './App.css';
 
 function App() {
@@ -16,7 +17,8 @@ function App() {
         <Route path="/cpanel" element={<CPanel />} />
         <Route path="/actividades" element={<Actividades />} />
         <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/roles" element={<Roles />} /> {/* 👈 AGREGADO */}
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/negocios" element={<Negocios />} /> {/* 👈 AGREGADO */}
       </Routes>
     </BrowserRouter>
   );
