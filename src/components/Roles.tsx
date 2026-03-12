@@ -300,6 +300,7 @@ export default function Roles() {
               type="text"
               value={filtroNombre}
               onChange={(e) => {
+                console.log('Valor original:', e.target.value); // 👈 AGREGAR ESTO
                 setFiltroNombre(e.target.value);
                 setPaginaActual(1);
               }}
