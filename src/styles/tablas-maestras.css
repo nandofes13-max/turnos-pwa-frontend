@@ -791,3 +791,10 @@
     display: flex;
   }
 }
+
+/* =============================================
+   CAMPOS DE DESCRIPCIÓN - respetan mayúsculas/minúsculas
+   ============================================= */
+.tm-input-descripcion {
+  text-transform: none !important; /* Anula cualquier transformación heredada */
+}
