@@ -487,63 +487,63 @@ export default function Negocios() {
           </div>
 
           {/* TABLA (solo visible en desktop) */}
-          <div className="tm-tabla-centrado">
-            <table className="tm-tabla">
-              <thead>
-                <tr>
-                  <th>NOMBRE</th>
-                  <th>URL</th>
-                  <th>WHATSAPP</th>
-                  <th>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {negociosPaginados.map((n) => (
-                  <tr 
-                    key={n.id} 
-                    className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
-                  >
-                    <td>{n.nombre}</td>
-                    <td>
-                      <a 
-                        href={`/negocio/${n.url}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {n.url}
-                      </a>
-                    </td>
-                    <td>{n.whatsapp || '-'}</td>
-                    <td>
-                      <ActionIcons
-                        onAdd={() => n.fecha_baja ? handleReactivar(n) : null}
-                        onEdit={() => !n.fecha_baja && handleEditar(n)}
-                        onDelete={() => !n.fecha_baja && handleEliminar(n)}
-                        onView={() => handleVerDetalle(n)}
-                        showAdd={true}
-                        showEdit={true}
-                        showDelete={true}
-                        showView={true}
-                        disabledAdd={!n.fecha_baja}
-                        disabledEdit={!!n.fecha_baja}
-                        disabledDelete={!!n.fecha_baja}
-                        disabledView={false}
-                        size="md"
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {negociosPaginados.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="tm-fila-vacia">
-                      No hay negocios que coincidan
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+<div className="tm-tabla-centrado">
+  <table className="tm-tabla">
+    <thead>
+      <tr>
+        <th className="tm-col-nombre">NOMBRE</th>
+        <th className="tm-col-url">URL</th> {/* 👈 AGREGAMOS ESTA COLUMNA */}
+        <th className="tm-col-whatsapp">WHATSAPP</th>
+        <th>ACCIONES</th>
+      </tr>
+    </thead>
+    <tbody>
+      {negociosPaginados.map((n) => (
+        <tr 
+          key={n.id} 
+          className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
+        >
+          <td>{n.nombre}</td>
+          <td>
+            <a 
+              href={`/negocio/${n.url}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              {n.url}
+            </a>
+          </td>
+          <td>{n.whatsapp || '-'}</td>
+          <td>
+            <ActionIcons
+              onAdd={() => n.fecha_baja ? handleReactivar(n) : null}
+              onEdit={() => !n.fecha_baja && handleEditar(n)}
+              onDelete={() => !n.fecha_baja && handleEliminar(n)}
+              onView={() => handleVerDetalle(n)}
+              showAdd={true}
+              showEdit={true}
+              showDelete={true}
+              showView={true}
+              disabledAdd={!n.fecha_baja}
+              disabledEdit={!!n.fecha_baja}
+              disabledDelete={!!n.fecha_baja}
+              disabledView={false}
+              size="md"
+            />
+          </td>
+        </tr>
+      ))}
+      {negociosPaginados.length === 0 && (
+        <tr>
+          <td colSpan={4} className="tm-fila-vacia">
+            No hay negocios que coincidan
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
           {/* CARDS PARA MÓVIL */}
           <div className="tm-cards">
