@@ -1,0 +1,40 @@
+/* =============================================
+   ESTILOS ESPECÍFICOS DE NEGOCIOS
+   ============================================= */
+
+/* Por ahora, todo se maneja desde tablas-maestras.css */
+
+/* Ajuste para el ancho de columnas específicas si hiciera falta */
+.tm-col-url {
+  width: 200px;
+}
+
+.tm-col-whatsapp {
+  width: 150px;
+}
+
+/* Estilo para el link de la URL en la tabla */
+.tm-url-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-xs);
+}
+
+.tm-url-link:hover {
+  text-decoration: underline;
+}
+
+/* Grid para el domicilio en el modal (2 columnas) */
+.tm-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* En móvil, el grid pasa a 1 columna */
+@media (max-width: 640px) {
+  .tm-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
