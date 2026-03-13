@@ -539,16 +539,16 @@ export default function Negocios() {
                     className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
                   >
                     <td>{n.nombre}</td>
-                    <td>
-                      <a 
-                        href={`/negocio/${n.url}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="tm-url-link"
-                      >
-                        {n.url}
-                      </a>
-                    </td>
+                    <td style={{ backgroundColor: 'yellow', fontWeight: 'bold' }}>
+  <a 
+    href={`/negocio/${n.url}`} 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="tm-url-link"
+  >
+    {n.url}
+  </a>
+</td>
                     <td>{n.whatsapp || '-'}</td>
                     <td>
                       {n.domicilio ? (
