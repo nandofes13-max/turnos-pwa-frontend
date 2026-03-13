@@ -137,3 +137,23 @@
   gap: 0.75rem;
   margin-top: 0.5rem;
 }
+/* FORZAR MISMO COMPORTAMIENTO EN AMBOS MODALES */
+.tm-modal-campo .tm-whatsapp-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.5rem !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.tm-modal-campo .tm-whatsapp-pais,
+.tm-modal-campo .tm-whatsapp-area,
+.tm-modal-campo .tm-whatsapp-numero {
+  width: 80px !important;
+  flex-shrink: 0 !important;
+}
+
+.tm-modal-campo .tm-whatsapp-numero {
+  flex: 1 !important;
+  width: auto !important;
+}
