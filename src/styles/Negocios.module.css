@@ -1,8 +1,53 @@
 /* =============================================
-   ESTILOS PARA EL MODAL DE NEGOCIOS
+   ESTILOS ESPECÍFICOS DE NEGOCIOS
    ============================================= */
 
-/* Etiquetas pequeñas para los campos del domicilio */
+/* Ancho de columnas */
+.tm-col-url {
+  width: 200px;
+}
+
+.tm-col-whatsapp {
+  width: 150px;
+}
+
+.tm-col-domicilio {
+  width: 250px;
+}
+
+/* Estilo para el link de la URL en la tabla */
+.tm-url-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-xs);
+}
+
+.tm-url-link:hover {
+  text-decoration: underline;
+}
+
+/* =============================================
+   ESTILOS PARA VALIDACIÓN DE WHATSAPP
+   ============================================= */
+
+/* Input con error */
+.tm-input-error {
+  border-color: var(--color-danger) !important;
+  background-color: var(--color-danger-light);
+}
+
+/* Texto de error */
+.tm-error-text {
+  color: var(--color-danger);
+  font-size: var(--font-xs);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* =============================================
+   ESTILOS PARA ETIQUETAS DE DOMICILIO
+   ============================================= */
+
 .tm-label-chico {
   display: block;
   font-size: var(--font-xs);
@@ -11,7 +56,10 @@
   font-weight: 500;
 }
 
-/* Buscador de direcciones */
+/* =============================================
+   ESTILOS PARA BUSCADOR (futuro Nominatim)
+   ============================================= */
+
 .tm-buscador-direccion {
   position: relative;
   margin-bottom: 1rem;
@@ -40,6 +88,10 @@
   display: none;
 }
 
+.tm-sugerencias.visible {
+  display: block;
+}
+
 .tm-sugerencia-item {
   padding: 0.5rem 0.75rem;
   cursor: pointer;
@@ -51,7 +103,10 @@
   background: var(--color-primary-light);
 }
 
-/* Grid de 2 columnas para el domicilio */
+/* =============================================
+   GRID PARA DOMICILIO
+   ============================================= */
+
 .tm-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -59,7 +114,6 @@
   margin-top: 0.5rem;
 }
 
-/* Responsive */
 @media (max-width: 640px) {
   .tm-grid-2 {
     grid-template-columns: 1fr;
