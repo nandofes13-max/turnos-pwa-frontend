@@ -665,119 +665,177 @@ export default function Negocios() {
       )}
 
       {/* MODAL AGREGAR */}
-      {modalMode === 'add' && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Agregar Negocio</h3>
-            {errorMessage && (
-              <div className="tm-modal-error">{errorMessage}</div>
-            )}
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                placeholder="Ej: Peluquería Canina"
-                className="tm-modal-input"
-                required
-                autoFocus
-              />
-            </div>
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp *</label>
-              <input
-                type="text"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                placeholder="+5491112345678"
-                className="tm-modal-input"
-                required
-              />
-            </div>
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Domicilio *</label>
-              <div className="tm-grid-2">
-                <input
-                  type="text"
-                  value={formData.domicilio.calle}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, calle: e.target.value }
-                  })}
-                  placeholder="Calle"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.numero}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, numero: e.target.value }
-                  })}
-                  placeholder="Número"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.codigo_postal}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, codigo_postal: e.target.value }
-                  })}
-                  placeholder="CP"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.localidad}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, localidad: e.target.value }
-                  })}
-                  placeholder="Localidad"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.provincia}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, provincia: e.target.value }
-                  })}
-                  placeholder="Provincia"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.pais}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, pais: e.target.value }
-                  })}
-                  placeholder="País"
-                  className="tm-modal-input"
-                  required
-                />
-              </div>
-            </div>
-            <div className="tm-modal-acciones">
-              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
-                Cancelar
-              </button>
-              <button onClick={guardarNegocio} className="tm-btn-primario">
-                Agregar
-              </button>
-            </div>
+{modalMode === 'add' && (
+  <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+    <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+      <h3 className="tm-modal-titulo">Agregar Negocio</h3>
+      {errorMessage && (
+        <div className="tm-modal-error">{errorMessage}</div>
+      )}
+      
+      {/* NOMBRE */}
+      <div className="tm-modal-campo">
+        <label className="tm-modal-label">Nombre *</label>
+        <input
+          type="text"
+          value={formData.nombre}
+          onChange={(e) => setFormData({ 
+            ...formData, 
+            nombre: e.target.value.toUpperCase() 
+          })}
+          placeholder="Ej: PELUQUERÍA CANINA"
+          className="tm-modal-input"
+          required
+          autoFocus
+        />
+      </div>
+
+      {/* WHATSAPP */}
+      <div className="tm-modal-campo">
+        <label className="tm-modal-label">WhatsApp *</label>
+        <input
+          type="tel"
+          value={formData.whatsapp}
+          onChange={(e) => {
+            const valor = e.target.value;
+            // Permitir solo + y números
+            if (/^[+0-9]*$/.test(valor)) {
+              setFormData({ ...formData, whatsapp: valor });
+            }
+          }}
+          placeholder="+5491112345678"
+          className="tm-modal-input"
+          required
+          pattern="^\+[1-9]{1}[0-9]{1,14}$"
+          title="Formato: +5491112345678 (código país + número)"
+        />
+      </div>
+
+      {/* DOMICILIO */}
+      <div className="tm-modal-campo">
+        <label className="tm-modal-label">Domicilio *</label>
+        
+        {/* BUSCADOR (Nominatim) - lo agregaremos después */}
+        <div className="tm-buscador-direccion">
+          <input
+            type="text"
+            placeholder="Buscar dirección (ej: Av Corrientes 1234, CABA)"
+            className="tm-modal-input tm-buscador-input"
+            id="buscador-direccion"
+          />
+          <div className="tm-sugerencias"></div>
+        </div>
+
+        <div className="tm-grid-2">
+          {/* CALLE */}
+          <div>
+            <label className="tm-label-chico">Calle</label>
+            <input
+              type="text"
+              value={formData.domicilio.calle}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() }
+              })}
+              placeholder="CALLE"
+              className="tm-modal-input"
+              required
+            />
+          </div>
+
+          {/* NÚMERO */}
+          <div>
+            <label className="tm-label-chico">Número</label>
+            <input
+              type="text"
+              value={formData.domicilio.numero}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, numero: e.target.value }
+              })}
+              placeholder="NÚMERO"
+              className="tm-modal-input"
+              required
+            />
+          </div>
+
+          {/* CÓDIGO POSTAL */}
+          <div>
+            <label className="tm-label-chico">Código Postal</label>
+            <input
+              type="text"
+              value={formData.domicilio.codigo_postal}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, codigo_postal: e.target.value }
+              })}
+              placeholder="CP"
+              className="tm-modal-input"
+              required
+            />
+          </div>
+
+          {/* LOCALIDAD */}
+          <div>
+            <label className="tm-label-chico">Localidad</label>
+            <input
+              type="text"
+              value={formData.domicilio.localidad}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() }
+              })}
+              placeholder="LOCALIDAD"
+              className="tm-modal-input"
+              required
+            />
+          </div>
+
+          {/* PROVINCIA */}
+          <div>
+            <label className="tm-label-chico">Provincia</label>
+            <input
+              type="text"
+              value={formData.domicilio.provincia}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() }
+              })}
+              placeholder="PROVINCIA"
+              className="tm-modal-input"
+              required
+            />
+          </div>
+
+          {/* PAÍS */}
+          <div>
+            <label className="tm-label-chico">País</label>
+            <input
+              type="text"
+              value={formData.domicilio.pais}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() }
+              })}
+              placeholder="PAÍS"
+              className="tm-modal-input"
+              required
+            />
           </div>
         </div>
-      )}
+      </div>
 
+      <div className="tm-modal-acciones">
+        <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
+          Cancelar
+        </button>
+        <button onClick={guardarNegocio} className="tm-btn-primario">
+          Agregar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedNegocio && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
