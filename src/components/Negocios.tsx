@@ -702,26 +702,35 @@ const guardarNegocio = async () => {
       </div>
 
       {/* WHATSAPP */}
-      <div className="tm-modal-campo">
-        <label className="tm-modal-label">WhatsApp *</label>
-        <input
-          type="tel"
-          value={formData.whatsapp}
-          onChange={(e) => {
-            const valor = e.target.value;
-            // Permitir solo + y números
-            if (/^[+0-9]*$/.test(valor)) {
-              setFormData({ ...formData, whatsapp: valor });
-            }
-          }}
-          placeholder="+5491112345678"
-          className="tm-modal-input"
-          required
-          pattern="^\+[1-9]{1}[0-9]{1,14}$"
-          title="Formato: +5491112345678 (código país + número)"
-        />
-      </div>
-
+<div className="tm-modal-campo">
+  <label className="tm-modal-label">WhatsApp *</label>
+  <input
+    type="tel"
+    value={formData.whatsapp}
+    onChange={(e) => {
+      const valor = e.target.value;
+      // Permitir solo + y números
+      if (/^[+0-9]*$/.test(valor)) {
+        setFormData({ ...formData, whatsapp: valor });
+      }
+    }}
+    onBlur={() => {
+      // Validar al salir del campo
+      const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
+      if (formData.whatsapp && !whatsappRegex.test(formData.whatsapp)) {
+        setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
+      } else {
+        setErrorMessage(null);
+      }
+    }}
+    placeholder="+5491112345678"
+    className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
+    required
+  />
+  {formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) && (
+    <small className="tm-error-text">Formato: +5491112345678</small>
+  )}
+</div>
       {/* DOMICILIO */}
       <div className="tm-modal-campo">
         <label className="tm-modal-label">Domicilio *</label>
