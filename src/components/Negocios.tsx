@@ -37,7 +37,6 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
-    whatsapp: '',
     domicilio: {
       calle: '',
       numero: '',
@@ -47,6 +46,12 @@ export default function Negocios() {
       pais: '',
     }
   });
+  
+  // Estados para WhatsApp dividido
+  const [whatsappPais, setWhatsappPais] = useState('54');
+  const [whatsappArea, setWhatsappArea] = useState('');
+  const [whatsappNumero, setWhatsappNumero] = useState('');
+  
   const [confirmDelete, setConfirmDelete] = useState<Negocio | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Negocio | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -143,7 +148,6 @@ export default function Negocios() {
   const handleAgregar = () => {
     setFormData({ 
       nombre: '', 
-      whatsapp: '',
       domicilio: {
         calle: '',
         numero: '',
@@ -153,14 +157,28 @@ export default function Negocios() {
         pais: '',
       }
     });
+    setWhatsappPais('54');
+    setWhatsappArea('');
+    setWhatsappNumero('');
     setErrorMessage(null);
     setModalMode('add');
   };
 
   const handleEditar = (negocio: Negocio) => {
+    // Separar WhatsApp en partes si existe
+    if (negocio.whatsapp) {
+      const partes = negocio.whatsapp.replace(/\+/g, '').split(' ');
+      setWhatsappPais(partes[0] || '54');
+      setWhatsappArea(partes[1] || '');
+      setWhatsappNumero(partes[2] || '');
+    } else {
+      setWhatsappPais('54');
+      setWhatsappArea('');
+      setWhatsappNumero('');
+    }
+
     setFormData({ 
       nombre: negocio.nombre,
-      whatsapp: negocio.whatsapp || '',
       domicilio: negocio.domicilio || {
         calle: '',
         numero: '',
@@ -190,19 +208,32 @@ export default function Negocios() {
     }
   };
 
+  const formatearNumeroWhatsapp = (valor: string): string => {
+    const soloNumeros = valor.replace(/\D/g, '');
+    if (soloNumeros.length <= 4) return soloNumeros;
+    if (soloNumeros.length <= 7) {
+      return `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 7)}`;
+    }
+    return `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 8)}`;
+  };
+
   const validarFormulario = (): boolean => {
     if (!formData.nombre.trim()) {
       setErrorMessage('El nombre del negocio es obligatorio');
       return false;
     }
     
-    const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
-    if (!formData.whatsapp.trim()) {
-      setErrorMessage('El WhatsApp es obligatorio');
+    if (!whatsappPais || !whatsappArea || !whatsappNumero) {
+      setErrorMessage('Completá país, área y número de WhatsApp');
       return false;
     }
-    if (!whatsappRegex.test(formData.whatsapp)) {
-      setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
+
+    const paisValido = /^\d{1,3}$/.test(whatsappPais);
+    const areaValida = /^\d{2,4}$/.test(whatsappArea);
+    const numeroValido = /^\d{4,5}-\d{4}$/.test(whatsappNumero);
+
+    if (!paisValido || !areaValida || !numeroValido) {
+      setErrorMessage('El formato de WhatsApp no es válido');
       return false;
     }
     
@@ -258,9 +289,11 @@ export default function Negocios() {
   const guardarNegocio = async () => {
     if (!validarFormulario()) return;
 
+    const whatsappCompleto = `+${whatsappPais} ${whatsappArea} ${whatsappNumero}`;
+
     const datosParaEnviar = {
       nombre: formData.nombre.toUpperCase(),
-      whatsapp: formData.whatsapp,
+      whatsapp: whatsappCompleto,
       domicilio: {
         calle: formData.domicilio.calle.toUpperCase(),
         numero: formData.domicilio.numero,
@@ -303,7 +336,6 @@ export default function Negocios() {
       setSelectedNegocio(null);
       setFormData({ 
         nombre: '', 
-        whatsapp: '',
         domicilio: {
           calle: '',
           numero: '',
@@ -313,6 +345,9 @@ export default function Negocios() {
           pais: '',
         }
       });
+      setWhatsappPais('54');
+      setWhatsappArea('');
+      setWhatsappNumero('');
       setErrorMessage(null);
       fetchNegocios();
     } catch (err) {
@@ -641,32 +676,59 @@ export default function Negocios() {
               />
             </div>
 
+            {/* WHATSAPP DIVIDIDO */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <input
-                type="tel"
-                value={formData.whatsapp}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  if (/^[+0-9]*$/.test(valor)) {
-                    setFormData({ ...formData, whatsapp: valor });
-                  }
-                }}
-                onBlur={() => {
-                  const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
-                  if (formData.whatsapp && !whatsappRegex.test(formData.whatsapp)) {
-                    setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
-                  } else {
-                    setErrorMessage(null);
-                  }
-                }}
-                placeholder="+5491112345678"
-                className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
-                required
-              />
-              {formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) && (
-                <small className="tm-error-text">Formato: +5491112345678</small>
-              )}
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {/* PAÍS */}
+                <div style={{ width: '80px' }}>
+                  <input
+                    type="text"
+                    value={whatsappPais}
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/\D/g, '');
+                      setWhatsappPais(valor);
+                    }}
+                    placeholder="54"
+                    className="tm-modal-input"
+                    style={{ textAlign: 'center' }}
+                  />
+                </div>
+                
+                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
+                
+                {/* ÁREA */}
+                <div style={{ width: '80px' }}>
+                  <input
+                    type="text"
+                    value={whatsappArea}
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/\D/g, '');
+                      setWhatsappArea(valor);
+                    }}
+                    placeholder="11"
+                    className="tm-modal-input"
+                    style={{ textAlign: 'center' }}
+                  />
+                </div>
+                
+                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
+                
+                {/* NÚMERO LOCAL */}
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="text"
+                    value={whatsappNumero}
+                    onChange={(e) => {
+                      const formateado = formatearNumeroWhatsapp(e.target.value);
+                      setWhatsappNumero(formateado);
+                    }}
+                    placeholder="5833-2657"
+                    className="tm-modal-input"
+                  />
+                </div>
+              </div>
+              <small className="tm-ayuda-texto">Ej: +54 11 5833-2657</small>
             </div>
 
             <div className="tm-modal-campo">
@@ -777,20 +839,48 @@ export default function Negocios() {
               />
             </div>
 
+            {/* WHATSAPP DIVIDIDO EN EDICIÓN */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <input
-                type="tel"
-                value={formData.whatsapp}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  if (/^[+0-9]*$/.test(valor)) {
-                    setFormData({ ...formData, whatsapp: valor });
-                  }
-                }}
-                className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
-                required
-              />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div style={{ width: '80px' }}>
+                  <input
+                    type="text"
+                    value={whatsappPais}
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/\D/g, '');
+                      setWhatsappPais(valor);
+                    }}
+                    className="tm-modal-input"
+                    style={{ textAlign: 'center' }}
+                  />
+                </div>
+                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
+                <div style={{ width: '80px' }}>
+                  <input
+                    type="text"
+                    value={whatsappArea}
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/\D/g, '');
+                      setWhatsappArea(valor);
+                    }}
+                    className="tm-modal-input"
+                    style={{ textAlign: 'center' }}
+                  />
+                </div>
+                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="text"
+                    value={whatsappNumero}
+                    onChange={(e) => {
+                      const formateado = formatearNumeroWhatsapp(e.target.value);
+                      setWhatsappNumero(formateado);
+                    }}
+                    className="tm-modal-input"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="tm-modal-campo">
