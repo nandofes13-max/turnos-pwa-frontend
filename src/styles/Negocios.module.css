@@ -157,3 +157,26 @@
   flex: 1 !important;
   width: auto !important;
 }
+/* FUERZA BRUTA - WhatsApp en fila en TODOS lados */
+.tm-whatsapp-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
+  background-color: yellow !important;
+  padding: 10px !important;
+}
+
+.tm-whatsapp-pais,
+.tm-whatsapp-area,
+.tm-whatsapp-numero {
+  width: auto !important;
+  flex: 1 1 0 !important;
+  background-color: lightblue !important;
+  margin: 2px !important;
+}
+
+.tm-whatsapp-input {
+  text-align: center !important;
+  width: 100% !important;
+  background-color: white !important;
+}
