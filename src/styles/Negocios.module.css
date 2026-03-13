@@ -119,3 +119,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Estilo para el texto de ayuda */
+.tm-ayuda-texto {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--color-gray-500);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
