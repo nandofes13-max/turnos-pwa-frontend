@@ -15,7 +15,7 @@
   width: 250px;
 }
 
-/* Estilo para el link de la URL en la tabla */
+/* Estilo para el link de la URL */
 .tm-url-link {
   color: var(--color-primary);
   text-decoration: none;
@@ -26,17 +26,12 @@
   text-decoration: underline;
 }
 
-/* =============================================
-   ESTILOS PARA VALIDACIÓN DE WHATSAPP
-   ============================================= */
-
-/* Input con error */
+/* Estilos para validación de WhatsApp */
 .tm-input-error {
   border-color: var(--color-danger) !important;
   background-color: var(--color-danger-light);
 }
 
-/* Texto de error */
 .tm-error-text {
   color: var(--color-danger);
   font-size: var(--font-xs);
@@ -44,10 +39,7 @@
   display: block;
 }
 
-/* =============================================
-   ESTILOS PARA ETIQUETAS DE DOMICILIO
-   ============================================= */
-
+/* Etiquetas chicas */
 .tm-label-chico {
   display: block;
   font-size: var(--font-xs);
@@ -56,10 +48,7 @@
   font-weight: 500;
 }
 
-/* =============================================
-   ESTILOS PARA BUSCADOR (futuro Nominatim)
-   ============================================= */
-
+/* Buscador de direcciones (futuro) */
 .tm-buscador-direccion {
   position: relative;
   margin-bottom: 1rem;
@@ -103,10 +92,7 @@
   background: var(--color-primary-light);
 }
 
-/* =============================================
-   GRID PARA DOMICILIO
-   ============================================= */
-
+/* Grid para domicilio */
 .tm-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -114,17 +100,22 @@
   margin-top: 0.5rem;
 }
 
+/* Responsive del grid (solo para móvil) */
 @media (max-width: 640px) {
   .tm-grid-2 {
     grid-template-columns: 1fr;
   }
-}
-
-/* Estilo para el texto de ayuda */
-.tm-ayuda-texto {
-  display: block;
-  font-size: var(--font-xs);
-  color: var(--color-gray-500);
-  margin-top: 0.25rem;
-  font-style: italic;
+  
+  /* WhatsApp en móvil: apilar campos */
+  .tm-modal-campo > div[style*="display: flex"] {
+    flex-wrap: wrap;
+  }
+  
+  .tm-modal-campo > div[style*="display: flex"] > div {
+    width: 100% !important;
+  }
+  
+  .tm-modal-campo > div[style*="display: flex"] > span {
+    display: none;
+  }
 }
