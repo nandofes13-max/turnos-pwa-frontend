@@ -656,9 +656,9 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL AGREGAR */}
+      {/* MODAL AGREGAR - con key */}
       {modalMode === 'add' && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+        <div key="add-modal" className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Agregar Negocio</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
@@ -820,9 +820,9 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL EDITAR */}
+      {/* MODAL EDITAR - con key */}
       {modalMode === 'edit' && selectedNegocio && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+        <div key="edit-modal" className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Editar Negocio</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
