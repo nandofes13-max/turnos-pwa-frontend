@@ -108,31 +108,26 @@
     grid-template-columns: 1fr;
   }
   
-  /* WhatsApp en móvil: apilar campos */
-  .tm-modal-campo > div[style*="display: flex"] {
-    flex-wrap: wrap;
-    flex-direction: column;
-    gap: 0.75rem;
+  /* WhatsApp en móvil: apilar campos usando la nueva clase */
+  .tm-whatsapp-container {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
     width: 100%;
   }
   
-  .tm-modal-campo > div[style*="display: flex"] > div {
+  .tm-whatsapp-container > div {
     width: 100% !important;
   }
   
-  .tm-modal-campo > div[style*="display: flex"] > span {
+  .tm-whatsapp-container > span {
     display: none;
   }
 
-  .tm-modal-campo > div[style*="display: flex"] input {
+  .tm-whatsapp-container input {
     text-align: left !important;
     font-size: 16px;
     width: 100%;
     box-sizing: border-box;
-  }
-
-  .tm-modal-campo > div[style*="display: flex"] > div:last-child {
-    width: 100% !important;
   }
 
   input[value*="-"] {
