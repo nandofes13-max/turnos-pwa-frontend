@@ -131,10 +131,10 @@
 }
 
 /* =============================================
-   RESPONSIVE - MÓVIL (FORZADO)
+   RESPONSIVE - SOLO MÓVIL (HASTA 640px)
    ============================================= */
-@media (max-width: 768px) {
-  /* WhatsApp: apilar verticalmente */
+@media (max-width: 640px) {
+  /* WhatsApp: apilar verticalmente SOLO en móvil */
   .tm-whatsapp-wrapper {
     flex-direction: column !important;
     gap: 0.75rem !important;
@@ -157,12 +157,6 @@
     min-height: 48px;
   }
 
-  /* Ocultar guiones si los hubiera (por estructura) */
-  .tm-whatsapp-wrapper::before,
-  .tm-whatsapp-wrapper::after {
-    display: none;
-  }
-  
   /* Grid del domicilio a 1 columna */
   .tm-grid-2 {
     grid-template-columns: 1fr;
