@@ -100,24 +100,15 @@
   margin-top: 0.5rem;
 }
 
-/* Responsive del grid (solo para móvil) */
+/* =============================================
+   RESPONSIVE - SOLO PARA MÓVIL
+   ============================================= */
 @media (max-width: 640px) {
   .tm-grid-2 {
     grid-template-columns: 1fr;
   }
   
-/* Responsive del grid y WhatsApp en móvil */
-@media (max-width: 640px) {
-  .tm-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  
-  /* Responsive del grid y WhatsApp en móvil */
-@media (max-width: 640px) {
-  .tm-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  
+  /* WhatsApp en móvil: apilar campos */
   .tm-modal-campo > div[style*="display: flex"] {
     flex-wrap: wrap;
     flex-direction: column;
@@ -147,4 +138,4 @@
   input[value*="-"] {
     letter-spacing: 0.5px;
   }
-}  /* 👈 ESTA LLAVE CIERRA LA MEDIA QUERY */
+}
