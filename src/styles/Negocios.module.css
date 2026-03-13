@@ -109,6 +109,8 @@
   /* WhatsApp en móvil: apilar campos */
   .tm-modal-campo > div[style*="display: flex"] {
     flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.75rem;
   }
   
   .tm-modal-campo > div[style*="display: flex"] > div {
@@ -117,5 +119,11 @@
   
   .tm-modal-campo > div[style*="display: flex"] > span {
     display: none;
+  }
+
+  /* Opcional: hacer los inputs un poco más grandes */
+  .tm-modal-campo > div[style*="display: flex"] input {
+    text-align: left !important;
+    font-size: 16px;
   }
 }
