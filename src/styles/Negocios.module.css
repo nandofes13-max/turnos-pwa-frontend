@@ -134,6 +134,30 @@
   margin: 0 !important;
 }
 
+/* ANULAR CUALQUIER REGLA DE TABLAS MAESTRAS */
+.tm-whatsapp-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.tm-whatsapp-pais,
+.tm-whatsapp-area,
+.tm-whatsapp-numero {
+  display: block !important;
+  width: auto !important;
+  flex: 1 1 0 !important;
+}
+
+/* MEDIA QUERY ESPECÍFICA PARA EVITAR QUE SE APILEN */
+@media (max-width: 640px) {
+  .tm-whatsapp-wrapper {
+    flex-direction: row !important; /* NUNCA COLUMNA */
+  }
+}   
+
 .tm-whatsapp-input {
   text-align: center !important;
   width: 100% !important;
