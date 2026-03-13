@@ -112,7 +112,12 @@
     grid-template-columns: 1fr;
   }
   
-  /* WhatsApp en móvil: apilar campos y que ocupen todo el ancho */
+  /* Responsive del grid y WhatsApp en móvil */
+@media (max-width: 640px) {
+  .tm-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  
   .tm-modal-campo > div[style*="display: flex"] {
     flex-wrap: wrap;
     flex-direction: column;
@@ -128,7 +133,6 @@
     display: none;
   }
 
-  /* Inputs más grandes y con texto visible */
   .tm-modal-campo > div[style*="display: flex"] input {
     text-align: left !important;
     font-size: 16px;
@@ -136,13 +140,11 @@
     box-sizing: border-box;
   }
 
-  /* Asegurar que el contenedor del número tenga el ancho completo */
   .tm-modal-campo > div[style*="display: flex"] > div:last-child {
     width: 100% !important;
   }
 
-  /* Si el número tiene guion, que no se corte */
   input[value*="-"] {
     letter-spacing: 0.5px;
   }
-}
+}  /* 👈 ESTA LLAVE CIERRA LA MEDIA QUERY */
