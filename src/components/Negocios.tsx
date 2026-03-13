@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
 import '../styles/tablas-maestras.css';
 import '../styles/Negocios.module.css';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 interface Negocio {
   id: number;
@@ -17,7 +19,7 @@ interface Negocio {
     latitud?: number;
     longitud?: number;
   };
-  whatsapp?: string;
+  whatsapp_e164?: string; // Cambiado para reflejar el nuevo campo
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -37,7 +39,6 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
-    whatsapp: '',
     domicilio: {
       calle: '',
       numero: '',
@@ -47,6 +48,10 @@ export default function Negocios() {
       pais: '',
     }
   });
+  
+  // Estado para el teléfono (formato E164)
+  const [phoneValue, setPhoneValue] = useState<string>();
+  
   const [confirmDelete, setConfirmDelete] = useState<Negocio | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Negocio | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -143,7 +148,6 @@ export default function Negocios() {
   const handleAgregar = () => {
     setFormData({ 
       nombre: '', 
-      whatsapp: '',
       domicilio: {
         calle: '',
         numero: '',
@@ -153,6 +157,7 @@ export default function Negocios() {
         pais: '',
       }
     });
+    setPhoneValue(undefined);
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -160,7 +165,6 @@ export default function Negocios() {
   const handleEditar = (negocio: Negocio) => {
     setFormData({ 
       nombre: negocio.nombre,
-      whatsapp: negocio.whatsapp || '',
       domicilio: negocio.domicilio || {
         calle: '',
         numero: '',
@@ -170,6 +174,12 @@ export default function Negocios() {
         pais: '',
       }
     });
+    // Cargar el teléfono si existe
+    if (negocio.whatsapp_e164) {
+      setPhoneValue(negocio.whatsapp_e164);
+    } else {
+      setPhoneValue(undefined);
+    }
     setSelectedNegocio(negocio);
     setErrorMessage(null);
     setModalMode('edit');
@@ -190,15 +200,31 @@ export default function Negocios() {
     }
   };
 
+  // Función para parsear E164 a country_code y national_number
+  const parsePhoneE164 = (phone: string | undefined) => {
+    if (!phone) return { country_code: null, national_number: '' };
+    
+    const match = phone.match(/^\+(\d{1,3})(\d+)$/);
+    if (match) {
+      return {
+        country_code: parseInt(match[1], 10),
+        national_number: match[2]
+      };
+    }
+    return { country_code: null, national_number: '' };
+  };
+
   const validarFormulario = (): boolean => {
     if (!formData.nombre.trim()) {
       setErrorMessage('El nombre del negocio es obligatorio');
       return false;
     }
-    if (!formData.whatsapp.trim()) {
+    
+    if (!phoneValue) {
       setErrorMessage('El WhatsApp es obligatorio');
       return false;
     }
+    
     if (!formData.domicilio.calle.trim()) {
       setErrorMessage('La calle es obligatoria');
       return false;
@@ -251,9 +277,17 @@ export default function Negocios() {
   const guardarNegocio = async () => {
     if (!validarFormulario()) return;
 
+    // Parsear el teléfono
+    const { country_code, national_number } = parsePhoneE164(phoneValue);
+    if (!country_code || !national_number) {
+      setErrorMessage('El número de WhatsApp no es válido');
+      return;
+    }
+
     const datosParaEnviar = {
       nombre: formData.nombre.toUpperCase(),
-      whatsapp: formData.whatsapp,
+      country_code,
+      national_number,
       domicilio: {
         calle: formData.domicilio.calle.toUpperCase(),
         numero: formData.domicilio.numero,
@@ -296,7 +330,6 @@ export default function Negocios() {
       setSelectedNegocio(null);
       setFormData({ 
         nombre: '', 
-        whatsapp: '',
         domicilio: {
           calle: '',
           numero: '',
@@ -306,6 +339,7 @@ export default function Negocios() {
           pais: '',
         }
       });
+      setPhoneValue(undefined);
       setErrorMessage(null);
       fetchNegocios();
     } catch (err) {
@@ -338,7 +372,7 @@ export default function Negocios() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           nombre: confirmReactivar.nombre,
-          whatsapp: confirmReactivar.whatsapp,
+          whatsapp_e164: confirmReactivar.whatsapp_e164,
           domicilio: confirmReactivar.domicilio,
           fecha_baja: null,
           usuario_baja: null
@@ -515,7 +549,7 @@ export default function Negocios() {
                         {n.url}
                       </a>
                     </td>
-                    <td>{n.whatsapp || '-'}</td>
+                    <td>{n.whatsapp_e164 || '-'}</td>
                     <td>
                       {n.domicilio ? (
                         <span className="text-xs">
@@ -571,7 +605,7 @@ export default function Negocios() {
                     {n.url}
                   </a>
                 </div>
-                {n.whatsapp && <div className="tm-card-whatsapp">{n.whatsapp}</div>}
+                {n.whatsapp_e164 && <div className="tm-card-whatsapp">{n.whatsapp_e164}</div>}
                 {n.domicilio && (
                   <div className="tm-card-domicilio text-xs">
                     {n.domicilio.calle} {n.domicilio.numero}, {n.domicilio.localidad}
@@ -634,16 +668,18 @@ export default function Negocios() {
               />
             </div>
 
+            {/* NUEVO CAMPO WHATSAPP CON SELECTOR DE PAÍS */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <input
-                type="text"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                placeholder="+5491112345678"
-                className="tm-modal-input"
-                required
+              <PhoneInput
+                international
+                defaultCountry="AR"
+                value={phoneValue}
+                onChange={setPhoneValue}
+                className="tm-phone-input"
+                limitMaxLength={true}
               />
+              <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
             <div className="tm-modal-campo">
@@ -744,15 +780,18 @@ export default function Negocios() {
               />
             </div>
 
+            {/* MISMO CAMPO WHATSAPP EN EDITAR */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <input
-                type="text"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                className="tm-modal-input"
-                required
+              <PhoneInput
+                international
+                defaultCountry="AR"
+                value={phoneValue}
+                onChange={setPhoneValue}
+                className="tm-phone-input"
+                limitMaxLength={true}
               />
+              <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
             <div className="tm-modal-campo">
@@ -854,7 +893,7 @@ export default function Negocios() {
             </div>
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">WhatsApp</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp}</p>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp_e164}</p>
             </div>
             {selectedNegocio.domicilio && (
               <div className="tm-modal-detalle-campo">
