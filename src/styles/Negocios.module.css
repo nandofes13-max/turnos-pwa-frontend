@@ -101,36 +101,74 @@
 }
 
 /* =============================================
-   RESPONSIVE - SOLO PARA MÓVIL
+   CONTENEDOR DE WHATSAPP - ESCRITORIO
+   ============================================= */
+.tm-whatsapp-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.tm-whatsapp-pais {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.tm-whatsapp-area {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.tm-whatsapp-numero {
+  flex: 1;
+}
+
+.tm-whatsapp-input {
+  text-align: center;
+  width: 100%;
+}
+
+/* =============================================
+   RESPONSIVE - MÓVIL
    ============================================= */
 @media (max-width: 640px) {
+  /* Grid del domicilio a 1 columna */
   .tm-grid-2 {
     grid-template-columns: 1fr;
   }
   
-  /* WhatsApp en móvil: apilar campos usando la nueva clase */
-  .tm-whatsapp-container {
+  /* WhatsApp: apilar verticalmente */
+  .tm-whatsapp-wrapper {
     flex-direction: column !important;
     gap: 0.75rem !important;
     width: 100%;
   }
   
-  .tm-whatsapp-container > div {
+  .tm-whatsapp-pais,
+  .tm-whatsapp-area,
+  .tm-whatsapp-numero {
     width: 100% !important;
+    flex-shrink: 1;
   }
   
-  .tm-whatsapp-container > span {
-    display: none;
-  }
-
-  .tm-whatsapp-container input {
+  .tm-whatsapp-input {
     text-align: left !important;
     font-size: 16px;
     width: 100%;
     box-sizing: border-box;
+    padding: 12px;
+    min-height: 48px;
   }
 
   input[value*="-"] {
     letter-spacing: 0.5px;
+  }
+
+  /* Ocultar guiones (ya no son necesarios) */
+  .tm-whatsapp-wrapper::before,
+  .tm-whatsapp-wrapper::after {
+    display: none;
   }
 }
