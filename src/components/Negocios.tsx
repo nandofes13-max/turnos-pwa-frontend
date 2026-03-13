@@ -679,7 +679,7 @@ export default function Negocios() {
             {/* WHATSAPP DIVIDIDO */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+             <div className="tm-whatsapp-container" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 {/* PAÍS */}
                 <div style={{ width: '80px' }}>
                   <input
