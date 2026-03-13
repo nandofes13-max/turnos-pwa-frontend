@@ -101,78 +101,37 @@
 }
 
 /* =============================================
-   CONTENEDOR DE WHATSAPP - SIEMPRE EN FILA
+   WHATSAPP - VERSIÓN ULTRA FUERTE (CON !IMPORTANT)
    ============================================= */
-.tm-whatsapp-wrapper {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  align-items: center;
-  width: 100%;
-}
-
-.tm-whatsapp-pais {
-  width: 80px;
-  flex-shrink: 0;
-}
-
-.tm-whatsapp-area {
-  width: 80px;
-  flex-shrink: 0;
-}
-
-.tm-whatsapp-numero {
-  flex: 1;
-}
-
-.tm-whatsapp-input {
-  text-align: center;
-  width: 100%;
-}
-
-/* Grid para domicilio siempre en 2 columnas */
-.tm-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-/* FORZAR MISMO COMPORTAMIENTO EN AMBOS MODALES */
-.tm-modal-campo .tm-whatsapp-wrapper {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 0.5rem !important;
-  align-items: center !important;
-  width: 100% !important;
-}
-
-.tm-modal-campo .tm-whatsapp-pais,
-.tm-modal-campo .tm-whatsapp-area,
-.tm-modal-campo .tm-whatsapp-numero {
-  width: 80px !important;
-  flex-shrink: 0 !important;
-}
-
-.tm-modal-campo .tm-whatsapp-numero {
-  flex: 1 !important;
-  width: auto !important;
-}
-/* FUERZA BRUTA - WhatsApp en fila en TODOS lados */
 .tm-whatsapp-wrapper {
   display: flex !important;
   flex-direction: row !important;
   gap: 10px !important;
-  background-color: yellow !important;
-  padding: 10px !important;
+  align-items: center !important;
+  width: 100% !important;
+  background-color: transparent !important;
+  padding: 0 !important;
 }
 
-.tm-whatsapp-pais,
-.tm-whatsapp-area,
+.tm-whatsapp-pais {
+  width: 80px !important;
+  flex-shrink: 0 !important;
+  background-color: transparent !important;
+  margin: 0 !important;
+}
+
+.tm-whatsapp-area {
+  width: 80px !important;
+  flex-shrink: 0 !important;
+  background-color: transparent !important;
+  margin: 0 !important;
+}
+
 .tm-whatsapp-numero {
+  flex: 1 !important;
   width: auto !important;
-  flex: 1 1 0 !important;
-  background-color: lightblue !important;
-  margin: 2px !important;
+  background-color: transparent !important;
+  margin: 0 !important;
 }
 
 .tm-whatsapp-input {
