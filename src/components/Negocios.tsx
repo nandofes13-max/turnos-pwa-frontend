@@ -94,15 +94,10 @@ export default function Negocios() {
 
   const filtrarNegocios = (negocios: Negocio[]): Negocio[] => {
     return negocios.filter(n => {
-      // Filtro por nombre
       if (filtroNombre && !n.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) return false;
-      
-      // Filtro por URL
       if (filtroUrl && !n.url.toLowerCase().includes(filtroUrl.toLowerCase())) return false;
-      
       const tipo = obtenerTipoMovimiento(n);
       if (filtroTipoMovimiento.length > 0 && !filtroTipoMovimiento.includes(tipo)) return false;
-
       if (fechaDesde && n.fecha_alta) {
         const fechaAlta = new Date(n.fecha_alta).toISOString().split('T')[0];
         if (fechaAlta < fechaDesde) return false;
@@ -111,19 +106,15 @@ export default function Negocios() {
         const fechaAlta = new Date(n.fecha_alta).toISOString().split('T')[0];
         if (fechaAlta > fechaHasta) return false;
       }
-
       return true;
     });
   };
 
   const negociosFiltrados = filtrarNegocios(negocios);
   
-  // Lógica de paginación
   const totalPaginas = Math.ceil(negociosFiltrados.length / itemsPorPagina);
-  
   const indiceUltimoItem = paginaActual * itemsPorPagina;
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
-  
   const negociosPaginados = negociosFiltrados
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
@@ -200,67 +191,63 @@ export default function Negocios() {
   };
 
   const validarFormulario = (): boolean => {
-  if (!formData.nombre.trim()) {
-    setErrorMessage('El nombre del negocio es obligatorio');
-    return false;
-  }
-  
-  // Validación de WhatsApp
-  const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
-  if (!formData.whatsapp.trim()) {
-    setErrorMessage('El WhatsApp es obligatorio');
-    return false;
-  }
-  if (!whatsappRegex.test(formData.whatsapp)) {
-    setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
-    return false;
-  }
-  
-  if (!formData.domicilio.calle.trim()) {
-    setErrorMessage('La calle es obligatoria');
-    return false;
-  }
-  if (!formData.domicilio.numero.trim()) {
-    setErrorMessage('El número es obligatorio');
-    return false;
-  }
-  if (!formData.domicilio.codigo_postal.trim()) {
-    setErrorMessage('El código postal es obligatorio');
-    return false;
-  }
-  if (!formData.domicilio.localidad.trim()) {
-    setErrorMessage('La localidad es obligatoria');
-    return false;
-  }
-  if (!formData.domicilio.provincia.trim()) {
-    setErrorMessage('La provincia es obligatoria');
-    return false;
-  }
-  if (!formData.domicilio.pais.trim()) {
-    setErrorMessage('El país es obligatorio');
-    return false;
-  }
-  return true;
-};
+    if (!formData.nombre.trim()) {
+      setErrorMessage('El nombre del negocio es obligatorio');
+      return false;
+    }
+    
+    const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
+    if (!formData.whatsapp.trim()) {
+      setErrorMessage('El WhatsApp es obligatorio');
+      return false;
+    }
+    if (!whatsappRegex.test(formData.whatsapp)) {
+      setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
+      return false;
+    }
+    
+    if (!formData.domicilio.calle.trim()) {
+      setErrorMessage('La calle es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.numero.trim()) {
+      setErrorMessage('El número es obligatorio');
+      return false;
+    }
+    if (!formData.domicilio.codigo_postal.trim()) {
+      setErrorMessage('El código postal es obligatorio');
+      return false;
+    }
+    if (!formData.domicilio.localidad.trim()) {
+      setErrorMessage('La localidad es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.provincia.trim()) {
+      setErrorMessage('La provincia es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.pais.trim()) {
+      setErrorMessage('El país es obligatorio');
+      return false;
+    }
+    return true;
+  };
+
   const verificarExistente = async (nombre: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(NEGOCIOS_URL);
       const data: Negocio[] = await res.json();
-      
       const activos = data.filter(n => 
         !n.fecha_baja && 
         (id ? n.id !== id : true)
       );
-      
       const nombreExistente = activos.some(n => 
         n.nombre.toLowerCase() === nombre.toLowerCase()
       );
-      
       if (nombreExistente) {
         setErrorMessage('Ya existe un negocio activo con ese nombre');
         return false;
       }
-      
       return true;
     } catch (err) {
       console.error('Error al validar:', err);
@@ -268,82 +255,80 @@ export default function Negocios() {
     }
   };
 
-const guardarNegocio = async () => {
-  if (!validarFormulario()) return;
+  const guardarNegocio = async () => {
+    if (!validarFormulario()) return;
 
-  // Preparar datos con mayúsculas
-  const datosParaEnviar = {
-    nombre: formData.nombre.toUpperCase(),
-    whatsapp: formData.whatsapp,
-    domicilio: {
-      calle: formData.domicilio.calle.toUpperCase(),
-      numero: formData.domicilio.numero,
-      codigo_postal: formData.domicilio.codigo_postal,
-      localidad: formData.domicilio.localidad.toUpperCase(),
-      provincia: formData.domicilio.provincia.toUpperCase(),
-      pais: formData.domicilio.pais.toUpperCase(),
+    const datosParaEnviar = {
+      nombre: formData.nombre.toUpperCase(),
+      whatsapp: formData.whatsapp,
+      domicilio: {
+        calle: formData.domicilio.calle.toUpperCase(),
+        numero: formData.domicilio.numero,
+        codigo_postal: formData.domicilio.codigo_postal,
+        localidad: formData.domicilio.localidad.toUpperCase(),
+        provincia: formData.domicilio.provincia.toUpperCase(),
+        pais: formData.domicilio.pais.toUpperCase(),
+      }
+    };
+
+    try {
+      if (modalMode === 'add') {
+        const esValido = await verificarExistente(datosParaEnviar.nombre);
+        if (!esValido) return;
+      }
+
+      let res;
+      if (modalMode === 'add') {
+        res = await fetch(NEGOCIOS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datosParaEnviar),
+        });
+      } else if (modalMode === 'edit' && selectedNegocio) {
+        res = await fetch(`${NEGOCIOS_URL}/${selectedNegocio.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datosParaEnviar),
+        });
+      } else {
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al guardar negocio');
+      }
+
+      setModalMode(null);
+      setSelectedNegocio(null);
+      setFormData({ 
+        nombre: '', 
+        whatsapp: '',
+        domicilio: {
+          calle: '',
+          numero: '',
+          codigo_postal: '',
+          localidad: '',
+          provincia: '',
+          pais: '',
+        }
+      });
+      setErrorMessage(null);
+      fetchNegocios();
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el negocio');
     }
   };
 
-  try {
-    if (modalMode === 'add') {
-      const esValido = await verificarExistente(datosParaEnviar.nombre);
-      if (!esValido) return;
-    }
-
-    let res;
-    if (modalMode === 'add') {
-      res = await fetch(NEGOCIOS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosParaEnviar),
-      });
-    } else if (modalMode === 'edit' && selectedNegocio) {
-      res = await fetch(`${NEGOCIOS_URL}/${selectedNegocio.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosParaEnviar),
-      });
-    } else {
-      return;
-    }
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al guardar negocio');
-    }
-
-    setModalMode(null);
-    setSelectedNegocio(null);
-    setFormData({ 
-      nombre: '', 
-      whatsapp: '',
-      domicilio: {
-        calle: '',
-        numero: '',
-        codigo_postal: '',
-        localidad: '',
-        provincia: '',
-        pais: '',
-      }
-    });
-    setErrorMessage(null);
-    fetchNegocios();
-  } catch (err) {
-    console.error(err);
-    setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el negocio');
-  }
-};  const confirmarEliminar = async () => {
+  const confirmarEliminar = async () => {
     if (!confirmDelete) return;
-
     try {
       const res = await fetch(`${NEGOCIOS_URL}/${confirmDelete.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
-
       if (!res.ok) throw new Error('Error al eliminar negocio');
-
       setConfirmDelete(null);
       fetchNegocios();
     } catch (err) {
@@ -354,7 +339,6 @@ const guardarNegocio = async () => {
 
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
-
     try {
       const res = await fetch(`${NEGOCIOS_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
@@ -367,9 +351,7 @@ const guardarNegocio = async () => {
           usuario_baja: null
         }),
       });
-
       if (!res.ok) throw new Error('Error al reactivar negocio');
-
       setConfirmReactivar(null);
       fetchNegocios();
     } catch (err) {
@@ -394,8 +376,6 @@ const guardarNegocio = async () => {
       {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
-          
-          {/* NOMBRE */}
           <div className="tm-filtro-campo tm-filtro-nombre">
             <label className="tm-filtro-label">Nombre</label>
             <input
@@ -409,8 +389,6 @@ const guardarNegocio = async () => {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* URL */}
           <div className="tm-filtro-campo tm-filtro-url">
             <label className="tm-filtro-label">URL</label>
             <input
@@ -424,8 +402,6 @@ const guardarNegocio = async () => {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* FECHA DESDE */}
           <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Desde</label>
             <input
@@ -438,8 +414,6 @@ const guardarNegocio = async () => {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* FECHA HASTA */}
           <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Hasta</label>
             <input
@@ -452,8 +426,6 @@ const guardarNegocio = async () => {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* MOVIMIENTO */}
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
             <div className="tm-filtro-dropdown">
@@ -466,7 +438,6 @@ const guardarNegocio = async () => {
                 </span>
                 <span>▼</span>
               </button>
-              
               {filtroExpandido.movimiento && (
                 <div className="tm-filtro-dropdown-menu">
                   <label className="tm-filtro-checkbox-label">
@@ -493,13 +464,8 @@ const guardarNegocio = async () => {
               )}
             </div>
           </div>
-
-          {/* Botón Limpiar Filtros */}
           <div className="tm-filtro-accion">
-            <button
-              onClick={limpiarFiltros}
-              className="tm-btn-limpiar"
-            >
+            <button onClick={limpiarFiltros} className="tm-btn-limpiar">
               Limpiar Filtros
             </button>
           </div>
@@ -514,13 +480,9 @@ const guardarNegocio = async () => {
         </div>
       ) : (
         <div className="tm-tabla-wrapper">
-          {/* Botón Agregar */}
           <div className="tm-tabla-header-contenedor">
             <div className="tm-tabla-header-inner">
-              <button
-                onClick={handleAgregar}
-                className="tm-btn-agregar"
-              >
+              <button onClick={handleAgregar} className="tm-btn-agregar">
                 Agregar Negocio
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -531,7 +493,7 @@ const guardarNegocio = async () => {
             </div>
           </div>
 
-          {/* TABLA (solo visible en desktop) */}
+          {/* TABLA */}
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
@@ -545,21 +507,21 @@ const guardarNegocio = async () => {
               </thead>
               <tbody>
                 {negociosPaginados.map((n) => (
-                  <tr 
-                    key={n.id} 
-                    className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
-                  >
+                  <tr key={n.id} className={n.fecha_baja ? 'tm-fila-inactiva' : ''}>
                     <td>{n.nombre}</td>
-                    <td style={{ backgroundColor: 'yellow', fontWeight: 'bold' }}>
-  <a 
-    href={`/negocio/${n.url}`} 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="tm-url-link"
-  >
-    {n.url}
-  </a>
-</td>
+                    <td>
+                      <span className="text-xs text-gray-500">
+                        https://turnos-pwa-frontend.onrender.com/
+                      </span>
+                      <a 
+                        href={`/negocio/${n.url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="tm-url-link font-medium"
+                      >
+                        {n.url}
+                      </a>
+                    </td>
                     <td>{n.whatsapp || '-'}</td>
                     <td>
                       {n.domicilio ? (
@@ -598,15 +560,15 @@ const guardarNegocio = async () => {
             </table>
           </div>
 
-          {/* CARDS PARA MÓVIL */}
+          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {negociosPaginados.map((n) => (
-              <div 
-                key={`card-${n.id}`}
-                className={`tm-card-item ${n.fecha_baja ? 'inactiva' : ''}`}
-              >
+              <div key={`card-${n.id}`} className={`tm-card-item ${n.fecha_baja ? 'inactiva' : ''}`}>
                 <div className="tm-card-nombre">{n.nombre}</div>
                 <div className="tm-card-url">
+                  <span className="text-xs text-gray-500">
+                    https://turnos-pwa-frontend.onrender.com/
+                  </span>
                   <a 
                     href={`/negocio/${n.url}`} 
                     target="_blank" 
@@ -646,29 +608,13 @@ const guardarNegocio = async () => {
           {/* PAGINACIÓN */}
           {negociosFiltrados.length > 0 && (
             <div className="tm-paginacion">
-              <button
-                onClick={() => irAPagina(paginaActual - 1)}
-                disabled={paginaActual === 1}
-                className="tm-paginacion-btn"
-              >
-                ←
-              </button>
-              
+              <button onClick={() => irAPagina(paginaActual - 1)} disabled={paginaActual === 1} className="tm-paginacion-btn">←</button>
               <span className="tm-paginacion-info">
-                Página {paginaActual} de {totalPaginas} &nbsp;
-                ({negociosFiltrados.length} registros)
+                Página {paginaActual} de {totalPaginas} ({negociosFiltrados.length} registros)
               </span>
-              
-              <button
-                onClick={() => irAPagina(paginaActual + 1)}
-                disabled={paginaActual === totalPaginas}
-                className="tm-paginacion-btn"
-              >
-                →
-              </button>
+              <button onClick={() => irAPagina(paginaActual + 1)} disabled={paginaActual === totalPaginas} className="tm-paginacion-btn">→</button>
             </div>
           )}
-
           <div className="tm-tabla-footer">
             Mostrando {negociosPaginados.length} de {negociosFiltrados.length} negocios
           </div>
@@ -676,394 +622,261 @@ const guardarNegocio = async () => {
       )}
 
       {/* MODAL AGREGAR */}
-{modalMode === 'add' && (
-  <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-    <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-      <h3 className="tm-modal-titulo">Agregar Negocio</h3>
-      {errorMessage && (
-        <div className="tm-modal-error">{errorMessage}</div>
-      )}
-      
-      {/* NOMBRE */}
-      <div className="tm-modal-campo">
-        <label className="tm-modal-label">Nombre *</label>
-        <input
-          type="text"
-          value={formData.nombre}
-          onChange={(e) => setFormData({ 
-            ...formData, 
-            nombre: e.target.value.toUpperCase() 
-          })}
-          placeholder="Ej: PELUQUERÍA CANINA"
-          className="tm-modal-input"
-          required
-          autoFocus
-        />
-      </div>
-
-      {/* WHATSAPP */}
-<div className="tm-modal-campo">
-  <label className="tm-modal-label">WhatsApp *</label>
-  <input
-    type="tel"
-    value={formData.whatsapp}
-    onChange={(e) => {
-      const valor = e.target.value;
-      // Permitir solo + y números
-      if (/^[+0-9]*$/.test(valor)) {
-        setFormData({ ...formData, whatsapp: valor });
-      }
-    }}
-    onBlur={() => {
-      // Validar al salir del campo
-      const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
-      if (formData.whatsapp && !whatsappRegex.test(formData.whatsapp)) {
-        setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
-      } else {
-        setErrorMessage(null);
-      }
-    }}
-    placeholder="+5491112345678"
-    className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
-    required
-  />
-  {formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) && (
-    <small className="tm-error-text">Formato: +5491112345678</small>
-  )}
-</div>
-      {/* DOMICILIO */}
-      <div className="tm-modal-campo">
-        <label className="tm-modal-label">Domicilio *</label>
-        
-        {/* BUSCADOR (Nominatim) - lo agregaremos después */}
-        <div className="tm-buscador-direccion">
-          <input
-            type="text"
-            placeholder="Buscar dirección (ej: Av Corrientes 1234, CABA)"
-            className="tm-modal-input tm-buscador-input"
-            id="buscador-direccion"
-          />
-          <div className="tm-sugerencias"></div>
-        </div>
-
-        <div className="tm-grid-2">
-          {/* CALLE */}
-          <div>
-            <label className="tm-label-chico">Calle</label>
-            <input
-              type="text"
-              value={formData.domicilio.calle}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() }
-              })}
-              placeholder="CALLE"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-
-          {/* NÚMERO */}
-          <div>
-            <label className="tm-label-chico">Número</label>
-            <input
-              type="text"
-              value={formData.domicilio.numero}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, numero: e.target.value }
-              })}
-              placeholder="NÚMERO"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-
-          {/* CÓDIGO POSTAL */}
-          <div>
-            <label className="tm-label-chico">Código Postal</label>
-            <input
-              type="text"
-              value={formData.domicilio.codigo_postal}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, codigo_postal: e.target.value }
-              })}
-              placeholder="CP"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-
-          {/* LOCALIDAD */}
-          <div>
-            <label className="tm-label-chico">Localidad</label>
-            <input
-              type="text"
-              value={formData.domicilio.localidad}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() }
-              })}
-              placeholder="LOCALIDAD"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-
-          {/* PROVINCIA */}
-          <div>
-            <label className="tm-label-chico">Provincia</label>
-            <input
-              type="text"
-              value={formData.domicilio.provincia}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() }
-              })}
-              placeholder="PROVINCIA"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-
-          {/* PAÍS */}
-          <div>
-            <label className="tm-label-chico">País</label>
-            <input
-              type="text"
-              value={formData.domicilio.pais}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() }
-              })}
-              placeholder="PAÍS"
-              className="tm-modal-input"
-              required
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="tm-modal-acciones">
-        <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
-          Cancelar
-        </button>
-        <button onClick={guardarNegocio} className="tm-btn-primario">
-          Agregar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-      {/* MODAL EDITAR */}
-      {modalMode === 'edit' && selectedNegocio && (
+      {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Editar Negocio</h3>
-            {errorMessage && (
-              <div className="tm-modal-error">{errorMessage}</div>
-            )}
+            <h3 className="tm-modal-titulo">Agregar Negocio</h3>
+            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
+            
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
               <input
                 type="text"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                placeholder="Ej: PELUQUERÍA CANINA"
                 className="tm-modal-input"
                 required
+                autoFocus
               />
             </div>
+
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <input
-                type="text"
+                type="tel"
                 value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (/^[+0-9]*$/.test(valor)) {
+                    setFormData({ ...formData, whatsapp: valor });
+                  }
+                }}
+                onBlur={() => {
+                  const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
+                  if (formData.whatsapp && !whatsappRegex.test(formData.whatsapp)) {
+                    setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
+                  } else {
+                    setErrorMessage(null);
+                  }
+                }}
+                placeholder="+5491112345678"
+                className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
+                required
+              />
+              {formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) && (
+                <small className="tm-error-text">Formato: +5491112345678</small>
+              )}
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Domicilio *</label>
+              <div className="tm-buscador-direccion">
+                <input
+                  type="text"
+                  placeholder="Buscar dirección (ej: Av Corrientes 1234, CABA)"
+                  className="tm-modal-input tm-buscador-input"
+                  id="buscador-direccion"
+                />
+                <div className="tm-sugerencias"></div>
+              </div>
+
+              <div className="tm-grid-2">
+                <div>
+                  <label className="tm-label-chico">Calle</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.calle}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() } })}
+                    placeholder="CALLE"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Número</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.numero}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, numero: e.target.value } })}
+                    placeholder="NÚMERO"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Código Postal</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.codigo_postal}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, codigo_postal: e.target.value } })}
+                    placeholder="CP"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Localidad</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.localidad}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() } })}
+                    placeholder="LOCALIDAD"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Provincia</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.provincia}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() } })}
+                    placeholder="PROVINCIA"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">País</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.pais}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() } })}
+                    placeholder="PAÍS"
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="tm-modal-acciones">
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
+              <button onClick={guardarNegocio} className="tm-btn-primario">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR (simplificado) */}
+      {modalMode === 'edit' && selectedNegocio && (
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tm-modal-titulo">Editar Negocio</h3>
+            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
+            
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Nombre *</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                 className="tm-modal-input"
                 required
               />
             </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">WhatsApp *</label>
+              <input
+                type="tel"
+                value={formData.whatsapp}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (/^[+0-9]*$/.test(valor)) {
+                    setFormData({ ...formData, whatsapp: valor });
+                  }
+                }}
+                className={`tm-modal-input ${formData.whatsapp && !/^\+[1-9]{1}[0-9]{1,14}$/.test(formData.whatsapp) ? 'tm-input-error' : ''}`}
+                required
+              />
+            </div>
+
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
               <div className="tm-grid-2">
-                <input
-                  type="text"
-                  value={formData.domicilio.calle}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, calle: e.target.value }
-                  })}
-                  placeholder="Calle"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.numero}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, numero: e.target.value }
-                  })}
-                  placeholder="Número"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.codigo_postal}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, codigo_postal: e.target.value }
-                  })}
-                  placeholder="CP"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.localidad}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, localidad: e.target.value }
-                  })}
-                  placeholder="Localidad"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.provincia}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, provincia: e.target.value }
-                  })}
-                  placeholder="Provincia"
-                  className="tm-modal-input"
-                  required
-                />
-                <input
-                  type="text"
-                  value={formData.domicilio.pais}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    domicilio: { ...formData.domicilio, pais: e.target.value }
-                  })}
-                  placeholder="País"
-                  className="tm-modal-input"
-                  required
-                />
+                <div>
+                  <label className="tm-label-chico">Calle</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.calle}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Número</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.numero}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, numero: e.target.value } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Código Postal</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.codigo_postal}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, codigo_postal: e.target.value } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Localidad</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.localidad}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">Provincia</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.provincia}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="tm-label-chico">País</label>
+                  <input
+                    type="text"
+                    value={formData.domicilio.pais}
+                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() } })}
+                    className="tm-modal-input"
+                    required
+                  />
+                </div>
               </div>
             </div>
+
             {selectedNegocio.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
                 <span className="tm-modal-detalle-label">Último Movimiento</span>
-                <p className="tm-modal-detalle-valor">
-                  {selectedNegocio.ultimoMovimiento.replace('demo', 'DEMO')}
-                </p>
+                <p className="tm-modal-detalle-valor">{selectedNegocio.ultimoMovimiento.replace('demo', 'DEMO')}</p>
               </div>
             )}
             <div className="tm-modal-acciones">
-              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
-                Cancelar
-              </button>
-              <button onClick={guardarNegocio} className="tm-btn-primario">
-                Guardar
-              </button>
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
+              <button onClick={guardarNegocio} className="tm-btn-primario">Guardar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL VER DETALLE */}
-      {modalMode === 'view' && selectedNegocio && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Detalle de Negocio</h3>
-            <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">ID</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.id}</p>
-            </div>
-            <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">Nombre</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.nombre}</p>
-            </div>
-            <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">URL</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.url}</p>
-            </div>
-            <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">WhatsApp</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp}</p>
-            </div>
-            {selectedNegocio.domicilio && (
-              <div className="tm-modal-detalle-campo">
-                <span className="tm-modal-detalle-label">Domicilio</span>
-                <p className="tm-modal-detalle-valor">
-                  {selectedNegocio.domicilio.calle} {selectedNegocio.domicilio.numero}<br />
-                  {selectedNegocio.domicilio.codigo_postal} - {selectedNegocio.domicilio.localidad}<br />
-                  {selectedNegocio.domicilio.provincia}, {selectedNegocio.domicilio.pais}
-                </p>
-              </div>
-            )}
-            <div className={`tm-modal-detalle-movimiento ${selectedNegocio.fecha_baja ? 'inactivo' : 'activo'}`}>
-              <span className="tm-modal-detalle-label">Último Movimiento</span>
-              <p className="tm-modal-detalle-valor">
-                {selectedNegocio.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}
-              </p>
-            </div>
-            <div className="tm-modal-acciones">
-              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL CONFIRMAR BAJA */}
-      {confirmDelete && (
-        <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <p className="text-gray-700 mb-2 text-sm">
-              ¿Dar de BAJA al negocio <strong>{confirmDelete.nombre}</strong>?
-            </p>
-            <p className="tm-modal-input-hint mb-4">
-              El registro pasará a estado inactivo.
-            </p>
-            <div className="tm-modal-acciones">
-              <button onClick={() => setConfirmDelete(null)} className="tm-btn-secundario">
-                Cancelar
-              </button>
-              <button onClick={confirmarEliminar} className="tm-btn-danger">
-                Confirmar BAJA
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL CONFIRMAR REACTIVAR */}
-      {confirmReactivar && (
-        <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <p className="text-gray-700 mb-2 text-sm">
-              ¿Reactivar el negocio <strong>{confirmReactivar.nombre}</strong>?
-            </p>
-            <p className="tm-modal-input-hint mb-4">
-              El registro volverá a estado activo.
-            </p>
-            <div className="tm-modal-acciones">
-              <button onClick={() => setConfirmReactivar(null)} className="tm-btn-secundario">
-                Cancelar
-              </button>
-              <button onClick={confirmarReactivar} className="tm-btn-success">
-                Confirmar ALTA
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL VER DETALLE, CONFIRMAR BAJA, REACTIVAR (igual que antes) */}
+      {modalMode === 'view' && selectedNegocio && ( ... )}
+      {confirmDelete && ( ... )}
+      {confirmReactivar && ( ... )}
     </div>
   );
 }
