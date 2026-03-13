@@ -200,41 +200,48 @@ export default function Negocios() {
   };
 
   const validarFormulario = (): boolean => {
-    if (!formData.nombre.trim()) {
-      setErrorMessage('El nombre del negocio es obligatorio');
-      return false;
-    }
-    if (!formData.whatsapp.trim()) {
-      setErrorMessage('El WhatsApp es obligatorio');
-      return false;
-    }
-    if (!formData.domicilio.calle.trim()) {
-      setErrorMessage('La calle es obligatoria');
-      return false;
-    }
-    if (!formData.domicilio.numero.trim()) {
-      setErrorMessage('El número es obligatorio');
-      return false;
-    }
-    if (!formData.domicilio.codigo_postal.trim()) {
-      setErrorMessage('El código postal es obligatorio');
-      return false;
-    }
-    if (!formData.domicilio.localidad.trim()) {
-      setErrorMessage('La localidad es obligatoria');
-      return false;
-    }
-    if (!formData.domicilio.provincia.trim()) {
-      setErrorMessage('La provincia es obligatoria');
-      return false;
-    }
-    if (!formData.domicilio.pais.trim()) {
-      setErrorMessage('El país es obligatorio');
-      return false;
-    }
-    return true;
-  };
-
+  if (!formData.nombre.trim()) {
+    setErrorMessage('El nombre del negocio es obligatorio');
+    return false;
+  }
+  
+  // Validación de WhatsApp
+  const whatsappRegex = /^\+[1-9]{1}[0-9]{1,14}$/;
+  if (!formData.whatsapp.trim()) {
+    setErrorMessage('El WhatsApp es obligatorio');
+    return false;
+  }
+  if (!whatsappRegex.test(formData.whatsapp)) {
+    setErrorMessage('El WhatsApp debe tener formato internacional válido (ej: +5491112345678)');
+    return false;
+  }
+  
+  if (!formData.domicilio.calle.trim()) {
+    setErrorMessage('La calle es obligatoria');
+    return false;
+  }
+  if (!formData.domicilio.numero.trim()) {
+    setErrorMessage('El número es obligatorio');
+    return false;
+  }
+  if (!formData.domicilio.codigo_postal.trim()) {
+    setErrorMessage('El código postal es obligatorio');
+    return false;
+  }
+  if (!formData.domicilio.localidad.trim()) {
+    setErrorMessage('La localidad es obligatoria');
+    return false;
+  }
+  if (!formData.domicilio.provincia.trim()) {
+    setErrorMessage('La provincia es obligatoria');
+    return false;
+  }
+  if (!formData.domicilio.pais.trim()) {
+    setErrorMessage('El país es obligatorio');
+    return false;
+  }
+  return true;
+};
   const verificarExistente = async (nombre: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(NEGOCIOS_URL);
