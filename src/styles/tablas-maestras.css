@@ -868,3 +868,17 @@
     overflow-y: auto;
   }
 }
+
+/* =============================================
+   MODAL - CON SCROLL (AGREGADO)
+   ============================================= */
+.tm-modal {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .tm-modal {
+    max-height: 90vh;
+  }
+}
