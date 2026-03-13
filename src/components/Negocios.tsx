@@ -261,68 +261,72 @@ export default function Negocios() {
     }
   };
 
-  const guardarNegocio = async () => {
-    if (!validarFormulario()) return;
+const guardarNegocio = async () => {
+  if (!validarFormulario()) return;
 
-    try {
-      if (modalMode === 'add') {
-        const esValido = await verificarExistente(formData.nombre);
-        if (!esValido) return;
-      }
-
-      let res;
-      if (modalMode === 'add') {
-        res = await fetch(NEGOCIOS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            nombre: formData.nombre,
-            whatsapp: formData.whatsapp,
-            domicilio: formData.domicilio
-          }),
-        });
-      } else if (modalMode === 'edit' && selectedNegocio) {
-        res = await fetch(`${NEGOCIOS_URL}/${selectedNegocio.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            nombre: formData.nombre,
-            whatsapp: formData.whatsapp,
-            domicilio: formData.domicilio
-          }),
-        });
-      } else {
-        return;
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al guardar negocio');
-      }
-
-      setModalMode(null);
-      setSelectedNegocio(null);
-      setFormData({ 
-        nombre: '', 
-        whatsapp: '',
-        domicilio: {
-          calle: '',
-          numero: '',
-          codigo_postal: '',
-          localidad: '',
-          provincia: '',
-          pais: '',
-        }
-      });
-      setErrorMessage(null);
-      fetchNegocios();
-    } catch (err) {
-      console.error(err);
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el negocio');
+  // Preparar datos con mayúsculas
+  const datosParaEnviar = {
+    nombre: formData.nombre.toUpperCase(),
+    whatsapp: formData.whatsapp,
+    domicilio: {
+      calle: formData.domicilio.calle.toUpperCase(),
+      numero: formData.domicilio.numero,
+      codigo_postal: formData.domicilio.codigo_postal,
+      localidad: formData.domicilio.localidad.toUpperCase(),
+      provincia: formData.domicilio.provincia.toUpperCase(),
+      pais: formData.domicilio.pais.toUpperCase(),
     }
   };
 
-  const confirmarEliminar = async () => {
+  try {
+    if (modalMode === 'add') {
+      const esValido = await verificarExistente(datosParaEnviar.nombre);
+      if (!esValido) return;
+    }
+
+    let res;
+    if (modalMode === 'add') {
+      res = await fetch(NEGOCIOS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosParaEnviar),
+      });
+    } else if (modalMode === 'edit' && selectedNegocio) {
+      res = await fetch(`${NEGOCIOS_URL}/${selectedNegocio.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosParaEnviar),
+      });
+    } else {
+      return;
+    }
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al guardar negocio');
+    }
+
+    setModalMode(null);
+    setSelectedNegocio(null);
+    setFormData({ 
+      nombre: '', 
+      whatsapp: '',
+      domicilio: {
+        calle: '',
+        numero: '',
+        codigo_postal: '',
+        localidad: '',
+        provincia: '',
+        pais: '',
+      }
+    });
+    setErrorMessage(null);
+    fetchNegocios();
+  } catch (err) {
+    console.error(err);
+    setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el negocio');
+  }
+};  const confirmarEliminar = async () => {
     if (!confirmDelete) return;
 
     try {
