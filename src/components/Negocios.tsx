@@ -759,7 +759,7 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL EDITAR (simplificado) */}
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedNegocio && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -873,10 +873,95 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL VER DETALLE, CONFIRMAR BAJA, REACTIVAR (igual que antes) */}
-      {modalMode === 'view' && selectedNegocio && ( ... )}
-      {confirmDelete && ( ... )}
-      {confirmReactivar && ( ... )}
+      {/* MODAL VER DETALLE */}
+      {modalMode === 'view' && selectedNegocio && (
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tm-modal-titulo">Detalle de Negocio</h3>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">ID</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.id}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Nombre</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.nombre}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">URL</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.url}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">WhatsApp</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp}</p>
+            </div>
+            {selectedNegocio.domicilio && (
+              <div className="tm-modal-detalle-campo">
+                <span className="tm-modal-detalle-label">Domicilio</span>
+                <p className="tm-modal-detalle-valor">
+                  {selectedNegocio.domicilio.calle} {selectedNegocio.domicilio.numero}<br />
+                  {selectedNegocio.domicilio.codigo_postal} - {selectedNegocio.domicilio.localidad}<br />
+                  {selectedNegocio.domicilio.provincia}, {selectedNegocio.domicilio.pais}
+                </p>
+              </div>
+            )}
+            <div className={`tm-modal-detalle-movimiento ${selectedNegocio.fecha_baja ? 'inactivo' : 'activo'}`}>
+              <span className="tm-modal-detalle-label">Último Movimiento</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedNegocio.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}
+              </p>
+            </div>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAR BAJA */}
+      {confirmDelete && (
+        <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="text-gray-700 mb-2 text-sm">
+              ¿Dar de BAJA al negocio <strong>{confirmDelete.nombre}</strong>?
+            </p>
+            <p className="tm-modal-input-hint mb-4">
+              El registro pasará a estado inactivo.
+            </p>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setConfirmDelete(null)} className="tm-btn-secundario">
+                Cancelar
+              </button>
+              <button onClick={confirmarEliminar} className="tm-btn-danger">
+                Confirmar BAJA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAR REACTIVAR */}
+      {confirmReactivar && (
+        <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="text-gray-700 mb-2 text-sm">
+              ¿Reactivar el negocio <strong>{confirmReactivar.nombre}</strong>?
+            </p>
+            <p className="tm-modal-input-hint mb-4">
+              El registro volverá a estado activo.
+            </p>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setConfirmReactivar(null)} className="tm-btn-secundario">
+                Cancelar
+              </button>
+              <button onClick={confirmarReactivar} className="tm-btn-success">
+                Confirmar ALTA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
