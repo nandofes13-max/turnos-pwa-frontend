@@ -676,60 +676,61 @@ export default function Negocios() {
               />
             </div>
 
-            {/* WHATSAPP DIVIDIDO */}
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp *</label>
-             <div className="tm-whatsapp-container" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                {/* PAÍS */}
-                <div style={{ width: '80px' }}>
-                  <input
-                    type="text"
-                    value={whatsappPais}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappPais(valor);
-                    }}
-                    placeholder="54"
-                    className="tm-modal-input"
-                    style={{ textAlign: 'center' }}
-                  />
-                </div>
-                
-                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
-                
-                {/* ÁREA */}
-                <div style={{ width: '80px' }}>
-                  <input
-                    type="text"
-                    value={whatsappArea}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappArea(valor);
-                    }}
-                    placeholder="11"
-                    className="tm-modal-input"
-                    style={{ textAlign: 'center' }}
-                  />
-                </div>
-                
-                <span style={{ fontSize: '1.2rem', color: 'var(--color-gray-400)' }}>-</span>
-                
-                {/* NÚMERO LOCAL */}
-                <div style={{ flex: 1 }}>
-                  <input
-                    type="text"
-                    value={whatsappNumero}
-                    onChange={(e) => {
-                      const formateado = formatearNumeroWhatsapp(e.target.value);
-                      setWhatsappNumero(formateado);
-                    }}
-                    placeholder="5833-2657"
-                    className="tm-modal-input"
-                  />
-                </div>
-              </div>
-              <small className="tm-ayuda-texto">Ej: +54 11 5833-2657</small>
-            </div>
+{/* WHATSAPP DIVIDIDO */}
+<div className="tm-modal-campo">
+  <label className="tm-modal-label">WhatsApp *</label>
+  
+  {/* Contenedor padre con clase específica */}
+  <div className="tm-whatsapp-wrapper">
+    
+    {/* PAÍS */}
+    <div className="tm-whatsapp-pais">
+      <input
+        type="tel"
+        value={whatsappPais}
+        onChange={(e) => {
+          const valor = e.target.value.replace(/\D/g, '');
+          setWhatsappPais(valor);
+        }}
+        placeholder="54"
+        className="tm-modal-input tm-whatsapp-input"
+        inputMode="numeric"
+      />
+    </div>
+    
+    {/* ÁREA */}
+    <div className="tm-whatsapp-area">
+      <input
+        type="tel"
+        value={whatsappArea}
+        onChange={(e) => {
+          const valor = e.target.value.replace(/\D/g, '');
+          setWhatsappArea(valor);
+        }}
+        placeholder="11"
+        className="tm-modal-input tm-whatsapp-input"
+        inputMode="numeric"
+      />
+    </div>
+    
+    {/* NÚMERO LOCAL */}
+    <div className="tm-whatsapp-numero">
+      <input
+        type="tel"
+        value={whatsappNumero}
+        onChange={(e) => {
+          const formateado = formatearNumeroWhatsapp(e.target.value);
+          setWhatsappNumero(formateado);
+        }}
+        placeholder="5833-2657"
+        className="tm-modal-input tm-whatsapp-input"
+        inputMode="numeric"
+      />
+    </div>
+  </div>
+  
+  <small className="tm-ayuda-texto">Ej: +54 11 5833-2657</small>
+</div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
