@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
 import '../styles/tablas-maestras.css';
+import '../styles/Negocios.module.css';
 
 interface Negocio {
   id: number;
   nombre: string;
   url: string;
   domicilio?: {
-    calle?: string;
-    numero?: string;
-    codigo_postal?: string;
-    localidad?: string;
-    provincia?: string;
-    pais?: string;
+    calle: string;
+    numero: string;
+    codigo_postal: string;
+    localidad: string;
+    provincia: string;
+    pais: string;
     latitud?: number;
     longitud?: number;
   };
@@ -198,6 +199,42 @@ export default function Negocios() {
     }
   };
 
+  const validarFormulario = (): boolean => {
+    if (!formData.nombre.trim()) {
+      setErrorMessage('El nombre del negocio es obligatorio');
+      return false;
+    }
+    if (!formData.whatsapp.trim()) {
+      setErrorMessage('El WhatsApp es obligatorio');
+      return false;
+    }
+    if (!formData.domicilio.calle.trim()) {
+      setErrorMessage('La calle es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.numero.trim()) {
+      setErrorMessage('El número es obligatorio');
+      return false;
+    }
+    if (!formData.domicilio.codigo_postal.trim()) {
+      setErrorMessage('El código postal es obligatorio');
+      return false;
+    }
+    if (!formData.domicilio.localidad.trim()) {
+      setErrorMessage('La localidad es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.provincia.trim()) {
+      setErrorMessage('La provincia es obligatoria');
+      return false;
+    }
+    if (!formData.domicilio.pais.trim()) {
+      setErrorMessage('El país es obligatorio');
+      return false;
+    }
+    return true;
+  };
+
   const verificarExistente = async (nombre: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(NEGOCIOS_URL);
@@ -225,10 +262,7 @@ export default function Negocios() {
   };
 
   const guardarNegocio = async () => {
-    if (!formData.nombre) {
-      setErrorMessage('El nombre del negocio es obligatorio');
-      return;
-    }
+    if (!validarFormulario()) return;
 
     try {
       if (modalMode === 'add') {
@@ -243,7 +277,7 @@ export default function Negocios() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: formData.nombre,
-            whatsapp: formData.whatsapp || null,
+            whatsapp: formData.whatsapp,
             domicilio: formData.domicilio
           }),
         });
@@ -253,7 +287,7 @@ export default function Negocios() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: formData.nombre,
-            whatsapp: formData.whatsapp || null,
+            whatsapp: formData.whatsapp,
             domicilio: formData.domicilio
           }),
         });
@@ -487,63 +521,71 @@ export default function Negocios() {
           </div>
 
           {/* TABLA (solo visible en desktop) */}
-<div className="tm-tabla-centrado">
-  <table className="tm-tabla">
-    <thead>
-      <tr>
-        <th className="tm-col-nombre">NOMBRE</th>
-        <th className="tm-col-url">URL</th> {/* 👈 AGREGAMOS ESTA COLUMNA */}
-        <th className="tm-col-whatsapp">WHATSAPP</th>
-        <th>ACCIONES</th>
-      </tr>
-    </thead>
-    <tbody>
-      {negociosPaginados.map((n) => (
-        <tr 
-          key={n.id} 
-          className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
-        >
-          <td>{n.nombre}</td>
-          <td>
-            <a 
-              href={`/negocio/${n.url}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              {n.url}
-            </a>
-          </td>
-          <td>{n.whatsapp || '-'}</td>
-          <td>
-            <ActionIcons
-              onAdd={() => n.fecha_baja ? handleReactivar(n) : null}
-              onEdit={() => !n.fecha_baja && handleEditar(n)}
-              onDelete={() => !n.fecha_baja && handleEliminar(n)}
-              onView={() => handleVerDetalle(n)}
-              showAdd={true}
-              showEdit={true}
-              showDelete={true}
-              showView={true}
-              disabledAdd={!n.fecha_baja}
-              disabledEdit={!!n.fecha_baja}
-              disabledDelete={!!n.fecha_baja}
-              disabledView={false}
-              size="md"
-            />
-          </td>
-        </tr>
-      ))}
-      {negociosPaginados.length === 0 && (
-        <tr>
-          <td colSpan={4} className="tm-fila-vacia">
-            No hay negocios que coincidan
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+          <div className="tm-tabla-centrado">
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th className="tm-col-nombre">NOMBRE</th>
+                  <th className="tm-col-url">URL</th>
+                  <th className="tm-col-whatsapp">WHATSAPP</th>
+                  <th className="tm-col-domicilio">DOMICILIO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {negociosPaginados.map((n) => (
+                  <tr 
+                    key={n.id} 
+                    className={n.fecha_baja ? 'tm-fila-inactiva' : ''}
+                  >
+                    <td>{n.nombre}</td>
+                    <td>
+                      <a 
+                        href={`/negocio/${n.url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="tm-url-link"
+                      >
+                        {n.url}
+                      </a>
+                    </td>
+                    <td>{n.whatsapp || '-'}</td>
+                    <td>
+                      {n.domicilio ? (
+                        <span className="text-xs">
+                          {n.domicilio.calle} {n.domicilio.numero}, {n.domicilio.localidad}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td>
+                      <ActionIcons
+                        onAdd={() => n.fecha_baja ? handleReactivar(n) : null}
+                        onEdit={() => !n.fecha_baja && handleEditar(n)}
+                        onDelete={() => !n.fecha_baja && handleEliminar(n)}
+                        onView={() => handleVerDetalle(n)}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
+                        showView={true}
+                        disabledAdd={!n.fecha_baja}
+                        disabledEdit={!!n.fecha_baja}
+                        disabledDelete={!!n.fecha_baja}
+                        disabledView={false}
+                        size="md"
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {negociosPaginados.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="tm-fila-vacia">
+                      No hay negocios que coincidan
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* CARDS PARA MÓVIL */}
           <div className="tm-cards">
@@ -558,12 +600,17 @@ export default function Negocios() {
                     href={`/negocio/${n.url}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline text-xs"
+                    className="tm-url-link"
                   >
                     {n.url}
                   </a>
                 </div>
                 {n.whatsapp && <div className="tm-card-whatsapp">{n.whatsapp}</div>}
+                {n.domicilio && (
+                  <div className="tm-card-domicilio text-xs">
+                    {n.domicilio.calle} {n.domicilio.numero}, {n.domicilio.localidad}
+                  </div>
+                )}
                 <div className="tm-card-acciones">
                   <ActionIcons
                     onAdd={() => n.fecha_baja ? handleReactivar(n) : null}
@@ -617,7 +664,7 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODALES (similares a Roles pero adaptados) */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -633,22 +680,24 @@ export default function Negocios() {
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ej: Peluquería Canina"
                 className="tm-modal-input"
+                required
                 autoFocus
               />
             </div>
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp</label>
+              <label className="tm-modal-label">WhatsApp *</label>
               <input
                 type="text"
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                 placeholder="+5491112345678"
                 className="tm-modal-input"
+                required
               />
             </div>
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Domicilio</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="tm-modal-label">Domicilio *</label>
+              <div className="tm-grid-2">
                 <input
                   type="text"
                   value={formData.domicilio.calle}
@@ -658,6 +707,7 @@ export default function Negocios() {
                   })}
                   placeholder="Calle"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -668,6 +718,7 @@ export default function Negocios() {
                   })}
                   placeholder="Número"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -678,6 +729,7 @@ export default function Negocios() {
                   })}
                   placeholder="CP"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -688,6 +740,7 @@ export default function Negocios() {
                   })}
                   placeholder="Localidad"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -698,6 +751,7 @@ export default function Negocios() {
                   })}
                   placeholder="Provincia"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -708,6 +762,7 @@ export default function Negocios() {
                   })}
                   placeholder="País"
                   className="tm-modal-input"
+                  required
                 />
               </div>
             </div>
@@ -723,7 +778,7 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL EDITAR (similar al de agregar pero con datos cargados) */}
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedNegocio && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -738,20 +793,22 @@ export default function Negocios() {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 className="tm-modal-input"
+                required
               />
             </div>
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp</label>
+              <label className="tm-modal-label">WhatsApp *</label>
               <input
                 type="text"
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                 className="tm-modal-input"
+                required
               />
             </div>
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Domicilio</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="tm-modal-label">Domicilio *</label>
+              <div className="tm-grid-2">
                 <input
                   type="text"
                   value={formData.domicilio.calle}
@@ -761,6 +818,7 @@ export default function Negocios() {
                   })}
                   placeholder="Calle"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -771,6 +829,7 @@ export default function Negocios() {
                   })}
                   placeholder="Número"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -781,6 +840,7 @@ export default function Negocios() {
                   })}
                   placeholder="CP"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -791,6 +851,7 @@ export default function Negocios() {
                   })}
                   placeholder="Localidad"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -801,6 +862,7 @@ export default function Negocios() {
                   })}
                   placeholder="Provincia"
                   className="tm-modal-input"
+                  required
                 />
                 <input
                   type="text"
@@ -811,6 +873,7 @@ export default function Negocios() {
                   })}
                   placeholder="País"
                   className="tm-modal-input"
+                  required
                 />
               </div>
             </div>
@@ -851,23 +914,17 @@ export default function Negocios() {
               <span className="tm-modal-detalle-label">URL</span>
               <p className="tm-modal-detalle-valor">{selectedNegocio.url}</p>
             </div>
-            {selectedNegocio.whatsapp && (
-              <div className="tm-modal-detalle-campo">
-                <span className="tm-modal-detalle-label">WhatsApp</span>
-                <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp}</p>
-              </div>
-            )}
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">WhatsApp</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp}</p>
+            </div>
             {selectedNegocio.domicilio && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
                 <p className="tm-modal-detalle-valor">
-                  {[
-                    selectedNegocio.domicilio.calle,
-                    selectedNegocio.domicilio.numero,
-                    selectedNegocio.domicilio.localidad,
-                    selectedNegocio.domicilio.provincia,
-                    selectedNegocio.domicilio.pais
-                  ].filter(Boolean).join(', ')}
+                  {selectedNegocio.domicilio.calle} {selectedNegocio.domicilio.numero}<br />
+                  {selectedNegocio.domicilio.codigo_postal} - {selectedNegocio.domicilio.localidad}<br />
+                  {selectedNegocio.domicilio.provincia}, {selectedNegocio.domicilio.pais}
                 </p>
               </div>
             )}
