@@ -37,6 +37,7 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
+    whatsapp: '',
     domicilio: {
       calle: '',
       numero: '',
@@ -46,12 +47,6 @@ export default function Negocios() {
       pais: '',
     }
   });
-  
-  // Estados para WhatsApp dividido
-  const [whatsappPais, setWhatsappPais] = useState('54');
-  const [whatsappArea, setWhatsappArea] = useState('');
-  const [whatsappNumero, setWhatsappNumero] = useState('');
-  
   const [confirmDelete, setConfirmDelete] = useState<Negocio | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Negocio | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -148,6 +143,7 @@ export default function Negocios() {
   const handleAgregar = () => {
     setFormData({ 
       nombre: '', 
+      whatsapp: '',
       domicilio: {
         calle: '',
         numero: '',
@@ -157,28 +153,14 @@ export default function Negocios() {
         pais: '',
       }
     });
-    setWhatsappPais('54');
-    setWhatsappArea('');
-    setWhatsappNumero('');
     setErrorMessage(null);
     setModalMode('add');
   };
 
   const handleEditar = (negocio: Negocio) => {
-    // Separar WhatsApp en partes si existe
-    if (negocio.whatsapp) {
-      const partes = negocio.whatsapp.replace(/\+/g, '').split(' ');
-      setWhatsappPais(partes[0] || '54');
-      setWhatsappArea(partes[1] || '');
-      setWhatsappNumero(partes[2] || '');
-    } else {
-      setWhatsappPais('54');
-      setWhatsappArea('');
-      setWhatsappNumero('');
-    }
-
     setFormData({ 
       nombre: negocio.nombre,
+      whatsapp: negocio.whatsapp || '',
       domicilio: negocio.domicilio || {
         calle: '',
         numero: '',
@@ -208,35 +190,15 @@ export default function Negocios() {
     }
   };
 
-  const formatearNumeroWhatsapp = (valor: string): string => {
-    const soloNumeros = valor.replace(/\D/g, '');
-    if (soloNumeros.length <= 4) return soloNumeros;
-    if (soloNumeros.length <= 7) {
-      return `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 7)}`;
-    }
-    return `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 8)}`;
-  };
-
   const validarFormulario = (): boolean => {
     if (!formData.nombre.trim()) {
       setErrorMessage('El nombre del negocio es obligatorio');
       return false;
     }
-    
-    if (!whatsappPais || !whatsappArea || !whatsappNumero) {
-      setErrorMessage('Completá país, área y número de WhatsApp');
+    if (!formData.whatsapp.trim()) {
+      setErrorMessage('El WhatsApp es obligatorio');
       return false;
     }
-
-    const paisValido = /^\d{1,3}$/.test(whatsappPais);
-    const areaValida = /^\d{2,4}$/.test(whatsappArea);
-    const numeroValido = /^\d{4,5}-\d{4}$/.test(whatsappNumero);
-
-    if (!paisValido || !areaValida || !numeroValido) {
-      setErrorMessage('El formato de WhatsApp no es válido');
-      return false;
-    }
-    
     if (!formData.domicilio.calle.trim()) {
       setErrorMessage('La calle es obligatoria');
       return false;
@@ -289,11 +251,9 @@ export default function Negocios() {
   const guardarNegocio = async () => {
     if (!validarFormulario()) return;
 
-    const whatsappCompleto = `+${whatsappPais} ${whatsappArea} ${whatsappNumero}`;
-
     const datosParaEnviar = {
       nombre: formData.nombre.toUpperCase(),
-      whatsapp: whatsappCompleto,
+      whatsapp: formData.whatsapp,
       domicilio: {
         calle: formData.domicilio.calle.toUpperCase(),
         numero: formData.domicilio.numero,
@@ -336,6 +296,7 @@ export default function Negocios() {
       setSelectedNegocio(null);
       setFormData({ 
         nombre: '', 
+        whatsapp: '',
         domicilio: {
           calle: '',
           numero: '',
@@ -345,9 +306,6 @@ export default function Negocios() {
           pais: '',
         }
       });
-      setWhatsappPais('54');
-      setWhatsappArea('');
-      setWhatsappNumero('');
       setErrorMessage(null);
       fetchNegocios();
     } catch (err) {
@@ -656,9 +614,9 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL AGREGAR - con key */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
-        <div key="add-modal" className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Agregar Negocio</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
@@ -676,72 +634,20 @@ export default function Negocios() {
               />
             </div>
 
-            {/* WHATSAPP DIVIDIDO */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              
-              <div className="tm-whatsapp-wrapper">
-                {/* PAÍS */}
-                <div className="tm-whatsapp-pais">
-                  <input
-                    type="tel"
-                    value={whatsappPais}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappPais(valor);
-                    }}
-                    placeholder="54"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-                
-                {/* ÁREA */}
-                <div className="tm-whatsapp-area">
-                  <input
-                    type="tel"
-                    value={whatsappArea}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappArea(valor);
-                    }}
-                    placeholder="11"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-                
-                {/* NÚMERO LOCAL */}
-                <div className="tm-whatsapp-numero">
-                  <input
-                    type="tel"
-                    value={whatsappNumero}
-                    onChange={(e) => {
-                      const formateado = formatearNumeroWhatsapp(e.target.value);
-                      setWhatsappNumero(formateado);
-                    }}
-                    placeholder="5833-2657"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-              </div>
-              
-              <small className="tm-ayuda-texto">Ej: +54 11 5833-2657</small>
+              <input
+                type="text"
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                placeholder="+5491112345678"
+                className="tm-modal-input"
+                required
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
-              <div className="tm-buscador-direccion">
-                <input
-                  type="text"
-                  placeholder="Buscar dirección (ej: Av Corrientes 1234, CABA)"
-                  className="tm-modal-input tm-buscador-input"
-                  id="buscador-direccion"
-                />
-                <div className="tm-sugerencias"></div>
-              </div>
-
               <div className="tm-grid-2">
                 <div>
                   <label className="tm-label-chico">Calle</label>
@@ -820,9 +726,9 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL EDITAR - con key */}
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedNegocio && (
-        <div key="edit-modal" className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Editar Negocio</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
@@ -838,58 +744,15 @@ export default function Negocios() {
               />
             </div>
 
-            {/* WHATSAPP DIVIDIDO (misma estructura que en AGREGAR) */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              
-              <div className="tm-whatsapp-wrapper">
-                {/* PAÍS */}
-                <div className="tm-whatsapp-pais">
-                  <input
-                    type="tel"
-                    value={whatsappPais}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappPais(valor);
-                    }}
-                    placeholder="54"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-                
-                {/* ÁREA */}
-                <div className="tm-whatsapp-area">
-                  <input
-                    type="tel"
-                    value={whatsappArea}
-                    onChange={(e) => {
-                      const valor = e.target.value.replace(/\D/g, '');
-                      setWhatsappArea(valor);
-                    }}
-                    placeholder="11"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-                
-                {/* NÚMERO LOCAL */}
-                <div className="tm-whatsapp-numero">
-                  <input
-                    type="tel"
-                    value={whatsappNumero}
-                    onChange={(e) => {
-                      const formateado = formatearNumeroWhatsapp(e.target.value);
-                      setWhatsappNumero(formateado);
-                    }}
-                    placeholder="5833-2657"
-                    className="tm-modal-input tm-whatsapp-input"
-                    inputMode="numeric"
-                  />
-                </div>
-              </div>
-              
-              <small className="tm-ayuda-texto">Ej: +54 11 5833-2657</small>
+              <input
+                type="text"
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                className="tm-modal-input"
+                required
+              />
             </div>
 
             <div className="tm-modal-campo">
