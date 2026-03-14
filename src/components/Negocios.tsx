@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
+import MapaSelector from './MapaSelector';
 import '../styles/tablas-maestras.css';
 import '../styles/Negocios.module.css';
 import PhoneInput from 'react-phone-number-input';
@@ -10,16 +11,18 @@ interface Negocio {
   nombre: string;
   url: string;
   domicilio?: {
-    calle: string;
-    numero: string;
-    codigo_postal: string;
-    localidad: string;
-    provincia: string;
-    pais: string;
-    latitud?: number;
-    longitud?: number;
+    street: string;
+    street_number: string;
+    postal_code: string;
+    city: string;
+    state: string;
+    country: string;
+    country_code: string;
+    latitude: number;
+    longitude: number;
+    formatted_address: string;
   };
-  whatsapp_e164?: string; // Cambiado para reflejar el nuevo campo
+  whatsapp_e164?: string;
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -39,14 +42,7 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
-    domicilio: {
-      calle: '',
-      numero: '',
-      codigo_postal: '',
-      localidad: '',
-      provincia: '',
-      pais: '',
-    }
+    domicilio: null as any,
   });
   
   // Estado para el teléfono (formato E164)
@@ -148,14 +144,7 @@ export default function Negocios() {
   const handleAgregar = () => {
     setFormData({ 
       nombre: '', 
-      domicilio: {
-        calle: '',
-        numero: '',
-        codigo_postal: '',
-        localidad: '',
-        provincia: '',
-        pais: '',
-      }
+      domicilio: null,
     });
     setPhoneValue(undefined);
     setErrorMessage(null);
@@ -165,16 +154,8 @@ export default function Negocios() {
   const handleEditar = (negocio: Negocio) => {
     setFormData({ 
       nombre: negocio.nombre,
-      domicilio: negocio.domicilio || {
-        calle: '',
-        numero: '',
-        codigo_postal: '',
-        localidad: '',
-        provincia: '',
-        pais: '',
-      }
+      domicilio: negocio.domicilio || null,
     });
-    // Cargar el teléfono si existe
     if (negocio.whatsapp_e164) {
       setPhoneValue(negocio.whatsapp_e164);
     } else {
@@ -225,30 +206,11 @@ export default function Negocios() {
       return false;
     }
     
-    if (!formData.domicilio.calle.trim()) {
-      setErrorMessage('La calle es obligatoria');
+    if (!formData.domicilio || !formData.domicilio.formatted_address) {
+      setErrorMessage('Debés seleccionar una dirección válida en el mapa');
       return false;
     }
-    if (!formData.domicilio.numero.trim()) {
-      setErrorMessage('El número es obligatorio');
-      return false;
-    }
-    if (!formData.domicilio.codigo_postal.trim()) {
-      setErrorMessage('El código postal es obligatorio');
-      return false;
-    }
-    if (!formData.domicilio.localidad.trim()) {
-      setErrorMessage('La localidad es obligatoria');
-      return false;
-    }
-    if (!formData.domicilio.provincia.trim()) {
-      setErrorMessage('La provincia es obligatoria');
-      return false;
-    }
-    if (!formData.domicilio.pais.trim()) {
-      setErrorMessage('El país es obligatorio');
-      return false;
-    }
+    
     return true;
   };
 
@@ -277,7 +239,6 @@ export default function Negocios() {
   const guardarNegocio = async () => {
     if (!validarFormulario()) return;
 
-    // Parsear el teléfono
     const { country_code, national_number } = parsePhoneE164(phoneValue);
     if (!country_code || !national_number) {
       setErrorMessage('El número de WhatsApp no es válido');
@@ -288,14 +249,7 @@ export default function Negocios() {
       nombre: formData.nombre.toUpperCase(),
       country_code,
       national_number,
-      domicilio: {
-        calle: formData.domicilio.calle.toUpperCase(),
-        numero: formData.domicilio.numero,
-        codigo_postal: formData.domicilio.codigo_postal,
-        localidad: formData.domicilio.localidad.toUpperCase(),
-        provincia: formData.domicilio.provincia.toUpperCase(),
-        pais: formData.domicilio.pais.toUpperCase(),
-      }
+      domicilio: formData.domicilio,
     };
 
     try {
@@ -330,14 +284,7 @@ export default function Negocios() {
       setSelectedNegocio(null);
       setFormData({ 
         nombre: '', 
-        domicilio: {
-          calle: '',
-          numero: '',
-          codigo_postal: '',
-          localidad: '',
-          provincia: '',
-          pais: '',
-        }
+        domicilio: null,
       });
       setPhoneValue(undefined);
       setErrorMessage(null);
@@ -551,9 +498,9 @@ export default function Negocios() {
                     </td>
                     <td>{n.whatsapp_e164 || '-'}</td>
                     <td>
-                      {n.domicilio ? (
+                      {n.domicilio?.formatted_address ? (
                         <span className="text-xs">
-                          {n.domicilio.calle} {n.domicilio.numero}, {n.domicilio.localidad}
+                          {n.domicilio.formatted_address.substring(0, 40)}...
                         </span>
                       ) : '-'}
                     </td>
@@ -606,9 +553,9 @@ export default function Negocios() {
                   </a>
                 </div>
                 {n.whatsapp_e164 && <div className="tm-card-whatsapp">{n.whatsapp_e164}</div>}
-                {n.domicilio && (
+                {n.domicilio?.formatted_address && (
                   <div className="tm-card-domicilio text-xs">
-                    {n.domicilio.calle} {n.domicilio.numero}, {n.domicilio.localidad}
+                    {n.domicilio.formatted_address.substring(0, 40)}...
                   </div>
                 )}
                 <div className="tm-card-acciones">
@@ -668,7 +615,7 @@ export default function Negocios() {
               />
             </div>
 
-            {/* NUEVO CAMPO WHATSAPP CON SELECTOR DE PAÍS */}
+            {/* WHATSAPP */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
@@ -682,76 +629,15 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
+            {/* DOMICILIO CON MAPA */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
-              <div className="tm-grid-2">
-                <div>
-                  <label className="tm-label-chico">Calle</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.calle}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() } })}
-                    placeholder="CALLE"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Número</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.numero}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, numero: e.target.value } })}
-                    placeholder="NÚMERO"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Código Postal</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.codigo_postal}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, codigo_postal: e.target.value } })}
-                    placeholder="CP"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Localidad</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.localidad}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() } })}
-                    placeholder="LOCALIDAD"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Provincia</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.provincia}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() } })}
-                    placeholder="PROVINCIA"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">País</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.pais}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() } })}
-                    placeholder="PAÍS"
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-              </div>
+              <MapaSelector
+                value={formData.domicilio}
+                onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
+                defaultCountry="AR"
+                autoLocate={true}
+              />
             </div>
 
             <div className="tm-modal-acciones">
@@ -780,7 +666,7 @@ export default function Negocios() {
               />
             </div>
 
-            {/* MISMO CAMPO WHATSAPP EN EDITAR */}
+            {/* WHATSAPP */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
@@ -794,70 +680,15 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
+            {/* DOMICILIO CON MAPA */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
-              <div className="tm-grid-2">
-                <div>
-                  <label className="tm-label-chico">Calle</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.calle}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, calle: e.target.value.toUpperCase() } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Número</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.numero}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, numero: e.target.value } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Código Postal</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.codigo_postal}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, codigo_postal: e.target.value } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Localidad</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.localidad}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, localidad: e.target.value.toUpperCase() } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">Provincia</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.provincia}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, provincia: e.target.value.toUpperCase() } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="tm-label-chico">País</label>
-                  <input
-                    type="text"
-                    value={formData.domicilio.pais}
-                    onChange={(e) => setFormData({ ...formData, domicilio: { ...formData.domicilio, pais: e.target.value.toUpperCase() } })}
-                    className="tm-modal-input"
-                    required
-                  />
-                </div>
-              </div>
+              <MapaSelector
+                value={formData.domicilio}
+                onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
+                defaultCountry="AR"
+                autoLocate={true}
+              />
             </div>
 
             {selectedNegocio.ultimoMovimiento && (
@@ -899,9 +730,10 @@ export default function Negocios() {
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
                 <p className="tm-modal-detalle-valor">
-                  {selectedNegocio.domicilio.calle} {selectedNegocio.domicilio.numero}<br />
-                  {selectedNegocio.domicilio.codigo_postal} - {selectedNegocio.domicilio.localidad}<br />
-                  {selectedNegocio.domicilio.provincia}, {selectedNegocio.domicilio.pais}
+                  {selectedNegocio.domicilio.formatted_address}
+                </p>
+                <p className="tm-modal-detalle-valor text-xs text-gray-500">
+                  Lat: {selectedNegocio.domicilio.latitude}, Lng: {selectedNegocio.domicilio.longitude}
                 </p>
               </div>
             )}
