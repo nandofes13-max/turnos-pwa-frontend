@@ -1,0 +1,195 @@
+/* =============================================
+   MAPA SELECTOR - ESTILOS
+   ============================================= */
+
+.mapa-selector-container {
+  width: 100%;
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+/* =============================================
+   BARRA DE BÚSQUEDA
+   ============================================= */
+.mapa-search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.mapa-search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--color-primary-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mapa-search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+}
+
+.mapa-locate-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--color-primary-light);
+  border-radius: var(--radius-md);
+  background: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.mapa-locate-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+/* =============================================
+   SUGERENCIAS DE BÚSQUEDA
+   ============================================= */
+.mapa-sugerencias {
+  position: absolute;
+  top: calc(48px + 0.5rem);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mapa-sugerencia-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  border-bottom: 1px solid var(--color-gray-100);
+  transition: background 0.15s;
+}
+
+.mapa-sugerencia-item:hover {
+  background: var(--color-primary-light);
+}
+
+.mapa-sugerencia-item:last-child {
+  border-bottom: none;
+}
+
+/* =============================================
+   CONTENEDOR DEL MAPA
+   ============================================= */
+.mapa-container {
+  width: 100%;
+  height: 300px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--color-gray-200);
+  margin: 0.5rem 0;
+}
+
+.mapa-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--color-gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-500);
+  font-size: var(--font-sm);
+}
+
+/* =============================================
+   INFO DE DIRECCIÓN CONFIRMADA
+   ============================================= */
+.mapa-info {
+  background: var(--color-primary-light);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin: 0.5rem 0;
+  border-left: 4px solid var(--color-primary);
+}
+
+.mapa-direccion-confirmada {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--font-sm);
+  color: var(--color-gray-700);
+  word-break: break-word;
+}
+
+.mapa-reset-btn {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mapa-reset-btn:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+/* =============================================
+   MENSAJES DE ESTADO
+   ============================================= */
+.mapa-loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--color-gray-500);
+  font-size: var(--font-sm);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  margin: 0.5rem 0;
+}
+
+.mapa-error {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  margin: 0.5rem 0;
+  border: 1px solid var(--color-danger);
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 640px) {
+  .mapa-search-bar {
+    flex-wrap: wrap;
+  }
+
+  .mapa-search-input {
+    width: 100%;
+  }
+
+  .mapa-locate-btn {
+    width: 100%;
+    height: 48px;
+  }
+
+  .mapa-sugerencias {
+    top: calc(96px + 0.5rem);
+  }
+
+  .mapa-container {
+    height: 250px;
+  }
+}
