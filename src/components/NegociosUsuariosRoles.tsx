@@ -627,12 +627,239 @@ export default function NegociosUsuariosRoles() {
         </div>
       )}
 
-      {/* MODALES (sin cambios) */}
-      {modalMode === 'add' && ( ... )}
-      {modalMode === 'edit' && selectedRelacion && ( ... )}
-      {modalMode === 'view' && selectedRelacion && ( ... )}
-      {confirmDelete && ( ... )}
-      {confirmReactivar && ( ... )}
+      {/* MODALES */}
+      {modalMode === 'add' && (
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tm-modal-titulo">Asignar Acceso</h3>
+            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
+            
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Negocio *</label>
+              <select
+                value={formData.negocioId}
+                onChange={(e) => setFormData({ ...formData, negocioId: e.target.value })}
+                className="tm-modal-input"
+                required
+              >
+                <option value="">Seleccionar negocio...</option>
+                {negocios.map(n => (
+                  <option key={n.id} value={n.id}>
+                    {n.nombre} ({n.url})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Usuario *</label>
+              <select
+                value={formData.usuarioId}
+                onChange={(e) => setFormData({ ...formData, usuarioId: e.target.value })}
+                className="tm-modal-input"
+                required
+              >
+                <option value="">Seleccionar usuario...</option>
+                {usuarios.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.email} - {u.apellido} {u.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Rol *</label>
+              <select
+                value={formData.rolId}
+                onChange={(e) => setFormData({ ...formData, rolId: e.target.value })}
+                className="tm-modal-input"
+                required
+              >
+                <option value="">Seleccionar rol...</option>
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">
+                <input
+                  type="checkbox"
+                  checked={formData.activo}
+                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                />{' '}
+                Activo
+              </label>
+            </div>
+
+            <div className="tm-modal-acciones">
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
+              <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalMode === 'edit' && selectedRelacion && (
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tm-modal-titulo">Editar Acceso</h3>
+            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
+            
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Negocio</label>
+              <input
+                type="text"
+                value={selectedRelacion.negocio?.nombre || `ID: ${selectedRelacion.negocioId}`}
+                className="tm-modal-input"
+                disabled
+              />
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Usuario</label>
+              <input
+                type="text"
+                value={selectedRelacion.usuario?.email || `ID: ${selectedRelacion.usuarioId}`}
+                className="tm-modal-input"
+                disabled
+              />
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Rol *</label>
+              <select
+                value={formData.rolId}
+                onChange={(e) => setFormData({ ...formData, rolId: e.target.value })}
+                className="tm-modal-input"
+                required
+              >
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">
+                <input
+                  type="checkbox"
+                  checked={formData.activo}
+                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                />{' '}
+                Activo
+              </label>
+            </div>
+
+            {selectedRelacion.ultimoMovimiento && (
+              <div className="tm-modal-detalle-movimiento activo">
+                <span className="tm-modal-detalle-label">Último Movimiento</span>
+                <p className="tm-modal-detalle-valor">{selectedRelacion.ultimoMovimiento.replace('demo', 'DEMO')}</p>
+              </div>
+            )}
+            <div className="tm-modal-acciones">
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
+              <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalMode === 'view' && selectedRelacion && (
+        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="tm-modal-titulo">Detalle de Acceso</h3>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">ID</span>
+              <p className="tm-modal-detalle-valor">{selectedRelacion.id}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Negocio</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedRelacion.negocio?.nombre} ({selectedRelacion.negocio?.url})
+              </p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Usuario</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedRelacion.usuario?.email}<br />
+                {selectedRelacion.usuario?.apellido} {selectedRelacion.usuario?.nombre}
+              </p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Rol</span>
+              <p className="tm-modal-detalle-valor">{selectedRelacion.rol?.nombre}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Estado</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedRelacion.activo ? 'Activo' : 'Inactivo'}
+              </p>
+            </div>
+            <div className={`tm-modal-detalle-movimiento ${selectedRelacion.fecha_baja ? 'inactivo' : 'activo'}`}>
+              <span className="tm-modal-detalle-label">Último Movimiento</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedRelacion.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}
+              </p>
+            </div>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="text-gray-700 mb-2 text-sm">
+              ¿Desactivar el acceso de <strong>{confirmDelete.usuario?.email}</strong> 
+              {' '}al negocio <strong>{confirmDelete.negocio?.nombre}</strong>?
+            </p>
+            <p className="tm-modal-input-hint mb-4">
+              El registro pasará a estado inactivo.
+            </p>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setConfirmDelete(null)} className="tm-btn-secundario">
+                Cancelar
+              </button>
+              <button onClick={confirmarEliminar} className="tm-btn-danger">
+                Confirmar BAJA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmReactivar && (
+        <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
+          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="text-gray-700 mb-2 text-sm">
+              ¿Reactivar el acceso de <strong>{confirmReactivar.usuario?.email}</strong> 
+              {' '}al negocio <strong>{confirmReactivar.negocio?.nombre}</strong>?
+            </p>
+            <p className="tm-modal-input-hint mb-4">
+              El registro volverá a estado activo.
+            </p>
+            <div className="tm-modal-acciones">
+              <button onClick={() => setConfirmReactivar(null)} className="tm-btn-secundario">
+                Cancelar
+              </button>
+              <button onClick={confirmarReactivar} className="tm-btn-success">
+                Confirmar ALTA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
