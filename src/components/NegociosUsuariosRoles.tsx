@@ -91,19 +91,21 @@ export default function NegociosUsuariosRoles() {
   }, []);
 
   const fetchRelaciones = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(RELACIONES_URL);
-      const data = await res.json();
-      setRelaciones(data);
-      setPaginaActual(1);
-    } catch (err) {
-      console.error('Error al cargar relaciones:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  setLoading(true);
+  setFetchError(null);
+  try {
+    const res = await fetch(RELACIONES_URL);
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+    const data = await res.json();
+    setRelaciones(data);
+    setPaginaActual(1);
+  } catch (err) {
+    console.error('Error al cargar relaciones:', err);
+    setFetchError(err instanceof Error ? err.message : 'Error desconocido');
+  } finally {
+    setLoading(false);
+  }
+};
   const fetchNegocios = async () => {
     try {
       const res = await fetch(NEGOCIOS_URL);
