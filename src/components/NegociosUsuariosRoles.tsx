@@ -541,13 +541,7 @@ export default function NegociosUsuariosRoles() {
                       ) : `ID: ${r.usuarioId}`}
                     </td>
                     <td>{r.rol?.nombre || `ID: ${r.rolId}`}</td>
-                    <td>
-                      {r.fecha_baja ? (
-                        <span className="text-red-600">Inactivo</span>
-                      ) : (
-                        <span className="text-green-600">Activo</span>
-                      )}
-                    </td>
+                  
                     <td>
                       <ActionIcons
                         onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
