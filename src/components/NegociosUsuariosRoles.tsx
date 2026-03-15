@@ -328,25 +328,25 @@ export default function NegociosUsuariosRoles() {
   };
 
   const confirmarReactivar = async () => {
-    if (!confirmReactivar) return;
-    try {
-      const res = await fetch(`${RELACIONES_URL}/${confirmReactivar.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...confirmReactivar,
-          fecha_baja: null,
-          usuario_baja: null
-        }),
-      });
-      if (!res.ok) throw new Error('Error al reactivar relación');
-      setConfirmReactivar(null);
-      fetchRelaciones();
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo reactivar la relación');
-    }
-  };
+  if (!confirmReactivar) return;
+  try {
+    const res = await fetch(`${RELACIONES_URL}/${confirmReactivar.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        rolId: confirmReactivar.rolId,  // Mantiene el mismo rol
+        fecha_baja: null,
+        usuario_baja: null
+      }),
+    });
+    if (!res.ok) throw new Error('Error al reactivar relación');
+    setConfirmReactivar(null);
+    fetchRelaciones();
+  } catch (err) {
+    console.error(err);
+    alert('No se pudo reactivar la relación');
+  }
+};
 
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
@@ -519,7 +519,6 @@ export default function NegociosUsuariosRoles() {
                   <th>NEGOCIO</th>
                   <th>USUARIO</th>
                   <th>ROL</th>
-                  <th>ESTADO</th>
                   <th>ACCIONES</th>
                 </tr>
               </thead>
@@ -570,7 +569,7 @@ export default function NegociosUsuariosRoles() {
                 ))}
                 {relacionesPaginadas.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="tm-fila-vacia">
+                    <td colSpan={4} className="tm-fila-vacia">
                       No hay relaciones que coincidan
                     </td>
                   </tr>
