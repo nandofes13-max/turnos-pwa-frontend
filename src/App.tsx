@@ -5,7 +5,8 @@ import CPanel from './components/CPanel';
 import Actividades from './components/Actividades';
 import Usuarios from './components/Usuarios';
 import Roles from './components/Roles';
-import Negocios from './components/Negocios'; // 👈 AGREGADO
+import Negocios from './components/Negocios';
+import NegociosUsuariosRoles from './components/NegociosUsuariosRoles'; // 👈 AGREGADO
 import './App.css';
 
 function App() {
@@ -18,7 +19,8 @@ function App() {
         <Route path="/actividades" element={<Actividades />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/roles" element={<Roles />} />
-        <Route path="/negocios" element={<Negocios />} /> {/* 👈 AGREGADO */}
+        <Route path="/negocios" element={<Negocios />} />
+        <Route path="/negocios-usuarios-roles" element={<NegociosUsuariosRoles />} /> {/* 👈 AGREGADO */}
       </Routes>
     </BrowserRouter>
   );
