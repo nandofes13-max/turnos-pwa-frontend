@@ -483,6 +483,16 @@ export default function NegociosUsuariosRoles() {
           </div>
         </div>
       </div>
+       {/* 👇 ACÁ VA EL MANEJO DE ERRORES */}
+  {fetchError && (
+    <div className="tm-error">
+      <p>Error al cargar datos: {fetchError}</p>
+      <button onClick={fetchRelaciones} className="tm-btn-secundario">
+        Reintentar
+      </button>
+    </div>
+  )}
+
 
       {/* Tabla de Relaciones */}
       {loading ? (
