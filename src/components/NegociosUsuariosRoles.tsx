@@ -11,7 +11,6 @@ interface Relacion {
   usuario?: { id: number; email: string; nombre: string; apellido: string };
   rolId: number;
   rol?: { id: number; nombre: string };
-  activo: boolean;
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -25,6 +24,7 @@ interface Negocio {
   id: number;
   nombre: string;
   url: string;
+  fecha_baja?: string | null;
 }
 
 interface Usuario {
@@ -32,11 +32,13 @@ interface Usuario {
   email: string;
   nombre: string;
   apellido: string;
+  fecha_baja?: string | null;
 }
 
 interface Rol {
   id: number;
   nombre: string;
+  fecha_baja?: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -57,8 +59,7 @@ export default function NegociosUsuariosRoles() {
   const [formData, setFormData] = useState({ 
     negocioId: '',
     usuarioId: '',
-    rolId: '',
-    activo: true
+    rolId: ''
   });
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
@@ -107,31 +108,38 @@ export default function NegociosUsuariosRoles() {
     }
   };
 
+  // Filtrar solo negocios activos (sin fecha_baja)
   const fetchNegocios = async () => {
     try {
       const res = await fetch(NEGOCIOS_URL);
       const data = await res.json();
-      setNegocios(data);
+      // Solo mostrar negocios activos (sin fecha_baja)
+      const activos = data.filter((n: Negocio) => !n.fecha_baja);
+      setNegocios(activos);
     } catch (err) {
       console.error('Error al cargar negocios:', err);
     }
   };
 
+  // Filtrar solo usuarios activos (sin fecha_baja)
   const fetchUsuarios = async () => {
     try {
       const res = await fetch(USUARIOS_URL);
       const data = await res.json();
-      setUsuarios(data);
+      const activos = data.filter((u: Usuario) => !u.fecha_baja);
+      setUsuarios(activos);
     } catch (err) {
       console.error('Error al cargar usuarios:', err);
     }
   };
 
+  // Filtrar solo roles activos (sin fecha_baja)
   const fetchRoles = async () => {
     try {
       const res = await fetch(ROLES_URL);
       const data = await res.json();
-      setRoles(data);
+      const activos = data.filter((r: Rol) => !r.fecha_baja);
+      setRoles(activos);
     } catch (err) {
       console.error('Error al cargar roles:', err);
     }
@@ -210,8 +218,7 @@ export default function NegociosUsuariosRoles() {
     setFormData({ 
       negocioId: '',
       usuarioId: '',
-      rolId: '',
-      activo: true
+      rolId: ''
     });
     setErrorMessage(null);
     setModalMode('add');
@@ -221,8 +228,7 @@ export default function NegociosUsuariosRoles() {
     setFormData({ 
       negocioId: relacion.negocioId.toString(),
       usuarioId: relacion.usuarioId.toString(),
-      rolId: relacion.rolId.toString(),
-      activo: relacion.activo
+      rolId: relacion.rolId.toString()
     });
     setSelectedRelacion(relacion);
     setErrorMessage(null);
@@ -272,8 +278,7 @@ export default function NegociosUsuariosRoles() {
           body: JSON.stringify({
             negocioId: parseInt(formData.negocioId),
             usuarioId: parseInt(formData.usuarioId),
-            rolId: parseInt(formData.rolId),
-            activo: formData.activo,
+            rolId: parseInt(formData.rolId)
           }),
         });
       } else if (modalMode === 'edit' && selectedRelacion) {
@@ -281,8 +286,7 @@ export default function NegociosUsuariosRoles() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            rolId: parseInt(formData.rolId),
-            activo: formData.activo,
+            rolId: parseInt(formData.rolId)
           }),
         });
       } else {
@@ -296,7 +300,7 @@ export default function NegociosUsuariosRoles() {
 
       setModalMode(null);
       setSelectedRelacion(null);
-      setFormData({ negocioId: '', usuarioId: '', rolId: '', activo: true });
+      setFormData({ negocioId: '', usuarioId: '', rolId: '' });
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -330,8 +334,7 @@ export default function NegociosUsuariosRoles() {
         body: JSON.stringify({ 
           ...confirmReactivar,
           fecha_baja: null,
-          usuario_baja: null,
-          activo: true
+          usuario_baja: null
         }),
       });
       if (!res.ok) throw new Error('Error al reactivar relación');
@@ -538,10 +541,10 @@ export default function NegociosUsuariosRoles() {
                     </td>
                     <td>{r.rol?.nombre || `ID: ${r.rolId}`}</td>
                     <td>
-                      {r.activo ? (
-                        <span className="text-green-600">Activo</span>
-                      ) : (
+                      {r.fecha_baja ? (
                         <span className="text-red-600">Inactivo</span>
+                      ) : (
+                        <span className="text-green-600">Activo</span>
                       )}
                     </td>
                     <td>
@@ -589,7 +592,7 @@ export default function NegociosUsuariosRoles() {
                   Rol: <strong>{r.rol?.nombre || `ID ${r.rolId}`}</strong>
                 </div>
                 <div className="tm-card-estado">
-                  Estado: {r.activo ? 'Activo' : 'Inactivo'}
+                  Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}
                 </div>
                 <div className="tm-card-acciones">
                   <ActionIcons
@@ -627,7 +630,7 @@ export default function NegociosUsuariosRoles() {
         </div>
       )}
 
-      {/* MODALES */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -685,17 +688,6 @@ export default function NegociosUsuariosRoles() {
               </select>
             </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">
-                <input
-                  type="checkbox"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                />{' '}
-                Activo
-              </label>
-            </div>
-
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
@@ -704,6 +696,7 @@ export default function NegociosUsuariosRoles() {
         </div>
       )}
 
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedRelacion && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -746,17 +739,6 @@ export default function NegociosUsuariosRoles() {
               </select>
             </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">
-                <input
-                  type="checkbox"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                />{' '}
-                Activo
-              </label>
-            </div>
-
             {selectedRelacion.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
                 <span className="tm-modal-detalle-label">Último Movimiento</span>
@@ -771,6 +753,7 @@ export default function NegociosUsuariosRoles() {
         </div>
       )}
 
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedRelacion && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -799,7 +782,7 @@ export default function NegociosUsuariosRoles() {
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">Estado</span>
               <p className="tm-modal-detalle-valor">
-                {selectedRelacion.activo ? 'Activo' : 'Inactivo'}
+                {selectedRelacion.fecha_baja ? 'Inactivo' : 'Activo'}
               </p>
             </div>
             <div className={`tm-modal-detalle-movimiento ${selectedRelacion.fecha_baja ? 'inactivo' : 'activo'}`}>
