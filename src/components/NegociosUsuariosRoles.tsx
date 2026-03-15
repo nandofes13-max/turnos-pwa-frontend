@@ -62,6 +62,7 @@ export default function NegociosUsuariosRoles() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
