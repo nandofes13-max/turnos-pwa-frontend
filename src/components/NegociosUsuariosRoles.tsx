@@ -282,6 +282,8 @@ export default function NegociosUsuariosRoles() {
           }),
         });
       } else if (modalMode === 'edit' && selectedRelacion) {
+        // 👇 ACÁ VA EL CONSOLE.LOG
+        console.log('Enviando PUT con rolId:', formData.rolId);
         res = await fetch(`${RELACIONES_URL}/${selectedRelacion.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
