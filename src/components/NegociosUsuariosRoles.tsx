@@ -282,7 +282,6 @@ export default function NegociosUsuariosRoles() {
           }),
         });
       } else if (modalMode === 'edit' && selectedRelacion) {
-        // 👇 ACÁ VA EL CONSOLE.LOG
         console.log('Enviando PUT con rolId:', formData.rolId);
         res = await fetch(`${RELACIONES_URL}/${selectedRelacion.id}`, {
           method: 'PUT',
@@ -328,25 +327,25 @@ export default function NegociosUsuariosRoles() {
   };
 
   const confirmarReactivar = async () => {
-  if (!confirmReactivar) return;
-  try {
-    const res = await fetch(`${RELACIONES_URL}/${confirmReactivar.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        rolId: confirmReactivar.rolId,  // Mantiene el mismo rol
-        fecha_baja: null,
-        usuario_baja: null
-      }),
-    });
-    if (!res.ok) throw new Error('Error al reactivar relación');
-    setConfirmReactivar(null);
-    fetchRelaciones();
-  } catch (err) {
-    console.error(err);
-    alert('No se pudo reactivar la relación');
-  }
-};
+    if (!confirmReactivar) return;
+    try {
+      const res = await fetch(`${RELACIONES_URL}/${confirmReactivar.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          rolId: confirmReactivar.rolId,
+          fecha_baja: null,
+          usuario_baja: null
+        }),
+      });
+      if (!res.ok) throw new Error('Error al reactivar relación');
+      setConfirmReactivar(null);
+      await fetchRelaciones();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo reactivar la relación');
+    }
+  };
 
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
