@@ -339,8 +339,11 @@ export default function NegociosUsuariosRoles() {
         }),
       });
       if (!res.ok) throw new Error('Error al reactivar relación');
+      
+      // Esperar a que el PUT termine y luego recargar
       setConfirmReactivar(null);
-      await fetchRelaciones();
+      await fetchRelaciones(); // 👈 Asegurar que espera la recarga
+      
     } catch (err) {
       console.error(err);
       alert('No se pudo reactivar la relación');
