@@ -214,6 +214,15 @@ export default function NegociosUsuariosRoles() {
     setPaginaActual(1);
   };
 
+  // Función para saber si un negocio ya tiene dueño activo
+  const tieneDuenioActivo = (negocioId: number): boolean => {
+    return relaciones.some(r => 
+      r.negocioId === negocioId && 
+      r.rol?.nombre === 'DUEÑO' && 
+      !r.fecha_baja
+    );
+  };
+
   const handleAgregar = () => {
     setFormData({ 
       negocioId: '',
@@ -677,11 +686,18 @@ export default function NegociosUsuariosRoles() {
                 required
               >
                 <option value="">Seleccionar rol...</option>
-                {roles.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.nombre}
-                  </option>
-                ))}
+                {roles.map(r => {
+                  const duenioExistente = r.nombre === 'DUEÑO' && formData.negocioId && tieneDuenioActivo(parseInt(formData.negocioId));
+                  return (
+                    <option 
+                      key={r.id} 
+                      value={r.id}
+                      disabled={duenioExistente}
+                    >
+                      {r.nombre} {duenioExistente ? ' (ya existe un dueño)' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -728,11 +744,18 @@ export default function NegociosUsuariosRoles() {
                 className="tm-modal-input"
                 required
               >
-                {roles.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.nombre}
-                  </option>
-                ))}
+                {roles.map(r => {
+                  const duenioExistente = r.nombre === 'DUEÑO' && tieneDuenioActivo(selectedRelacion.negocioId) && r.id !== selectedRelacion.rolId;
+                  return (
+                    <option 
+                      key={r.id} 
+                      value={r.id}
+                      disabled={duenioExistente}
+                    >
+                      {r.nombre} {duenioExistente ? ' (ya existe un dueño)' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
