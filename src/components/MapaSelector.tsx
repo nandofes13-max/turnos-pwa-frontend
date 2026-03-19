@@ -57,17 +57,19 @@ export default function MapaSelector({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
-  // Si hay un valor inicial, actualizar el hook y mover el mapa
+  // Si hay un valor inicial, actualizar el hook
   useEffect(() => {
     if (value && value.latitude && value.longitude) {
       setDireccion(value as Direccion);
-      
-      // Si el mapa ya está inicializado, mover el centro
-      if (mapRef.current) {
-        mapRef.current.setView([value.latitude, value.longitude], 15);
-      }
     }
   }, [value, setDireccion]);
+
+  // Cuando la dirección cambia (por selección o geolocalización), mover el mapa
+  useEffect(() => {
+    if (direccion.latitude !== 0 && direccion.longitude !== 0 && mapRef.current) {
+      mapRef.current.setView([direccion.latitude, direccion.longitude], 15);
+    }
+  }, [direccion.latitude, direccion.longitude]);
 
   // Notificar cambios al padre
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function MapaSelector({
       <div className="mapa-container">
         {direccion.latitude !== 0 && direccion.longitude !== 0 ? (
           <MapContainer
-            key={`${direccion.latitude}-${direccion.longitude}`} // 👈 Forzar recreación cuando cambian coordenadas
+            key={`${direccion.latitude}-${direccion.longitude}`}
             center={[direccion.latitude, direccion.longitude]}
             zoom={15}
             style={{ height: '300px', width: '100%' }}
