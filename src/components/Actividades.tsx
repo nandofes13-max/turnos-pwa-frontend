@@ -5,17 +5,18 @@ import '../styles/tablas-maestras.css';
 interface Actividad {
   id: number;
   nombre: string;
+  negocioId: number; // 👈 NUEVO
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
   fecha_modificacion?: string;
   usuario_modificacion?: string;
-  fecha_baja?: string | null; // 👈 PERMITIR NULL EXPLÍCITAMENTE
+  fecha_baja?: string | null;
   usuario_baja?: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
+const NEGOCIO_ID = 6; // 👈 ID del negocio DEMO (ajustar según corresponda)
 
 export default function Actividades() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
@@ -44,6 +45,10 @@ export default function Actividades() {
 
   const tiposMovimiento = ['Altas', 'Bajas'];
 
+  // Construir URLs con negocioId
+  const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
+  const ACTIVIDADES_POR_NEGOCIO_URL = `${API_BASE_URL}/actividades/negocio/${NEGOCIO_ID}`;
+
   useEffect(() => {
     fetchActividades();
   }, []);
@@ -51,7 +56,7 @@ export default function Actividades() {
   const fetchActividades = async () => {
     setLoading(true);
     try {
-      const res = await fetch(ACTIVIDADES_URL);
+      const res = await fetch(ACTIVIDADES_POR_NEGOCIO_URL);
       const data = await res.json();
       setActividades(data);
       setPaginaActual(1);
@@ -89,12 +94,9 @@ export default function Actividades() {
 
   const actividadesFiltradas = filtrarActividades(actividades);
   
-  // Lógica de paginación
   const totalPaginas = Math.ceil(actividadesFiltradas.length / itemsPorPagina);
-  
   const indiceUltimoItem = paginaActual * itemsPorPagina;
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
-  
   const actividadesPaginadas = actividadesFiltradas
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
@@ -143,17 +145,14 @@ export default function Actividades() {
   };
 
   const handleReactivar = (actividad: Actividad) => {
-    console.log('Intentando reactivar:', actividad);
     if (actividad.fecha_baja) {
       setConfirmReactivar(actividad);
-    } else {
-      console.warn('La actividad ya está activa');
     }
   };
 
   const verificarExistente = async (nombre: string, id?: number): Promise<boolean> => {
     try {
-      const res = await fetch(ACTIVIDADES_URL);
+      const res = await fetch(ACTIVIDADES_POR_NEGOCIO_URL);
       const data: Actividad[] = await res.json();
       
       const activos = data.filter(a => 
@@ -166,7 +165,7 @@ export default function Actividades() {
       );
       
       if (nombreExistente) {
-        setErrorMessage('Ya existe un registro activo con ese nombre');
+        setErrorMessage('Ya existe una actividad activa con ese nombre en este negocio');
         return false;
       }
       
@@ -197,11 +196,12 @@ export default function Actividades() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: nombreUpper
+            nombre: nombreUpper,
+            negocioId: NEGOCIO_ID // 👈 ENVIAMOS NEGOCIO_ID
           }),
         });
       } else if (modalMode === 'edit' && selectedActividad) {
-        res = await fetch(`${ACTIVIDADES_URL}/${selectedActividad.id}`, {
+        res = await fetch(`${ACTIVIDADES_URL}/${selectedActividad.id}/negocio/${NEGOCIO_ID}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -212,7 +212,10 @@ export default function Actividades() {
         return;
       }
 
-      if (!res.ok) throw new Error('Error al guardar actividad');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al guardar actividad');
+      }
 
       setModalMode(null);
       setSelectedActividad(null);
@@ -221,7 +224,7 @@ export default function Actividades() {
       fetchActividades();
     } catch (err) {
       console.error(err);
-      setErrorMessage('No se pudo guardar la actividad');
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar la actividad');
     }
   };
 
@@ -229,7 +232,7 @@ export default function Actividades() {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`${ACTIVIDADES_URL}/${confirmDelete.id}`, {
+      const res = await fetch(`${ACTIVIDADES_URL}/${confirmDelete.id}/negocio/${NEGOCIO_ID}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -247,24 +250,16 @@ export default function Actividades() {
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
 
-    console.log('Reactivando:', confirmReactivar);
-
     try {
-      const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
+      const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}/negocio/${NEGOCIO_ID}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          nombre: confirmReactivar.nombre,
-          fecha_baja: null,
-          usuario_baja: null
+          nombre: confirmReactivar.nombre
         }),
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Error response:', errorText);
-        throw new Error('Error al reactivar actividad');
-      }
+      if (!res.ok) throw new Error('Error al reactivar actividad');
 
       setConfirmReactivar(null);
       fetchActividades();
@@ -282,6 +277,9 @@ export default function Actividades() {
     setPaginaActual(1);
   };
 
+  // (El resto del componente sigue igual: estructura JSX, modales, etc.)
+  // Mantené el mismo JSX que tenías antes, solo cambiá las URLs en las funciones.
+  
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Actividades</h1>
@@ -411,7 +409,7 @@ export default function Actividades() {
             </div>
           </div>
 
-          {/* TABLA (solo visible en desktop) */}
+          {/* TABLA */}
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
@@ -454,7 +452,7 @@ export default function Actividades() {
             </table>
           </div>
 
-          {/* CARDS PARA MÓVIL */}
+          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {actividadesPaginadas.map((a) => (
               <div 
