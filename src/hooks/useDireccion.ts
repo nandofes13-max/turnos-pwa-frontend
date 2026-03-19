@@ -36,7 +36,7 @@ interface UseDireccionOptions {
 }
 
 export function useDireccion(options: UseDireccionOptions = {}) {
-  const { defaultCountry = 'AR', autoLocate = true } = options;
+  const { defaultCountry = 'AR', autoLocate = false } = options; // 👈 autoLocate false por defecto
 
   // Estados
   const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
@@ -44,6 +44,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null); // 👈 Error separado para geolocalización
 
   // =============================================
   // 1. Obtener ubicación del navegador
@@ -51,7 +52,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   const obtenerUbicacion = useCallback((): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocalización no soportada por el navegador'));
+        reject(new Error('Geolocalización no soportada'));
         return;
       }
 
@@ -113,19 +114,18 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   }, []);
 
   // =============================================
-  // 3. Localización automática al iniciar
+  // 3. Localización automática (solo si autoLocate es true)
   // =============================================
   const localizar = useCallback(async () => {
+    setGeoError(null);
     try {
       const position = await obtenerUbicacion();
       const { latitude, longitude } = position.coords;
       await reverseGeocode(latitude, longitude);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Error al obtener ubicación');
-      }
+      // Error de geolocalización: no mostramos error al usuario, solo log
+      console.log('Geolocalización falló (permiso denegado o timeout)');
+      setGeoError('no-permission'); // Marcador interno, no se muestra
     }
   }, [obtenerUbicacion, reverseGeocode]);
 
@@ -196,6 +196,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
     setDireccion(direccionVacia);
     setError(null);
     setSugerencias([]);
+    setGeoError(null);
   }, []);
 
   // =============================================
@@ -205,7 +206,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
     if (autoLocate) {
       localizar();
     }
-  }, [autoLocate, localizar]); // 👈 CORREGIDO
+  }, [autoLocate, localizar]);
 
   return {
     direccion,
