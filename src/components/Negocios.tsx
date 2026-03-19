@@ -10,18 +10,18 @@ interface Negocio {
   id: number;
   nombre: string;
   url: string;
-  domicilio?: {
-    street: string;
-    street_number: string;
-    postal_code: string;
-    city: string;
-    state: string;
-    country: string;
-    country_code: string;
-    latitude: number;
-    longitude: number;
-    formatted_address: string;
-  };
+  // Campos de domicilio (ahora directos)
+  street?: string;
+  street_number?: string;
+  postal_code?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  country_code_iso?: string;
+  latitude?: number;
+  longitude?: number;
+  formatted_address?: string;
+  
   whatsapp_e164?: string;
   ultimoMovimiento?: string;
   fecha_alta?: string;
@@ -42,7 +42,7 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
-    domicilio: null as any,
+    domicilio: null as any, // Para el mapa (sigue siendo objeto)
   });
   
   // Estado para el teléfono (formato E164)
@@ -152,9 +152,23 @@ export default function Negocios() {
   };
 
   const handleEditar = (negocio: Negocio) => {
+    // Convertir los campos sueltos a un objeto domicilio para el mapa
+    const domicilioObj = negocio.street ? {
+      street: negocio.street,
+      street_number: negocio.street_number,
+      postal_code: negocio.postal_code,
+      city: negocio.city,
+      state: negocio.state,
+      country: negocio.country,
+      country_code: negocio.country_code_iso,
+      latitude: negocio.latitude,
+      longitude: negocio.longitude,
+      formatted_address: negocio.formatted_address,
+    } : null;
+
     setFormData({ 
       nombre: negocio.nombre,
-      domicilio: negocio.domicilio || null,
+      domicilio: domicilioObj,
     });
     if (negocio.whatsapp_e164) {
       setPhoneValue(negocio.whatsapp_e164);
@@ -181,18 +195,17 @@ export default function Negocios() {
     }
   };
 
-  // Función para formatear dirección concatenada
-  const formatearDireccion = (domicilio: Negocio['domicilio']): string => {
-    if (!domicilio) return '';
+  // Función para formatear dirección concatenada (usa campos directos)
+  const formatearDireccion = (n: Negocio): string => {
     const partes = [
-      domicilio.street,
-      domicilio.street_number,
-      domicilio.city,
-      domicilio.postal_code,
-      domicilio.state,
-      domicilio.country
+      n.street,
+      n.street_number,
+      n.city,
+      n.postal_code,
+      n.state,
+      n.country
     ].filter(Boolean);
-    return partes.join(' ');
+    return partes.join(' ') || n.formatted_address || '';
   };
 
   // Función para parsear E164 a country_code y national_number
@@ -334,7 +347,16 @@ export default function Negocios() {
         body: JSON.stringify({ 
           nombre: confirmReactivar.nombre,
           whatsapp_e164: confirmReactivar.whatsapp_e164,
-          domicilio: confirmReactivar.domicilio,
+          street: confirmReactivar.street,
+          street_number: confirmReactivar.street_number,
+          postal_code: confirmReactivar.postal_code,
+          city: confirmReactivar.city,
+          state: confirmReactivar.state,
+          country: confirmReactivar.country,
+          country_code_iso: confirmReactivar.country_code_iso,
+          latitude: confirmReactivar.latitude,
+          longitude: confirmReactivar.longitude,
+          formatted_address: confirmReactivar.formatted_address,
           fecha_baja: null,
           usuario_baja: null
         }),
@@ -512,9 +534,9 @@ export default function Negocios() {
                     </td>
                     <td>{n.whatsapp_e164 || '-'}</td>
                     <td>
-                      {n.domicilio ? (
-                        <span className="text-xs" title={formatearDireccion(n.domicilio)}>
-                          {formatearDireccion(n.domicilio).substring(0, 40)}...
+                      {n.street ? (
+                        <span className="text-xs" title={formatearDireccion(n)}>
+                          {formatearDireccion(n).substring(0, 40)}...
                         </span>
                       ) : '-'}
                     </td>
@@ -567,9 +589,9 @@ export default function Negocios() {
                   </a>
                 </div>
                 {n.whatsapp_e164 && <div className="tm-card-whatsapp">{n.whatsapp_e164}</div>}
-                {n.domicilio && (
+                {n.street && (
                   <div className="tm-card-domicilio text-xs">
-                    {formatearDireccion(n.domicilio).substring(0, 40)}...
+                    {formatearDireccion(n).substring(0, 40)}...
                   </div>
                 )}
                 <div className="tm-card-acciones">
@@ -695,16 +717,16 @@ export default function Negocios() {
             </div>
 
             {/* DOMICILIO ACTUAL (solo lectura) */}
-            {selectedNegocio.domicilio && (
+            {selectedNegocio.street && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Domicilio actual</label>
                 <div className="tm-direccion-actual">
                   <p className="tm-direccion-texto">
-                    {formatearDireccion(selectedNegocio.domicilio)}
+                    {formatearDireccion(selectedNegocio)}
                   </p>
                   <p className="tm-coordenadas-texto">
-                    Lat: {selectedNegocio.domicilio.latitude?.toFixed(6)}, 
-                    Lng: {selectedNegocio.domicilio.longitude?.toFixed(6)}
+                    Lat: {selectedNegocio.latitude?.toFixed(6)}, 
+                    Lng: {selectedNegocio.longitude?.toFixed(6)}
                   </p>
                 </div>
               </div>
@@ -717,7 +739,7 @@ export default function Negocios() {
                 value={formData.domicilio}
                 onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
                 defaultCountry="AR"
-                autoLocate={false}  // No geolocalizar automáticamente al editar
+                autoLocate={false}
               />
             </div>
 
@@ -756,14 +778,14 @@ export default function Negocios() {
               <span className="tm-modal-detalle-label">WhatsApp</span>
               <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp_e164}</p>
             </div>
-            {selectedNegocio.domicilio && (
+            {selectedNegocio.street && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
                 <p className="tm-modal-detalle-valor">
-                  {formatearDireccion(selectedNegocio.domicilio)}
+                  {formatearDireccion(selectedNegocio)}
                 </p>
                 <p className="tm-modal-detalle-valor text-xs text-gray-500">
-                  Lat: {selectedNegocio.domicilio.latitude}, Lng: {selectedNegocio.domicilio.longitude}
+                  Lat: {selectedNegocio.latitude}, Lng: {selectedNegocio.longitude}
                 </p>
               </div>
             )}
