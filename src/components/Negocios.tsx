@@ -181,6 +181,20 @@ export default function Negocios() {
     }
   };
 
+  // Función para formatear dirección concatenada
+  const formatearDireccion = (domicilio: Negocio['domicilio']): string => {
+    if (!domicilio) return '';
+    const partes = [
+      domicilio.street,
+      domicilio.street_number,
+      domicilio.city,
+      domicilio.postal_code,
+      domicilio.state,
+      domicilio.country
+    ].filter(Boolean);
+    return partes.join(' ');
+  };
+
   // Función para parsear E164 a country_code y national_number
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
@@ -498,9 +512,9 @@ export default function Negocios() {
                     </td>
                     <td>{n.whatsapp_e164 || '-'}</td>
                     <td>
-                      {n.domicilio?.formatted_address ? (
-                        <span className="text-xs">
-                          {n.domicilio.formatted_address.substring(0, 40)}...
+                      {n.domicilio ? (
+                        <span className="text-xs" title={formatearDireccion(n.domicilio)}>
+                          {formatearDireccion(n.domicilio).substring(0, 40)}...
                         </span>
                       ) : '-'}
                     </td>
@@ -553,9 +567,9 @@ export default function Negocios() {
                   </a>
                 </div>
                 {n.whatsapp_e164 && <div className="tm-card-whatsapp">{n.whatsapp_e164}</div>}
-                {n.domicilio?.formatted_address && (
+                {n.domicilio && (
                   <div className="tm-card-domicilio text-xs">
-                    {n.domicilio.formatted_address.substring(0, 40)}...
+                    {formatearDireccion(n.domicilio).substring(0, 40)}...
                   </div>
                 )}
                 <div className="tm-card-acciones">
@@ -680,14 +694,30 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
-            {/* DOMICILIO CON MAPA */}
+            {/* DOMICILIO ACTUAL (solo lectura) */}
+            {selectedNegocio.domicilio && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Domicilio actual</label>
+                <div className="tm-direccion-actual">
+                  <p className="tm-direccion-texto">
+                    {formatearDireccion(selectedNegocio.domicilio)}
+                  </p>
+                  <p className="tm-coordenadas-texto">
+                    Lat: {selectedNegocio.domicilio.latitude?.toFixed(6)}, 
+                    Lng: {selectedNegocio.domicilio.longitude?.toFixed(6)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* MAPA PARA CAMBIAR DOMICILIO */}
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Domicilio *</label>
+              <label className="tm-modal-label">Buscar nueva dirección</label>
               <MapaSelector
                 value={formData.domicilio}
                 onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
                 defaultCountry="AR"
-                autoLocate={true}
+                autoLocate={false}  // No geolocalizar automáticamente al editar
               />
             </div>
 
@@ -730,7 +760,7 @@ export default function Negocios() {
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
                 <p className="tm-modal-detalle-valor">
-                  {selectedNegocio.domicilio.formatted_address}
+                  {formatearDireccion(selectedNegocio.domicilio)}
                 </p>
                 <p className="tm-modal-detalle-valor text-xs text-gray-500">
                   Lat: {selectedNegocio.domicilio.latitude}, Lng: {selectedNegocio.domicilio.longitude}
