@@ -725,9 +725,9 @@ export default function Negocios() {
                     {formatearDireccion(selectedNegocio)}
                   </p>
                   <p className="tm-coordenadas-texto">
-                    Lat: {selectedNegocio.latitude?.toFixed(6)}, 
-                    Lng: {selectedNegocio.longitude?.toFixed(6)}
-                  </p>
+  Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
+  Lng: {Number(selectedNegocio.longitude).toFixed(6)}
+</p>
                 </div>
               </div>
             )}
@@ -785,8 +785,9 @@ export default function Negocios() {
                   {formatearDireccion(selectedNegocio)}
                 </p>
                 <p className="tm-modal-detalle-valor text-xs text-gray-500">
-                  Lat: {selectedNegocio.latitude}, Lng: {selectedNegocio.longitude}
-                </p>
+  Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
+  Lng: {Number(selectedNegocio.longitude).toFixed(6)}
+</p>
               </div>
             )}
             <div className={`tm-modal-detalle-movimiento ${selectedNegocio.fecha_baja ? 'inactivo' : 'activo'}`}>
