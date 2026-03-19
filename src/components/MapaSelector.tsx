@@ -52,21 +52,17 @@ export default function MapaSelector({
     moverPin,
     resetear,
     setDireccion,
-  } = useDireccion({ 
-    defaultCountry, 
-    autoLocate: autoLocate && !value,
-    initialValue: value, // 👈 PASAMOS EL VALOR INICIAL
-  });
+  } = useDireccion({ defaultCountry, autoLocate: autoLocate && !value });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
-  // Cuando la dirección cambia (por selección o geolocalización), mover el mapa
+  // Si hay un valor inicial, actualizar el hook
   useEffect(() => {
-    if (direccion.latitude !== 0 && direccion.longitude !== 0 && mapRef.current) {
-      mapRef.current.setView([direccion.latitude, direccion.longitude], 15);
+    if (value && value.latitude && value.longitude) {
+      setDireccion(value as Direccion);
     }
-  }, [direccion.latitude, direccion.longitude]);
+  }, [value, setDireccion]);
 
   // Notificar cambios al padre
   useEffect(() => {
@@ -132,7 +128,6 @@ export default function MapaSelector({
       <div className="mapa-container">
         {direccion.latitude !== 0 && direccion.longitude !== 0 ? (
           <MapContainer
-            key={`${direccion.latitude}-${direccion.longitude}`}
             center={[direccion.latitude, direccion.longitude]}
             zoom={15}
             style={{ height: '300px', width: '100%' }}
