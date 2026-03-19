@@ -1,5 +1,5 @@
 // src/hooks/useDireccion.ts
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 // Tipos para la dirección
 export interface Direccion {
@@ -33,21 +33,13 @@ const direccionVacia: Direccion = {
 interface UseDireccionOptions {
   defaultCountry?: string;
   autoLocate?: boolean;
-  initialValue?: Partial<Direccion>; // 👈 NUEVO
 }
 
 export function useDireccion(options: UseDireccionOptions = {}) {
-  const { defaultCountry = 'AR', autoLocate = false, initialValue } = options;
+  const { defaultCountry = 'AR', autoLocate = true } = options;
 
   // Estados
-  const [direccion, setDireccion] = useState<Direccion>(() => {
-    // Si hay initialValue con coordenadas, usarlo
-    if (initialValue?.latitude && initialValue?.longitude) {
-      return initialValue as Direccion;
-    }
-    return direccionVacia;
-  });
-
+  const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sugerencias, setSugerencias] = useState<any[]>([]);
@@ -59,7 +51,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   const obtenerUbicacion = useCallback((): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocalización no soportada'));
+        reject(new Error('Geolocalización no soportada por el navegador'));
         return;
       }
 
@@ -82,7 +74,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'TurnosPWA/1.0',
+          'User-Agent': 'TurnosPWA/1.0', // Obligatorio para Nominatim
         },
       });
 
@@ -96,6 +88,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
         throw new Error('No se pudo obtener dirección de las coordenadas');
       }
 
+      // Mapear respuesta a nuestro formato
       const nuevaDireccion: Direccion = {
         street: data.address.road || data.address.pedestrian || '',
         street_number: data.address.house_number || '',
@@ -121,7 +114,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   }, []);
 
   // =============================================
-  // 3. Localización automática (solo si autoLocate es true)
+  // 3. Localización automática al iniciar
   // =============================================
   const localizar = useCallback(async () => {
     try {
@@ -129,8 +122,11 @@ export function useDireccion(options: UseDireccionOptions = {}) {
       const { latitude, longitude } = position.coords;
       await reverseGeocode(latitude, longitude);
     } catch (err) {
-      // Error de geolocalización: solo log, no error visible
-      console.log('Geolocalización falló (permiso denegado o timeout)');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Error al obtener ubicación');
+      }
     }
   }, [obtenerUbicacion, reverseGeocode]);
 
@@ -174,8 +170,9 @@ export function useDireccion(options: UseDireccionOptions = {}) {
 
     setLoading(true);
     try {
+      // Usar reverse geocoding con las coordenadas de la sugerencia
       await reverseGeocode(parseFloat(sugerencia.lat), parseFloat(sugerencia.lon));
-      setSugerencias([]);
+      setSugerencias([]); // Limpiar sugerencias
     } catch (err) {
       console.error('Error al seleccionar dirección:', err);
     } finally {
@@ -206,11 +203,11 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   // =============================================
   // 8. Inicializar (auto localizar si está activado)
   // =============================================
-  useEffect(() => {
+  useState(() => {
     if (autoLocate) {
       localizar();
     }
-  }, [autoLocate, localizar]);
+  });
 
   return {
     direccion,
@@ -223,6 +220,6 @@ export function useDireccion(options: UseDireccionOptions = {}) {
     seleccionarDireccion,
     moverPin,
     resetear,
-    setDireccion,
+    setDireccion, // Para casos donde se quiera setear manualmente
   };
 }
