@@ -33,18 +33,25 @@ const direccionVacia: Direccion = {
 interface UseDireccionOptions {
   defaultCountry?: string;
   autoLocate?: boolean;
+  initialValue?: Partial<Direccion>; // 👈 NUEVO
 }
 
 export function useDireccion(options: UseDireccionOptions = {}) {
-  const { defaultCountry = 'AR', autoLocate = false } = options; // 👈 autoLocate false por defecto
+  const { defaultCountry = 'AR', autoLocate = false, initialValue } = options;
 
   // Estados
-  const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
+  const [direccion, setDireccion] = useState<Direccion>(() => {
+    // Si hay initialValue con coordenadas, usarlo
+    if (initialValue?.latitude && initialValue?.longitude) {
+      return initialValue as Direccion;
+    }
+    return direccionVacia;
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sugerencias, setSugerencias] = useState<any[]>([]);
   const [buscando, setBuscando] = useState(false);
-  const [geoError, setGeoError] = useState<string | null>(null); // 👈 Error separado para geolocalización
 
   // =============================================
   // 1. Obtener ubicación del navegador
@@ -117,15 +124,13 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   // 3. Localización automática (solo si autoLocate es true)
   // =============================================
   const localizar = useCallback(async () => {
-    setGeoError(null);
     try {
       const position = await obtenerUbicacion();
       const { latitude, longitude } = position.coords;
       await reverseGeocode(latitude, longitude);
     } catch (err) {
-      // Error de geolocalización: no mostramos error al usuario, solo log
+      // Error de geolocalización: solo log, no error visible
       console.log('Geolocalización falló (permiso denegado o timeout)');
-      setGeoError('no-permission'); // Marcador interno, no se muestra
     }
   }, [obtenerUbicacion, reverseGeocode]);
 
@@ -196,7 +201,6 @@ export function useDireccion(options: UseDireccionOptions = {}) {
     setDireccion(direccionVacia);
     setError(null);
     setSugerencias([]);
-    setGeoError(null);
   }, []);
 
   // =============================================
