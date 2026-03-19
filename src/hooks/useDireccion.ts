@@ -1,5 +1,5 @@
 // src/hooks/useDireccion.ts
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Tipos para la dirección
 export interface Direccion {
@@ -74,7 +74,7 @@ export function useDireccion(options: UseDireccionOptions = {}) {
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'TurnosPWA/1.0', // Obligatorio para Nominatim
+          'User-Agent': 'TurnosPWA/1.0',
         },
       });
 
@@ -88,7 +88,6 @@ export function useDireccion(options: UseDireccionOptions = {}) {
         throw new Error('No se pudo obtener dirección de las coordenadas');
       }
 
-      // Mapear respuesta a nuestro formato
       const nuevaDireccion: Direccion = {
         street: data.address.road || data.address.pedestrian || '',
         street_number: data.address.house_number || '',
@@ -170,9 +169,8 @@ export function useDireccion(options: UseDireccionOptions = {}) {
 
     setLoading(true);
     try {
-      // Usar reverse geocoding con las coordenadas de la sugerencia
       await reverseGeocode(parseFloat(sugerencia.lat), parseFloat(sugerencia.lon));
-      setSugerencias([]); // Limpiar sugerencias
+      setSugerencias([]);
     } catch (err) {
       console.error('Error al seleccionar dirección:', err);
     } finally {
@@ -203,11 +201,11 @@ export function useDireccion(options: UseDireccionOptions = {}) {
   // =============================================
   // 8. Inicializar (auto localizar si está activado)
   // =============================================
-  useState(() => {
+  useEffect(() => {
     if (autoLocate) {
       localizar();
     }
-  });
+  }, [autoLocate, localizar]); // 👈 CORREGIDO
 
   return {
     direccion,
@@ -220,6 +218,6 @@ export function useDireccion(options: UseDireccionOptions = {}) {
     seleccionarDireccion,
     moverPin,
     resetear,
-    setDireccion, // Para casos donde se quiera setear manualmente
+    setDireccion,
   };
 }
