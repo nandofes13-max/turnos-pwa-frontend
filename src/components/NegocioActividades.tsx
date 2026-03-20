@@ -42,7 +42,7 @@ export default function NegocioActividades() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedRelacion, setSelectedRelacion] = useState<Relacion | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     negocioId: '',
     actividadId: ''
@@ -187,16 +187,6 @@ export default function NegocioActividades() {
     setModalMode('add');
   };
 
-  const handleEditar = (relacion: Relacion) => {
-    setFormData({ 
-      negocioId: relacion.negocioId.toString(),
-      actividadId: relacion.actividadId.toString()
-    });
-    setSelectedRelacion(relacion);
-    setErrorMessage(null);
-    setModalMode('edit');
-  };
-
   const handleVerDetalle = (relacion: Relacion) => {
     setSelectedRelacion(relacion);
     setModalMode('view');
@@ -232,15 +222,6 @@ export default function NegocioActividades() {
       if (modalMode === 'add') {
         res = await fetch(RELACIONES_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            negocioId: parseInt(formData.negocioId),
-            actividadId: parseInt(formData.actividadId)
-          }),
-        });
-      } else if (modalMode === 'edit' && selectedRelacion) {
-        res = await fetch(`${RELACIONES_URL}/${selectedRelacion.id}`, {
-          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             negocioId: parseInt(formData.negocioId),
@@ -456,8 +437,7 @@ export default function NegocioActividades() {
                   <th>ACTIVIDAD</th>
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {relacionesPaginadas.map((r) => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -479,15 +459,15 @@ export default function NegocioActividades() {
                     <td>
                       <ActionIcons
                         onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
-                        onEdit={() => !r.fecha_baja && handleEditar(r)}
+                        onEdit={null}
                         onDelete={() => !r.fecha_baja && handleEliminar(r)}
                         onView={() => handleVerDetalle(r)}
                         showAdd={true}
-                        showEdit={true}
+                        showEdit={false}
                         showDelete={true}
                         showView={true}
                         disabledAdd={!r.fecha_baja}
-                        disabledEdit={!!r.fecha_baja}
+                        disabledEdit={true}
                         disabledDelete={!!r.fecha_baja}
                         disabledView={false}
                         size="md"
@@ -523,15 +503,15 @@ export default function NegocioActividades() {
                 <div className="tm-card-acciones">
                   <ActionIcons
                     onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
-                    onEdit={() => !r.fecha_baja && handleEditar(r)}
+                    onEdit={null}
                     onDelete={() => !r.fecha_baja && handleEliminar(r)}
                     onView={() => handleVerDetalle(r)}
                     showAdd={true}
-                    showEdit={true}
+                    showEdit={false}
                     showDelete={true}
                     showView={true}
                     disabledAdd={!r.fecha_baja}
-                    disabledEdit={!!r.fecha_baja}
+                    disabledEdit={true}
                     disabledDelete={!!r.fecha_baja}
                     disabledView={false}
                     size="lg"
@@ -597,53 +577,6 @@ export default function NegocioActividades() {
               </select>
             </div>
 
-            <div className="tm-modal-acciones">
-              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EDITAR */}
-      {modalMode === 'edit' && selectedRelacion && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Editar Asignación</h3>
-            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
-            
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Negocio</label>
-              <input
-                type="text"
-                value={selectedRelacion.negocio?.nombre || `ID: ${selectedRelacion.negocioId}`}
-                className="tm-modal-input"
-                disabled
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Actividad *</label>
-              <select
-                value={formData.actividadId}
-                onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })}
-                className="tm-modal-input"
-                required
-              >
-                {actividades.map(a => (
-                  <option key={a.id} value={a.id}>
-                    {a.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedRelacion.ultimoMovimiento && (
-              <div className="tm-modal-detalle-movimiento activo">
-                <span className="tm-modal-detalle-label">Último Movimiento</span>
-                <p className="tm-modal-detalle-valor">{selectedRelacion.ultimoMovimiento.replace('demo', 'DEMO')}</p>
-              </div>
-            )}
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
