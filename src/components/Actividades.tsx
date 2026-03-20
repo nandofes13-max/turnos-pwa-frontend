@@ -10,7 +10,7 @@ interface Actividad {
   usuario_alta?: string;
   fecha_modificacion?: string;
   usuario_modificacion?: string;
-  fecha_baja?: string | null; // 👈 PERMITIR NULL EXPLÍCITAMENTE
+  fecha_baja?: string | null;
   usuario_baja?: string | null;
 }
 
@@ -89,12 +89,9 @@ export default function Actividades() {
 
   const actividadesFiltradas = filtrarActividades(actividades);
   
-  // Lógica de paginación
   const totalPaginas = Math.ceil(actividadesFiltradas.length / itemsPorPagina);
-  
   const indiceUltimoItem = paginaActual * itemsPorPagina;
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
-  
   const actividadesPaginadas = actividadesFiltradas
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
@@ -143,11 +140,8 @@ export default function Actividades() {
   };
 
   const handleReactivar = (actividad: Actividad) => {
-    console.log('Intentando reactivar:', actividad);
     if (actividad.fecha_baja) {
       setConfirmReactivar(actividad);
-    } else {
-      console.warn('La actividad ya está activa');
     }
   };
 
@@ -166,7 +160,7 @@ export default function Actividades() {
       );
       
       if (nombreExistente) {
-        setErrorMessage('Ya existe un registro activo con ese nombre');
+        setErrorMessage('Ya existe una actividad activa con ese nombre');
         return false;
       }
       
@@ -212,7 +206,10 @@ export default function Actividades() {
         return;
       }
 
-      if (!res.ok) throw new Error('Error al guardar actividad');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al guardar actividad');
+      }
 
       setModalMode(null);
       setSelectedActividad(null);
@@ -221,7 +218,7 @@ export default function Actividades() {
       fetchActividades();
     } catch (err) {
       console.error(err);
-      setErrorMessage('No se pudo guardar la actividad');
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar la actividad');
     }
   };
 
@@ -247,24 +244,16 @@ export default function Actividades() {
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
 
-    console.log('Reactivando:', confirmReactivar);
-
     try {
       const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          nombre: confirmReactivar.nombre,
-          fecha_baja: null,
-          usuario_baja: null
+          nombre: confirmReactivar.nombre
         }),
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Error response:', errorText);
-        throw new Error('Error al reactivar actividad');
-      }
+      if (!res.ok) throw new Error('Error al reactivar actividad');
 
       setConfirmReactivar(null);
       fetchActividades();
@@ -411,14 +400,14 @@ export default function Actividades() {
             </div>
           </div>
 
-          {/* TABLA (solo visible en desktop) */}
+          {/* TABLA */}
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
                   <th className="tm-col-nombre">NOMBRE</th>
                   <th>ACCIONES</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody>
                 {actividadesPaginadas.map((a) => (
@@ -426,7 +415,7 @@ export default function Actividades() {
                     key={a.id} 
                     className={a.fecha_baja ? 'tm-fila-inactiva' : ''}
                   >
-                    <td className="tm-celda-nombre">{a.nombre}</td>
+                    <td className="tm-celda-nombre">{a.nombre} </td>
                     <td>
                       <ActionIcons
                         onAdd={() => a.fecha_baja ? handleReactivar(a) : null}
@@ -454,7 +443,7 @@ export default function Actividades() {
             </table>
           </div>
 
-          {/* CARDS PARA MÓVIL */}
+          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {actividadesPaginadas.map((a) => (
               <div 
@@ -512,7 +501,7 @@ export default function Actividades() {
         </div>
       )}
 
-      {/* MODALES (sin cambios) */}
+      {/* MODALES */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
