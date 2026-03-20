@@ -241,28 +241,29 @@ export default function Actividades() {
     }
   };
 
-  const confirmarReactivar = async () => {
-    if (!confirmReactivar) return;
+ const confirmarReactivar = async () => {
+  if (!confirmReactivar) return;
 
-    try {
-      const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          nombre: confirmReactivar.nombre
-        }),
-      });
+  try {
+    const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        nombre: confirmReactivar.nombre,
+        fecha_baja: null,
+        usuario_baja: null
+      }),
+    });
 
-      if (!res.ok) throw new Error('Error al reactivar actividad');
+    if (!res.ok) throw new Error('Error al reactivar actividad');
 
-      setConfirmReactivar(null);
-      fetchActividades();
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo reactivar la actividad');
-    }
-  };
-
+    setConfirmReactivar(null);
+    fetchActividades();
+  } catch (err) {
+    console.error(err);
+    alert('No se pudo reactivar la actividad');
+  }
+};
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
     setFiltroNombre('');
