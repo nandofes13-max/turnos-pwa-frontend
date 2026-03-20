@@ -6,7 +6,8 @@ import Actividades from './components/Actividades';
 import Usuarios from './components/Usuarios';
 import Roles from './components/Roles';
 import Negocios from './components/Negocios';
-import NegociosUsuariosRoles from './components/NegociosUsuariosRoles'; // 👈 AGREGADO
+import NegociosUsuariosRoles from './components/NegociosUsuariosRoles';
+import NegocioActividades from './components/NegocioActividades'; // 👈 AGREGADO
 import './App.css';
 
 function App() {
@@ -20,7 +21,8 @@ function App() {
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/roles" element={<Roles />} />
         <Route path="/negocios" element={<Negocios />} />
-        <Route path="/negocios-usuarios-roles" element={<NegociosUsuariosRoles />} /> {/* 👈 AGREGADO */}
+        <Route path="/negocios-usuarios-roles" element={<NegociosUsuariosRoles />} />
+        <Route path="/negocio-actividades" element={<NegocioActividades />} /> {/* 👈 AGREGADO */}
       </Routes>
     </BrowserRouter>
   );
