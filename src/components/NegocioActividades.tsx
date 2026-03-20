@@ -299,7 +299,7 @@ export default function NegocioActividades() {
 
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
-              <thead>发展<th>NEGOCIO</th><th>ACTIVIDAD</th><th>ESTADO</th><th>ACCIONES</th> </thead>
+              <thead><th>NEGOCIO</th><th>ACTIVIDAD</th><th>ESTADO</th><th>ACCIONES</th> </thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
