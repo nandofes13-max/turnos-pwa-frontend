@@ -102,6 +102,15 @@ export default function NegocioActividades() {
     }
   };
 
+  // Función para saber si una actividad ya está asignada (activa o inactiva) al negocio seleccionado
+  const actividadYaAsignada = (actividadId: number): boolean => {
+    if (!formData.negocioId) return false;
+    return relaciones.some(r => 
+      r.actividadId === actividadId && 
+      r.negocioId === parseInt(formData.negocioId)
+    );
+  };
+
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
 
   const filtrarRelaciones = () => {
@@ -290,7 +299,7 @@ export default function NegocioActividades() {
 
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
-              <thead><tr><th>NEGOCIO</th><th>ACTIVIDAD</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+              <thead>发展<th>NEGOCIO</th><th>ACTIVIDAD</th><th>ESTADO</th><th>ACCIONES</th> </thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -342,10 +351,22 @@ export default function NegocioActividades() {
             </div>
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Actividad *</label>
-              <select value={formData.actividadId} onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })} className="tm-modal-input" required>
+              <select
+                value={formData.actividadId}
+                onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })}
+                className="tm-modal-input"
+                required
+              >
                 <option value="">Seleccionar actividad...</option>
-                {actividades.map(a => (<option key={a.id} value={a.id}>{a.nombre}</option>))}
+                {actividades
+                  .filter(a => !actividadYaAsignada(a.id))
+                  .map(a => (
+                    <option key={a.id} value={a.id}>{a.nombre}</option>
+                  ))}
               </select>
+              {actividades.filter(a => !actividadYaAsignada(a.id)).length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">No hay actividades disponibles. Todas ya están asignadas a este negocio.</p>
+              )}
             </div>
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
