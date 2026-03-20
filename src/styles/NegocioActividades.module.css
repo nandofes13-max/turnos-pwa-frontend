@@ -1,0 +1,33 @@
+/* =============================================
+   ESTILOS ESPECÍFICOS DE GESTIÓN DE ACTIVIDADES POR NEGOCIO
+   ============================================= */
+
+/* Anchos de columnas */
+.tm-col-negocio {
+  width: 250px;
+}
+
+.tm-col-actividad {
+  width: 200px;
+}
+
+.tm-col-estado {
+  width: 100px;
+}
+
+/* Filtros específicos */
+.tm-filtro-negocio {
+  width: 250px;
+}
+
+.tm-filtro-actividad {
+  width: 200px;
+}
+
+/* En móvil, ajustar filtros */
+@media (max-width: 640px) {
+  .tm-filtro-negocio,
+  .tm-filtro-actividad {
+    width: 100%;
+  }
+}
