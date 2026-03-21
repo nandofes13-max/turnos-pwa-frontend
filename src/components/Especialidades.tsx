@@ -6,8 +6,6 @@ interface Especialidad {
   id: number;
   nombre: string;
   descripcion?: string;
-  actividadId: number;
-  actividad?: { id: number; nombre: string };
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -17,24 +15,16 @@ interface Especialidad {
   usuario_baja?: string | null;
 }
 
-interface Actividad {
-  id: number;
-  nombre: string;
-  fecha_baja?: string | null;
-}
-
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const ESPECIALIDADES_URL = `${API_BASE_URL}/especialidades`;
-const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
 
 export default function Especialidades() {
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
-  const [actividades, setActividades] = useState<Actividad[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedEspecialidad, setSelectedEspecialidad] = useState<Especialidad | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', actividadId: '' });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
   const [confirmDelete, setConfirmDelete] = useState<Especialidad | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Especialidad | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -42,7 +32,6 @@ export default function Especialidades() {
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
-  const [filtroActividad, setFiltroActividad] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   
@@ -59,7 +48,6 @@ export default function Especialidades() {
 
   useEffect(() => {
     fetchEspecialidades();
-    fetchActividades();
   }, []);
 
   const fetchEspecialidades = async () => {
@@ -79,17 +67,6 @@ export default function Especialidades() {
     }
   };
 
-  const fetchActividades = async () => {
-    try {
-      const res = await fetch(ACTIVIDADES_URL);
-      const data = await res.json();
-      const activos = data.filter((a: Actividad) => !a.fecha_baja);
-      setActividades(activos);
-    } catch (err) {
-      console.error('Error al cargar actividades:', err);
-    }
-  };
-
   const obtenerTipoMovimiento = (e: Especialidad): string => {
     if (e.fecha_baja) return 'Bajas';
     return 'Altas';
@@ -98,7 +75,6 @@ export default function Especialidades() {
   const filtrarEspecialidades = () => {
     return especialidades.filter(e => {
       if (filtroNombre && !e.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) return false;
-      if (filtroActividad && e.actividad?.nombre && !e.actividad.nombre.toLowerCase().includes(filtroActividad.toLowerCase())) return false;
       
       const tipo = obtenerTipoMovimiento(e);
       if (filtroTipoMovimiento.length > 0 && !filtroTipoMovimiento.includes(tipo)) return false;
@@ -146,7 +122,7 @@ export default function Especialidades() {
   };
 
   const handleAgregar = () => {
-    setFormData({ nombre: '', descripcion: '', actividadId: '' });
+    setFormData({ nombre: '', descripcion: '' });
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -154,8 +130,7 @@ export default function Especialidades() {
   const handleEditar = (especialidad: Especialidad) => {
     setFormData({ 
       nombre: especialidad.nombre, 
-      descripcion: especialidad.descripcion || '', 
-      actividadId: especialidad.actividadId.toString() 
+      descripcion: especialidad.descripcion || '' 
     });
     setSelectedEspecialidad(especialidad);
     setErrorMessage(null);
@@ -208,10 +183,6 @@ export default function Especialidades() {
       setErrorMessage('El nombre es obligatorio');
       return;
     }
-    if (!formData.actividadId && modalMode === 'add') {
-      setErrorMessage('Debe seleccionar una actividad');
-      return;
-    }
 
     const nombreUpper = formData.nombre.toUpperCase();
 
@@ -228,12 +199,10 @@ export default function Especialidades() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: nombreUpper,
-            descripcion: formData.descripcion,
-            actividadId: parseInt(formData.actividadId)
+            descripcion: formData.descripcion
           }),
         });
       } else if (modalMode === 'edit' && selectedEspecialidad) {
-        // En edición, solo se puede cambiar nombre y descripción (no actividad)
         res = await fetch(`${ESPECIALIDADES_URL}/${selectedEspecialidad.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -253,7 +222,7 @@ export default function Especialidades() {
 
       setModalMode(null);
       setSelectedEspecialidad(null);
-      setFormData({ nombre: '', descripcion: '', actividadId: '' });
+      setFormData({ nombre: '', descripcion: '' });
       setErrorMessage(null);
       fetchEspecialidades();
     } catch (err) {
@@ -287,7 +256,6 @@ export default function Especialidades() {
         body: JSON.stringify({ 
           nombre: confirmReactivar.nombre,
           descripcion: confirmReactivar.descripcion,
-          actividadId: confirmReactivar.actividadId,
           fecha_baja: null,
           usuario_baja: null
         }),
@@ -304,7 +272,6 @@ export default function Especialidades() {
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
     setFiltroNombre('');
-    setFiltroActividad('');
     setFechaDesde('');
     setFechaHasta('');
     setPaginaActual(1);
@@ -327,19 +294,6 @@ export default function Especialidades() {
                 setPaginaActual(1);
               }}
               placeholder="Buscar..."
-              className="tm-filtro-input"
-            />
-          </div>
-          <div className="tm-filtro-campo tm-filtro-actividad">
-            <label className="tm-filtro-label">Actividad</label>
-            <input
-              type="text"
-              value={filtroActividad}
-              onChange={(e) => {
-                setFiltroActividad(e.target.value);
-                setPaginaActual(1);
-              }}
-              placeholder="Buscar actividad..."
               className="tm-filtro-input"
             />
           </div>
@@ -449,16 +403,13 @@ export default function Especialidades() {
               <thead>
                   <tr>
                     <th>NOMBRE</th>
-                    <th>ACTIVIDAD</th>
                     <th>DESCRIPCIÓN</th>
                     <th>ACCIONES</th>
-                  </tr>
-              </thead>
+                  </thead>
               <tbody>
                 {especialidadesPaginadas.map((e) => (
                   <tr key={e.id} className={e.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{e.nombre}</td>
-                    <td>{e.actividad?.nombre || `ID: ${e.actividadId}`}</td>
+                    <td>{e.nombre}   </td>
                     <td>{e.descripcion || '-'}</td>
                     <td>
                       <ActionIcons
@@ -481,7 +432,7 @@ export default function Especialidades() {
                 ))}
                 {especialidadesPaginadas.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="tm-fila-vacia">
+                    <td colSpan={3} className="tm-fila-vacia">
                       No hay especialidades que coincidan
                     </td>
                   </tr>
@@ -494,7 +445,6 @@ export default function Especialidades() {
             {especialidadesPaginadas.map((e) => (
               <div key={`card-${e.id}`} className={`tm-card-item ${e.fecha_baja ? 'inactiva' : ''}`}>
                 <div className="tm-card-nombre">{e.nombre}</div>
-                <div className="tm-card-actividad">Actividad: {e.actividad?.nombre || `ID ${e.actividadId}`}</div>
                 {e.descripcion && <div className="tm-card-descripcion">{e.descripcion}</div>}
                 <div className="tm-card-acciones">
                   <ActionIcons
@@ -552,21 +502,6 @@ export default function Especialidades() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Actividad *</label>
-              <select
-                value={formData.actividadId}
-                onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })}
-                className="tm-modal-input"
-                required
-              >
-                <option value="">Seleccionar actividad...</option>
-                {actividades.map(a => (
-                  <option key={a.id} value={a.id}>{a.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="tm-modal-campo">
               <label className="tm-modal-label">Descripción</label>
               <textarea
                 value={formData.descripcion}
@@ -600,17 +535,6 @@ export default function Especialidades() {
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                 className="tm-modal-input"
               />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Actividad</label>
-              <input
-                type="text"
-                value={selectedEspecialidad.actividad?.nombre || `ID: ${selectedEspecialidad.actividadId}`}
-                className="tm-modal-input"
-                disabled
-              />
-              <p className="tm-modal-input-hint">La actividad no puede modificarse</p>
             </div>
 
             <div className="tm-modal-campo">
@@ -649,10 +573,6 @@ export default function Especialidades() {
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">Nombre</span>
               <p className="tm-modal-detalle-valor">{selectedEspecialidad.nombre}</p>
-            </div>
-            <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">Actividad</span>
-              <p className="tm-modal-detalle-valor">{selectedEspecialidad.actividad?.nombre}</p>
             </div>
             {selectedEspecialidad.descripcion && (
               <div className="tm-modal-detalle-campo">
