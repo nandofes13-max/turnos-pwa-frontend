@@ -401,15 +401,16 @@ export default function Especialidades() {
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-                  <tr>
-                    <th>NOMBRE</th>
-                    <th>DESCRIPCIÓN</th>
-                    <th>ACCIONES</th>
-                  </thead>
+                 <tr>
+                   <th>NOMBRE</th>
+                   <th>DESCRIPCIÓN</th>
+                   <th>ACCIONES</th>
+                 </tr>
+              </thead>
               <tbody>
                 {especialidadesPaginadas.map((e) => (
                   <tr key={e.id} className={e.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{e.nombre}   </td>
+                    <td>{e.nombre}</td>
                     <td>{e.descripcion || '-'}</td>
                     <td>
                       <ActionIcons
