@@ -208,7 +208,7 @@ export default function Especialidades() {
       setErrorMessage('El nombre es obligatorio');
       return;
     }
-    if (!formData.actividadId) {
+    if (!formData.actividadId && modalMode === 'add') {
       setErrorMessage('Debe seleccionar una actividad');
       return;
     }
@@ -233,13 +233,13 @@ export default function Especialidades() {
           }),
         });
       } else if (modalMode === 'edit' && selectedEspecialidad) {
+        // En edición, solo se puede cambiar nombre y descripción (no actividad)
         res = await fetch(`${ESPECIALIDADES_URL}/${selectedEspecialidad.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             nombre: nombreUpper,
-            descripcion: formData.descripcion,
-            actividadId: parseInt(formData.actividadId)
+            descripcion: formData.descripcion
           }),
         });
       } else {
@@ -287,7 +287,9 @@ export default function Especialidades() {
         body: JSON.stringify({ 
           nombre: confirmReactivar.nombre,
           descripcion: confirmReactivar.descripcion,
-          actividadId: confirmReactivar.actividadId
+          actividadId: confirmReactivar.actividadId,
+          fecha_baja: null,
+          usuario_baja: null
         }),
       });
       if (!res.ok) throw new Error('Error al reactivar especialidad');
@@ -445,12 +447,12 @@ export default function Especialidades() {
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-                 <tr>
-                  <th>NOMBRE</th>
-                  <th>ACTIVIDAD</th>
-                  <th>DESCRIPCIÓN</th>
-                  <th>ACCIONES</th>
-                </tr>
+                  <tr>
+                    <th>NOMBRE</th>
+                    <th>ACTIVIDAD</th>
+                    <th>DESCRIPCIÓN</th>
+                    <th>ACCIONES</th>
+                  </tr>
               </thead>
               <tbody>
                 {especialidadesPaginadas.map((e) => (
@@ -601,17 +603,14 @@ export default function Especialidades() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Actividad *</label>
-              <select
-                value={formData.actividadId}
-                onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })}
+              <label className="tm-modal-label">Actividad</label>
+              <input
+                type="text"
+                value={selectedEspecialidad.actividad?.nombre || `ID: ${selectedEspecialidad.actividadId}`}
                 className="tm-modal-input"
-                required
-              >
-                {actividades.map(a => (
-                  <option key={a.id} value={a.id}>{a.nombre}</option>
-                ))}
-              </select>
+                disabled
+              />
+              <p className="tm-modal-input-hint">La actividad no puede modificarse</p>
             </div>
 
             <div className="tm-modal-campo">
