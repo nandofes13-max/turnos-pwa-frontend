@@ -1,0 +1,33 @@
+/* =============================================
+   ESTILOS ESPECÍFICOS DE ESPECIALIDADES
+   ============================================= */
+
+/* Anchos de columnas */
+.tm-col-nombre {
+  width: 200px;
+}
+
+.tm-col-actividad {
+  width: 180px;
+}
+
+.tm-col-descripcion {
+  width: 300px;
+}
+
+/* Filtros específicos */
+.tm-filtro-nombre {
+  width: 250px;
+}
+
+.tm-filtro-actividad {
+  width: 200px;
+}
+
+/* En móvil, ajustar filtros */
+@media (max-width: 640px) {
+  .tm-filtro-nombre,
+  .tm-filtro-actividad {
+    width: 100%;
+  }
+}
