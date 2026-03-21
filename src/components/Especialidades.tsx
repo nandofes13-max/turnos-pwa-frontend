@@ -95,7 +95,7 @@ export default function Especialidades() {
     return 'Altas';
   };
 
-  const filtrarEspecialidades = (especialidades: Especialidad[]): Especialidad[] => {
+  const filtrarEspecialidades = () => {
     return especialidades.filter(e => {
       if (filtroNombre && !e.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) return false;
       if (filtroActividad && e.actividad?.nombre && !e.actividad.nombre.toLowerCase().includes(filtroActividad.toLowerCase())) return false;
@@ -116,7 +116,7 @@ export default function Especialidades() {
     });
   };
 
-  const especialidadesFiltradas = filtrarEspecialidades(especialidades);
+  const especialidadesFiltradas = filtrarEspecialidades();
   
   const totalPaginas = Math.ceil(especialidadesFiltradas.length / itemsPorPagina);
   const indiceUltimoItem = paginaActual * itemsPorPagina;
@@ -315,8 +315,6 @@ export default function Especialidades() {
       {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
-          
-          {/* NOMBRE */}
           <div className="tm-filtro-campo tm-filtro-nombre">
             <label className="tm-filtro-label">Nombre</label>
             <input
@@ -330,8 +328,6 @@ export default function Especialidades() {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* ACTIVIDAD */}
           <div className="tm-filtro-campo tm-filtro-actividad">
             <label className="tm-filtro-label">Actividad</label>
             <input
@@ -345,8 +341,6 @@ export default function Especialidades() {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* FECHA DESDE */}
           <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Desde</label>
             <input
@@ -359,8 +353,6 @@ export default function Especialidades() {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* FECHA HASTA */}
           <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Hasta</label>
             <input
@@ -373,8 +365,6 @@ export default function Especialidades() {
               className="tm-filtro-input"
             />
           </div>
-
-          {/* MOVIMIENTO */}
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
             <div className="tm-filtro-dropdown">
@@ -387,7 +377,6 @@ export default function Especialidades() {
                 </span>
                 <span>▼</span>
               </button>
-              
               {filtroExpandido.movimiento && (
                 <div className="tm-filtro-dropdown-menu">
                   <label className="tm-filtro-checkbox-label">
@@ -414,13 +403,8 @@ export default function Especialidades() {
               )}
             </div>
           </div>
-
-          {/* Botón Limpiar Filtros */}
           <div className="tm-filtro-accion">
-            <button
-              onClick={limpiarFiltros}
-              className="tm-btn-limpiar"
-            >
+            <button onClick={limpiarFiltros} className="tm-btn-limpiar">
               Limpiar Filtros
             </button>
           </div>
@@ -461,16 +445,17 @@ export default function Especialidades() {
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-                <tr>
+                 <tr>
                   <th>NOMBRE</th>
                   <th>ACTIVIDAD</th>
                   <th>DESCRIPCIÓN</th>
                   <th>ACCIONES</th>
-                </thead>
+                </tr>
+              </thead>
               <tbody>
                 {especialidadesPaginadas.map((e) => (
                   <tr key={e.id} className={e.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td className="tm-celda-nombre">{e.nombre}  </td>
+                    <td>{e.nombre}</td>
                     <td>{e.actividad?.nombre || `ID: ${e.actividadId}`}</td>
                     <td>{e.descripcion || '-'}</td>
                     <td>
@@ -623,7 +608,6 @@ export default function Especialidades() {
                 className="tm-modal-input"
                 required
               >
-                <option value="">Seleccionar actividad...</option>
                 {actividades.map(a => (
                   <option key={a.id} value={a.id}>{a.nombre}</option>
                 ))}
