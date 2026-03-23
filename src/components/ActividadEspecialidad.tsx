@@ -109,13 +109,28 @@ export default function ActividadEspecialidad() {
       return false;
     }
     const actividadIdNum = parseInt(formData.actividadId);
+    
+    console.log(`🔍 Buscando especialidad ${especialidadId} en actividad ${actividadIdNum}`);
+    console.log('📋 Relaciones disponibles:', relaciones.map(r => ({
+      id: r.id,
+      act_id: r.actividad_id,
+      esp_id: r.especialidad_id,
+      act_nombre: r.actividad?.nombre,
+      esp_nombre: r.especialidad?.nombre
+    })));
+    
     const existe = relaciones.some(r => {
       const coincide = r.actividad_id === actividadIdNum && r.especialidad_id === especialidadId;
       if (coincide) {
-        console.log(`✅ ESPECIALIDAD ${especialidadId} YA ASIGNADA a actividad ${actividadIdNum}`);
+        console.log(`✅ ENCONTRADO: Especialidad ${especialidadId} (${r.especialidad?.nombre}) ya asignada a actividad ${actividadIdNum} (${r.actividad?.nombre})`);
       }
       return coincide;
     });
+    
+    if (!existe) {
+      console.log(`❌ No encontrada: Especialidad ${especialidadId} NO está asignada a actividad ${actividadIdNum}`);
+    }
+    
     return existe;
   };
 
