@@ -71,6 +71,7 @@ export default function ActividadEspecialidad() {
       const res = await fetch(RELACIONES_URL);
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
+      console.log('🔍 RELACIONES CARGADAS:', data);
       setRelaciones(data);
       setPaginaActual(1);
     } catch (err) {
@@ -103,11 +104,19 @@ export default function ActividadEspecialidad() {
 
   // Función para saber si una especialidad ya está asignada (activa o inactiva) a la actividad seleccionada
   const especialidadYaAsignada = (especialidadId: number): boolean => {
-    if (!formData.actividadId) return false;
-    return relaciones.some(r => 
-      r.actividad_id === parseInt(formData.actividadId) && 
-      r.especialidad_id === especialidadId
-    );
+    if (!formData.actividadId) {
+      console.log('📌 No hay actividad seleccionada');
+      return false;
+    }
+    const actividadIdNum = parseInt(formData.actividadId);
+    const existe = relaciones.some(r => {
+      const coincide = r.actividad_id === actividadIdNum && r.especialidad_id === especialidadId;
+      if (coincide) {
+        console.log(`✅ ESPECIALIDAD ${especialidadId} YA ASIGNADA a actividad ${actividadIdNum}`);
+      }
+      return coincide;
+    });
+    return existe;
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -149,6 +158,7 @@ export default function ActividadEspecialidad() {
   };
 
   const handleAgregar = () => {
+    console.log('🟢 Abriendo modal, relaciones actuales:', relaciones);
     setFormData({ actividadId: '', especialidadId: '' });
     setErrorMessage(null);
     setModalMode('add');
@@ -292,10 +302,8 @@ export default function ActividadEspecialidad() {
         </div>
       </div>
 
-      {/* Manejo de errores */}
       {fetchError && (<div className="tm-error"><p>Error al cargar datos: {fetchError}</p><button onClick={fetchRelaciones} className="tm-btn-secundario">Reintentar</button></div>)}
 
-      {/* Tabla de Relaciones */}
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
@@ -309,10 +317,10 @@ export default function ActividadEspecialidad() {
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
                     <td>{r.actividad?.nombre || `ID: ${r.actividad_id}`}</td>
-                     <td>{r.especialidad?.nombre || `ID: ${r.especialidad_id}`}</td>
-                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
-                     <td><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="md" /></td>
-                   </tr>
+                    <td>{r.especialidad?.nombre || `ID: ${r.especialidad_id}`}</td>
+                    <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
+                    <td><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="md" /></td>
+                  </tr>
                 ))}
                 {relacionesPaginadas.length === 0 && (<tr><td colSpan={4} className="tm-fila-vacia">No hay relaciones que coincidan</td></tr>)}
               </tbody>
@@ -349,7 +357,15 @@ export default function ActividadEspecialidad() {
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Actividad *</label>
-              <select value={formData.actividadId} onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })} className="tm-modal-input" required>
+              <select 
+                value={formData.actividadId} 
+                onChange={(e) => {
+                  console.log('📌 Actividad seleccionada:', e.target.value);
+                  setFormData({ actividadId: e.target.value, especialidadId: '' });
+                }} 
+                className="tm-modal-input" 
+                required
+              >
                 <option value="">Seleccionar actividad...</option>
                 {actividades.map(a => (<option key={a.id} value={a.id}>{a.nombre}</option>))}
               </select>
@@ -364,7 +380,13 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadYaAsignada(e.id))
+                  .filter(e => {
+                    const asignada = especialidadYaAsignada(e.id);
+                    if (asignada) {
+                      console.log(`🔴 Ocultando: ${e.nombre} (ID: ${e.id}) porque ya está asignada a actividad ${formData.actividadId}`);
+                    }
+                    return !asignada;
+                  })
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
