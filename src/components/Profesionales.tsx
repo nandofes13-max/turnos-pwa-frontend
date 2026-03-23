@@ -448,7 +448,8 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </thead>
+                </tr>
+              </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -478,7 +479,9 @@ export default function Profesionales() {
                   </tr>
                 ))}
                 {profesionalesPaginados.length === 0 && (
-                  <tr><td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td></tr>
+                  <tr>
+                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -604,7 +607,6 @@ export default function Profesionales() {
               />
             </div>
 
-            {/* Vista previa de la foto */}
             {formData.foto && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
@@ -698,7 +700,6 @@ export default function Profesionales() {
               />
             </div>
 
-            {/* Vista previa de la foto */}
             {(formData.foto || selectedProfesional.nombre) && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
