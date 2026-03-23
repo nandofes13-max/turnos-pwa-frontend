@@ -46,6 +46,8 @@ export default function ActividadEspecialidad() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Estado para las especialidades ya asignadas a la actividad seleccionada
+  const [especialidadesAsignadas, setEspecialidadesAsignadas] = useState<number[]>([]);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -102,36 +104,26 @@ export default function ActividadEspecialidad() {
     }
   };
 
-  // Función para saber si una especialidad ya está asignada (activa o inactiva) a la actividad seleccionada
-  const especialidadYaAsignada = (especialidadId: number): boolean => {
-    if (!formData.actividadId) {
-      console.log('📌 No hay actividad seleccionada');
-      return false;
+  // Cargar especialidades asignadas a una actividad específica
+  const cargarEspecialidadesAsignadas = async (actividadId: number) => {
+    if (!actividadId) {
+      setEspecialidadesAsignadas([]);
+      return;
     }
-    const actividadIdNum = parseInt(formData.actividadId);
-    
-    console.log(`🔍 Buscando especialidad ${especialidadId} en actividad ${actividadIdNum}`);
-    console.log('📋 Relaciones disponibles:', relaciones.map(r => ({
-      id: r.id,
-      act_id: r.actividad_id,
-      esp_id: r.especialidad_id,
-      act_nombre: r.actividad?.nombre,
-      esp_nombre: r.especialidad?.nombre
-    })));
-    
-    const existe = relaciones.some(r => {
-      const coincide = r.actividad_id === actividadIdNum && r.especialidad_id === especialidadId;
-      if (coincide) {
-        console.log(`✅ ENCONTRADO: Especialidad ${especialidadId} (${r.especialidad?.nombre}) ya asignada a actividad ${actividadIdNum} (${r.actividad?.nombre})`);
+    try {
+      const res = await fetch(`${RELACIONES_URL}/por-actividad/${actividadId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const ids = data.map((r: Relacion) => r.especialidad_id);
+        console.log(`📌 Especialidades asignadas a actividad ${actividadId}:`, ids);
+        setEspecialidadesAsignadas(ids);
+      } else {
+        setEspecialidadesAsignadas([]);
       }
-      return coincide;
-    });
-    
-    if (!existe) {
-      console.log(`❌ No encontrada: Especialidad ${especialidadId} NO está asignada a actividad ${actividadIdNum}`);
+    } catch (err) {
+      console.error('Error cargando especialidades asignadas:', err);
+      setEspecialidadesAsignadas([]);
     }
-    
-    return existe;
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -173,8 +165,8 @@ export default function ActividadEspecialidad() {
   };
 
   const handleAgregar = () => {
-    console.log('🟢 Abriendo modal, relaciones actuales:', relaciones);
     setFormData({ actividadId: '', especialidadId: '' });
+    setEspecialidadesAsignadas([]);
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -201,13 +193,23 @@ export default function ActividadEspecialidad() {
 
   const guardarRelacion = async () => {
     if (!validarFormulario()) return;
+    
+    const actividadIdNum = parseInt(formData.actividadId);
+    const especialidadIdNum = parseInt(formData.especialidadId);
+    
+    // Validar usando el estado actualizado
+    if (especialidadesAsignadas.includes(especialidadIdNum)) {
+      setErrorMessage('Esta especialidad ya está vinculada a esta actividad');
+      return;
+    }
+    
     try {
       const res = await fetch(RELACIONES_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          actividadId: parseInt(formData.actividadId),
-          especialidadId: parseInt(formData.especialidadId)
+          actividadId: actividadIdNum,
+          especialidadId: especialidadIdNum
         }),
       });
       if (!res.ok) {
@@ -217,6 +219,7 @@ export default function ActividadEspecialidad() {
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ actividadId: '', especialidadId: '' });
+      setEspecialidadesAsignadas([]);
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -375,8 +378,13 @@ export default function ActividadEspecialidad() {
               <select 
                 value={formData.actividadId} 
                 onChange={(e) => {
-                  console.log('📌 Actividad seleccionada:', e.target.value);
-                  setFormData({ actividadId: e.target.value, especialidadId: '' });
+                  const nuevaActividadId = e.target.value;
+                  setFormData({ actividadId: nuevaActividadId, especialidadId: '' });
+                  if (nuevaActividadId) {
+                    cargarEspecialidadesAsignadas(parseInt(nuevaActividadId));
+                  } else {
+                    setEspecialidadesAsignadas([]);
+                  }
                 }} 
                 className="tm-modal-input" 
                 required
@@ -395,18 +403,12 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => {
-                    const asignada = especialidadYaAsignada(e.id);
-                    if (asignada) {
-                      console.log(`🔴 Ocultando: ${e.nombre} (ID: ${e.id}) porque ya está asignada a actividad ${formData.actividadId}`);
-                    }
-                    return !asignada;
-                  })
+                  .filter(e => !especialidadesAsignadas.includes(e.id))
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
               </select>
-              {especialidades.filter(e => !especialidadYaAsignada(e.id)).length === 0 && formData.actividadId && (
+              {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.actividadId && (
                 <p className="text-sm text-gray-500 mt-1">No hay especialidades disponibles. Todas ya están asignadas a esta actividad.</p>
               )}
             </div>
