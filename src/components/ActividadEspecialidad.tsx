@@ -71,7 +71,6 @@ export default function ActividadEspecialidad() {
       const res = await fetch(RELACIONES_URL);
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
-      console.log('Relaciones cargadas:', data);
       setRelaciones(data);
       setPaginaActual(1);
     } catch (err) {
@@ -102,18 +101,13 @@ export default function ActividadEspecialidad() {
     }
   };
 
-  // Función para saber si una especialidad ya está asignada (activa o inactiva) a la actividad seleccionada
   const especialidadYaAsignada = (especialidadId: number): boolean => {
     if (!formData.actividadId) return false;
-    
     const actividadIdNum = parseInt(formData.actividadId);
-    
-    const existe = relaciones.some(r => 
+    return relaciones.some(r => 
       r.actividad_id === actividadIdNum && 
       r.especialidad_id === especialidadId
     );
-    
-    return existe;
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -154,7 +148,20 @@ export default function ActividadEspecialidad() {
     setPaginaActual(1);
   };
 
-  const handleAgregar = () => {
+  const handleAgregar = async () => {
+    // Recargar relaciones antes de abrir el modal
+    setLoading(true);
+    try {
+      const res = await fetch(RELACIONES_URL);
+      if (res.ok) {
+        const data = await res.json();
+        setRelaciones(data);
+      }
+    } catch (err) {
+      console.error('Error recargando relaciones:', err);
+    } finally {
+      setLoading(false);
+    }
     setFormData({ actividadId: '', especialidadId: '' });
     setErrorMessage(null);
     setModalMode('add');
@@ -312,10 +319,8 @@ export default function ActividadEspecialidad() {
         </div>
       </div>
 
-      {/* Manejo de errores */}
       {fetchError && (<div className="tm-error"><p>Error al cargar datos: {fetchError}</p><button onClick={fetchRelaciones} className="tm-btn-secundario">Reintentar</button></div>)}
 
-      {/* Tabla de Relaciones */}
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
@@ -384,38 +389,6 @@ export default function ActividadEspecialidad() {
               </select>
             </div>
 
-            {/* DEBUG: Mostrar estado actual */}
-            {formData.actividadId && (
-              <div className="text-xs bg-yellow-100 p-2 mb-2 rounded border border-yellow-400">
-                <p className="font-bold">🔍 DEBUG:</p>
-                <p>Actividad seleccionada: <strong>{formData.actividadId}</strong></p>
-                <p>Especialidades YA asignadas a esta actividad:</p>
-                <ul className="list-disc pl-4">
-                  {relaciones
-                    .filter(r => r.actividad_id === parseInt(formData.actividadId))
-                    .map(r => (
-                      <li key={r.id}>
-                        ID: {r.especialidad_id} - 
-                        Nombre: {especialidades.find(e => e.id === r.especialidad_id)?.nombre || 'Cargando...'} - 
-                        Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}
-                      </li>
-                    ))}
-                  {relaciones.filter(r => r.actividad_id === parseInt(formData.actividadId)).length === 0 && (
-                    <li>No hay especialidades asignadas aún</li>
-                  )}
-                </ul>
-                <p className="mt-2">Todas las especialidades disponibles:</p>
-                <ul className="list-disc pl-4">
-                  {especialidades.map(e => (
-                    <li key={e.id}>
-                      {e.nombre} (ID: {e.id}) - 
-                      {especialidadYaAsignada(e.id) ? ' ❌ YA ASIGNADA (NO debería aparecer en el select)' : ' ✅ DISPONIBLE'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Especialidad *</label>
               <select
@@ -426,13 +399,7 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => {
-                    const yaAsignada = especialidadYaAsignada(e.id);
-                    if (formData.actividadId && yaAsignada) {
-                      console.log(`🔴 Ocultando: ${e.nombre} - ya asignada a actividad ${formData.actividadId}`);
-                    }
-                    return !yaAsignada;
-                  })
+                  .filter(e => !especialidadYaAsignada(e.id))
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
