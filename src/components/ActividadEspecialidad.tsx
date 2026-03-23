@@ -4,8 +4,8 @@ import '../styles/tablas-maestras.css';
 
 interface Relacion {
   id: number;
-  actividad_id: number;
-  especialidad_id: number;
+  actividadId: number;      // ← CORREGIDO: con mayúscula I
+  especialidadId: number;   // ← CORREGIDO: con mayúscula I
   actividad?: { id: number; nombre: string };
   especialidad?: { id: number; nombre: string };
   ultimoMovimiento?: string;
@@ -72,6 +72,7 @@ export default function ActividadEspecialidad() {
       const res = await fetch(RELACIONES_URL);
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
+      console.log('🔍 RELACIONES CARGADAS:', data);
       setRelaciones(data);
       setPaginaActual(1);
     } catch (err) {
@@ -102,6 +103,7 @@ export default function ActividadEspecialidad() {
     }
   };
 
+  // Cargar especialidades asignadas a una actividad específica
   const cargarEspecialidadesAsignadas = async (actividadId: number) => {
     if (!actividadId) {
       setEspecialidadesAsignadas([]);
@@ -111,7 +113,7 @@ export default function ActividadEspecialidad() {
       const res = await fetch(`${RELACIONES_URL}/por-actividad/${actividadId}`);
       if (res.ok) {
         const data = await res.json();
-        const ids = data.map((r: Relacion) => r.especialidad_id);
+        const ids = data.map((r: Relacion) => r.especialidadId);  // ← CORREGIDO
         console.log(`📌 Especialidades asignadas a actividad ${actividadId}:`, ids);
         setEspecialidadesAsignadas(ids);
       } else {
@@ -247,8 +249,8 @@ export default function ActividadEspecialidad() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          actividadId: confirmReactivar.actividad_id,
-          especialidadId: confirmReactivar.especialidad_id,
+          actividadId: confirmReactivar.actividadId,
+          especialidadId: confirmReactivar.especialidadId,
           fecha_baja: null,
           usuario_baja: null
         }),
@@ -275,6 +277,7 @@ export default function ActividadEspecialidad() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Actividad ↔ Especialidad</h1>
 
+      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo tm-filtro-actividad">
@@ -329,8 +332,8 @@ export default function ActividadEspecialidad() {
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{r.actividad?.nombre || `ID: ${r.actividad_id}`}</td>
-                    <td>{r.especialidad?.nombre || `ID: ${r.especialidad_id}`}</td>
+                    <td>{r.actividad?.nombre || `ID: ${r.actividadId}`}</td>
+                    <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
                     <td><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="md" /></td>
                   </tr>
@@ -343,8 +346,8 @@ export default function ActividadEspecialidad() {
           <div className="tm-cards">
             {relacionesPaginadas.map(r => (
               <div key={`card-${r.id}`} className={`tm-card-item ${r.fecha_baja ? 'inactiva' : ''}`}>
-                <div className="tm-card-actividad"><strong>{r.actividad?.nombre || `Actividad ${r.actividad_id}`}</strong></div>
-                <div className="tm-card-especialidad">Especialidad: <strong>{r.especialidad?.nombre || `ID ${r.especialidad_id}`}</strong></div>
+                <div className="tm-card-actividad"><strong>{r.actividad?.nombre || `Actividad ${r.actividadId}`}</strong></div>
+                <div className="tm-card-especialidad">Especialidad: <strong>{r.especialidad?.nombre || `ID ${r.especialidadId}`}</strong></div>
                 <div className="tm-card-estado">Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}</div>
                 <div className="tm-card-acciones"><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="lg" /></div>
               </div>
@@ -374,7 +377,6 @@ export default function ActividadEspecialidad() {
                 value={formData.actividadId} 
                 onChange={(e) => {
                   const nuevaActividadId = e.target.value;
-                  console.log('📌 Actividad seleccionada:', nuevaActividadId);
                   setFormData({ actividadId: nuevaActividadId, especialidadId: '' });
                   if (nuevaActividadId) {
                     cargarEspecialidadesAsignadas(parseInt(nuevaActividadId));
@@ -398,20 +400,11 @@ export default function ActividadEspecialidad() {
                 required
               >
                 <option value="">Seleccionar especialidad...</option>
-                {(() => {
-                  console.log('🎯 Renderizando select, especialidadesAsignadas:', especialidadesAsignadas);
-                  return especialidades
-                    .filter(e => {
-                      const estaAsignada = especialidadesAsignadas.includes(e.id);
-                      if (estaAsignada) {
-                        console.log(`🔴 Ocultando: ${e.nombre} (ID: ${e.id}) porque está en especialidadesAsignadas`);
-                      }
-                      return !estaAsignada;
-                    })
-                    .map(e => (
-                      <option key={e.id} value={e.id}>{e.nombre}</option>
-                    ));
-                })()}
+                {especialidades
+                  .filter(e => !especialidadesAsignadas.includes(e.id))
+                  .map(e => (
+                    <option key={e.id} value={e.id}>{e.nombre}</option>
+                  ))}
               </select>
               {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.actividadId && (
                 <p className="text-sm text-gray-500 mt-1">No hay especialidades disponibles. Todas ya están asignadas a esta actividad.</p>
