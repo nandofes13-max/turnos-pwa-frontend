@@ -10,6 +10,7 @@ import NegociosUsuariosRoles from './components/NegociosUsuariosRoles';
 import NegocioActividades from './components/NegocioActividades';
 import Especialidades from './components/Especialidades';
 import ActividadEspecialidad from './components/ActividadEspecialidad'; // 👈 NUEVO IMPORT
+import Profesionales from './components/Profesionales';
 import './App.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         <Route path="/negocio-actividades" element={<NegocioActividades />} />
         <Route path="/especialidades" element={<Especialidades />} />
         <Route path="/actividad-especialidad" element={<ActividadEspecialidad />} /> {/* 👈 NUEVA RUTA */}
+        <Route path="/profesionales" element={<Profesionales />} />
       </Routes>
     </BrowserRouter>
   );
