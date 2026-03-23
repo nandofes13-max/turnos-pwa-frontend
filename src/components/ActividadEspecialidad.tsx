@@ -46,6 +46,8 @@ export default function ActividadEspecialidad() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Estado para las especialidades ya asignadas a la actividad seleccionada (cargadas on-demand)
+  const [especialidadesAsignadas, setEspecialidadesAsignadas] = useState<number[]>([]);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -101,13 +103,25 @@ export default function ActividadEspecialidad() {
     }
   };
 
-  const especialidadYaAsignada = (especialidadId: number): boolean => {
-    if (!formData.actividadId) return false;
-    const actividadIdNum = parseInt(formData.actividadId);
-    return relaciones.some(r => 
-      r.actividad_id === actividadIdNum && 
-      r.especialidad_id === especialidadId
-    );
+  // Función para cargar las especialidades asignadas a una actividad específica
+  const cargarEspecialidadesAsignadas = async (actividadId: number) => {
+    if (!actividadId) {
+      setEspecialidadesAsignadas([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${RELACIONES_URL}/por-actividad/${actividadId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const ids = data.map((r: Relacion) => r.especialidad_id);
+        setEspecialidadesAsignadas(ids);
+      } else {
+        setEspecialidadesAsignadas([]);
+      }
+    } catch (err) {
+      console.error('Error cargando especialidades asignadas:', err);
+      setEspecialidadesAsignadas([]);
+    }
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -148,21 +162,9 @@ export default function ActividadEspecialidad() {
     setPaginaActual(1);
   };
 
-  const handleAgregar = async () => {
-    // Recargar relaciones antes de abrir el modal
-    setLoading(true);
-    try {
-      const res = await fetch(RELACIONES_URL);
-      if (res.ok) {
-        const data = await res.json();
-        setRelaciones(data);
-      }
-    } catch (err) {
-      console.error('Error recargando relaciones:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleAgregar = () => {
     setFormData({ actividadId: '', especialidadId: '' });
+    setEspecialidadesAsignadas([]);
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -193,12 +195,8 @@ export default function ActividadEspecialidad() {
     const actividadIdNum = parseInt(formData.actividadId);
     const especialidadIdNum = parseInt(formData.especialidadId);
     
-    const yaExiste = relaciones.some(r => 
-      r.actividad_id === actividadIdNum && 
-      r.especialidad_id === especialidadIdNum
-    );
-    
-    if (yaExiste) {
+    // Validar usando el estado actualizado de especialidadesAsignadas
+    if (especialidadesAsignadas.includes(especialidadIdNum)) {
       setErrorMessage('Esta especialidad ya está vinculada a esta actividad');
       return;
     }
@@ -219,6 +217,7 @@ export default function ActividadEspecialidad() {
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ actividadId: '', especialidadId: '' });
+      setEspecialidadesAsignadas([]);
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -378,8 +377,14 @@ export default function ActividadEspecialidad() {
               <select 
                 value={formData.actividadId} 
                 onChange={(e) => {
-                  setFormData({ actividadId: e.target.value, especialidadId: '' });
+                  const nuevaActividadId = e.target.value;
+                  setFormData({ actividadId: nuevaActividadId, especialidadId: '' });
                   setErrorMessage(null);
+                  if (nuevaActividadId) {
+                    cargarEspecialidadesAsignadas(parseInt(nuevaActividadId));
+                  } else {
+                    setEspecialidadesAsignadas([]);
+                  }
                 }} 
                 className="tm-modal-input" 
                 required
@@ -399,12 +404,12 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadYaAsignada(e.id))
+                  .filter(e => !especialidadesAsignadas.includes(e.id))
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
               </select>
-              {especialidades.filter(e => !especialidadYaAsignada(e.id)).length === 0 && formData.actividadId && (
+              {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.actividadId && (
                 <p className="text-sm text-amber-600 mt-1">
                   ⚠️ No hay especialidades disponibles. Todas las especialidades ya están asignadas a esta actividad.
                 </p>
