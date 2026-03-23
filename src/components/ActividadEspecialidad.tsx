@@ -46,7 +46,6 @@ export default function ActividadEspecialidad() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Estado para las especialidades ya asignadas a la actividad seleccionada
   const [especialidadesAsignadas, setEspecialidadesAsignadas] = useState<number[]>([]);
   
   // Estados para filtros
@@ -73,7 +72,6 @@ export default function ActividadEspecialidad() {
       const res = await fetch(RELACIONES_URL);
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
-      console.log('🔍 RELACIONES CARGADAS:', data);
       setRelaciones(data);
       setPaginaActual(1);
     } catch (err) {
@@ -104,7 +102,6 @@ export default function ActividadEspecialidad() {
     }
   };
 
-  // Cargar especialidades asignadas a una actividad específica
   const cargarEspecialidadesAsignadas = async (actividadId: number) => {
     if (!actividadId) {
       setEspecialidadesAsignadas([]);
@@ -197,7 +194,6 @@ export default function ActividadEspecialidad() {
     const actividadIdNum = parseInt(formData.actividadId);
     const especialidadIdNum = parseInt(formData.especialidadId);
     
-    // Validar usando el estado actualizado
     if (especialidadesAsignadas.includes(especialidadIdNum)) {
       setErrorMessage('Esta especialidad ya está vinculada a esta actividad');
       return;
@@ -279,7 +275,6 @@ export default function ActividadEspecialidad() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Actividad ↔ Especialidad</h1>
 
-      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo tm-filtro-actividad">
@@ -379,6 +374,7 @@ export default function ActividadEspecialidad() {
                 value={formData.actividadId} 
                 onChange={(e) => {
                   const nuevaActividadId = e.target.value;
+                  console.log('📌 Actividad seleccionada:', nuevaActividadId);
                   setFormData({ actividadId: nuevaActividadId, especialidadId: '' });
                   if (nuevaActividadId) {
                     cargarEspecialidadesAsignadas(parseInt(nuevaActividadId));
@@ -402,11 +398,20 @@ export default function ActividadEspecialidad() {
                 required
               >
                 <option value="">Seleccionar especialidad...</option>
-                {especialidades
-                  .filter(e => !especialidadesAsignadas.includes(e.id))
-                  .map(e => (
-                    <option key={e.id} value={e.id}>{e.nombre}</option>
-                  ))}
+                {(() => {
+                  console.log('🎯 Renderizando select, especialidadesAsignadas:', especialidadesAsignadas);
+                  return especialidades
+                    .filter(e => {
+                      const estaAsignada = especialidadesAsignadas.includes(e.id);
+                      if (estaAsignada) {
+                        console.log(`🔴 Ocultando: ${e.nombre} (ID: ${e.id}) porque está en especialidadesAsignadas`);
+                      }
+                      return !estaAsignada;
+                    })
+                    .map(e => (
+                      <option key={e.id} value={e.id}>{e.nombre}</option>
+                    ));
+                })()}
               </select>
               {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.actividadId && (
                 <p className="text-sm text-gray-500 mt-1">No hay especialidades disponibles. Todas ya están asignadas a esta actividad.</p>
