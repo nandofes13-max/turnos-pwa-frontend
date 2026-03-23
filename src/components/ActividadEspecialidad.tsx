@@ -255,42 +255,58 @@ export default function ActividadEspecialidad() {
   };
 
   const guardarRelacion = async () => {
-    if (!formData.actividad_id || !formData.especialidad_id) {
-      setErrorMessage('Debe seleccionar una Actividad y una Especialidad');
+  if (!formData.actividad_id || !formData.especialidad_id) {
+    setErrorMessage('Debe seleccionar una Actividad y una Especialidad');
+    return;
+  }
+
+  try {
+    if (modalMode === 'add') {
+      const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id);
+      if (!esValido) return;
+    } else if (modalMode === 'edit' && selectedRelacion) {
+      const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id, selectedRelacion.id);
+      if (!esValido) return;
+    }
+
+    let res;
+    if (modalMode === 'add') {
+      res = await fetch(ACTIVIDAD_ESPECIALIDAD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          actividadId: formData.actividad_id, 
+          especialidadId: formData.especialidad_id 
+        }),
+      });
+    } else if (modalMode === 'edit' && selectedRelacion) {
+      res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${selectedRelacion.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          actividadId: formData.actividad_id, 
+          especialidadId: formData.especialidad_id 
+        }),
+      });
+    } else {
       return;
     }
 
-    try {
-      if (modalMode === 'add') {
-        const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id);
-        if (!esValido) return;
-      } else if (modalMode === 'edit' && selectedRelacion) {
-        const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id, selectedRelacion.id);
-        if (!esValido) return;
-      }
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al guardar la relación');
+    }
 
-      let res;
-      if (modalMode === 'add') {
-        res = await fetch(ACTIVIDAD_ESPECIALIDAD_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-      } else if (modalMode === 'edit' && selectedRelacion) {
-        res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${selectedRelacion.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        });
-      } else {
-        return;
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al guardar la relación');
-      }
-
+    setModalMode(null);
+    setSelectedRelacion(null);
+    setFormData({ actividad_id: 0, especialidad_id: 0 });
+    setErrorMessage(null);
+    await fetchRelaciones();
+  } catch (err) {
+    console.error(err);
+    setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar la relación');
+  }
+};
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ actividad_id: 0, especialidad_id: 0 });
