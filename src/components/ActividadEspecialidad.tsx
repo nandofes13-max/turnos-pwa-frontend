@@ -71,6 +71,7 @@ export default function ActividadEspecialidad() {
       const res = await fetch(RELACIONES_URL);
       if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
+      console.log('Relaciones cargadas:', data);
       setRelaciones(data);
       setPaginaActual(1);
     } catch (err) {
@@ -107,11 +108,12 @@ export default function ActividadEspecialidad() {
     
     const actividadIdNum = parseInt(formData.actividadId);
     
-    // Buscar si existe alguna relación con esta actividad y especialidad
-    return relaciones.some(r => 
+    const existe = relaciones.some(r => 
       r.actividad_id === actividadIdNum && 
       r.especialidad_id === especialidadId
     );
+    
+    return existe;
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -181,7 +183,6 @@ export default function ActividadEspecialidad() {
   const guardarRelacion = async () => {
     if (!validarFormulario()) return;
     
-    // Validación adicional por si el filtro fallara
     const actividadIdNum = parseInt(formData.actividadId);
     const especialidadIdNum = parseInt(formData.especialidadId);
     
@@ -323,7 +324,7 @@ export default function ActividadEspecialidad() {
 
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
-              <thead><th>ACTIVIDAD</th><th>ESPECIALIDAD</th><th>ESTADO</th><th>ACCIONES</th></thead>
+              <thead>前后<th>ACTIVIDAD</th><th>ESPECIALIDAD</th><th>ESTADO</th><th>ACCIONES</th></thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -366,6 +367,7 @@ export default function ActividadEspecialidad() {
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Asignar Especialidad a Actividad</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
+            
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Actividad *</label>
               <select 
@@ -381,6 +383,39 @@ export default function ActividadEspecialidad() {
                 {actividades.map(a => (<option key={a.id} value={a.id}>{a.nombre}</option>))}
               </select>
             </div>
+
+            {/* DEBUG: Mostrar estado actual */}
+            {formData.actividadId && (
+              <div className="text-xs bg-yellow-100 p-2 mb-2 rounded border border-yellow-400">
+                <p className="font-bold">🔍 DEBUG:</p>
+                <p>Actividad seleccionada: <strong>{formData.actividadId}</strong></p>
+                <p>Especialidades YA asignadas a esta actividad:</p>
+                <ul className="list-disc pl-4">
+                  {relaciones
+                    .filter(r => r.actividad_id === parseInt(formData.actividadId))
+                    .map(r => (
+                      <li key={r.id}>
+                        ID: {r.especialidad_id} - 
+                        Nombre: {especialidades.find(e => e.id === r.especialidad_id)?.nombre || 'Cargando...'} - 
+                        Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}
+                      </li>
+                    ))}
+                  {relaciones.filter(r => r.actividad_id === parseInt(formData.actividadId)).length === 0 && (
+                    <li>No hay especialidades asignadas aún</li>
+                  )}
+                </ul>
+                <p className="mt-2">Todas las especialidades disponibles:</p>
+                <ul className="list-disc pl-4">
+                  {especialidades.map(e => (
+                    <li key={e.id}>
+                      {e.nombre} (ID: {e.id}) - 
+                      {especialidadYaAsignada(e.id) ? ' ❌ YA ASIGNADA (NO debería aparecer en el select)' : ' ✅ DISPONIBLE'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Especialidad *</label>
               <select
@@ -391,7 +426,13 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadYaAsignada(e.id))
+                  .filter(e => {
+                    const yaAsignada = especialidadYaAsignada(e.id);
+                    if (formData.actividadId && yaAsignada) {
+                      console.log(`🔴 Ocultando: ${e.nombre} - ya asignada a actividad ${formData.actividadId}`);
+                    }
+                    return !yaAsignada;
+                  })
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
@@ -402,6 +443,7 @@ export default function ActividadEspecialidad() {
                 </p>
               )}
             </div>
+
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
