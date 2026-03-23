@@ -442,7 +442,7 @@ export default function Profesionales() {
             </div>
           </div>
 
-          <div className="tm-tabla-centrado">
+                    <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -453,7 +453,8 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </thead>
+                </tr>
+              </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -484,7 +485,7 @@ export default function Profesionales() {
                 ))}
                 {profesionalesPaginados.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coinciden</td>
+                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
                   </tr>
                 )}
               </tbody>
