@@ -10,6 +10,8 @@ interface Profesional {
   nombre: string;
   email: string;
   whatsapp_e164?: string;
+  country_code?: number;
+  national_number?: string;
   matricula?: string;
   foto?: string;
   ultimoMovimiento?: string;
@@ -157,6 +159,7 @@ export default function Profesionales() {
     }
   };
 
+  // Función para parsear el número de teléfono E164 a country_code y national_number
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
     const match = phone.match(/^\+(\d{1,3})(\d+)$/);
@@ -225,7 +228,8 @@ export default function Profesionales() {
       documento: formData.documento,
       nombre: formData.nombre.toUpperCase(),
       email: formData.email,
-      whatsapp_e164: phoneValue,
+      country_code: country_code,
+      national_number: national_number,
       matricula: formData.matricula || null,
       foto: formData.foto || null
     };
@@ -296,7 +300,8 @@ export default function Profesionales() {
           documento: confirmReactivar.documento,
           nombre: confirmReactivar.nombre,
           email: confirmReactivar.email,
-          whatsapp_e164: confirmReactivar.whatsapp_e164,
+          country_code: confirmReactivar.country_code,
+          national_number: confirmReactivar.national_number,
           matricula: confirmReactivar.matricula,
           foto: confirmReactivar.foto,
           fecha_baja: null,
@@ -448,8 +453,7 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -480,7 +484,7 @@ export default function Profesionales() {
                 ))}
                 {profesionalesPaginados.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
+                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coinciden</td>
                   </tr>
                 )}
               </tbody>
