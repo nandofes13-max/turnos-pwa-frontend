@@ -335,27 +335,26 @@ export default function ActividadEspecialidad() {
   };
 
   const confirmarReactivar = async () => {
-    if (!confirmReactivar) return;
-    try {
-      const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${confirmReactivar.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          actividad_id: confirmReactivar.actividad_id,
-          especialidad_id: confirmReactivar.especialidad_id,
-          fecha_baja: null,
-          usuario_baja: null
-        }),
-      });
-      if (!res.ok) throw new Error('Error al reactivar relación');
-      setConfirmReactivar(null);
-      await fetchRelaciones();
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo reactivar la relación');
-    }
-  };
-
+  if (!confirmReactivar) return;
+  try {
+    const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${confirmReactivar.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        actividadId: confirmReactivar.actividad_id,
+        especialidadId: confirmReactivar.especialidad_id,
+        fecha_baja: null,
+        usuario_baja: null
+      }),
+    });
+    if (!res.ok) throw new Error('Error al reactivar relación');
+    setConfirmReactivar(null);
+    await fetchRelaciones();
+  } catch (err) {
+    console.error(err);
+    alert('No se pudo reactivar la relación');
+  }
+};
   // ===== RENDER =====
   return (
     <div className="tm-page">
