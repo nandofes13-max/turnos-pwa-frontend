@@ -321,6 +321,29 @@ export default function Profesionales() {
     setPaginaActual(1);
   };
 
+  // Función para obtener el avatar (foto o iniciales)
+  const obtenerAvatar = (profesional: Profesional) => {
+    if (profesional.foto) {
+      return (
+        <img 
+          src={profesional.foto} 
+          alt={profesional.nombre} 
+          className="w-8 h-8 rounded-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`;
+          }}
+        />
+      );
+    }
+    return (
+      <img 
+        src={`https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`}
+        alt={profesional.nombre}
+        className="w-8 h-8 rounded-full"
+      />
+    );
+  };
+
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Profesionales</h1>
@@ -418,17 +441,18 @@ export default function Profesionales() {
             <table className="tm-tabla">
               <thead>
                 <tr>
+                  <th>AVATAR</th>
                   <th>DOCUMENTO</th>
                   <th>NOMBRE</th>
                   <th>EMAIL</th>
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
+                    <td className="text-center">{obtenerAvatar(p)}</td>
                     <td>{p.documento}</td>
                     <td>{p.nombre}</td>
                     <td>{p.email}</td>
@@ -454,7 +478,7 @@ export default function Profesionales() {
                   </tr>
                 ))}
                 {profesionalesPaginados.length === 0 && (
-                  <tr><td colSpan={6} className="tm-fila-vacia">No hay profesionales que coincidan</td></tr>
+                  <tr><td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td></tr>
                 )}
               </tbody>
             </table>
@@ -464,12 +488,15 @@ export default function Profesionales() {
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
               <div key={`card-${p.id}`} className={`tm-card-item ${p.fecha_baja ? 'inactiva' : ''}`}>
-                <div className="tm-card-nombre"><strong>{p.nombre}</strong></div>
+                <div className="flex items-center gap-3 mb-2">
+                  {obtenerAvatar(p)}
+                  <div className="tm-card-nombre"><strong>{p.nombre}</strong></div>
+                </div>
                 <div className="tm-card-documento">Documento: {p.documento}</div>
                 <div className="tm-card-email">Email: {p.email}</div>
                 <div className="tm-card-whatsapp">WhatsApp: {p.whatsapp_e164 || '-'}</div>
                 {p.matricula && <div className="tm-card-matricula">Matrícula: {p.matricula}</div>}
-                <div className="tm-card-acciones">
+                <div className="tm-card-acciones mt-2">
                   <ActionIcons
                     onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
                     onEdit={() => !p.fecha_baja && handleEditar(p)}
@@ -577,6 +604,23 @@ export default function Profesionales() {
               />
             </div>
 
+            {/* Vista previa de la foto */}
+            {formData.foto && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Vista previa</label>
+                <div className="flex justify-center mt-1">
+                  <img 
+                    src={formData.foto} 
+                    alt="Vista previa" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarProfesional} className="tm-btn-primario">Agregar</button>
@@ -654,6 +698,23 @@ export default function Profesionales() {
               />
             </div>
 
+            {/* Vista previa de la foto */}
+            {(formData.foto || selectedProfesional.nombre) && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Vista previa</label>
+                <div className="flex justify-center mt-1">
+                  <img 
+                    src={formData.foto || `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`}
+                    alt="Vista previa" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {selectedProfesional.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
                 <span className="tm-modal-detalle-label">Último Movimiento</span>
@@ -673,6 +734,16 @@ export default function Profesionales() {
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
+            <div className="tm-modal-detalle-campo flex justify-center">
+              <img 
+                src={selectedProfesional.foto || `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`}
+                alt={selectedProfesional.nombre}
+                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                }}
+              />
+            </div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedProfesional.id}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Documento</span><p className="tm-modal-detalle-valor">{selectedProfesional.documento}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedProfesional.nombre}</p></div>
