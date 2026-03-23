@@ -46,8 +46,6 @@ export default function ActividadEspecialidad() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Estado para las especialidades ya asignadas a la actividad seleccionada (cargadas on-demand)
-  const [especialidadesAsignadas, setEspecialidadesAsignadas] = useState<number[]>([]);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -103,25 +101,13 @@ export default function ActividadEspecialidad() {
     }
   };
 
-  // Función para cargar las especialidades asignadas a una actividad específica
-  const cargarEspecialidadesAsignadas = async (actividadId: number) => {
-    if (!actividadId) {
-      setEspecialidadesAsignadas([]);
-      return;
-    }
-    try {
-      const res = await fetch(`${RELACIONES_URL}/por-actividad/${actividadId}`);
-      if (res.ok) {
-        const data = await res.json();
-        const ids = data.map((r: Relacion) => r.especialidad_id);
-        setEspecialidadesAsignadas(ids);
-      } else {
-        setEspecialidadesAsignadas([]);
-      }
-    } catch (err) {
-      console.error('Error cargando especialidades asignadas:', err);
-      setEspecialidadesAsignadas([]);
-    }
+  // Función para saber si una especialidad ya está asignada (activa o inactiva) a la actividad seleccionada
+  const especialidadYaAsignada = (especialidadId: number): boolean => {
+    if (!formData.actividadId) return false;
+    return relaciones.some(r => 
+      r.actividad_id === parseInt(formData.actividadId) && 
+      r.especialidad_id === especialidadId
+    );
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => r.fecha_baja ? 'Bajas' : 'Altas';
@@ -164,7 +150,6 @@ export default function ActividadEspecialidad() {
 
   const handleAgregar = () => {
     setFormData({ actividadId: '', especialidadId: '' });
-    setEspecialidadesAsignadas([]);
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -191,23 +176,13 @@ export default function ActividadEspecialidad() {
 
   const guardarRelacion = async () => {
     if (!validarFormulario()) return;
-    
-    const actividadIdNum = parseInt(formData.actividadId);
-    const especialidadIdNum = parseInt(formData.especialidadId);
-    
-    // Validar usando el estado actualizado de especialidadesAsignadas
-    if (especialidadesAsignadas.includes(especialidadIdNum)) {
-      setErrorMessage('Esta especialidad ya está vinculada a esta actividad');
-      return;
-    }
-    
     try {
       const res = await fetch(RELACIONES_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          actividadId: actividadIdNum,
-          especialidadId: especialidadIdNum
+          actividadId: parseInt(formData.actividadId),
+          especialidadId: parseInt(formData.especialidadId)
         }),
       });
       if (!res.ok) {
@@ -217,7 +192,6 @@ export default function ActividadEspecialidad() {
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ actividadId: '', especialidadId: '' });
-      setEspecialidadesAsignadas([]);
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -318,8 +292,10 @@ export default function ActividadEspecialidad() {
         </div>
       </div>
 
+      {/* Manejo de errores */}
       {fetchError && (<div className="tm-error"><p>Error al cargar datos: {fetchError}</p><button onClick={fetchRelaciones} className="tm-btn-secundario">Reintentar</button></div>)}
 
+      {/* Tabla de Relaciones */}
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
@@ -328,15 +304,15 @@ export default function ActividadEspecialidad() {
 
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
-              <thead>前后<th>ACTIVIDAD</th><th>ESPECIALIDAD</th><th>ESTADO</th><th>ACCIONES</th></thead>
+              <thead><th>ACTIVIDAD</th><th>ESPECIALIDAD</th><th>ESTADO</th><th>ACCIONES</th></thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
                     <td>{r.actividad?.nombre || `ID: ${r.actividad_id}`}</td>
-                    <td>{r.especialidad?.nombre || `ID: ${r.especialidad_id}`}</td>
-                    <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
-                    <td><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="md" /></td>
-                  </tr>
+                     <td>{r.especialidad?.nombre || `ID: ${r.especialidad_id}`}</td>
+                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
+                     <td><ActionIcons onAdd={() => r.fecha_baja ? handleReactivar(r) : null} onEdit={null} onDelete={() => !r.fecha_baja && handleEliminar(r)} onView={() => handleVerDetalle(r)} showAdd={true} showEdit={false} showDelete={true} showView={true} disabledAdd={!r.fecha_baja} disabledEdit={true} disabledDelete={!!r.fecha_baja} disabledView={false} size="md" /></td>
+                   </tr>
                 ))}
                 {relacionesPaginadas.length === 0 && (<tr><td colSpan={4} className="tm-fila-vacia">No hay relaciones que coincidan</td></tr>)}
               </tbody>
@@ -371,29 +347,13 @@ export default function ActividadEspecialidad() {
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Asignar Especialidad a Actividad</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
-            
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Actividad *</label>
-              <select 
-                value={formData.actividadId} 
-                onChange={(e) => {
-                  const nuevaActividadId = e.target.value;
-                  setFormData({ actividadId: nuevaActividadId, especialidadId: '' });
-                  setErrorMessage(null);
-                  if (nuevaActividadId) {
-                    cargarEspecialidadesAsignadas(parseInt(nuevaActividadId));
-                  } else {
-                    setEspecialidadesAsignadas([]);
-                  }
-                }} 
-                className="tm-modal-input" 
-                required
-              >
+              <select value={formData.actividadId} onChange={(e) => setFormData({ ...formData, actividadId: e.target.value })} className="tm-modal-input" required>
                 <option value="">Seleccionar actividad...</option>
                 {actividades.map(a => (<option key={a.id} value={a.id}>{a.nombre}</option>))}
               </select>
             </div>
-
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Especialidad *</label>
               <select
@@ -404,18 +364,15 @@ export default function ActividadEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadesAsignadas.includes(e.id))
+                  .filter(e => !especialidadYaAsignada(e.id))
                   .map(e => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
               </select>
-              {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.actividadId && (
-                <p className="text-sm text-amber-600 mt-1">
-                  ⚠️ No hay especialidades disponibles. Todas las especialidades ya están asignadas a esta actividad.
-                </p>
+              {especialidades.filter(e => !especialidadYaAsignada(e.id)).length === 0 && formData.actividadId && (
+                <p className="text-sm text-gray-500 mt-1">No hay especialidades disponibles. Todas ya están asignadas a esta actividad.</p>
               )}
             </div>
-
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
