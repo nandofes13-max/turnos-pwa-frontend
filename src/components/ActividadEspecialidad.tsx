@@ -6,11 +6,13 @@ import '../styles/tablas-maestras.css';
 interface Actividad {
   id: number;
   nombre: string;
+  fecha_baja?: string | null;
 }
 
 interface Especialidad {
   id: number;
   nombre: string;
+  fecha_baja?: string | null;
 }
 
 interface ActividadEspecialidad {
@@ -47,8 +49,8 @@ export default function ActividadEspecialidad() {
   const [selectedRelacion, setSelectedRelacion] = useState<ActividadEspecialidad | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ actividad_id: 0, especialidad_id: 0 });
-  const [confirmDelete, setConfirmDelete] = useState<ActividadEspecialidad | null>(null);
-  const [confirmReactivar, setConfirmReactivar] = useState<ActividadEspecialidad | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ActividadEspecialidadConNombres | null>(null);
+  const [confirmReactivar, setConfirmReactivar] = useState<ActividadEspecialidadConNombres | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Estados para filtros
@@ -86,17 +88,15 @@ export default function ActividadEspecialidad() {
       const data: ActividadEspecialidad[] = await res.json();
       
       // Enriquecer con nombres
-      const relacionesConNombres = await Promise.all(
-        data.map(async (rel) => {
-          const actividad = actividades.find(a => a.id === rel.actividad_id);
-          const especialidad = especialidades.find(e => e.id === rel.especialidad_id);
-          return {
-            ...rel,
-            actividad_nombre: actividad?.nombre || `ID ${rel.actividad_id}`,
-            especialidad_nombre: especialidad?.nombre || `ID ${rel.especialidad_id}`,
-          };
-        })
-      );
+      const relacionesConNombres = data.map((rel) => {
+        const actividad = actividades.find(a => a.id === rel.actividad_id);
+        const especialidad = especialidades.find(e => e.id === rel.especialidad_id);
+        return {
+          ...rel,
+          actividad_nombre: actividad?.nombre || `ID ${rel.actividad_id}`,
+          especialidad_nombre: especialidad?.nombre || `ID ${rel.especialidad_id}`,
+        };
+      });
       setRelaciones(relacionesConNombres);
       setPaginaActual(1);
     } catch (err) {
@@ -255,63 +255,53 @@ export default function ActividadEspecialidad() {
   };
 
   const guardarRelacion = async () => {
-  if (!formData.actividad_id || !formData.especialidad_id) {
-    setErrorMessage('Debe seleccionar una Actividad y una Especialidad');
-    return;
-  }
-
-  try {
-    if (modalMode === 'add') {
-      const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id);
-      if (!esValido) return;
-    } else if (modalMode === 'edit' && selectedRelacion) {
-      const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id, selectedRelacion.id);
-      if (!esValido) return;
-    }
-
-    let res;
-    if (modalMode === 'add') {
-      res = await fetch(ACTIVIDAD_ESPECIALIDAD_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          actividadId: formData.actividad_id, 
-          especialidadId: formData.especialidad_id 
-        }),
-      });
-    } else if (modalMode === 'edit' && selectedRelacion) {
-      res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${selectedRelacion.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          actividadId: formData.actividad_id, 
-          especialidadId: formData.especialidad_id 
-        }),
-      });
-    } else {
+    if (!formData.actividad_id || !formData.especialidad_id) {
+      setErrorMessage('Debe seleccionar una Actividad y una Especialidad');
       return;
     }
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al guardar la relación');
-    }
+    try {
+      if (modalMode === 'add') {
+        const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id);
+        if (!esValido) return;
+      } else if (modalMode === 'edit' && selectedRelacion) {
+        const esValido = await verificarCombinacionUnica(formData.actividad_id, formData.especialidad_id, selectedRelacion.id);
+        if (!esValido) return;
+      }
 
-    setModalMode(null);
-    setSelectedRelacion(null);
-    setFormData({ actividad_id: 0, especialidad_id: 0 });
-    setErrorMessage(null);
-    await fetchRelaciones();
-  } catch (err) {
-    console.error(err);
-    setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar la relación');
-  }
-};
+      let res;
+      if (modalMode === 'add') {
+        res = await fetch(ACTIVIDAD_ESPECIALIDAD_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            actividadId: formData.actividad_id, 
+            especialidadId: formData.especialidad_id 
+          }),
+        });
+      } else if (modalMode === 'edit' && selectedRelacion) {
+        res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${selectedRelacion.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            actividadId: formData.actividad_id, 
+            especialidadId: formData.especialidad_id 
+          }),
+        });
+      } else {
+        return;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al guardar la relación');
+      }
+
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ actividad_id: 0, especialidad_id: 0 });
       setErrorMessage(null);
-      await fetchRelaciones(); // Recargar después de guardar
+      await fetchRelaciones();
     } catch (err) {
       console.error(err);
       setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar la relación');
@@ -335,26 +325,27 @@ export default function ActividadEspecialidad() {
   };
 
   const confirmarReactivar = async () => {
-  if (!confirmReactivar) return;
-  try {
-    const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${confirmReactivar.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        actividadId: confirmReactivar.actividad_id,
-        especialidadId: confirmReactivar.especialidad_id,
-        fecha_baja: null,
-        usuario_baja: null
-      }),
-    });
-    if (!res.ok) throw new Error('Error al reactivar relación');
-    setConfirmReactivar(null);
-    await fetchRelaciones();
-  } catch (err) {
-    console.error(err);
-    alert('No se pudo reactivar la relación');
-  }
-};
+    if (!confirmReactivar) return;
+    try {
+      const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/${confirmReactivar.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          actividadId: confirmReactivar.actividad_id,
+          especialidadId: confirmReactivar.especialidad_id,
+          fecha_baja: null,
+          usuario_baja: null
+        }),
+      });
+      if (!res.ok) throw new Error('Error al reactivar relación');
+      setConfirmReactivar(null);
+      await fetchRelaciones();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo reactivar la relación');
+    }
+  };
+
   // ===== RENDER =====
   return (
     <div className="tm-page">
