@@ -12,6 +12,7 @@ interface Profesional {
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
+  genero?: string; // M o F
   matricula?: string;
   foto?: string;
   ultimoMovimiento?: string;
@@ -26,6 +27,10 @@ interface Profesional {
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
 
+// Avatares por defecto según género
+const AVATAR_MASCULINO = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+const AVATAR_FEMENINO = 'https://randomuser.me/api/portraits/women/2.jpg';
+
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,6 +40,7 @@ export default function Profesionales() {
     documento: '',
     nombre: '',
     email: '',
+    genero: '',
     matricula: '',
     foto: ''
   });
@@ -124,7 +130,7 @@ export default function Profesionales() {
   };
 
   const handleAgregar = () => {
-    setFormData({ documento: '', nombre: '', email: '', matricula: '', foto: '' });
+    setFormData({ documento: '', nombre: '', email: '', genero: '', matricula: '', foto: '' });
     setPhoneValue(undefined);
     setErrorMessage(null);
     setModalMode('add');
@@ -135,6 +141,7 @@ export default function Profesionales() {
       documento: profesional.documento,
       nombre: profesional.nombre,
       email: profesional.email,
+      genero: profesional.genero || '',
       matricula: profesional.matricula || '',
       foto: profesional.foto || ''
     });
@@ -159,7 +166,6 @@ export default function Profesionales() {
     }
   };
 
-  // Función para parsear el número de teléfono E164 a country_code y national_number
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
     const match = phone.match(/^\+(\d{1,3})(\d+)$/);
@@ -230,6 +236,7 @@ export default function Profesionales() {
       email: formData.email,
       country_code: country_code,
       national_number: national_number,
+      genero: formData.genero || null,
       matricula: formData.matricula || null,
       foto: formData.foto || null
     };
@@ -264,7 +271,7 @@ export default function Profesionales() {
 
       setModalMode(null);
       setSelectedProfesional(null);
-      setFormData({ documento: '', nombre: '', email: '', matricula: '', foto: '' });
+      setFormData({ documento: '', nombre: '', email: '', genero: '', matricula: '', foto: '' });
       setPhoneValue(undefined);
       setErrorMessage(null);
       fetchProfesionales();
@@ -302,6 +309,7 @@ export default function Profesionales() {
           email: confirmReactivar.email,
           country_code: confirmReactivar.country_code,
           national_number: confirmReactivar.national_number,
+          genero: confirmReactivar.genero,
           matricula: confirmReactivar.matricula,
           foto: confirmReactivar.foto,
           fecha_baja: null,
@@ -326,8 +334,9 @@ export default function Profesionales() {
     setPaginaActual(1);
   };
 
-  // Función para obtener el avatar (foto o iniciales)
+  // Función para obtener el avatar (foto, avatar por género, o iniciales)
   const obtenerAvatar = (profesional: Profesional) => {
+    // Si tiene foto propia, usarla
     if (profesional.foto) {
       return (
         <img 
@@ -335,11 +344,41 @@ export default function Profesionales() {
           alt={profesional.nombre} 
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`;
+            // Si falla la foto, usar avatar por género o iniciales
+            if (profesional.genero === 'F') {
+              (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+            } else if (profesional.genero === 'M') {
+              (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+            } else {
+              (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`;
+            }
           }}
         />
       );
     }
+    
+    // Si no tiene foto, usar avatar según género
+    if (profesional.genero === 'F') {
+      return (
+        <img 
+          src={AVATAR_FEMENINO} 
+          alt={profesional.nombre} 
+          className="w-8 h-8 rounded-full object-cover"
+        />
+      );
+    }
+    
+    if (profesional.genero === 'M') {
+      return (
+        <img 
+          src={AVATAR_MASCULINO} 
+          alt={profesional.nombre} 
+          className="w-8 h-8 rounded-full object-cover"
+        />
+      );
+    }
+    
+    // Sin género, usar iniciales
     return (
       <img 
         src={`https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`}
@@ -442,7 +481,7 @@ export default function Profesionales() {
             </div>
           </div>
 
-                    <div className="tm-tabla-centrado">
+          <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -453,8 +492,7 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -578,6 +616,20 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
+              <label className="tm-modal-label">Género</label>
+              <select
+                value={formData.genero}
+                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                className="tm-modal-input"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+              <small className="tm-ayuda-texto">Usado para avatar por defecto</small>
+            </div>
+
+            <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
                 international
@@ -621,7 +673,13 @@ export default function Profesionales() {
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
+                      if (formData.genero === 'F') {
+                        (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                      } else if (formData.genero === 'M') {
+                        (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                      } else {
+                        (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
+                      }
                     }}
                   />
                 </div>
@@ -674,6 +732,19 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
+              <label className="tm-modal-label">Género</label>
+              <select
+                value={formData.genero}
+                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                className="tm-modal-input"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+
+            <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
                 international
@@ -710,11 +781,17 @@ export default function Profesionales() {
                 <label className="tm-modal-label">Vista previa</label>
                 <div className="flex justify-center mt-1">
                   <img 
-                    src={formData.foto || `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`}
+                    src={formData.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                      if (selectedProfesional.genero === 'F') {
+                        (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                      } else if (selectedProfesional.genero === 'M') {
+                        (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                      } else {
+                        (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                      }
                     }}
                   />
                 </div>
@@ -742,11 +819,17 @@ export default function Profesionales() {
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
             <div className="tm-modal-detalle-campo flex justify-center">
               <img 
-                src={selectedProfesional.foto || `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`}
+                src={selectedProfesional.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
                 alt={selectedProfesional.nombre}
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                  if (selectedProfesional.genero === 'F') {
+                    (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                  } else if (selectedProfesional.genero === 'M') {
+                    (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                  } else {
+                    (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                  }
                 }}
               />
             </div>
@@ -754,6 +837,7 @@ export default function Profesionales() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Documento</span><p className="tm-modal-detalle-valor">{selectedProfesional.documento}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedProfesional.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedProfesional.email}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Género</span><p className="tm-modal-detalle-valor">{selectedProfesional.genero === 'M' ? 'Masculino' : selectedProfesional.genero === 'F' ? 'Femenino' : 'No especificado'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedProfesional.whatsapp_e164 || '-'}</p></div>
             {selectedProfesional.matricula && (
               <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>
