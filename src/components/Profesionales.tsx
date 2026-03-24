@@ -12,7 +12,7 @@ interface Profesional {
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
-  genero?: string; // M o F
+  genero?: string;
   matricula?: string;
   foto?: string;
   ultimoMovimiento?: string;
@@ -27,7 +27,6 @@ interface Profesional {
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
 
-// Avatares por defecto según género
 const AVATAR_MASCULINO = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
 const AVATAR_FEMENINO = 'https://randomuser.me/api/portraits/women/2.jpg';
 
@@ -49,7 +48,6 @@ export default function Profesionales() {
   const [confirmReactivar, setConfirmReactivar] = useState<Profesional | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
   const [filtroDocumento, setFiltroDocumento] = useState('');
@@ -334,9 +332,7 @@ export default function Profesionales() {
     setPaginaActual(1);
   };
 
-  // Función para obtener el avatar (foto, avatar por género, o iniciales)
   const obtenerAvatar = (profesional: Profesional) => {
-    // Si tiene foto propia, usarla
     if (profesional.foto) {
       return (
         <img 
@@ -344,7 +340,6 @@ export default function Profesionales() {
           alt={profesional.nombre} 
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
-            // Si falla la foto, usar avatar por género o iniciales
             if (profesional.genero === 'F') {
               (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
             } else if (profesional.genero === 'M') {
@@ -357,28 +352,14 @@ export default function Profesionales() {
       );
     }
     
-    // Si no tiene foto, usar avatar según género
     if (profesional.genero === 'F') {
-      return (
-        <img 
-          src={AVATAR_FEMENINO} 
-          alt={profesional.nombre} 
-          className="w-8 h-8 rounded-full object-cover"
-        />
-      );
+      return <img src={AVATAR_FEMENINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
     }
     
     if (profesional.genero === 'M') {
-      return (
-        <img 
-          src={AVATAR_MASCULINO} 
-          alt={profesional.nombre} 
-          className="w-8 h-8 rounded-full object-cover"
-        />
-      );
+      return <img src={AVATAR_MASCULINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
     }
     
-    // Sin género, usar iniciales
     return (
       <img 
         src={`https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`}
@@ -392,46 +373,23 @@ export default function Profesionales() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Profesionales</h1>
 
-      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Nombre</label>
-            <input
-              type="text"
-              value={filtroNombre}
-              onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }}
-              placeholder="Buscar..."
-              className="tm-filtro-input"
-            />
+            <input type="text" value={filtroNombre} onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }} placeholder="Buscar..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Documento</label>
-            <input
-              type="text"
-              value={filtroDocumento}
-              onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }}
-              placeholder="DNI / CUIT..."
-              className="tm-filtro-input"
-            />
+            <input type="text" value={filtroDocumento} onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }} placeholder="DNI / CUIT..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Fecha Desde</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }}
-              className="tm-filtro-input"
-            />
+            <input type="date" value={fechaDesde} onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Fecha Hasta</label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }}
-              className="tm-filtro-input"
-            />
+            <input type="date" value={fechaHasta} onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
@@ -463,7 +421,6 @@ export default function Profesionales() {
         </div>
       </div>
 
-      {/* Tabla */}
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
@@ -481,7 +438,7 @@ export default function Profesionales() {
             </div>
           </div>
 
-                    <div className="tm-tabla-centrado">
+          <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -492,8 +449,7 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -530,7 +486,7 @@ export default function Profesionales() {
               </tbody>
             </table>
           </div>
-          {/* Cards móvil */}
+
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
               <div key={`card-${p.id}`} className={`tm-card-item ${p.fecha_baja ? 'inactiva' : ''}`}>
@@ -583,45 +539,22 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input
-                type="text"
-                value={formData.documento}
-                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                placeholder="DNI / CUIT / CUIL"
-                className="tm-modal-input"
-                autoFocus
-              />
+              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} placeholder="DNI / CUIT / CUIL" className="tm-modal-input" autoFocus />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ej: DR. JUAN PÉREZ"
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} placeholder="Ej: DR. JUAN PÉREZ" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="ejemplo@mail.com"
-                className="tm-modal-input"
-              />
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="ejemplo@mail.com" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Género</label>
-              <select
-                value={formData.genero}
-                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="tm-modal-input"
-              >
+              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input">
                 <option value="">Seleccionar...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
@@ -631,57 +564,29 @@ export default function Profesionales() {
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
+              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input
-                type="text"
-                value={formData.matricula}
-                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                placeholder="Opcional"
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} placeholder="Opcional" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Foto (URL)</label>
-              <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                placeholder="https://ejemplo.com/foto.jpg"
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} placeholder="https://ejemplo.com/foto.jpg" className="tm-modal-input" />
             </div>
 
             {formData.foto && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
                 <div className="flex justify-center mt-1">
-                  <img 
-                    src={formData.foto} 
-                    alt="Vista previa" 
-                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      if (formData.genero === 'F') {
-                        (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                      } else if (formData.genero === 'M') {
-                        (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                      } else {
-                        (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
-                      }
-                    }}
-                  />
+                  <img src={formData.foto} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" onError={(e) => {
+                    if (formData.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                    else if (formData.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                    else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
+                  }} />
                 </div>
               </div>
             )}
@@ -703,41 +608,22 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input
-                type="text"
-                value={formData.documento}
-                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Género</label>
-              <select
-                value={formData.genero}
-                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="tm-modal-input"
-              >
+              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input">
                 <option value="">Seleccionar...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
@@ -746,54 +632,28 @@ export default function Profesionales() {
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
+              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input
-                type="text"
-                value={formData.matricula}
-                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Foto (URL)</label>
-              <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} className="tm-modal-input" />
             </div>
 
             {(formData.foto || selectedProfesional.nombre) && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
                 <div className="flex justify-center mt-1">
-                  <img 
-                    src={formData.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
-                    alt="Vista previa" 
-                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      if (selectedProfesional.genero === 'F') {
-                        (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                      } else if (selectedProfesional.genero === 'M') {
-                        (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                      } else {
-                        (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
-                      }
-                    }}
-                  />
+                  <img src={formData.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" onError={(e) => {
+                    if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                    else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                    else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                  }} />
                 </div>
               </div>
             )}
@@ -818,20 +678,11 @@ export default function Profesionales() {
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
             <div className="tm-modal-detalle-campo flex justify-center">
-              <img 
-                src={selectedProfesional.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
-                alt={selectedProfesional.nombre}
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-                onError={(e) => {
-                  if (selectedProfesional.genero === 'F') {
-                    (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                  } else if (selectedProfesional.genero === 'M') {
-                    (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                  } else {
-                    (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
-                  }
-                }}
-              />
+              <img src={selectedProfesional.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)} alt={selectedProfesional.nombre} className="w-24 h-24 rounded-full object-cover border-2 border-gray-300" onError={(e) => {
+                if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+              }} />
             </div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedProfesional.id}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Documento</span><p className="tm-modal-detalle-valor">{selectedProfesional.documento}</p></div>
@@ -839,12 +690,8 @@ export default function Profesionales() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedProfesional.email}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Género</span><p className="tm-modal-detalle-valor">{selectedProfesional.genero === 'M' ? 'Masculino' : selectedProfesional.genero === 'F' ? 'Femenino' : 'No especificado'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedProfesional.whatsapp_e164 || '-'}</p></div>
-            {selectedProfesional.matricula && (
-              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>
-            )}
-            {selectedProfesional.foto && (
-              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>
-            )}
+            {selectedProfesional.matricula && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>}
+            {selectedProfesional.foto && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>}
             <div className={`tm-modal-detalle-movimiento ${selectedProfesional.fecha_baja ? 'inactivo' : 'activo'}`}>
               <span className="tm-modal-detalle-label">Último Movimiento</span>
               <p className="tm-modal-detalle-valor">{selectedProfesional.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}</p>
@@ -854,7 +701,6 @@ export default function Profesionales() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -868,7 +714,6 @@ export default function Profesionales() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
