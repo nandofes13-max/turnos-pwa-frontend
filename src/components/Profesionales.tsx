@@ -464,54 +464,54 @@ export default function Profesionales() {
           </div>
 
           <div className="tm-tabla-centrado">
-            <table className="tm-tabla">
-              <thead>
-                <tr>
-                  <th>AVATAR</th>
-                  <th>DOCUMENTO</th>
-                  <th>NOMBRE</th>
-                  <th>EMAIL</th>
-                  <th>WHATSAPP</th>
-                  <th>MATRÍCULA</th>
-                  <th>ACCIONES</th>
-                </thead>
-              <tbody>
-                {profesionalesPaginados.map((p) => (
-                  <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td className="text-center">{obtenerAvatar(p)}</td>
-                    <td>{p.documento}</td>
-                    <td>{p.nombre}</td>
-                    <td>{p.email}</td>
-                    <td>{p.whatsapp_e164 || '-'}</td>
-                    <td>{p.matricula || '-'}</td>
-                    <td>
-                      <ActionIcons
-                        onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
-                        onEdit={() => !p.fecha_baja && handleEditar(p)}
-                        onDelete={() => !p.fecha_baja && handleEliminar(p)}
-                        onView={() => handleVerDetalle(p)}
-                        showAdd={true}
-                        showEdit={true}
-                        showDelete={true}
-                        showView={true}
-                        disabledAdd={!p.fecha_baja}
-                        disabledEdit={!!p.fecha_baja}
-                        disabledDelete={!!p.fecha_baja}
-                        disabledView={false}
-                        size="md"
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {profesionalesPaginados.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+  <table className="tm-tabla">
+    <thead>
+      <tr>
+        <th>AVATAR</th>
+        <th>DOCUMENTO</th>
+        <th>NOMBRE</th>
+        <th>EMAIL</th>
+        <th>WHATSAPP</th>
+        <th>MATRÍCULA</th>
+        <th>ACCIONES</th>
+      </tr>
+    </thead>
+    <tbody>
+      {profesionalesPaginados.map((p) => (
+        <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
+          <td className="text-center">{obtenerAvatar(p)}</td>
+          <td>{p.documento}</td>
+          <td>{p.nombre}</td>
+          <td>{p.email}</td>
+          <td>{p.whatsapp_e164 || '-'}</td>
+          <td>{p.matricula || '-'}</td>
+          <td>
+            <ActionIcons
+              onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
+              onEdit={() => !p.fecha_baja && handleEditar(p)}
+              onDelete={() => !p.fecha_baja && handleEliminar(p)}
+              onView={() => handleVerDetalle(p)}
+              showAdd={true}
+              showEdit={true}
+              showDelete={true}
+              showView={true}
+              disabledAdd={!p.fecha_baja}
+              disabledEdit={!!p.fecha_baja}
+              disabledDelete={!!p.fecha_baja}
+              disabledView={false}
+              size="md"
+            />
+          </td>
+        </tr>
+      ))}
+      {profesionalesPaginados.length === 0 && (
+        <tr>
+          <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
           {/* Cards móvil */}
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
