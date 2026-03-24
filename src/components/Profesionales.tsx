@@ -501,7 +501,7 @@ export default function Profesionales() {
             </div>
           </div>
 
-          <div className="tm-tabla-centrado">
+                    <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -549,7 +549,6 @@ export default function Profesionales() {
               </tbody>
             </table>
           </div>
-
           {/* Cards móvil */}
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
