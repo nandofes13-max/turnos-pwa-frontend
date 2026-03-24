@@ -15,7 +15,8 @@
     "react-phone-number-input": "^3.4.0",
     "leaflet": "^1.9.4",
     "react-leaflet": "^4.2.1",
-    "leaflet-control-geocoder": "^2.4.0"
+    "leaflet-control-geocoder": "^2.4.0",
+    "cloudinary": "^2.5.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
