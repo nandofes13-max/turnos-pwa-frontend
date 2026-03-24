@@ -26,13 +26,15 @@ interface Profesional {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
+const UPLOAD_URL = `${API_BASE_URL}/upload`;
 
-const AVATAR_MASCULINO = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
-const AVATAR_FEMENINO = 'https://randomuser.me/api/portraits/women/2.jpg';
+// Avatar vacío (imagen por defecto)
+const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
@@ -174,6 +176,59 @@ export default function Profesionales() {
     return { country_code: null, national_number: '' };
   };
 
+  const uploadImage = async (file: File): Promise<string> => {
+    setUploading(true);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64 = reader.result as string;
+          const res = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64 }),
+          });
+          if (!res.ok) throw new Error('Error al subir imagen');
+          const data = await res.json();
+          resolve(data.url);
+        } catch (err) {
+          reject(err);
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        reject(new Error('Error al leer el archivo'));
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Solo se permiten imágenes');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage('La imagen no debe superar los 2MB');
+      return;
+    }
+
+    try {
+      const url = await uploadImage(file);
+      setFormData({ ...formData, foto: url });
+      setErrorMessage(null);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Error al subir la imagen');
+    }
+  };
+
   const validarFormulario = (): boolean => {
     if (!formData.documento.trim()) {
       setErrorMessage('El documento es obligatorio');
@@ -185,6 +240,10 @@ export default function Profesionales() {
     }
     if (!formData.email.trim()) {
       setErrorMessage('El email es obligatorio');
+      return false;
+    }
+    if (!formData.genero) {
+      setErrorMessage('Debe seleccionar un género');
       return false;
     }
     if (!phoneValue) {
@@ -235,7 +294,7 @@ export default function Profesionales() {
       email: formData.email,
       country_code: country_code,
       national_number: national_number,
-      genero: formData.genero || null,
+      genero: formData.genero,
       matricula: formData.matricula || null,
       foto: formData.foto || null
     };
@@ -341,33 +400,12 @@ export default function Profesionales() {
           alt={profesional.nombre} 
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
-            if (profesional.genero === 'F') {
-              (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-            } else if (profesional.genero === 'M') {
-              (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-            } else {
-              (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`;
-            }
+            (e.target as HTMLImageElement).src = AVATAR_VACIO;
           }}
         />
       );
     }
-    
-    if (profesional.genero === 'F') {
-      return <img src={AVATAR_FEMENINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
-    }
-    
-    if (profesional.genero === 'M') {
-      return <img src={AVATAR_MASCULINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
-    }
-    
-    return (
-      <img 
-        src={`https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`}
-        alt={profesional.nombre}
-        className="w-8 h-8 rounded-full"
-      />
-    );
+    return <img src={AVATAR_VACIO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
   };
 
   return (
@@ -464,54 +502,54 @@ export default function Profesionales() {
           </div>
 
           <div className="tm-tabla-centrado">
-  <table className="tm-tabla">
-    <thead>
-      <tr>
-        <th>AVATAR</th>
-        <th>DOCUMENTO</th>
-        <th>NOMBRE</th>
-        <th>EMAIL</th>
-        <th>WHATSAPP</th>
-        <th>MATRÍCULA</th>
-        <th>ACCIONES</th>
-      </tr>
-    </thead>
-    <tbody>
-      {profesionalesPaginados.map((p) => (
-        <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
-          <td className="text-center">{obtenerAvatar(p)}</td>
-          <td>{p.documento}</td>
-          <td>{p.nombre}</td>
-          <td>{p.email}</td>
-          <td>{p.whatsapp_e164 || '-'}</td>
-          <td>{p.matricula || '-'}</td>
-          <td>
-            <ActionIcons
-              onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
-              onEdit={() => !p.fecha_baja && handleEditar(p)}
-              onDelete={() => !p.fecha_baja && handleEliminar(p)}
-              onView={() => handleVerDetalle(p)}
-              showAdd={true}
-              showEdit={true}
-              showDelete={true}
-              showView={true}
-              disabledAdd={!p.fecha_baja}
-              disabledEdit={!!p.fecha_baja}
-              disabledDelete={!!p.fecha_baja}
-              disabledView={false}
-              size="md"
-            />
-          </td>
-        </tr>
-      ))}
-      {profesionalesPaginados.length === 0 && (
-        <tr>
-          <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th>AVATAR</th>
+                  <th>DOCUMENTO</th>
+                  <th>NOMBRE</th>
+                  <th>EMAIL</th>
+                  <th>WHATSAPP</th>
+                  <th>MATRÍCULA</th>
+                  <th>ACCIONES</th>
+                </thead>
+              <tbody>
+                {profesionalesPaginados.map((p) => (
+                  <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
+                    <td className="text-center">{obtenerAvatar(p)}</td>
+                    <td>{p.documento}</td>
+                    <td>{p.nombre}</td>
+                    <td>{p.email}</td>
+                    <td>{p.whatsapp_e164 || '-'}</td>
+                    <td>{p.matricula || '-'}</td>
+                    <td>
+                      <ActionIcons
+                        onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
+                        onEdit={() => !p.fecha_baja && handleEditar(p)}
+                        onDelete={() => !p.fecha_baja && handleEliminar(p)}
+                        onView={() => handleVerDetalle(p)}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
+                        showView={true}
+                        disabledAdd={!p.fecha_baja}
+                        disabledEdit={!!p.fecha_baja}
+                        disabledDelete={!!p.fecha_baja}
+                        disabledView={false}
+                        size="md"
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {profesionalesPaginados.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
           {/* Cards móvil */}
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
@@ -598,17 +636,17 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género</label>
+              <label className="tm-modal-label">Género *</label>
               <select
                 value={formData.genero}
                 onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
                 className="tm-modal-input"
+                required
               >
-                <option value="">Seleccionar...</option>
+                <option value="">Seleccionar género...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
               </select>
-              <small className="tm-ayuda-texto">Usado para avatar por defecto</small>
             </div>
 
             <div className="tm-modal-campo">
@@ -636,33 +674,25 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto (URL)</label>
+              <label className="tm-modal-label">Foto</label>
               <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                placeholder="https://ejemplo.com/foto.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
                 className="tm-modal-input"
+                disabled={uploading}
               />
-            </div>
-
-            {formData.foto && (
-              <div className="tm-modal-campo">
-                <label className="tm-modal-label">Vista previa</label>
-                <div className="flex justify-center mt-1">
+              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
+              {formData.foto && (
+                <div className="mt-2">
                   <img 
                     src={formData.foto} 
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      if (formData.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                      else if (formData.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                      else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
-                    }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
@@ -710,13 +740,14 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género</label>
+              <label className="tm-modal-label">Género *</label>
               <select
                 value={formData.genero}
                 onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
                 className="tm-modal-input"
+                required
               >
-                <option value="">Seleccionar...</option>
+                <option value="">Seleccionar género...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
               </select>
@@ -745,32 +776,35 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto (URL)</label>
+              <label className="tm-modal-label">Foto</label>
               <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
                 className="tm-modal-input"
+                disabled={uploading}
               />
-            </div>
-
-            {(formData.foto || selectedProfesional.nombre) && (
-              <div className="tm-modal-campo">
-                <label className="tm-modal-label">Vista previa</label>
-                <div className="flex justify-center mt-1">
+              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
+              {formData.foto && (
+                <div className="mt-2">
                   <img 
-                    src={formData.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
+                    src={formData.foto} 
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                      else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                      else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
-                    }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+              {selectedProfesional.foto && !formData.foto && (
+                <div className="mt-2">
+                  <img 
+                    src={selectedProfesional.foto} 
+                    alt="Foto actual" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                  />
+                  <small className="tm-ayuda-texto">Foto actual</small>
+                </div>
+              )}
+            </div>
 
             {selectedProfesional.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
@@ -793,14 +827,9 @@ export default function Profesionales() {
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
             <div className="tm-modal-detalle-campo flex justify-center">
               <img 
-                src={selectedProfesional.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
+                src={selectedProfesional.foto || AVATAR_VACIO}
                 alt={selectedProfesional.nombre}
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-                onError={(e) => {
-                  if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
-                  else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
-                  else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
-                }}
               />
             </div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedProfesional.id}</p></div>
