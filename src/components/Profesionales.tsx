@@ -182,23 +182,15 @@ export default function Profesionales() {
       reader.onload = async () => {
         try {
           const base64 = reader.result as string;
-          console.log('📤 Enviando base64 (primeros 100 chars):', base64.substring(0, 100));
           const res = await fetch(UPLOAD_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64 }),
           });
-          console.log('📥 Respuesta status:', res.status);
-          if (!res.ok) {
-            const errorText = await res.text();
-            console.error('Error response:', errorText);
-            throw new Error('Error al subir imagen');
-          }
+          if (!res.ok) throw new Error('Error al subir imagen');
           const data = await res.json();
-          console.log('✅ Cloudinary response:', data);
           resolve(data.url);
         } catch (err) {
-          console.error('❌ Upload error:', err);
           reject(err);
         } finally {
           setUploading(false);
@@ -215,8 +207,6 @@ export default function Profesionales() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    console.log('📁 Archivo seleccionado:', file.name, file.type, file.size);
-
     if (!file.type.startsWith('image/')) {
       setErrorMessage('Solo se permiten imágenes');
       return;
@@ -229,12 +219,10 @@ export default function Profesionales() {
 
     try {
       const url = await uploadImage(file);
-      console.log('✅ URL recibida de Cloudinary:', url);
       setFormData({ ...formData, foto: url });
-      console.log('📸 formData.foto actualizado:', url);
       setErrorMessage(null);
     } catch (err) {
-      console.error('❌ Error en upload:', err);
+      console.error(err);
       setErrorMessage('Error al subir la imagen');
     }
   };
@@ -410,7 +398,6 @@ export default function Profesionales() {
           alt={profesional.nombre} 
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
-            console.log('❌ Error cargando imagen:', profesional.foto);
             (e.target as HTMLImageElement).src = AVATAR_VACIO;
           }}
         />
@@ -515,7 +502,7 @@ export default function Profesionales() {
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-    </thead>
+   </thead>
 <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -694,6 +681,13 @@ export default function Profesionales() {
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, foto: '' })}
+                    className="mt-1 text-sm text-red-600 hover:text-red-800"
+                  >
+                    🗑️ Quitar foto
+                  </button>
                 </div>
               )}
             </div>
@@ -790,6 +784,7 @@ export default function Profesionales() {
                 disabled={uploading}
               />
               {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
+              
               {formData.foto && (
                 <div className="mt-2">
                   <img 
@@ -797,8 +792,16 @@ export default function Profesionales() {
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, foto: '' })}
+                    className="mt-1 text-sm text-red-600 hover:text-red-800"
+                  >
+                    🗑️ Quitar foto
+                  </button>
                 </div>
               )}
+              
               {selectedProfesional.foto && !formData.foto && (
                 <div className="mt-2">
                   <img 
@@ -806,6 +809,16 @@ export default function Profesionales() {
                     alt="Foto actual" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, foto: '' });
+                      setSelectedProfesional({ ...selectedProfesional, foto: '' });
+                    }}
+                    className="mt-1 text-sm text-red-600 hover:text-red-800"
+                  >
+                    🗑️ Eliminar foto
+                  </button>
                   <small className="tm-ayuda-texto">Foto actual</small>
                 </div>
               )}
