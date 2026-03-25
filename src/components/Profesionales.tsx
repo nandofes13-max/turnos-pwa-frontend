@@ -26,12 +26,13 @@ interface Profesional {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
-
+const UPLOAD_URL = `${API_BASE_URL}/upload`;
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
@@ -171,6 +172,59 @@ export default function Profesionales() {
       return { country_code: parseInt(match[1], 10), national_number: match[2] };
     }
     return { country_code: null, national_number: '' };
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    setUploading(true);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64 = reader.result as string;
+          const res = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64 }),
+          });
+          if (!res.ok) throw new Error('Error al subir imagen');
+          const data = await res.json();
+          resolve(data.url);
+        } catch (err) {
+          reject(err);
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        reject(new Error('Error al leer el archivo'));
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Solo se permiten imágenes');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage('La imagen no debe superar los 2MB');
+      return;
+    }
+
+    try {
+      const url = await uploadImage(file);
+      setFormData({ ...formData, foto: url });
+      setErrorMessage(null);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Error al subir la imagen');
+    }
   };
 
   const validarFormulario = (): boolean => {
@@ -448,7 +502,7 @@ export default function Profesionales() {
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-  <tr>
+   <tr>
     <th>AVATAR</th>
     <th>DOCUMENTO</th>
     <th>NOMBRE</th>
@@ -456,7 +510,7 @@ export default function Profesionales() {
     <th>WHATSAPP</th>
     <th>MATRÍCULA</th>
     <th>ACCIONES</th>
-  </tr>
+   </tr>
 </thead>
 <tbody>
                 {profesionalesPaginados.map((p) => (
@@ -620,31 +674,25 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto (URL)</label>
+              <label className="tm-modal-label">Foto</label>
               <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                placeholder="https://ejemplo.com/foto.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
                 className="tm-modal-input"
+                disabled={uploading}
               />
-            </div>
-
-            {formData.foto && (
-              <div className="tm-modal-campo">
-                <label className="tm-modal-label">Vista previa</label>
-                <div className="flex justify-center mt-1">
+              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
+              {formData.foto && (
+                <div className="mt-2">
                   <img 
                     src={formData.foto} 
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = AVATAR_VACIO;
-                    }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
@@ -729,31 +777,35 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto (URL)</label>
+              <label className="tm-modal-label">Foto</label>
               <input
-                type="text"
-                value={formData.foto}
-                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                placeholder="https://ejemplo.com/foto.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
                 className="tm-modal-input"
+                disabled={uploading}
               />
-            </div>
-
-            {(formData.foto || selectedProfesional.foto) && (
-              <div className="tm-modal-campo">
-                <label className="tm-modal-label">Vista previa</label>
-                <div className="flex justify-center mt-1">
+              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
+              {formData.foto && (
+                <div className="mt-2">
                   <img 
-                    src={formData.foto || selectedProfesional.foto} 
+                    src={formData.foto} 
                     alt="Vista previa" 
                     className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = AVATAR_VACIO;
-                    }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+              {selectedProfesional.foto && !formData.foto && (
+                <div className="mt-2">
+                  <img 
+                    src={selectedProfesional.foto} 
+                    alt="Foto actual" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                  />
+                  <small className="tm-ayuda-texto">Foto actual</small>
+                </div>
+              )}
+            </div>
 
             {selectedProfesional.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
