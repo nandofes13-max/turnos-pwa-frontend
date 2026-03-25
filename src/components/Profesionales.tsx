@@ -26,13 +26,11 @@ interface Profesional {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
-
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null); // 👈 AGREGADO
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
@@ -48,7 +46,6 @@ export default function Profesionales() {
   const [confirmReactivar, setConfirmReactivar] = useState<Profesional | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
   const [filtroDocumento, setFiltroDocumento] = useState('');
@@ -65,16 +62,13 @@ export default function Profesionales() {
 
   const fetchProfesionales = async () => {
     setLoading(true);
-    setFetchError(null);
     try {
       const res = await fetch(PROFESIONALES_URL);
-      if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
       setProfesionales(data);
       setPaginaActual(1);
     } catch (err) {
       console.error('Error al cargar profesionales:', err);
-      setFetchError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -111,23 +105,13 @@ export default function Profesionales() {
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
 
-  const irAPagina = (pagina: number) => {
-    setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
-  };
-
+  const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
   const toggleMovimiento = (mov: string) => {
-    setFiltroTipoMovimiento(prev => 
-      prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]
-    );
+    setFiltroTipoMovimiento(prev => prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]);
     setPaginaActual(1);
   };
-
   const toggleTodosMovimientos = () => {
-    if (filtroTipoMovimiento.length === tiposMovimiento.length) {
-      setFiltroTipoMovimiento([]);
-    } else {
-      setFiltroTipoMovimiento([...tiposMovimiento]);
-    }
+    setFiltroTipoMovimiento(filtroTipoMovimiento.length === tiposMovimiento.length ? [] : [...tiposMovimiento]);
     setPaginaActual(1);
   };
 
@@ -158,15 +142,8 @@ export default function Profesionales() {
     setModalMode('view');
   };
 
-  const handleEliminar = (profesional: Profesional) => {
-    setConfirmDelete(profesional);
-  };
-
-  const handleReactivar = (profesional: Profesional) => {
-    if (profesional.fecha_baja) {
-      setConfirmReactivar(profesional);
-    }
-  };
+  const handleEliminar = (profesional: Profesional) => setConfirmDelete(profesional);
+  const handleReactivar = (profesional: Profesional) => profesional.fecha_baja && setConfirmReactivar(profesional);
 
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
@@ -205,13 +182,9 @@ export default function Profesionales() {
     try {
       const res = await fetch(PROFESIONALES_URL);
       const data: Profesional[] = await res.json();
-      const activos = data.filter(p => 
-        !p.fecha_baja && 
-        (id ? p.id !== id : true)
-      );
+      const activos = data.filter(p => !p.fecha_baja && (id ? p.id !== id : true));
       const documentoExistente = activos.some(p => p.documento === documento);
       const emailExistente = activos.some(p => p.email === email);
-      
       if (documentoExistente) {
         setErrorMessage('Ya existe un profesional activo con ese documento');
         return false;
@@ -351,7 +324,6 @@ export default function Profesionales() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Profesionales</h1>
 
-      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo">
@@ -398,13 +370,22 @@ export default function Profesionales() {
         </div>
       </div>
 
-      {fetchError && (<div className="tm-error"><p>Error al cargar datos: {fetchError}</p><button onClick={fetchProfesionales} className="tm-btn-secundario">Reintentar</button></div>)}
-
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
         <div className="tm-tabla-wrapper">
-          <div className="tm-tabla-header-contenedor"><div className="tm-tabla-header-inner"><button onClick={handleAgregar} className="tm-btn-agregar">Agregar Profesional<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button></div></div>
+          <div className="tm-tabla-header-contenedor">
+            <div className="tm-tabla-header-inner">
+              <button onClick={handleAgregar} className="tm-btn-agregar">
+                Agregar Profesional
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
@@ -642,12 +623,8 @@ export default function Profesionales() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedProfesional.email}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Género</span><p className="tm-modal-detalle-valor">{selectedProfesional.genero === 'M' ? 'Masculino' : selectedProfesional.genero === 'F' ? 'Femenino' : 'No especificado'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedProfesional.whatsapp_e164 || '-'}</p></div>
-            {selectedProfesional.matricula && (
-              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>
-            )}
-            {selectedProfesional.foto && (
-              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>
-            )}
+            {selectedProfesional.matricula && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>}
+            {selectedProfesional.foto && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>}
             <div className={`tm-modal-detalle-movimiento ${selectedProfesional.fecha_baja ? 'inactivo' : 'activo'}`}>
               <span className="tm-modal-detalle-label">Último Movimiento</span>
               <p className="tm-modal-detalle-valor">{selectedProfesional.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}</p>
@@ -657,7 +634,6 @@ export default function Profesionales() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -671,7 +647,6 @@ export default function Profesionales() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
