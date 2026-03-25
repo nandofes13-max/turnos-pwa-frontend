@@ -32,6 +32,7 @@ const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null); // 👈 AGREGADO
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
@@ -64,13 +65,16 @@ export default function Profesionales() {
 
   const fetchProfesionales = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(PROFESIONALES_URL);
+      if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
       const data = await res.json();
       setProfesionales(data);
       setPaginaActual(1);
     } catch (err) {
       console.error('Error al cargar profesionales:', err);
+      setFetchError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -413,12 +417,11 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {profesionalesPaginados.map(p => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{obtenerAvatar(p)}</td>
+                    <td className="text-center">{obtenerAvatar(p)}</td>
                     <td>{p.documento}</td>
                     <td>{p.nombre}</td>
                     <td>{p.email}</td>
