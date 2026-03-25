@@ -26,17 +26,14 @@ interface Profesional {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
-const UPLOAD_URL = `${API_BASE_URL}/upload`;
 
-// Avatar vacío (imagen por defecto)
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     documento: '',
     nombre: '',
@@ -174,59 +171,6 @@ export default function Profesionales() {
       return { country_code: parseInt(match[1], 10), national_number: match[2] };
     }
     return { country_code: null, national_number: '' };
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    setUploading(true);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        try {
-          const base64 = reader.result as string;
-          const res = await fetch(UPLOAD_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64 }),
-          });
-          if (!res.ok) throw new Error('Error al subir imagen');
-          const data = await res.json();
-          resolve(data.url);
-        } catch (err) {
-          reject(err);
-        } finally {
-          setUploading(false);
-        }
-      };
-      reader.onerror = () => {
-        setUploading(false);
-        reject(new Error('Error al leer el archivo'));
-      };
-    });
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Solo se permiten imágenes');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setErrorMessage('La imagen no debe superar los 2MB');
-      return;
-    }
-
-    try {
-      const url = await uploadImage(file);
-      setFormData({ ...formData, foto: url });
-      setErrorMessage(null);
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Error al subir la imagen');
-    }
   };
 
   const validarFormulario = (): boolean => {
@@ -394,16 +338,7 @@ export default function Profesionales() {
 
   const obtenerAvatar = (profesional: Profesional) => {
     if (profesional.foto) {
-      return (
-        <img 
-          src={profesional.foto} 
-          alt={profesional.nombre} 
-          className="w-8 h-8 rounded-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = AVATAR_VACIO;
-          }}
-        />
-      );
+      return <img src={profesional.foto} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
     }
     return <img src={AVATAR_VACIO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
   };
@@ -415,43 +350,21 @@ export default function Profesionales() {
       {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo tm-filtro-nombre">
+          <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Nombre</label>
-            <input
-              type="text"
-              value={filtroNombre}
-              onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }}
-              placeholder="Buscar..."
-              className="tm-filtro-input"
-            />
+            <input type="text" value={filtroNombre} onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }} placeholder="Buscar..." className="tm-filtro-input" />
           </div>
-          <div className="tm-filtro-campo tm-filtro-documento">
+          <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Documento</label>
-            <input
-              type="text"
-              value={filtroDocumento}
-              onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }}
-              placeholder="DNI / CUIT..."
-              className="tm-filtro-input"
-            />
+            <input type="text" value={filtroDocumento} onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }} placeholder="DNI / CUIT..." className="tm-filtro-input" />
           </div>
-          <div className="tm-filtro-campo tm-filtro-fecha">
+          <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Fecha Desde</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }}
-              className="tm-filtro-input"
-            />
+            <input type="date" value={fechaDesde} onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
           </div>
-          <div className="tm-filtro-campo tm-filtro-fecha">
+          <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Fecha Hasta</label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }}
-              className="tm-filtro-input"
-            />
+            <input type="date" value={fechaHasta} onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
@@ -477,31 +390,19 @@ export default function Profesionales() {
               )}
             </div>
           </div>
-          <div className="tm-filtro-accion">
-            <button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button>
-          </div>
+          <div className="tm-filtro-accion"><button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button></div>
         </div>
       </div>
 
-      {/* Tabla */}
+      {fetchError && (<div className="tm-error"><p>Error al cargar datos: {fetchError}</p><button onClick={fetchProfesionales} className="tm-btn-secundario">Reintentar</button></div>)}
+
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
         <div className="tm-tabla-wrapper">
-          <div className="tm-tabla-header-contenedor">
-            <div className="tm-tabla-header-inner">
-              <button onClick={handleAgregar} className="tm-btn-agregar">
-                Agregar Profesional
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="16"/>
-                  <line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+          <div className="tm-tabla-header-contenedor"><div className="tm-tabla-header-inner"><button onClick={handleAgregar} className="tm-btn-agregar">Agregar Profesional<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button></div></div>
 
-                             <div className="tm-tabla-centrado">
+          <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -512,11 +413,12 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
-                </thead>
+                </tr>
+              </thead>
               <tbody>
-                {profesionalesPaginados.map((p) => (
+                {profesionalesPaginados.map(p => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td className="text-center">{obtenerAvatar(p)}</td>
+                    <td>{obtenerAvatar(p)}</td>
                     <td>{p.documento}</td>
                     <td>{p.nombre}</td>
                     <td>{p.email}</td>
@@ -549,9 +451,9 @@ export default function Profesionales() {
               </tbody>
             </table>
           </div>
-          {/* Cards móvil */}
+
           <div className="tm-cards">
-            {profesionalesPaginados.map((p) => (
+            {profesionalesPaginados.map(p => (
               <div key={`card-${p.id}`} className={`tm-card-item ${p.fecha_baja ? 'inactiva' : ''}`}>
                 <div className="flex items-center gap-3 mb-2">
                   {obtenerAvatar(p)}
@@ -602,46 +504,22 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input
-                type="text"
-                value={formData.documento}
-                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                placeholder="DNI / CUIT / CUIL"
-                className="tm-modal-input"
-                autoFocus
-              />
+              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} placeholder="DNI / CUIT / CUIL" className="tm-modal-input" autoFocus />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ej: DR. JUAN PÉREZ"
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} placeholder="Ej: DR. JUAN PÉREZ" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="ejemplo@mail.com"
-                className="tm-modal-input"
-              />
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="ejemplo@mail.com" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Género *</label>
-              <select
-                value={formData.genero}
-                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="tm-modal-input"
-                required
-              >
+              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input" required>
                 <option value="">Seleccionar género...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
@@ -650,48 +528,28 @@ export default function Profesionales() {
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
+              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input
-                type="text"
-                value={formData.matricula}
-                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                placeholder="Opcional"
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} placeholder="Opcional" className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Foto</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="tm-modal-input"
-                disabled={uploading}
-              />
-              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
-              {formData.foto && (
-                <div className="mt-2">
-                  <img 
-                    src={formData.foto} 
-                    alt="Vista previa" 
-                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                  />
-                </div>
-              )}
+              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} placeholder="https://ejemplo.com/foto.jpg" className="tm-modal-input" />
             </div>
+
+            {formData.foto && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Vista previa</label>
+                <div className="flex justify-center mt-1">
+                  <img src={formData.foto} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" />
+                </div>
+              </div>
+            )}
 
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
@@ -710,42 +568,22 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input
-                type="text"
-                value={formData.documento}
-                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Género *</label>
-              <select
-                value={formData.genero}
-                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="tm-modal-input"
-                required
-              >
+              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input" required>
                 <option value="">Seleccionar género...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
@@ -754,56 +592,27 @@ export default function Profesionales() {
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
+              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input
-                type="text"
-                value={formData.matricula}
-                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                className="tm-modal-input"
-              />
+              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} className="tm-modal-input" />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Foto</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="tm-modal-input"
-                disabled={uploading}
-              />
-              {uploading && <small className="tm-ayuda-texto">Subiendo imagen...</small>}
-              {formData.foto && (
-                <div className="mt-2">
-                  <img 
-                    src={formData.foto} 
-                    alt="Vista previa" 
-                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                  />
-                </div>
-              )}
-              {selectedProfesional.foto && !formData.foto && (
-                <div className="mt-2">
-                  <img 
-                    src={selectedProfesional.foto} 
-                    alt="Foto actual" 
-                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
-                  />
-                  <small className="tm-ayuda-texto">Foto actual</small>
-                </div>
-              )}
+              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} placeholder="https://ejemplo.com/foto.jpg" className="tm-modal-input" />
             </div>
+
+            {(formData.foto || selectedProfesional.foto) && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Vista previa</label>
+                <div className="flex justify-center mt-1">
+                  <img src={formData.foto || selectedProfesional.foto} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" />
+                </div>
+              </div>
+            )}
 
             {selectedProfesional.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
@@ -824,13 +633,6 @@ export default function Profesionales() {
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
-            <div className="tm-modal-detalle-campo flex justify-center">
-              <img 
-                src={selectedProfesional.foto || AVATAR_VACIO}
-                alt={selectedProfesional.nombre}
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-              />
-            </div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedProfesional.id}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Documento</span><p className="tm-modal-detalle-valor">{selectedProfesional.documento}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedProfesional.nombre}</p></div>
