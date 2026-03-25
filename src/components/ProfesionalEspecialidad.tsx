@@ -52,7 +52,6 @@ export default function ProfesionalEspecialidad() {
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroProfesional, setFiltroProfesional] = useState('');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
@@ -337,7 +336,8 @@ export default function ProfesionalEspecialidad() {
                   <th>DESCRIPCIÓN</th>
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
-                </thead>
+                </tr>
+              </thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
