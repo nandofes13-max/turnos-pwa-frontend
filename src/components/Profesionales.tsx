@@ -510,6 +510,7 @@ export default function Profesionales() {
                   <th>WHATSAPP</th>
                   <th>MATRÍCULA</th>
                   <th>ACCIONES</th>
+                   </tr>
                 </thead>
               <tbody>
                 {profesionalesPaginados.map((p) => (
