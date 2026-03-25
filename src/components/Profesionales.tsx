@@ -499,11 +499,19 @@ export default function Profesionales() {
             </div>
           </div>
 
-          <div className="tm-tabla-centrado">
+                    <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
-   </thead>
-<tbody>
+                <tr>
+                  <th>AVATAR</th>
+                  <th>DOCUMENTO</th>
+                  <th>NOMBRE</th>
+                  <th>EMAIL</th>
+                  <th>WHATSAPP</th>
+                  <th>MATRÍCULA</th>
+                  <th>ACCIONES</th>
+                </thead>
+              <tbody>
                 {profesionalesPaginados.map((p) => (
                   <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
                     <td className="text-center">{obtenerAvatar(p)}</td>
@@ -539,7 +547,6 @@ export default function Profesionales() {
               </tbody>
             </table>
           </div>
-
           {/* Cards móvil */}
           <div className="tm-cards">
             {profesionalesPaginados.map((p) => (
