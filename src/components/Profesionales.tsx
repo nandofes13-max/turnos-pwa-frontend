@@ -26,13 +26,15 @@ interface Profesional {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const PROFESIONALES_URL = `${API_BASE_URL}/profesionales`;
-const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
+
+const AVATAR_MASCULINO = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+const AVATAR_FEMENINO = 'https://randomuser.me/api/portraits/women/2.jpg';
 
 export default function Profesionales() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProfesional, setSelectedProfesional] = useState<Profesional | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     documento: '',
     nombre: '',
@@ -46,6 +48,7 @@ export default function Profesionales() {
   const [confirmReactivar, setConfirmReactivar] = useState<Profesional | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
+  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
   const [filtroDocumento, setFiltroDocumento] = useState('');
@@ -105,13 +108,23 @@ export default function Profesionales() {
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
     .slice(indicePrimerItem, indiceUltimoItem);
 
-  const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
+  const irAPagina = (pagina: number) => {
+    setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
+  };
+
   const toggleMovimiento = (mov: string) => {
-    setFiltroTipoMovimiento(prev => prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]);
+    setFiltroTipoMovimiento(prev => 
+      prev.includes(mov) ? prev.filter(m => m !== mov) : [...prev, mov]
+    );
     setPaginaActual(1);
   };
+
   const toggleTodosMovimientos = () => {
-    setFiltroTipoMovimiento(filtroTipoMovimiento.length === tiposMovimiento.length ? [] : [...tiposMovimiento]);
+    if (filtroTipoMovimiento.length === tiposMovimiento.length) {
+      setFiltroTipoMovimiento([]);
+    } else {
+      setFiltroTipoMovimiento([...tiposMovimiento]);
+    }
     setPaginaActual(1);
   };
 
@@ -142,8 +155,15 @@ export default function Profesionales() {
     setModalMode('view');
   };
 
-  const handleEliminar = (profesional: Profesional) => setConfirmDelete(profesional);
-  const handleReactivar = (profesional: Profesional) => profesional.fecha_baja && setConfirmReactivar(profesional);
+  const handleEliminar = (profesional: Profesional) => {
+    setConfirmDelete(profesional);
+  };
+
+  const handleReactivar = (profesional: Profesional) => {
+    if (profesional.fecha_baja) {
+      setConfirmReactivar(profesional);
+    }
+  };
 
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
@@ -167,10 +187,6 @@ export default function Profesionales() {
       setErrorMessage('El email es obligatorio');
       return false;
     }
-    if (!formData.genero) {
-      setErrorMessage('Debe seleccionar un género');
-      return false;
-    }
     if (!phoneValue) {
       setErrorMessage('El WhatsApp es obligatorio');
       return false;
@@ -182,9 +198,13 @@ export default function Profesionales() {
     try {
       const res = await fetch(PROFESIONALES_URL);
       const data: Profesional[] = await res.json();
-      const activos = data.filter(p => !p.fecha_baja && (id ? p.id !== id : true));
+      const activos = data.filter(p => 
+        !p.fecha_baja && 
+        (id ? p.id !== id : true)
+      );
       const documentoExistente = activos.some(p => p.documento === documento);
       const emailExistente = activos.some(p => p.email === email);
+      
       if (documentoExistente) {
         setErrorMessage('Ya existe un profesional activo con ese documento');
         return false;
@@ -215,7 +235,7 @@ export default function Profesionales() {
       email: formData.email,
       country_code: country_code,
       national_number: national_number,
-      genero: formData.genero,
+      genero: formData.genero || null,
       matricula: formData.matricula || null,
       foto: formData.foto || null
     };
@@ -315,32 +335,85 @@ export default function Profesionales() {
 
   const obtenerAvatar = (profesional: Profesional) => {
     if (profesional.foto) {
-      return <img src={profesional.foto} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
+      return (
+        <img 
+          src={profesional.foto} 
+          alt={profesional.nombre} 
+          className="w-8 h-8 rounded-full object-cover"
+          onError={(e) => {
+            if (profesional.genero === 'F') {
+              (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+            } else if (profesional.genero === 'M') {
+              (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+            } else {
+              (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`;
+            }
+          }}
+        />
+      );
     }
-    return <img src={AVATAR_VACIO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
+    
+    if (profesional.genero === 'F') {
+      return <img src={AVATAR_FEMENINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
+    }
+    
+    if (profesional.genero === 'M') {
+      return <img src={AVATAR_MASCULINO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
+    }
+    
+    return (
+      <img 
+        src={`https://avatars.dicebear.com/api/initials/${encodeURIComponent(profesional.nombre)}.svg`}
+        alt={profesional.nombre}
+        className="w-8 h-8 rounded-full"
+      />
+    );
   };
 
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Profesionales</h1>
 
+      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
+          <div className="tm-filtro-campo tm-filtro-nombre">
             <label className="tm-filtro-label">Nombre</label>
-            <input type="text" value={filtroNombre} onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }} placeholder="Buscar..." className="tm-filtro-input" />
+            <input
+              type="text"
+              value={filtroNombre}
+              onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }}
+              placeholder="Buscar..."
+              className="tm-filtro-input"
+            />
           </div>
-          <div className="tm-filtro-campo">
+          <div className="tm-filtro-campo tm-filtro-documento">
             <label className="tm-filtro-label">Documento</label>
-            <input type="text" value={filtroDocumento} onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }} placeholder="DNI / CUIT..." className="tm-filtro-input" />
+            <input
+              type="text"
+              value={filtroDocumento}
+              onChange={(e) => { setFiltroDocumento(e.target.value); setPaginaActual(1); }}
+              placeholder="DNI / CUIT..."
+              className="tm-filtro-input"
+            />
           </div>
-          <div className="tm-filtro-campo">
+          <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Desde</label>
-            <input type="date" value={fechaDesde} onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }}
+              className="tm-filtro-input"
+            />
           </div>
-          <div className="tm-filtro-campo">
+          <div className="tm-filtro-campo tm-filtro-fecha">
             <label className="tm-filtro-label">Fecha Hasta</label>
-            <input type="date" value={fechaHasta} onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }}
+              className="tm-filtro-input"
+            />
           </div>
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
@@ -366,10 +439,13 @@ export default function Profesionales() {
               )}
             </div>
           </div>
-          <div className="tm-filtro-accion"><button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button></div>
+          <div className="tm-filtro-accion">
+            <button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button>
+          </div>
         </div>
       </div>
 
+      {/* Tabla */}
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
@@ -388,56 +464,57 @@ export default function Profesionales() {
           </div>
 
           <div className="tm-tabla-centrado">
-            <table className="tm-tabla">
-              <thead>
-                <tr>
-                  <th>AVATAR</th>
-                  <th>DOCUMENTO</th>
-                  <th>NOMBRE</th>
-                  <th>EMAIL</th>
-                  <th>WHATSAPP</th>
-                  <th>MATRÍCULA</th>
-                  <th>ACCIONES</th>
-                </thead>
-              <tbody>
-                {profesionalesPaginados.map(p => (
-                  <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td className="text-center">{obtenerAvatar(p)}</td>
-                    <td>{p.documento}</td>
-                    <td>{p.nombre}</td>
-                    <td>{p.email}</td>
-                    <td>{p.whatsapp_e164 || '-'}</td>
-                    <td>{p.matricula || '-'}</td>
-                    <td>
-                      <ActionIcons
-                        onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
-                        onEdit={() => !p.fecha_baja && handleEditar(p)}
-                        onDelete={() => !p.fecha_baja && handleEliminar(p)}
-                        onView={() => handleVerDetalle(p)}
-                        showAdd={true}
-                        showEdit={true}
-                        showDelete={true}
-                        showView={true}
-                        disabledAdd={!p.fecha_baja}
-                        disabledEdit={!!p.fecha_baja}
-                        disabledDelete={!!p.fecha_baja}
-                        disabledView={false}
-                        size="md"
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {profesionalesPaginados.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+  <table className="tm-tabla">
+    <thead>
+      <tr>
+        <th>AVATAR</th>
+        <th>DOCUMENTO</th>
+        <th>NOMBRE</th>
+        <th>EMAIL</th>
+        <th>WHATSAPP</th>
+        <th>MATRÍCULA</th>
+        <th>ACCIONES</th>
+      </tr>
+    </thead>
+    <tbody>
+      {profesionalesPaginados.map((p) => (
+        <tr key={p.id} className={p.fecha_baja ? 'tm-fila-inactiva' : ''}>
+          <td className="text-center">{obtenerAvatar(p)}</td>
+          <td>{p.documento}</td>
+          <td>{p.nombre}</td>
+          <td>{p.email}</td>
+          <td>{p.whatsapp_e164 || '-'}</td>
+          <td>{p.matricula || '-'}</td>
+          <td>
+            <ActionIcons
+              onAdd={() => p.fecha_baja ? handleReactivar(p) : null}
+              onEdit={() => !p.fecha_baja && handleEditar(p)}
+              onDelete={() => !p.fecha_baja && handleEliminar(p)}
+              onView={() => handleVerDetalle(p)}
+              showAdd={true}
+              showEdit={true}
+              showDelete={true}
+              showView={true}
+              disabledAdd={!p.fecha_baja}
+              disabledEdit={!!p.fecha_baja}
+              disabledDelete={!!p.fecha_baja}
+              disabledView={false}
+              size="md"
+            />
+          </td>
+        </tr>
+      ))}
+      {profesionalesPaginados.length === 0 && (
+        <tr>
+          <td colSpan={7} className="tm-fila-vacia">No hay profesionales que coincidan</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+          {/* Cards móvil */}
           <div className="tm-cards">
-            {profesionalesPaginados.map(p => (
+            {profesionalesPaginados.map((p) => (
               <div key={`card-${p.id}`} className={`tm-card-item ${p.fecha_baja ? 'inactiva' : ''}`}>
                 <div className="flex items-center gap-3 mb-2">
                   {obtenerAvatar(p)}
@@ -488,49 +565,101 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} placeholder="DNI / CUIT / CUIL" className="tm-modal-input" autoFocus />
+              <input
+                type="text"
+                value={formData.documento}
+                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
+                placeholder="DNI / CUIT / CUIL"
+                className="tm-modal-input"
+                autoFocus
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} placeholder="Ej: DR. JUAN PÉREZ" className="tm-modal-input" />
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                placeholder="Ej: DR. JUAN PÉREZ"
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="ejemplo@mail.com" className="tm-modal-input" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="ejemplo@mail.com"
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género *</label>
-              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input" required>
-                <option value="">Seleccionar género...</option>
+              <label className="tm-modal-label">Género</label>
+              <select
+                value={formData.genero}
+                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                className="tm-modal-input"
+              >
+                <option value="">Seleccionar...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
               </select>
+              <small className="tm-ayuda-texto">Usado para avatar por defecto</small>
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
+              <PhoneInput
+                international
+                defaultCountry="AR"
+                value={phoneValue}
+                onChange={setPhoneValue}
+                className="tm-phone-input"
+                limitMaxLength={true}
+              />
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} placeholder="Opcional" className="tm-modal-input" />
+              <input
+                type="text"
+                value={formData.matricula}
+                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
+                placeholder="Opcional"
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto</label>
-              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} placeholder="https://ejemplo.com/foto.jpg" className="tm-modal-input" />
+              <label className="tm-modal-label">Foto (URL)</label>
+              <input
+                type="text"
+                value={formData.foto}
+                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
+                placeholder="https://ejemplo.com/foto.jpg"
+                className="tm-modal-input"
+              />
             </div>
 
             {formData.foto && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
                 <div className="flex justify-center mt-1">
-                  <img src={formData.foto} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" />
+                  <img 
+                    src={formData.foto} 
+                    alt="Vista previa" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                    onError={(e) => {
+                      if (formData.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                      else if (formData.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                      else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(formData.nombre || 'Nuevo')}.svg`;
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -552,23 +681,42 @@ export default function Profesionales() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento *</label>
-              <input type="text" value={formData.documento} onChange={(e) => setFormData({ ...formData, documento: e.target.value })} className="tm-modal-input" />
+              <input
+                type="text"
+                value={formData.documento}
+                onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Nombre *</label>
-              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })} className="tm-modal-input" />
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Email *</label>
-              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="tm-modal-input" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género *</label>
-              <select value={formData.genero} onChange={(e) => setFormData({ ...formData, genero: e.target.value })} className="tm-modal-input" required>
-                <option value="">Seleccionar género...</option>
+              <label className="tm-modal-label">Género</label>
+              <select
+                value={formData.genero}
+                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                className="tm-modal-input"
+              >
+                <option value="">Seleccionar...</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
               </select>
@@ -576,24 +724,50 @@ export default function Profesionales() {
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput international defaultCountry="AR" value={phoneValue} onChange={setPhoneValue} className="tm-phone-input" limitMaxLength={true} />
+              <PhoneInput
+                international
+                defaultCountry="AR"
+                value={phoneValue}
+                onChange={setPhoneValue}
+                className="tm-phone-input"
+                limitMaxLength={true}
+              />
             </div>
 
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Matrícula</label>
-              <input type="text" value={formData.matricula} onChange={(e) => setFormData({ ...formData, matricula: e.target.value })} className="tm-modal-input" />
+              <input
+                type="text"
+                value={formData.matricula}
+                onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
+                className="tm-modal-input"
+              />
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto</label>
-              <input type="text" value={formData.foto} onChange={(e) => setFormData({ ...formData, foto: e.target.value })} placeholder="https://ejemplo.com/foto.jpg" className="tm-modal-input" />
+              <label className="tm-modal-label">Foto (URL)</label>
+              <input
+                type="text"
+                value={formData.foto}
+                onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
+                className="tm-modal-input"
+              />
             </div>
 
-            {(formData.foto || selectedProfesional.foto) && (
+            {(formData.foto || selectedProfesional.nombre) && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Vista previa</label>
                 <div className="flex justify-center mt-1">
-                  <img src={formData.foto || selectedProfesional.foto} alt="Vista previa" className="w-24 h-24 object-cover rounded-full border border-gray-300" />
+                  <img 
+                    src={formData.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
+                    alt="Vista previa" 
+                    className="w-24 h-24 object-cover rounded-full border border-gray-300"
+                    onError={(e) => {
+                      if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                      else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                      else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -617,14 +791,30 @@ export default function Profesionales() {
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Profesional</h3>
+            <div className="tm-modal-detalle-campo flex justify-center">
+              <img 
+                src={selectedProfesional.foto || (selectedProfesional.genero === 'F' ? AVATAR_FEMENINO : selectedProfesional.genero === 'M' ? AVATAR_MASCULINO : `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`)}
+                alt={selectedProfesional.nombre}
+                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                onError={(e) => {
+                  if (selectedProfesional.genero === 'F') (e.target as HTMLImageElement).src = AVATAR_FEMENINO;
+                  else if (selectedProfesional.genero === 'M') (e.target as HTMLImageElement).src = AVATAR_MASCULINO;
+                  else (e.target as HTMLImageElement).src = `https://avatars.dicebear.com/api/initials/${encodeURIComponent(selectedProfesional.nombre)}.svg`;
+                }}
+              />
+            </div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedProfesional.id}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Documento</span><p className="tm-modal-detalle-valor">{selectedProfesional.documento}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedProfesional.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedProfesional.email}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Género</span><p className="tm-modal-detalle-valor">{selectedProfesional.genero === 'M' ? 'Masculino' : selectedProfesional.genero === 'F' ? 'Femenino' : 'No especificado'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedProfesional.whatsapp_e164 || '-'}</p></div>
-            {selectedProfesional.matricula && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>}
-            {selectedProfesional.foto && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>}
+            {selectedProfesional.matricula && (
+              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Matrícula</span><p className="tm-modal-detalle-valor">{selectedProfesional.matricula}</p></div>
+            )}
+            {selectedProfesional.foto && (
+              <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Foto</span><p className="tm-modal-detalle-valor">{selectedProfesional.foto}</p></div>
+            )}
             <div className={`tm-modal-detalle-movimiento ${selectedProfesional.fecha_baja ? 'inactivo' : 'activo'}`}>
               <span className="tm-modal-detalle-label">Último Movimiento</span>
               <p className="tm-modal-detalle-valor">{selectedProfesional.ultimoMovimiento?.replace('demo', 'DEMO') || 'Sin datos'}</p>
@@ -634,6 +824,7 @@ export default function Profesionales() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -647,6 +838,7 @@ export default function Profesionales() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
