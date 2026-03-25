@@ -175,25 +175,28 @@ export default function Profesionales() {
   };
 
   const validarFormulario = (): boolean => {
-    if (!formData.documento.trim()) {
-      setErrorMessage('El documento es obligatorio');
-      return false;
-    }
-    if (!formData.nombre.trim()) {
-      setErrorMessage('El nombre es obligatorio');
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setErrorMessage('El email es obligatorio');
-      return false;
-    }
-    if (!phoneValue) {
-      setErrorMessage('El WhatsApp es obligatorio');
-      return false;
-    }
-    return true;
-  };
-
+  if (!formData.documento.trim()) {
+    setErrorMessage('El documento es obligatorio');
+    return false;
+  }
+  if (!formData.nombre.trim()) {
+    setErrorMessage('El nombre es obligatorio');
+    return false;
+  }
+  if (!formData.email.trim()) {
+    setErrorMessage('El email es obligatorio');
+    return false;
+  }
+  if (!formData.genero) {
+    setErrorMessage('Debe seleccionar un género');
+    return false;
+  }
+  if (!phoneValue) {
+    setErrorMessage('El WhatsApp es obligatorio');
+    return false;
+  }
+  return true;
+};
   const verificarExistente = async (documento: string, email: string, id?: number): Promise<boolean> => {
     try {
       const res = await fetch(PROFESIONALES_URL);
@@ -221,65 +224,64 @@ export default function Profesionales() {
   };
 
   const guardarProfesional = async () => {
-    if (!validarFormulario()) return;
+  if (!validarFormulario()) return;
 
-    const { country_code, national_number } = parsePhoneE164(phoneValue);
-    if (!country_code || !national_number) {
-      setErrorMessage('El número de WhatsApp no es válido');
+  const { country_code, national_number } = parsePhoneE164(phoneValue);
+  if (!country_code || !national_number) {
+    setErrorMessage('El número de WhatsApp no es válido');
+    return;
+  }
+
+  const datosParaEnviar = {
+    documento: formData.documento,
+    nombre: formData.nombre.toUpperCase(),
+    email: formData.email,
+    country_code: country_code,
+    national_number: national_number,
+    genero: formData.genero,
+    matricula: formData.matricula || null,
+    foto: formData.foto || null
+  };
+
+  try {
+    if (modalMode === 'add') {
+      const esValido = await verificarExistente(datosParaEnviar.documento, datosParaEnviar.email);
+      if (!esValido) return;
+    }
+
+    let res;
+    if (modalMode === 'add') {
+      res = await fetch(PROFESIONALES_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosParaEnviar),
+      });
+    } else if (modalMode === 'edit' && selectedProfesional) {
+      res = await fetch(`${PROFESIONALES_URL}/${selectedProfesional.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosParaEnviar),
+      });
+    } else {
       return;
     }
 
-    const datosParaEnviar = {
-      documento: formData.documento,
-      nombre: formData.nombre.toUpperCase(),
-      email: formData.email,
-      country_code: country_code,
-      national_number: national_number,
-      genero: formData.genero || null,
-      matricula: formData.matricula || null,
-      foto: formData.foto || null
-    };
-
-    try {
-      if (modalMode === 'add') {
-        const esValido = await verificarExistente(datosParaEnviar.documento, datosParaEnviar.email);
-        if (!esValido) return;
-      }
-
-      let res;
-      if (modalMode === 'add') {
-        res = await fetch(PROFESIONALES_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datosParaEnviar),
-        });
-      } else if (modalMode === 'edit' && selectedProfesional) {
-        res = await fetch(`${PROFESIONALES_URL}/${selectedProfesional.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datosParaEnviar),
-        });
-      } else {
-        return;
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al guardar profesional');
-      }
-
-      setModalMode(null);
-      setSelectedProfesional(null);
-      setFormData({ documento: '', nombre: '', email: '', genero: '', matricula: '', foto: '' });
-      setPhoneValue(undefined);
-      setErrorMessage(null);
-      fetchProfesionales();
-    } catch (err) {
-      console.error(err);
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el profesional');
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al guardar profesional');
     }
-  };
 
+    setModalMode(null);
+    setSelectedProfesional(null);
+    setFormData({ documento: '', nombre: '', email: '', genero: '', matricula: '', foto: '' });
+    setPhoneValue(undefined);
+    setErrorMessage(null);
+    fetchProfesionales();
+  } catch (err) {
+    console.error(err);
+    setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el profesional');
+  }
+};
   const confirmarEliminar = async () => {
     if (!confirmDelete) return;
     try {
