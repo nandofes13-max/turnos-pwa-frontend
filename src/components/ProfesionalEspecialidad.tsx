@@ -341,11 +341,11 @@ export default function ProfesionalEspecialidad() {
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`} \\
-                     <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`} \\
-                     <td className="max-w-xs truncate">{r.descripcion || '-'} \\
-                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>} \\
-                     <td>
+                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`}</td>
+                    <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
+                    <td className="max-w-xs truncate">{r.descripcion || '-'}</td>
+                    <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
+                    <td>
                       <ActionIcons
                         onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
                         onEdit={() => !r.fecha_baja && handleEditar(r)}
@@ -361,8 +361,8 @@ export default function ProfesionalEspecialidad() {
                         disabledView={false}
                         size="md"
                       />
-                     </td>
-                   </tr>
+                    </td>
+                  </tr>
                 ))}
                 {relacionesPaginadas.length === 0 && (
                   <tr>
