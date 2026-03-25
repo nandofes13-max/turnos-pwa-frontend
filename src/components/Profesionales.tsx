@@ -600,19 +600,19 @@ export default function Profesionales() {
             </div>
 
             <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género</label>
-              <select
-                value={formData.genero}
-                onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="tm-modal-input"
-              >
-                <option value="">Seleccionar...</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-              </select>
-              <small className="tm-ayuda-texto">Usado para avatar por defecto</small>
-            </div>
-
+  <label className="tm-modal-label">Género *</label>
+  <select
+    value={formData.genero}
+    onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+    className="tm-modal-input"
+    required
+  >
+    <option value="">Seleccionar género...</option>
+    <option value="M">Masculino</option>
+    <option value="F">Femenino</option>
+    <option value="X">No Binario</option>
+  </select>
+</div>
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
