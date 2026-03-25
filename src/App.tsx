@@ -9,8 +9,9 @@ import Negocios from './components/Negocios';
 import NegociosUsuariosRoles from './components/NegociosUsuariosRoles';
 import NegocioActividades from './components/NegocioActividades';
 import Especialidades from './components/Especialidades';
-import ActividadEspecialidad from './components/ActividadEspecialidad'; // 👈 NUEVO IMPORT
+import ActividadEspecialidad from './components/ActividadEspecialidad';
 import Profesionales from './components/Profesionales';
+import ProfesionalEspecialidad from './components/ProfesionalEspecialidad'; // 👈 NUEVO IMPORT
 import './App.css';
 
 function App() {
@@ -27,8 +28,9 @@ function App() {
         <Route path="/negocios-usuarios-roles" element={<NegociosUsuariosRoles />} />
         <Route path="/negocio-actividades" element={<NegocioActividades />} />
         <Route path="/especialidades" element={<Especialidades />} />
-        <Route path="/actividad-especialidad" element={<ActividadEspecialidad />} /> {/* 👈 NUEVA RUTA */}
+        <Route path="/actividad-especialidad" element={<ActividadEspecialidad />} />
         <Route path="/profesionales" element={<Profesionales />} />
+        <Route path="/profesional-especialidad" element={<ProfesionalEspecialidad />} /> {/* 👈 NUEVA RUTA */}
       </Routes>
     </BrowserRouter>
   );
