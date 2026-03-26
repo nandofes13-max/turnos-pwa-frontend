@@ -336,16 +336,15 @@ export default function ProfesionalEspecialidad() {
                   <th>DESCRIPCIÓN</th>
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`}</td>
-                    <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
-                    <td className="max-w-xs truncate">{r.descripcion || '-'}</td>
-                    <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
-                    <td>
+                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`} \\
+                     <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`} \\
+                    <td className="max-w-xs truncate">{r.descripcion || '-'} \\
+                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>} \\
+                     <td>
                       <ActionIcons
                         onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
                         onEdit={() => !r.fecha_baja && handleEditar(r)}
@@ -361,13 +360,13 @@ export default function ProfesionalEspecialidad() {
                         disabledView={false}
                         size="md"
                       />
-                    </td>
-                  </tr>
+                     </td>
+                   </tr>
                 ))}
                 {relacionesPaginadas.length === 0 && (
-                  <tr>
+                   <tr>
                     <td colSpan={5} className="tm-fila-vacia">No hay relaciones que coincidan</td>
-                  </tr>
+                   </tr>
                 )}
               </tbody>
             </table>
@@ -451,7 +450,7 @@ export default function ProfesionalEspecialidad() {
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 placeholder="Ej: Especialista en cardiología clínica"
-                className="tm-modal-input"
+                className="tm-modal-input tm-input-descripcion"
                 rows={3}
               />
               <small className="tm-ayuda-texto">Descripción de la especialidad para este profesional (opcional)</small>
@@ -503,7 +502,7 @@ export default function ProfesionalEspecialidad() {
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="tm-modal-input"
+                className="tm-modal-input tm-input-descripcion"
                 rows={3}
               />
             </div>
