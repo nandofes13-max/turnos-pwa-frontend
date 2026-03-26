@@ -42,7 +42,8 @@ export default function TablaMaestra({
               </th>
             ))}
             <th>ACCIONES</th>
-          </thead>
+          </tr>
+        </thead>
         <tbody>
           {datos.map((item, idx) => (
             <tr key={idx} className={esInactivo?.(item) ? 'tm-fila-inactiva' : ''}>
