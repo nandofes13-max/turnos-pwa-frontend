@@ -5,6 +5,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
+import styles from '../styles/Centros.module.css';
 
 interface Negocio {
   id: number;
@@ -63,7 +64,7 @@ export default function Centros() {
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
-  const [filtroNegocio, setFiltroNegocio] = useState('');
+  const [filtroUrl, setFiltroUrl] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
@@ -108,7 +109,7 @@ export default function Centros() {
 
   const filtrarCentros = () => {
     return centros.filter(c => {
-      if (filtroNegocio && !c.negocio?.nombre.toLowerCase().includes(filtroNegocio.toLowerCase())) return false;
+      if (filtroUrl && !c.negocio?.url.toLowerCase().includes(filtroUrl.toLowerCase())) return false;
       if (filtroNombre && !c.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) return false;
       const tipo = obtenerTipoMovimiento(c);
       if (filtroTipoMovimiento.length > 0 && !filtroTipoMovimiento.includes(tipo)) return false;
@@ -355,19 +356,33 @@ export default function Centros() {
 
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
-    setFiltroNegocio('');
+    setFiltroUrl('');
     setFiltroNombre('');
     setFechaDesde('');
     setFechaHasta('');
     setPaginaActual(1);
   };
 
+  // Componente para celda de URL con tooltip
+  const UrlCell = ({ negocio }: { negocio?: Negocio }) => {
+    if (!negocio) return <span>-</span>;
+    return (
+      <div className={styles.urlContainer}>
+        <span className={styles.urlLink}>{negocio.url}</span>
+        <span className={styles.urlTooltip}>{negocio.nombre}</span>
+      </div>
+    );
+  };
+
   // Preparar datos para TablaMaestra
   const datosTabla = centrosPaginados.map(c => ({
     ...c,
-    negocioNombre: c.negocio?.nombre || `ID: ${c.negocioId}`,
+    url: c.negocio?.url || '-',
+    nombre: c.nombre,
+    whatsapp: c.whatsapp_e164 || '-',
     direccion: formatearDireccion(c).substring(0, 40),
-    estado: c.fecha_baja ? 'Inactivo' : 'Activo'
+    estado: c.fecha_baja ? 'Inactivo' : 'Activo',
+    negocioObj: c.negocio
   }));
 
   return (
@@ -377,11 +392,11 @@ export default function Centros() {
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">Negocio</label>
-            <input type="text" value={filtroNegocio} onChange={(e) => { setFiltroNegocio(e.target.value); setPaginaActual(1); }} placeholder="Buscar negocio..." className="tm-filtro-input" />
+            <label className="tm-filtro-label">URL Negocio</label>
+            <input type="text" value={filtroUrl} onChange={(e) => { setFiltroUrl(e.target.value); setPaginaActual(1); }} placeholder="Buscar por URL..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">Nombre</label>
+            <label className="tm-filtro-label">Nombre Centro</label>
             <input type="text" value={filtroNombre} onChange={(e) => { setFiltroNombre(e.target.value); setPaginaActual(1); }} placeholder="Buscar centro..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
@@ -437,22 +452,89 @@ export default function Centros() {
             </div>
           </div>
 
-          <TablaMaestra
-            columnas={[
-              { key: 'codigo', label: 'CÓDIGO' },
-              { key: 'negocioNombre', label: 'NEGOCIO' },
-              { key: 'nombre', label: 'NOMBRE' },
-              { key: 'whatsapp_e164', label: 'WHATSAPP' },
-              { key: 'direccion', label: 'DOMICILIO' },
-              { key: 'estado', label: 'ESTADO' }
-            ]}
-            datos={datosTabla}
-            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
-            onEdit={(item) => !item.fecha_baja && handleEditar(item)}
-            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
-            onView={(item) => handleVerDetalle(item)}
-            esInactivo={(item) => item.fecha_baja}
-          />
+          <div className="tm-tabla-centrado">
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>URL NEGOCIO</th>
+                  <th>NOMBRE</th>
+                  <th>WHATSAPP</th>
+                  <th>DOMICILIO</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </thead>
+              <tbody>
+                {datosTabla.map((item, idx) => (
+                  <tr key={idx} className={item.fecha_baja ? 'tm-fila-inactiva' : ''}>
+                    <td>{item.codigo}</td>
+                    <td>
+                      <div className={styles.urlContainer}>
+                        <span className={styles.urlLink}>{item.url}</span>
+                        <span className={styles.urlTooltip}>{item.negocioObj?.nombre}</span>
+                      </div>
+                    </td>
+                    <td>{item.nombre}</td>
+                    <td>{item.whatsapp}</td>
+                    <td>{item.direccion}</td>
+                    <td>{item.estado}</td>
+                    <td>
+                      <ActionIcons
+                        onAdd={() => item.fecha_baja ? handleReactivar(item) : null}
+                        onEdit={() => !item.fecha_baja && handleEditar(item)}
+                        onDelete={() => !item.fecha_baja && handleEliminar(item)}
+                        onView={() => handleVerDetalle(item)}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
+                        showView={true}
+                        disabledAdd={!item.fecha_baja}
+                        disabledEdit={!!item.fecha_baja}
+                        disabledDelete={!!item.fecha_baja}
+                        disabledView={false}
+                        size="md"
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {datosTabla.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="tm-fila-vacia">No hay centros que coincidan</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="tm-cards">
+            {datosTabla.map((item, idx) => (
+              <div key={`card-${idx}`} className={`tm-card-item ${item.fecha_baja ? 'inactiva' : ''}`}>
+                <div className="tm-card-codigo">{item.codigo}</div>
+                <div className="tm-card-url">URL: {item.url}</div>
+                <div className="tm-card-nombre"><strong>{item.nombre}</strong></div>
+                <div className="tm-card-whatsapp">WhatsApp: {item.whatsapp}</div>
+                <div className="tm-card-direccion">📍 {item.direccion}</div>
+                <div className="tm-card-estado">Estado: {item.estado}</div>
+                <div className="tm-card-acciones mt-2">
+                  <ActionIcons
+                    onAdd={() => item.fecha_baja ? handleReactivar(item) : null}
+                    onEdit={() => !item.fecha_baja && handleEditar(item)}
+                    onDelete={() => !item.fecha_baja && handleEliminar(item)}
+                    onView={() => handleVerDetalle(item)}
+                    showAdd={true}
+                    showEdit={true}
+                    showDelete={true}
+                    showView={true}
+                    disabledAdd={!item.fecha_baja}
+                    disabledEdit={!!item.fecha_baja}
+                    disabledDelete={!!item.fecha_baja}
+                    disabledView={false}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
           
           {centrosFiltrados.length > 0 && (
             <div className="tm-paginacion">
@@ -481,7 +563,7 @@ export default function Centros() {
                 required
               >
                 <option value="">Seleccionar negocio...</option>
-                {negocios.map(n => (<option key={n.id} value={n.id}>{n.nombre}</option>))}
+                {negocios.map(n => (<option key={n.id} value={n.id}>{n.nombre} ({n.url})</option>))}
               </select>
             </div>
 
@@ -537,15 +619,13 @@ export default function Centros() {
             
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Negocio *</label>
-              <select 
-                value={formData.negocioId} 
-                onChange={(e) => setFormData({ ...formData, negocioId: e.target.value })} 
-                className="tm-modal-input" 
-                required
-              >
-                <option value="">Seleccionar negocio...</option>
-                {negocios.map(n => (<option key={n.id} value={n.id}>{n.nombre}</option>))}
-              </select>
+              <input
+                type="text"
+                value={selectedCentro.negocio?.nombre || `ID: ${selectedCentro.negocioId}`}
+                className="tm-modal-input"
+                disabled
+              />
+              <small className="tm-ayuda-texto">El negocio no puede modificarse</small>
             </div>
 
             <div className="tm-modal-campo">
@@ -625,7 +705,7 @@ export default function Centros() {
             <h3 className="tm-modal-titulo">Detalle de Centro</h3>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">ID</span><p className="tm-modal-detalle-valor">{selectedCentro.id}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Código</span><p className="tm-modal-detalle-valor">{selectedCentro.codigo}</p></div>
-            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Negocio</span><p className="tm-modal-detalle-valor">{selectedCentro.negocio?.nombre}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Negocio</span><p className="tm-modal-detalle-valor">{selectedCentro.negocio?.nombre} ({selectedCentro.negocio?.url})</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedCentro.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedCentro.whatsapp_e164}</p></div>
             {selectedCentro.street && (
