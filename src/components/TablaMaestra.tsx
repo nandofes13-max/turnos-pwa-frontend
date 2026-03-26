@@ -42,8 +42,7 @@ export default function TablaMaestra({
               </th>
             ))}
             <th>ACCIONES</th>
-          </tr>
-        </thead>
+          </thead>
         <tbody>
           {datos.map((item, idx) => (
             <tr key={idx} className={esInactivo?.(item) ? 'tm-fila-inactiva' : ''}>
@@ -63,7 +62,7 @@ export default function TablaMaestra({
                   showEdit={!!onEdit}
                   showDelete={!!onDelete}
                   showView={!!onView}
-                  disabledAdd={esInactivo?.(item)}
+                  disabledAdd={!esInactivo?.(item)}
                   disabledEdit={esInactivo?.(item)}
                   disabledDelete={esInactivo?.(item)}
                   disabledView={false}
