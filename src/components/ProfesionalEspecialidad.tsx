@@ -336,9 +336,9 @@ export default function ProfesionalEspecialidad() {
                   <th>DESCRIPCIÓN</th>
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
+                   </tr>
                 </thead>
-                </tr>
-              <tbody>
+                <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
                     <td className="tm-celda-nombre">{r.profesional?.nombre || `ID: ${r.profesionalId}`} </td>
