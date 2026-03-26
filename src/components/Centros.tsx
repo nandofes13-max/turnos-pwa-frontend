@@ -378,11 +378,9 @@ export default function Centros() {
   const datosTabla = centrosPaginados.map(c => ({
     ...c,
     url: c.negocio?.url || '-',
-    nombre: c.nombre,
-    whatsapp: c.whatsapp_e164 || '-',
+    negocioObj: c.negocio,
     direccion: formatearDireccion(c).substring(0, 40),
-    estado: c.fecha_baja ? 'Inactivo' : 'Activo',
-    negocioObj: c.negocio
+    estado: c.fecha_baja ? 'Inactivo' : 'Activo'
   }));
 
   return (
@@ -452,89 +450,23 @@ export default function Centros() {
             </div>
           </div>
 
-          <div className="tm-tabla-centrado">
-            <table className="tm-tabla">
-              <thead>
-                <tr>
-                  <th>CÓDIGO</th>
-                  <th>URL NEGOCIO</th>
-                  <th>NOMBRE</th>
-                  <th>WHATSAPP</th>
-                  <th>DOMICILIO</th>
-                  <th>ESTADO</th>
-                  <th>ACCIONES</th>
-                </thead>
-              <tbody>
-                {datosTabla.map((item, idx) => (
-                  <tr key={idx} className={item.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{item.codigo}</td>
-                    <td>
-                      <div className={styles.urlContainer}>
-                        <span className={styles.urlLink}>{item.url}</span>
-                        <span className={styles.urlTooltip}>{item.negocioObj?.nombre}</span>
-                      </div>
-                    </td>
-                    <td>{item.nombre}</td>
-                    <td>{item.whatsapp}</td>
-                    <td>{item.direccion}</td>
-                    <td>{item.estado}</td>
-                    <td>
-                      <ActionIcons
-                        onAdd={() => item.fecha_baja ? handleReactivar(item) : null}
-                        onEdit={() => !item.fecha_baja && handleEditar(item)}
-                        onDelete={() => !item.fecha_baja && handleEliminar(item)}
-                        onView={() => handleVerDetalle(item)}
-                        showAdd={true}
-                        showEdit={true}
-                        showDelete={true}
-                        showView={true}
-                        disabledAdd={!item.fecha_baja}
-                        disabledEdit={!!item.fecha_baja}
-                        disabledDelete={!!item.fecha_baja}
-                        disabledView={false}
-                        size="md"
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {datosTabla.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="tm-fila-vacia">No hay centros que coincidan</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="tm-cards">
-            {datosTabla.map((item, idx) => (
-              <div key={`card-${idx}`} className={`tm-card-item ${item.fecha_baja ? 'inactiva' : ''}`}>
-                <div className="tm-card-codigo">{item.codigo}</div>
-                <div className="tm-card-url">URL: {item.url}</div>
-                <div className="tm-card-nombre"><strong>{item.nombre}</strong></div>
-                <div className="tm-card-whatsapp">WhatsApp: {item.whatsapp}</div>
-                <div className="tm-card-direccion">📍 {item.direccion}</div>
-                <div className="tm-card-estado">Estado: {item.estado}</div>
-                <div className="tm-card-acciones mt-2">
-                  <ActionIcons
-                    onAdd={() => item.fecha_baja ? handleReactivar(item) : null}
-                    onEdit={() => !item.fecha_baja && handleEditar(item)}
-                    onDelete={() => !item.fecha_baja && handleEliminar(item)}
-                    onView={() => handleVerDetalle(item)}
-                    showAdd={true}
-                    showEdit={true}
-                    showDelete={true}
-                    showView={true}
-                    disabledAdd={!item.fecha_baja}
-                    disabledEdit={!!item.fecha_baja}
-                    disabledDelete={!!item.fecha_baja}
-                    disabledView={false}
-                    size="lg"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <TablaMaestra
+            columnas={[
+              { key: 'codigo', label: 'CÓDIGO' },
+              { key: 'url', label: 'URL NEGOCIO' },
+              { key: 'nombre', label: 'NOMBRE' },
+              { key: 'whatsapp_e164', label: 'WHATSAPP' },
+              { key: 'direccion', label: 'DOMICILIO' },
+              { key: 'estado', label: 'ESTADO' }
+            ]}
+            datos={datosTabla}
+            avatar={(item) => <UrlCell negocio={item.negocioObj} />}
+            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
+            onEdit={(item) => !item.fecha_baja && handleEditar(item)}
+            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
+            onView={(item) => handleVerDetalle(item)}
+            esInactivo={(item) => item.fecha_baja}
+          />
           
           {centrosFiltrados.length > 0 && (
             <div className="tm-paginacion">
