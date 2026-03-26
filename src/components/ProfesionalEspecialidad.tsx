@@ -52,6 +52,7 @@ export default function ProfesionalEspecialidad() {
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [especialidadesAsignadas, setEspecialidadesAsignadas] = useState<number[]>([]);
   
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroProfesional, setFiltroProfesional] = useState('');
@@ -103,6 +104,26 @@ export default function ProfesionalEspecialidad() {
     }
   };
 
+  const cargarEspecialidadesAsignadas = async (profesionalId: number) => {
+    if (!profesionalId) {
+      setEspecialidadesAsignadas([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${RELACIONES_URL}/por-profesional/${profesionalId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const ids = data.map((r: Relacion) => r.especialidadId);
+        setEspecialidadesAsignadas(ids);
+      } else {
+        setEspecialidadesAsignadas([]);
+      }
+    } catch (err) {
+      console.error('Error cargando especialidades asignadas:', err);
+      setEspecialidadesAsignadas([]);
+    }
+  };
+
   const obtenerTipoMovimiento = (r: Relacion): string => {
     if (r.fecha_baja) return 'Bajas';
     return 'Altas';
@@ -146,6 +167,7 @@ export default function ProfesionalEspecialidad() {
 
   const handleAgregar = () => {
     setFormData({ profesionalId: '', especialidadId: '', descripcion: '' });
+    setEspecialidadesAsignadas([]);
     setErrorMessage(null);
     setModalMode('add');
   };
@@ -184,9 +206,18 @@ export default function ProfesionalEspecialidad() {
   const guardarRelacion = async () => {
     if (!validarFormulario()) return;
 
+    const profesionalIdNum = parseInt(formData.profesionalId);
+    const especialidadIdNum = parseInt(formData.especialidadId);
+
+    // Validación adicional para evitar duplicados
+    if (especialidadesAsignadas.includes(especialidadIdNum)) {
+      setErrorMessage('Este profesional ya tiene asignada esta especialidad');
+      return;
+    }
+
     const datosParaEnviar = {
-      profesionalId: parseInt(formData.profesionalId),
-      especialidadId: parseInt(formData.especialidadId),
+      profesionalId: profesionalIdNum,
+      especialidadId: especialidadIdNum,
       descripcion: formData.descripcion || null
     };
 
@@ -216,6 +247,7 @@ export default function ProfesionalEspecialidad() {
       setModalMode(null);
       setSelectedRelacion(null);
       setFormData({ profesionalId: '', especialidadId: '', descripcion: '' });
+      setEspecialidadesAsignadas([]);
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -385,7 +417,15 @@ export default function ProfesionalEspecialidad() {
               <label className="tm-modal-label">Profesional *</label>
               <select 
                 value={formData.profesionalId} 
-                onChange={(e) => setFormData({ ...formData, profesionalId: e.target.value })} 
+                onChange={(e) => {
+                  const nuevoProfesionalId = e.target.value;
+                  setFormData({ ...formData, profesionalId: nuevoProfesionalId, especialidadId: '' });
+                  if (nuevoProfesionalId) {
+                    cargarEspecialidadesAsignadas(parseInt(nuevoProfesionalId));
+                  } else {
+                    setEspecialidadesAsignadas([]);
+                  }
+                }} 
                 className="tm-modal-input" 
                 required
               >
@@ -403,8 +443,15 @@ export default function ProfesionalEspecialidad() {
                 required
               >
                 <option value="">Seleccionar especialidad...</option>
-                {especialidades.map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
+                {especialidades
+                  .filter(e => !especialidadesAsignadas.includes(e.id))
+                  .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
               </select>
+              {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.profesionalId && (
+                <p className="text-sm text-amber-600 mt-1">
+                  ⚠️ No hay especialidades disponibles. Todas las especialidades ya están asignadas a este profesional.
+                </p>
+              )}
             </div>
 
             <div className="tm-modal-campo">
@@ -438,7 +485,15 @@ export default function ProfesionalEspecialidad() {
               <label className="tm-modal-label">Profesional *</label>
               <select 
                 value={formData.profesionalId} 
-                onChange={(e) => setFormData({ ...formData, profesionalId: e.target.value })} 
+                onChange={(e) => {
+                  const nuevoProfesionalId = e.target.value;
+                  setFormData({ ...formData, profesionalId: nuevoProfesionalId, especialidadId: '' });
+                  if (nuevoProfesionalId) {
+                    cargarEspecialidadesAsignadas(parseInt(nuevoProfesionalId));
+                  } else {
+                    setEspecialidadesAsignadas([]);
+                  }
+                }} 
                 className="tm-modal-input" 
                 required
               >
@@ -456,7 +511,9 @@ export default function ProfesionalEspecialidad() {
                 required
               >
                 <option value="">Seleccionar especialidad...</option>
-                {especialidades.map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
+                {especialidades
+                  .filter(e => !especialidadesAsignadas.includes(e.id) || e.id === selectedRelacion?.especialidadId)
+                  .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
               </select>
             </div>
 
