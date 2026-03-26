@@ -363,12 +363,15 @@ export default function Centros() {
     setPaginaActual(1);
   };
 
-  // Componente para celda de URL con tooltip
+  // Componente para celda de URL con tooltip y enlace completo
   const UrlCell = ({ negocio }: { negocio?: Negocio }) => {
     if (!negocio) return <span>-</span>;
+    const fullUrl = `${window.location.origin}/negocio/${negocio.url}`;
     return (
       <div className={styles.urlContainer}>
-        <span className={styles.urlLink}>{negocio.url}</span>
+        <a href={fullUrl} target="_blank" rel="noopener noreferrer" className={styles.urlLink}>
+          {fullUrl}
+        </a>
         <span className={styles.urlTooltip}>{negocio.nombre}</span>
       </div>
     );
@@ -377,8 +380,7 @@ export default function Centros() {
   // Preparar datos para TablaMaestra
   const datosTabla = centrosPaginados.map(c => ({
     ...c,
-    url: c.negocio?.url || '-',
-    negocioObj: c.negocio,
+    urlWithTooltip: <UrlCell negocio={c.negocio} />,
     direccion: formatearDireccion(c).substring(0, 40),
     estado: c.fecha_baja ? 'Inactivo' : 'Activo'
   }));
@@ -453,14 +455,13 @@ export default function Centros() {
           <TablaMaestra
             columnas={[
               { key: 'codigo', label: 'CÓDIGO' },
-              { key: 'url', label: 'URL NEGOCIO' },
+              { key: 'urlWithTooltip', label: 'URL NEGOCIO' },
               { key: 'nombre', label: 'NOMBRE' },
               { key: 'whatsapp_e164', label: 'WHATSAPP' },
               { key: 'direccion', label: 'DOMICILIO' },
               { key: 'estado', label: 'ESTADO' }
             ]}
             datos={datosTabla}
-            avatar={(item) => <UrlCell negocio={item.negocioObj} />}
             onAdd={(item) => item.fecha_baja && handleReactivar(item)}
             onEdit={(item) => !item.fecha_baja && handleEditar(item)}
             onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
