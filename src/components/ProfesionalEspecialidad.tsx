@@ -337,6 +337,7 @@ export default function ProfesionalEspecialidad() {
                   <th>ESTADO</th>
                   <th>ACCIONES</th>
                 </thead>
+                </tr>
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
