@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
+import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
 
 interface Profesional {
@@ -271,6 +272,15 @@ export default function ProfesionalEspecialidad() {
     setPaginaActual(1);
   };
 
+  // Preparar datos para TablaMaestra
+  const datosTabla = relacionesPaginadas.map(r => ({
+    ...r,
+    profesionalNombre: r.profesional?.nombre || `ID: ${r.profesionalId}`,
+    especialidadNombre: r.especialidad?.nombre || `ID: ${r.especialidadId}`,
+    estado: r.fecha_baja ? 'Inactivo' : 'Activo',
+    descripcion: r.descripcion || '-'
+  }));
+
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Profesional ↔ Especialidad</h1>
@@ -325,81 +335,33 @@ export default function ProfesionalEspecialidad() {
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando...</p></div>
       ) : (
         <div className="tm-tabla-wrapper">
-          <div className="tm-tabla-header-contenedor"><div className="tm-tabla-header-inner"><button onClick={handleAgregar} className="tm-btn-agregar">Asignar Especialidad a Profesional<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button></div></div>
-
-          <div className="tm-tabla-centrado">
-            <table className="tm-tabla">
-              <thead>
-                <tr>
-                  <th>PROFESIONAL</th>
-                  <th>ESPECIALIDAD</th>
-                  <th>DESCRIPCIÓN</th>
-                  <th>ESTADO</th>
-                  <th>ACCIONES</th>
-                   </tr>
-                </thead>
-                <tbody>
-                {relacionesPaginadas.map(r => (
-                  <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td className="tm-celda-nombre">{r.profesional?.nombre || `ID: ${r.profesionalId}`} </td>
-                    <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
-                    <td>{r.descripcion || '-'}</td>
-                    <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
-                    <td>
-                      <ActionIcons
-                        onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
-                        onEdit={() => !r.fecha_baja && handleEditar(r)}
-                        onDelete={() => !r.fecha_baja && handleEliminar(r)}
-                        onView={() => handleVerDetalle(r)}
-                        showAdd={true}
-                        showEdit={true}
-                        showDelete={true}
-                        showView={true}
-                        disabledAdd={!r.fecha_baja}
-                        disabledEdit={!!r.fecha_baja}
-                        disabledDelete={!!r.fecha_baja}
-                        disabledView={false}
-                        size="md"
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {relacionesPaginadas.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="tm-fila-vacia">No hay relaciones que coincidan</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="tm-tabla-header-contenedor">
+            <div className="tm-tabla-header-inner">
+              <button onClick={handleAgregar} className="tm-btn-agregar">
+                Asignar Especialidad a Profesional
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div className="tm-cards">
-            {relacionesPaginadas.map(r => (
-              <div key={`card-${r.id}`} className={`tm-card-item ${r.fecha_baja ? 'inactiva' : ''}`}>
-                <div className="tm-card-profesional"><strong>{r.profesional?.nombre || `Profesional ${r.profesionalId}`}</strong></div>
-                <div className="tm-card-especialidad">Especialidad: <strong>{r.especialidad?.nombre || `ID ${r.especialidadId}`}</strong></div>
-                {r.descripcion && <div className="tm-card-descripcion text-sm text-gray-600">📝 {r.descripcion}</div>}
-                <div className="tm-card-estado">Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}</div>
-                <div className="tm-card-acciones mt-2">
-                  <ActionIcons
-                    onAdd={() => r.fecha_baja ? handleReactivar(r) : null}
-                    onEdit={() => !r.fecha_baja && handleEditar(r)}
-                    onDelete={() => !r.fecha_baja && handleEliminar(r)}
-                    onView={() => handleVerDetalle(r)}
-                    showAdd={true}
-                    showEdit={true}
-                    showDelete={true}
-                    showView={true}
-                    disabledAdd={!r.fecha_baja}
-                    disabledEdit={!!r.fecha_baja}
-                    disabledDelete={!!r.fecha_baja}
-                    disabledView={false}
-                    size="lg"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <TablaMaestra
+            columnas={[
+              { key: 'profesionalNombre', label: 'PROFESIONAL' },
+              { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
+              { key: 'descripcion', label: 'DESCRIPCIÓN' },
+              { key: 'estado', label: 'ESTADO' }
+            ]}
+            datos={datosTabla}
+            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
+            onEdit={(item) => !item.fecha_baja && handleEditar(item)}
+            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
+            onView={(item) => handleVerDetalle(item)}
+            esInactivo={(item) => item.fecha_baja}
+          />
           
           {relacionesFiltradas.length > 0 && (
             <div className="tm-paginacion">
