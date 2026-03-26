@@ -42,7 +42,7 @@ export default function ProfesionalEspecialidad() {
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRelacion, setSelectedRelacion] = useState<Relacion | null>(null);
-  const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     profesionalId: '', 
     especialidadId: '',
@@ -340,9 +340,9 @@ export default function ProfesionalEspecialidad() {
               <tbody>
                 {relacionesPaginadas.map(r => (
                   <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
-                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`}</td>
+                    <td className="tm-celda-nombre">{r.profesional?.nombre || `ID: ${r.profesionalId}`} </td>
                     <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
-                    <td className="max-w-xs truncate">{r.descripcion || '-'}</td>
+                    <td>{r.descripcion || '-'}</td>
                     <td>{r.fecha_baja ? <span className="text-red-600">Inactivo</span> : <span className="text-green-600">Activo</span>}</td>
                     <td>
                       <ActionIcons
