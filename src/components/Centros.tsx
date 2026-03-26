@@ -181,7 +181,13 @@ export default function Centros() {
   };
 
   const handleEliminar = (centro: Centro) => setConfirmDelete(centro);
-  const handleReactivar = (centro: Centro) => centro.fecha_baja && setConfirmReactivar(centro);
+  
+  const handleReactivar = (centro: Centro) => {
+    console.log('🟢 Reactivar centro:', centro);
+    if (centro.fecha_baja) {
+      setConfirmReactivar(centro);
+    }
+  };
 
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
@@ -322,6 +328,7 @@ export default function Centros() {
 
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
+    console.log('🔄 Confirmando reactivación de:', confirmReactivar);
     try {
       const res = await fetch(`${CENTROS_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
@@ -345,7 +352,12 @@ export default function Centros() {
           usuario_baja: null
         }),
       });
-      if (!res.ok) throw new Error('Error al reactivar centro');
+      console.log('📡 Respuesta status:', res.status);
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Error response:', errorData);
+        throw new Error('Error al reactivar centro');
+      }
       setConfirmReactivar(null);
       fetchCentros();
     } catch (err) {
