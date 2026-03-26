@@ -1,0 +1,51 @@
+.urlContainer {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.urlLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--color-primary);
+}
+
+.urlLink:hover {
+  text-decoration: underline;
+}
+
+.urlTooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-gray-800);
+  color: white;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.urlContainer:hover .urlTooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip con flecha */
+.urlTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--color-gray-800) transparent transparent transparent;
+}
