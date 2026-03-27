@@ -130,8 +130,14 @@ export default function Centros() {
   const indiceUltimoItem = paginaActual * itemsPorPagina;
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
   const centrosPaginados = centrosFiltrados
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
-    .slice(indicePrimerItem, indiceUltimoItem);
+  .sort((a, b) => {
+    // Primero ordenar por URL del negocio
+    const urlCompare = (a.negocio?.url || '').localeCompare(b.negocio?.url || '');
+    if (urlCompare !== 0) return urlCompare;
+    // Si la URL es igual, ordenar por código
+    return a.codigo.localeCompare(b.codigo);
+  })
+  .slice(indicePrimerItem, indiceUltimoItem);
 
   const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
   const toggleMovimiento = (mov: string) => {
