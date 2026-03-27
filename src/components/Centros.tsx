@@ -375,19 +375,16 @@ export default function Centros() {
     setPaginaActual(1);
   };
 
-  // Componente para celda de URL con tooltip y enlace completo
+  // Componente para celda de URL
   const UrlCell = ({ negocio }: { negocio?: Negocio }) => {
-    if (!negocio) return <span>-</span>;
-    const fullUrl = `${window.location.origin}/negocio/${negocio.url}`;
-    return (
-      <div className={styles.urlContainer}>
-        <a href={fullUrl} target="_blank" rel="noopener noreferrer" className={styles.urlLink}>
-          {fullUrl}
-        </a>
-        <span className={styles.urlTooltip}>{negocio.nombre}</span>
-      </div>
-    );
-  };
+  if (!negocio) return <span>-</span>;
+  return (
+    <div className={styles.urlContainer}>
+      <span className={styles.urlLink}>{negocio.url}</span>
+      <span className={styles.urlTooltip}>{negocio.nombre}</span>
+    </div>
+  );
+};
 
   // Preparar datos para TablaMaestra
   const datosTabla = centrosPaginados.map(c => ({
