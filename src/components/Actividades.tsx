@@ -5,6 +5,7 @@ import '../styles/tablas-maestras.css';
 interface Actividad {
   id: number;
   nombre: string;
+  virtual: boolean;
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -22,7 +23,7 @@ export default function Actividades() {
   const [loading, setLoading] = useState(false);
   const [selectedActividad, setSelectedActividad] = useState<Actividad | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
-  const [formData, setFormData] = useState({ nombre: '' });
+  const [formData, setFormData] = useState({ nombre: '', virtual: false });
   const [confirmDelete, setConfirmDelete] = useState<Actividad | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Actividad | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -30,12 +31,14 @@ export default function Actividades() {
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
+  const [filtroVirtual, setFiltroVirtual] = useState<string>('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   
   // Estados para filtros expandidos
   const [filtroExpandido, setFiltroExpandido] = useState({
-    movimiento: false
+    movimiento: false,
+    virtual: false
   });
 
   // Estados para paginación
@@ -43,6 +46,7 @@ export default function Actividades() {
   const [itemsPorPagina] = useState(10);
 
   const tiposMovimiento = ['Altas', 'Bajas'];
+  const opcionesVirtual = ['Todos', 'Sí', 'No'];
 
   useEffect(() => {
     fetchActividades();
@@ -70,6 +74,9 @@ export default function Actividades() {
   const filtrarActividades = (actividades: Actividad[]): Actividad[] => {
     return actividades.filter(a => {
       if (filtroNombre && !a.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) return false;
+      
+      if (filtroVirtual === 'Sí' && !a.virtual) return false;
+      if (filtroVirtual === 'No' && a.virtual) return false;
       
       const tipo = obtenerTipoMovimiento(a);
       if (filtroTipoMovimiento.length > 0 && !filtroTipoMovimiento.includes(tipo)) return false;
@@ -118,13 +125,13 @@ export default function Actividades() {
 
   // ===== FUNCIONES CRUD =====
   const handleAgregar = () => {
-    setFormData({ nombre: '' });
+    setFormData({ nombre: '', virtual: false });
     setErrorMessage(null);
     setModalMode('add');
   };
 
   const handleEditar = (actividad: Actividad) => {
-    setFormData({ nombre: actividad.nombre });
+    setFormData({ nombre: actividad.nombre, virtual: actividad.virtual });
     setSelectedActividad(actividad);
     setErrorMessage(null);
     setModalMode('edit');
@@ -191,7 +198,8 @@ export default function Actividades() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: nombreUpper
+            nombre: nombreUpper,
+            virtual: formData.virtual
           }),
         });
       } else if (modalMode === 'edit' && selectedActividad) {
@@ -199,7 +207,8 @@ export default function Actividades() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            nombre: nombreUpper
+            nombre: nombreUpper,
+            virtual: formData.virtual
           }),
         });
       } else {
@@ -213,7 +222,7 @@ export default function Actividades() {
 
       setModalMode(null);
       setSelectedActividad(null);
-      setFormData({ nombre: '' });
+      setFormData({ nombre: '', virtual: false });
       setErrorMessage(null);
       fetchActividades();
     } catch (err) {
@@ -241,32 +250,35 @@ export default function Actividades() {
     }
   };
 
- const confirmarReactivar = async () => {
-  if (!confirmReactivar) return;
+  const confirmarReactivar = async () => {
+    if (!confirmReactivar) return;
 
-  try {
-    const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        nombre: confirmReactivar.nombre,
-        fecha_baja: null,
-        usuario_baja: null
-      }),
-    });
+    try {
+      const res = await fetch(`${ACTIVIDADES_URL}/${confirmReactivar.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nombre: confirmReactivar.nombre,
+          virtual: confirmReactivar.virtual,
+          fecha_baja: null,
+          usuario_baja: null
+        }),
+      });
 
-    if (!res.ok) throw new Error('Error al reactivar actividad');
+      if (!res.ok) throw new Error('Error al reactivar actividad');
 
-    setConfirmReactivar(null);
-    fetchActividades();
-  } catch (err) {
-    console.error(err);
-    alert('No se pudo reactivar la actividad');
-  }
-};
+      setConfirmReactivar(null);
+      fetchActividades();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo reactivar la actividad');
+    }
+  };
+
   const limpiarFiltros = () => {
     setFiltroTipoMovimiento([]);
     setFiltroNombre('');
+    setFiltroVirtual('');
     setFechaDesde('');
     setFechaHasta('');
     setPaginaActual(1);
@@ -293,6 +305,39 @@ export default function Actividades() {
               placeholder="Buscar..."
               className="tm-filtro-input"
             />
+          </div>
+
+          {/* VIRTUAL */}
+          <div className="tm-filtro-campo tm-filtro-virtual">
+            <label className="tm-filtro-label">Virtual</label>
+            <div className="tm-filtro-dropdown">
+              <button
+                onClick={() => setFiltroExpandido(prev => ({ ...prev, virtual: !prev.virtual }))}
+                className="tm-filtro-dropdown-btn"
+              >
+                <span>{filtroVirtual || 'Todos'}</span>
+                <span>▼</span>
+              </button>
+              {filtroExpandido.virtual && (
+                <div className="tm-filtro-dropdown-menu">
+                  {opcionesVirtual.map(op => (
+                    <label key={op} className="tm-filtro-checkbox-label">
+                      <input
+                        type="radio"
+                        name="filtroVirtual"
+                        checked={filtroVirtual === op}
+                        onChange={() => {
+                          setFiltroVirtual(op === 'Todos' ? '' : op);
+                          setPaginaActual(1);
+                          setFiltroExpandido(prev => ({ ...prev, virtual: false }));
+                        }}
+                      />
+                      <span>{op}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* FECHA DESDE */}
@@ -407,9 +452,9 @@ export default function Actividades() {
               <thead>
                 <tr>
                   <th className="tm-col-nombre">NOMBRE</th>
+                  <th>VIRTUAL</th>
                   <th>ACCIONES</th>
-                 </tr>
-              </thead>
+                </thead>
               <tbody>
                 {actividadesPaginadas.map((a) => (
                   <tr 
@@ -417,6 +462,7 @@ export default function Actividades() {
                     className={a.fecha_baja ? 'tm-fila-inactiva' : ''}
                   >
                     <td className="tm-celda-nombre">{a.nombre} </td>
+                    <td>{a.virtual ? 'Sí' : 'No'}</td>
                     <td>
                       <ActionIcons
                         onAdd={() => a.fecha_baja ? handleReactivar(a) : null}
@@ -435,7 +481,7 @@ export default function Actividades() {
                 ))}
                 {actividadesPaginadas.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="tm-fila-vacia">
+                    <td colSpan={3} className="tm-fila-vacia">
                       No hay actividades que coincidan
                     </td>
                   </tr>
@@ -452,6 +498,7 @@ export default function Actividades() {
                 className={`tm-card-item ${a.fecha_baja ? 'inactiva' : ''}`}
               >
                 <div className="tm-card-nombre">{a.nombre}</div>
+                <div className="tm-card-virtual">Virtual: {a.virtual ? 'Sí' : 'No'}</div>
                 <div className="tm-card-acciones">
                   <ActionIcons
                     onAdd={() => a.fecha_baja ? handleReactivar(a) : null}
@@ -502,7 +549,7 @@ export default function Actividades() {
         </div>
       )}
 
-      {/* MODALES */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -521,6 +568,18 @@ export default function Actividades() {
                 autoFocus
               />
             </div>
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Virtual</label>
+              <label className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  checked={formData.virtual}
+                  onChange={(e) => setFormData({ ...formData, virtual: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-600">Permite servicios virtuales (telemedicina, etc.)</span>
+              </label>
+            </div>
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">
                 Cancelar
@@ -533,6 +592,7 @@ export default function Actividades() {
         </div>
       )}
 
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedActividad && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -549,6 +609,18 @@ export default function Actividades() {
                 placeholder="Ingrese nombre"
                 className="tm-modal-input"
               />
+            </div>
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Virtual</label>
+              <label className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  checked={formData.virtual}
+                  onChange={(e) => setFormData({ ...formData, virtual: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-600">Permite servicios virtuales (telemedicina, etc.)</span>
+              </label>
             </div>
             {selectedActividad.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
@@ -570,6 +642,7 @@ export default function Actividades() {
         </div>
       )}
 
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedActividad && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -581,6 +654,10 @@ export default function Actividades() {
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">Nombre</span>
               <p className="tm-modal-detalle-valor">{selectedActividad.nombre}</p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Virtual</span>
+              <p className="tm-modal-detalle-valor">{selectedActividad.virtual ? 'Sí' : 'No'}</p>
             </div>
             <div className={`tm-modal-detalle-movimiento ${selectedActividad.fecha_baja ? 'inactivo' : 'activo'}`}>
               <span className="tm-modal-detalle-label">Último Movimiento</span>
@@ -597,6 +674,7 @@ export default function Actividades() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -618,6 +696,7 @@ export default function Actividades() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
