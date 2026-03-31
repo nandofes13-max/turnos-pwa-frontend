@@ -454,6 +454,7 @@ export default function Actividades() {
                   <th className="tm-col-nombre">NOMBRE</th>
                   <th>VIRTUAL</th>
                   <th>ACCIONES</th>
+                </tr>
                 </thead>
               <tbody>
                 {actividadesPaginadas.map((a) => (
