@@ -141,18 +141,22 @@ export default function Centros() {
     }
   };
 
-  const verificarYaTieneVirtual = async (negocioId: number) => {
-    try {
-      const res = await fetch(CENTROS_URL);
-      const data: Centro[] = await res.json();
-      const tieneVirtual = data.some(c => c.negocioId === negocioId && c.es_virtual === true && !c.fecha_baja);
-      setYaTieneVirtual(tieneVirtual);
-    } catch (err) {
-      console.error('Error verificando centro virtual existente:', err);
-      setYaTieneVirtual(false);
-    }
-  };
-
+ const verificarYaTieneVirtual = async (negocioId: number) => {
+  try {
+    const res = await fetch(CENTROS_URL);
+    const data: Centro[] = await res.json();
+    // Filtrar por negocioId y es_virtual true y sin fecha_baja
+    const tieneVirtual = data.some(c => 
+      c.negocioId === negocioId && 
+      c.es_virtual === true && 
+      !c.fecha_baja
+    );
+    setYaTieneVirtual(tieneVirtual);
+  } catch (err) {
+    console.error('Error verificando centro virtual existente:', err);
+    setYaTieneVirtual(false);
+  }
+};
   const obtenerTipoMovimiento = (c: Centro): string => {
     if (c.fecha_baja) return 'Bajas';
     return 'Altas';
