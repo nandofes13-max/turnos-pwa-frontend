@@ -113,53 +113,19 @@ export default function Centros() {
     }
   };
 
-const verificarActividadesVirtuales = async (negocioId: number) => {
-  try {
-    const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
-    const negocioActividades = await resNegocioAct.json();
-    
-    if (negocioActividades.length === 0) {
-      setPuedeSerVirtual(false);
-      return;
-    }
-    
-    const resActividades = await fetch(ACTIVIDADES_URL);
-    const todasActividades = await resActividades.json();
-    
-    const tieneVirtual = negocioActividades.some((na: any) => {
-      const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
-      return actividad && actividad.virtual === true;
-    });
-    
-    setPuedeSerVirtual(tieneVirtual);
-  } catch (err) {
-    console.error('Error verificando actividades virtuales:', err);
-    setPuedeSerVirtual(false);
-  }
-};    
-    const resActividades = await fetch(ACTIVIDADES_URL);
-    const todasActividades = await resActividades.json();
-    console.log('📋 Todas las actividades:', todasActividades);
-    
-    const tieneVirtual = negocioActividades.some((na: any) => {
-      const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
-      console.log(`Actividad ${na.actividadId}:`, actividad, `virtual = ${actividad?.virtual}`);
-      return actividad && actividad.virtual === true;
-    });
-    
-    console.log('✅ ¿Tiene actividad virtual?', tieneVirtual);
-    setPuedeSerVirtual(tieneVirtual);
-  } catch (err) {
-    console.error('Error verificando actividades virtuales:', err);
-    setPuedeSerVirtual(false);
-  }
-};
+  const verificarActividadesVirtuales = async (negocioId: number) => {
+    try {
+      const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
+      const negocioActividades = await resNegocioAct.json();
       
-      // Obtener todas las actividades
+      if (negocioActividades.length === 0) {
+        setPuedeSerVirtual(false);
+        return;
+      }
+      
       const resActividades = await fetch(ACTIVIDADES_URL);
       const todasActividades = await resActividades.json();
       
-      // Verificar si alguna actividad del negocio tiene virtual = true
       const tieneVirtual = negocioActividades.some((na: any) => {
         const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
         return actividad && actividad.virtual === true;
@@ -172,21 +138,22 @@ const verificarActividadesVirtuales = async (negocioId: number) => {
     }
   };
 
- const verificarYaTieneVirtual = async (negocioId: number) => {
-  try {
-    const res = await fetch(CENTROS_URL);
-    const data: Centro[] = await res.json();
-    const tieneVirtual = data.some(c => 
-      c.negocioId === negocioId && 
-      c.es_virtual === true && 
-      !c.fecha_baja
-    );
-    setYaTieneVirtual(tieneVirtual);
-  } catch (err) {
-    console.error('Error verificando centro virtual existente:', err);
-    setYaTieneVirtual(false);
-  }
-};
+  const verificarYaTieneVirtual = async (negocioId: number) => {
+    try {
+      const res = await fetch(CENTROS_URL);
+      const data: Centro[] = await res.json();
+      const tieneVirtual = data.some(c => 
+        c.negocioId === negocioId && 
+        c.es_virtual === true && 
+        !c.fecha_baja
+      );
+      setYaTieneVirtual(tieneVirtual);
+    } catch (err) {
+      console.error('Error verificando centro virtual existente:', err);
+      setYaTieneVirtual(false);
+    }
+  };
+
   const obtenerTipoMovimiento = (c: Centro): string => {
     if (c.fecha_baja) return 'Bajas';
     return 'Altas';
@@ -315,7 +282,6 @@ const verificarActividadesVirtuales = async (negocioId: number) => {
       return false;
     }
     
-    // Validar domicilio solo si NO es virtual
     if (!formData.es_virtual) {
       if (!formData.domicilio || !formData.domicilio.formatted_address) {
         setErrorMessage('Debés seleccionar una dirección válida en el mapa');
@@ -366,7 +332,6 @@ const verificarActividadesVirtuales = async (negocioId: number) => {
       es_virtual: formData.es_virtual,
     };
     
-    // Solo enviar domicilio si NO es virtual
     if (!formData.es_virtual) {
       datosParaEnviar.domicilio = formData.domicilio;
     }
@@ -605,19 +570,16 @@ const verificarActividadesVirtuales = async (negocioId: number) => {
               <select 
                 value={formData.negocioId} 
                 onChange={async (e) => {
-  const nuevoNegocioId = e.target.value;
-  console.log('Negocio seleccionado:', nuevoNegocioId);
-  setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
-  if (nuevoNegocioId) {
-    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
-    await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
-    console.log('puedeSerVirtual:', puedeSerVirtual);
-    console.log('yaTieneVirtual:', yaTieneVirtual);
-  } else {
-    setPuedeSerVirtual(false);
-    setYaTieneVirtual(false);
-  }
-}}
+                  const nuevoNegocioId = e.target.value;
+                  setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
+                  if (nuevoNegocioId) {
+                    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
+                    await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
+                  } else {
+                    setPuedeSerVirtual(false);
+                    setYaTieneVirtual(false);
+                  }
+                }} 
                 className="tm-modal-input" 
                 required
               >
@@ -638,7 +600,6 @@ const verificarActividadesVirtuales = async (negocioId: number) => {
               />
             </div>
 
-            {/* Checkbox Virtual - solo si el negocio tiene actividades virtuales y no tiene ya un centro virtual */}
             {mostrarCheckboxVirtual && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Centro Virtual</label>
