@@ -20,6 +20,7 @@ interface Centro {
   negocio?: Negocio;
   nombre: string;
   codigo: string;
+  es_virtual: boolean;
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
@@ -42,9 +43,16 @@ interface Centro {
   usuario_baja?: string | null;
 }
 
+interface Actividad {
+  id: number;
+  virtual: boolean;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const CENTROS_URL = `${API_BASE_URL}/centros`;
 const NEGOCIOS_URL = `${API_BASE_URL}/negocios`;
+const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
+const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
 
 export default function Centros() {
   const [centros, setCentros] = useState<Centro[]>([]);
@@ -55,12 +63,15 @@ export default function Centros() {
   const [formData, setFormData] = useState({ 
     negocioId: '',
     nombre: '',
+    es_virtual: false,
     domicilio: null as any,
   });
   const [phoneValue, setPhoneValue] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState<Centro | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Centro | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [puedeSerVirtual, setPuedeSerVirtual] = useState(false);
+  const [yaTieneVirtual, setYaTieneVirtual] = useState(false);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -102,6 +113,46 @@ export default function Centros() {
     }
   };
 
+  const verificarActividadesVirtuales = async (negocioId: number) => {
+    try {
+      // Obtener actividades del negocio
+      const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
+      const negocioActividades = await resNegocioAct.json();
+      
+      if (negocioActividades.length === 0) {
+        setPuedeSerVirtual(false);
+        return;
+      }
+      
+      // Obtener todas las actividades
+      const resActividades = await fetch(ACTIVIDADES_URL);
+      const todasActividades = await resActividades.json();
+      
+      // Verificar si alguna actividad del negocio tiene virtual = true
+      const tieneVirtual = negocioActividades.some((na: any) => {
+        const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
+        return actividad && actividad.virtual === true;
+      });
+      
+      setPuedeSerVirtual(tieneVirtual);
+    } catch (err) {
+      console.error('Error verificando actividades virtuales:', err);
+      setPuedeSerVirtual(false);
+    }
+  };
+
+  const verificarYaTieneVirtual = async (negocioId: number) => {
+    try {
+      const res = await fetch(CENTROS_URL);
+      const data: Centro[] = await res.json();
+      const tieneVirtual = data.some(c => c.negocioId === negocioId && c.es_virtual === true && !c.fecha_baja);
+      setYaTieneVirtual(tieneVirtual);
+    } catch (err) {
+      console.error('Error verificando centro virtual existente:', err);
+      setYaTieneVirtual(false);
+    }
+  };
+
   const obtenerTipoMovimiento = (c: Centro): string => {
     if (c.fecha_baja) return 'Bajas';
     return 'Altas';
@@ -130,14 +181,12 @@ export default function Centros() {
   const indiceUltimoItem = paginaActual * itemsPorPagina;
   const indicePrimerItem = indiceUltimoItem - itemsPorPagina;
   const centrosPaginados = centrosFiltrados
-  .sort((a, b) => {
-    // Primero ordenar por URL del negocio
-    const urlCompare = (a.negocio?.url || '').localeCompare(b.negocio?.url || '');
-    if (urlCompare !== 0) return urlCompare;
-    // Si la URL es igual, ordenar por código
-    return a.codigo.localeCompare(b.codigo);
-  })
-  .slice(indicePrimerItem, indiceUltimoItem);
+    .sort((a, b) => {
+      const urlCompare = (a.negocio?.url || '').localeCompare(b.negocio?.url || '');
+      if (urlCompare !== 0) return urlCompare;
+      return a.codigo.localeCompare(b.codigo);
+    })
+    .slice(indicePrimerItem, indiceUltimoItem);
 
   const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
   const toggleMovimiento = (mov: string) => {
@@ -150,9 +199,11 @@ export default function Centros() {
   };
 
   const handleAgregar = () => {
-    setFormData({ negocioId: '', nombre: '', domicilio: null });
+    setFormData({ negocioId: '', nombre: '', es_virtual: false, domicilio: null });
     setPhoneValue(undefined);
     setErrorMessage(null);
+    setPuedeSerVirtual(false);
+    setYaTieneVirtual(false);
     setModalMode('add');
   };
 
@@ -173,6 +224,7 @@ export default function Centros() {
     setFormData({ 
       negocioId: centro.negocioId.toString(),
       nombre: centro.nombre,
+      es_virtual: centro.es_virtual || false,
       domicilio: domicilioObj,
     });
     setPhoneValue(centro.whatsapp_e164);
@@ -189,7 +241,6 @@ export default function Centros() {
   const handleEliminar = (centro: Centro) => setConfirmDelete(centro);
   
   const handleReactivar = (centro: Centro) => {
-    console.log('🟢 Reactivar centro:', centro);
     if (centro.fecha_baja) {
       setConfirmReactivar(centro);
     }
@@ -229,10 +280,15 @@ export default function Centros() {
       setErrorMessage('El WhatsApp es obligatorio');
       return false;
     }
-    if (!formData.domicilio || !formData.domicilio.formatted_address) {
-      setErrorMessage('Debés seleccionar una dirección válida en el mapa');
-      return false;
+    
+    // Validar domicilio solo si NO es virtual
+    if (!formData.es_virtual) {
+      if (!formData.domicilio || !formData.domicilio.formatted_address) {
+        setErrorMessage('Debés seleccionar una dirección válida en el mapa');
+        return false;
+      }
     }
+    
     return true;
   };
 
@@ -268,13 +324,18 @@ export default function Centros() {
       return;
     }
 
-    const datosParaEnviar = {
+    const datosParaEnviar: any = {
       negocioId: parseInt(formData.negocioId),
       nombre: formData.nombre.toUpperCase(),
       country_code,
       national_number,
-      domicilio: formData.domicilio,
+      es_virtual: formData.es_virtual,
     };
+    
+    // Solo enviar domicilio si NO es virtual
+    if (!formData.es_virtual) {
+      datosParaEnviar.domicilio = formData.domicilio;
+    }
 
     try {
       if (modalMode === 'add') {
@@ -306,7 +367,7 @@ export default function Centros() {
 
       setModalMode(null);
       setSelectedCentro(null);
-      setFormData({ negocioId: '', nombre: '', domicilio: null });
+      setFormData({ negocioId: '', nombre: '', es_virtual: false, domicilio: null });
       setPhoneValue(undefined);
       setErrorMessage(null);
       fetchCentros();
@@ -334,7 +395,6 @@ export default function Centros() {
 
   const confirmarReactivar = async () => {
     if (!confirmReactivar) return;
-    console.log('🔄 Confirmando reactivación de:', confirmReactivar);
     try {
       const res = await fetch(`${CENTROS_URL}/${confirmReactivar.id}`, {
         method: 'PUT',
@@ -344,6 +404,7 @@ export default function Centros() {
           nombre: confirmReactivar.nombre,
           country_code: confirmReactivar.country_code,
           national_number: confirmReactivar.national_number,
+          es_virtual: confirmReactivar.es_virtual,
           street: confirmReactivar.street,
           street_number: confirmReactivar.street_number,
           postal_code: confirmReactivar.postal_code,
@@ -358,12 +419,7 @@ export default function Centros() {
           usuario_baja: null
         }),
       });
-      console.log('📡 Respuesta status:', res.status);
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Error response:', errorData);
-        throw new Error('Error al reactivar centro');
-      }
+      if (!res.ok) throw new Error('Error al reactivar centro');
       setConfirmReactivar(null);
       fetchCentros();
     } catch (err) {
@@ -381,31 +437,32 @@ export default function Centros() {
     setPaginaActual(1);
   };
 
-  // Componente para celda de URL
- const UrlCell = ({ negocio }: { negocio?: Negocio }) => {
-  if (!negocio) return <span>-</span>;
-  const fullUrl = `${window.location.origin}/negocio/${negocio.url}`;
-  return (
-    <div className={styles.urlContainer}>
-      <a 
-        href={fullUrl} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className={styles.urlLink}
-      >
-        {negocio.url}
-      </a>
-      <span className={styles.urlTooltip}>{fullUrl}</span>
-    </div>
-  );
-};
-  // Preparar datos para TablaMaestra
+  const UrlCell = ({ negocio }: { negocio?: Negocio }) => {
+    if (!negocio) return <span>-</span>;
+    const fullUrl = `${window.location.origin}/negocio/${negocio.url}`;
+    return (
+      <div className={styles.urlContainer}>
+        <a 
+          href={fullUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={styles.urlLink}
+        >
+          {negocio.url}
+        </a>
+        <span className={styles.urlTooltip}>{fullUrl}</span>
+      </div>
+    );
+  };
+
   const datosTabla = centrosPaginados.map(c => ({
     ...c,
     urlWithTooltip: <UrlCell negocio={c.negocio} />,
-    direccion: formatearDireccion(c).substring(0, 40),
+    direccion: c.es_virtual ? 'Virtual' : (formatearDireccion(c).substring(0, 40) || '-'),
     estado: c.fecha_baja ? 'Inactivo' : 'Activo'
   }));
+
+  const mostrarCheckboxVirtual = puedeSerVirtual && !yaTieneVirtual && modalMode === 'add';
 
   return (
     <div className="tm-page">
@@ -513,7 +570,17 @@ export default function Centros() {
               <label className="tm-modal-label">Negocio *</label>
               <select 
                 value={formData.negocioId} 
-                onChange={(e) => setFormData({ ...formData, negocioId: e.target.value })} 
+                onChange={async (e) => {
+                  const nuevoNegocioId = e.target.value;
+                  setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
+                  if (nuevoNegocioId) {
+                    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
+                    await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
+                  } else {
+                    setPuedeSerVirtual(false);
+                    setYaTieneVirtual(false);
+                  }
+                }} 
                 className="tm-modal-input" 
                 required
               >
@@ -534,28 +601,67 @@ export default function Centros() {
               />
             </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
-              <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
-            </div>
+            {/* Checkbox Virtual - solo si el negocio tiene actividades virtuales y no tiene ya un centro virtual */}
+            {mostrarCheckboxVirtual && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Centro Virtual</label>
+                <label className="flex items-center gap-2 mt-1">
+                  <input
+                    type="checkbox"
+                    checked={formData.es_virtual}
+                    onChange={(e) => {
+                      const esVirtual = e.target.checked;
+                      setFormData({ ...formData, es_virtual: esVirtual, domicilio: esVirtual ? null : formData.domicilio });
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm text-gray-600">Centro sin domicilio físico (telemedicina, etc.)</span>
+                </label>
+              </div>
+            )}
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Domicilio *</label>
-              <MapaSelector
-                value={formData.domicilio}
-                onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
-                defaultCountry="AR"
-                autoLocate={true}
-              />
-            </div>
+            {!formData.es_virtual && (
+              <>
+                <div className="tm-modal-campo">
+                  <label className="tm-modal-label">WhatsApp *</label>
+                  <PhoneInput
+                    international
+                    defaultCountry="AR"
+                    value={phoneValue}
+                    onChange={setPhoneValue}
+                    className="tm-phone-input"
+                    limitMaxLength={true}
+                  />
+                  <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
+                </div>
+
+                <div className="tm-modal-campo">
+                  <label className="tm-modal-label">Domicilio *</label>
+                  <MapaSelector
+                    value={formData.domicilio}
+                    onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
+                    defaultCountry="AR"
+                    autoLocate={true}
+                  />
+                </div>
+              </>
+            )}
+
+            {formData.es_virtual && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">WhatsApp *</label>
+                <PhoneInput
+                  international
+                  defaultCountry="AR"
+                  value={phoneValue}
+                  onChange={setPhoneValue}
+                  className="tm-phone-input"
+                  limitMaxLength={true}
+                />
+                <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
+                <p className="text-sm text-amber-600 mt-2">⚠️ Este es un centro virtual. No requiere domicilio.</p>
+              </div>
+            )}
 
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
@@ -604,40 +710,59 @@ export default function Centros() {
               <small className="tm-ayuda-texto">Código generado automáticamente</small>
             </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={phoneValue}
-                onChange={setPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
-            </div>
-
-            {selectedCentro.street && (
-              <div className="tm-modal-campo">
-                <label className="tm-modal-label">Domicilio actual</label>
-                <div className="tm-direccion-actual">
-                  <p className="tm-direccion-texto">{formatearDireccion(selectedCentro)}</p>
-                  <p className="tm-coordenadas-texto">
-                    Lat: {Number(selectedCentro.latitude).toFixed(6)}, 
-                    Lng: {Number(selectedCentro.longitude).toFixed(6)}
-                  </p>
+            {selectedCentro.es_virtual ? (
+              <>
+                <div className="tm-modal-campo">
+                  <label className="tm-modal-label">WhatsApp *</label>
+                  <PhoneInput
+                    international
+                    defaultCountry="AR"
+                    value={phoneValue}
+                    onChange={setPhoneValue}
+                    className="tm-phone-input"
+                    limitMaxLength={true}
+                  />
+                  <p className="text-sm text-amber-600 mt-2">⚠️ Este es un centro virtual. No requiere domicilio.</p>
                 </div>
-              </div>
-            )}
+              </>
+            ) : (
+              <>
+                <div className="tm-modal-campo">
+                  <label className="tm-modal-label">WhatsApp *</label>
+                  <PhoneInput
+                    international
+                    defaultCountry="AR"
+                    value={phoneValue}
+                    onChange={setPhoneValue}
+                    className="tm-phone-input"
+                    limitMaxLength={true}
+                  />
+                </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Buscar nueva dirección</label>
-              <MapaSelector
-                value={formData.domicilio}
-                onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
-                defaultCountry="AR"
-                autoLocate={false}
-              />
-            </div>
+                {selectedCentro.street && (
+                  <div className="tm-modal-campo">
+                    <label className="tm-modal-label">Domicilio actual</label>
+                    <div className="tm-direccion-actual">
+                      <p className="tm-direccion-texto">{formatearDireccion(selectedCentro)}</p>
+                      <p className="tm-coordenadas-texto">
+                        Lat: {Number(selectedCentro.latitude).toFixed(6)}, 
+                        Lng: {Number(selectedCentro.longitude).toFixed(6)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="tm-modal-campo">
+                  <label className="tm-modal-label">Buscar nueva dirección</label>
+                  <MapaSelector
+                    value={formData.domicilio}
+                    onChange={(nuevaDireccion) => setFormData({ ...formData, domicilio: nuevaDireccion })}
+                    defaultCountry="AR"
+                    autoLocate={false}
+                  />
+                </div>
+              </>
+            )}
 
             {selectedCentro.ultimoMovimiento && (
               <div className="tm-modal-detalle-movimiento activo">
@@ -662,8 +787,9 @@ export default function Centros() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Código</span><p className="tm-modal-detalle-valor">{selectedCentro.codigo}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Negocio</span><p className="tm-modal-detalle-valor">{selectedCentro.negocio?.nombre} ({selectedCentro.negocio?.url})</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedCentro.nombre}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Tipo</span><p className="tm-modal-detalle-valor">{selectedCentro.es_virtual ? 'Virtual' : 'Físico'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedCentro.whatsapp_e164}</p></div>
-            {selectedCentro.street && (
+            {!selectedCentro.es_virtual && selectedCentro.street && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
                 <p className="tm-modal-detalle-valor">{formatearDireccion(selectedCentro)}</p>
