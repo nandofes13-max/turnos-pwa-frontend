@@ -23,6 +23,8 @@ interface Negocio {
   formatted_address?: string;
   
   whatsapp_e164?: string;
+  country_code?: number;
+  national_number?: string;
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -346,6 +348,8 @@ export default function Negocios() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           nombre: confirmReactivar.nombre,
+          country_code: confirmReactivar.country_code,
+          national_number: confirmReactivar.national_number,
           whatsapp_e164: confirmReactivar.whatsapp_e164,
           street: confirmReactivar.street,
           street_number: confirmReactivar.street_number,
@@ -513,8 +517,7 @@ export default function Negocios() {
                   <th className="tm-col-whatsapp">WHATSAPP</th>
                   <th className="tm-col-domicilio">DOMICILIO</th>
                   <th>ACCIONES</th>
-                </tr>
-              </thead>
+                </thead>
               <tbody>
                 {negociosPaginados.map((n) => (
                   <tr key={n.id} className={n.fecha_baja ? 'tm-fila-inactiva' : ''}>
