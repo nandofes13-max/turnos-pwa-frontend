@@ -596,21 +596,15 @@ export default function Centros() {
                 <option value="">Seleccionar negocio...</option>
                 {negocios.map(n => (<option key={n.id} value={n.id}>{n.nombre} ({n.url})</option>))}
               </select>
+              
+              {formData.negocioId && !tieneActividades && (
+                <div className="text-red-600 text-sm mt-1">
+                  ⚠️ Este negocio no tiene actividades asignadas. Debe asignar al menos una actividad antes de crear un centro.
+                </div>
+              )}
             </div>
 
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ej: SUCURSAL LANÚS"
-                className="tm-modal-input"
-                autoFocus
-              />
-            </div>
-
-            {mostrarCheckboxVirtual && (
+            {tieneActividades && mostrarCheckboxVirtual && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Centro Virtual</label>
                 <label className="flex items-center gap-2 mt-1">
@@ -619,7 +613,12 @@ export default function Centros() {
                     checked={formData.es_virtual}
                     onChange={(e) => {
                       const esVirtual = e.target.checked;
-                      setFormData({ ...formData, es_virtual: esVirtual, domicilio: esVirtual ? null : formData.domicilio });
+                      setFormData({ 
+                        ...formData, 
+                        es_virtual: esVirtual, 
+                        nombre: esVirtual ? 'VIRTUAL' : '',
+                        domicilio: esVirtual ? null : formData.domicilio 
+                      });
                     }}
                     className="w-4 h-4"
                   />
@@ -628,7 +627,25 @@ export default function Centros() {
               </div>
             )}
 
-            {!formData.es_virtual && (
+            {tieneActividades && (
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">Nombre *</label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                  placeholder={formData.es_virtual ? "Se asignará automáticamente 'VIRTUAL'" : "Ej: SUCURSAL LANÚS"}
+                  className="tm-modal-input"
+                  autoFocus
+                  disabled={formData.es_virtual}
+                />
+                {formData.es_virtual && (
+                  <small className="tm-ayuda-texto">El nombre se asigna automáticamente como "VIRTUAL"</small>
+                )}
+              </div>
+            )}
+
+            {tieneActividades && !formData.es_virtual && (
               <>
                 <div className="tm-modal-campo">
                   <label className="tm-modal-label">WhatsApp *</label>
@@ -655,7 +672,7 @@ export default function Centros() {
               </>
             )}
 
-            {formData.es_virtual && (
+            {tieneActividades && formData.es_virtual && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">WhatsApp *</label>
                 <PhoneInput
@@ -703,7 +720,11 @@ export default function Centros() {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                 className="tm-modal-input"
+                disabled={selectedCentro.es_virtual}
               />
+              {selectedCentro.es_virtual && (
+                <small className="tm-ayuda-texto">Los centros virtuales mantienen el nombre "VIRTUAL"</small>
+              )}
             </div>
 
             <div className="tm-modal-campo">
@@ -718,19 +739,17 @@ export default function Centros() {
             </div>
 
             {selectedCentro.es_virtual ? (
-              <>
-                <div className="tm-modal-campo">
-                  <label className="tm-modal-label">WhatsApp *</label>
-                  <PhoneInput
-                    international
-                    defaultCountry="AR"
-                    value={phoneValue}
-                    onChange={setPhoneValue}
-                    className="tm-phone-input"
-                    limitMaxLength={true}
-                  />
-                </div>
-              </>
+              <div className="tm-modal-campo">
+                <label className="tm-modal-label">WhatsApp *</label>
+                <PhoneInput
+                  international
+                  defaultCountry="AR"
+                  value={phoneValue}
+                  onChange={setPhoneValue}
+                  className="tm-phone-input"
+                  limitMaxLength={true}
+                />
+              </div>
             ) : (
               <>
                 <div className="tm-modal-campo">
