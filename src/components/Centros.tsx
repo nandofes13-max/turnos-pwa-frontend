@@ -575,16 +575,19 @@ export default function Centros() {
               <select 
                 value={formData.negocioId} 
                 onChange={async (e) => {
-                  const nuevoNegocioId = e.target.value;
-                  setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
-                  if (nuevoNegocioId) {
-                    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
-                    await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
-                  } else {
-                    setPuedeSerVirtual(false);
-                    setYaTieneVirtual(false);
-                  }
-                }} 
+  const nuevoNegocioId = e.target.value;
+  console.log('Negocio seleccionado:', nuevoNegocioId);
+  setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
+  if (nuevoNegocioId) {
+    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
+    await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
+    console.log('puedeSerVirtual:', puedeSerVirtual);
+    console.log('yaTieneVirtual:', yaTieneVirtual);
+  } else {
+    setPuedeSerVirtual(false);
+    setYaTieneVirtual(false);
+  }
+}}
                 className="tm-modal-input" 
                 required
               >
