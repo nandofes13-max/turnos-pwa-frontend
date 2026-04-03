@@ -114,15 +114,36 @@ export default function Centros() {
   };
 
   const verificarActividadesVirtuales = async (negocioId: number) => {
-    try {
-      // Obtener actividades del negocio
-      const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
-      const negocioActividades = await resNegocioAct.json();
-      
-      if (negocioActividades.length === 0) {
-        setPuedeSerVirtual(false);
-        return;
-      }
+  try {
+    console.log('🔍 Verificando actividades para negocio:', negocioId);
+    
+    const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
+    const negocioActividades = await resNegocioAct.json();
+    console.log('📋 Actividades del negocio:', negocioActividades);
+    
+    if (negocioActividades.length === 0) {
+      console.log('❌ El negocio no tiene actividades asignadas');
+      setPuedeSerVirtual(false);
+      return;
+    }
+    
+    const resActividades = await fetch(ACTIVIDADES_URL);
+    const todasActividades = await resActividades.json();
+    console.log('📋 Todas las actividades:', todasActividades);
+    
+    const tieneVirtual = negocioActividades.some((na: any) => {
+      const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
+      console.log(`Actividad ${na.actividadId}:`, actividad, `virtual = ${actividad?.virtual}`);
+      return actividad && actividad.virtual === true;
+    });
+    
+    console.log('✅ ¿Tiene actividad virtual?', tieneVirtual);
+    setPuedeSerVirtual(tieneVirtual);
+  } catch (err) {
+    console.error('Error verificando actividades virtuales:', err);
+    setPuedeSerVirtual(false);
+  }
+};
       
       // Obtener todas las actividades
       const resActividades = await fetch(ACTIVIDADES_URL);
