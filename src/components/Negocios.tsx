@@ -517,6 +517,7 @@ export default function Negocios() {
                   <th className="tm-col-whatsapp">WHATSAPP</th>
                   <th className="tm-col-domicilio">DOMICILIO</th>
                   <th>ACCIONES</th>
+                </tr>  
                 </thead>
               <tbody>
                 {negociosPaginados.map((n) => (
