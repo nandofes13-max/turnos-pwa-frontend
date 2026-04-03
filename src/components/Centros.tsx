@@ -113,20 +113,30 @@ export default function Centros() {
     }
   };
 
-  const verificarActividadesVirtuales = async (negocioId: number) => {
+const verificarActividadesVirtuales = async (negocioId: number) => {
   try {
-    console.log('🔍 Verificando actividades para negocio:', negocioId);
-    
     const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
     const negocioActividades = await resNegocioAct.json();
-    console.log('📋 Actividades del negocio:', negocioActividades);
     
     if (negocioActividades.length === 0) {
-      console.log('❌ El negocio no tiene actividades asignadas');
       setPuedeSerVirtual(false);
       return;
     }
     
+    const resActividades = await fetch(ACTIVIDADES_URL);
+    const todasActividades = await resActividades.json();
+    
+    const tieneVirtual = negocioActividades.some((na: any) => {
+      const actividad = todasActividades.find((a: Actividad) => a.id === na.actividadId);
+      return actividad && actividad.virtual === true;
+    });
+    
+    setPuedeSerVirtual(tieneVirtual);
+  } catch (err) {
+    console.error('Error verificando actividades virtuales:', err);
+    setPuedeSerVirtual(false);
+  }
+};    
     const resActividades = await fetch(ACTIVIDADES_URL);
     const todasActividades = await resActividades.json();
     console.log('📋 Todas las actividades:', todasActividades);
@@ -166,7 +176,6 @@ export default function Centros() {
   try {
     const res = await fetch(CENTROS_URL);
     const data: Centro[] = await res.json();
-    // Filtrar por negocioId y es_virtual true y sin fecha_baja
     const tieneVirtual = data.some(c => 
       c.negocioId === negocioId && 
       c.es_virtual === true && 
