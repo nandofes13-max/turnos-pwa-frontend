@@ -72,6 +72,7 @@ export default function Centros() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [puedeSerVirtual, setPuedeSerVirtual] = useState(false);
   const [yaTieneVirtual, setYaTieneVirtual] = useState(false);
+  const [tieneActividades, setTieneActividades] = useState(false);
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -113,12 +114,14 @@ export default function Centros() {
     }
   };
 
-  const verificarActividadesVirtuales = async (negocioId: number) => {
+  const verificarActividadesDelNegocio = async (negocioId: number) => {
     try {
-      const resNegocioAct = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
-      const negocioActividades = await resNegocioAct.json();
+      const res = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
+      const negocioActividades = await res.json();
+      const tieneAct = negocioActividades.length > 0;
+      setTieneActividades(tieneAct);
       
-      if (negocioActividades.length === 0) {
+      if (!tieneAct) {
         setPuedeSerVirtual(false);
         return;
       }
@@ -133,7 +136,8 @@ export default function Centros() {
       
       setPuedeSerVirtual(tieneVirtual);
     } catch (err) {
-      console.error('Error verificando actividades virtuales:', err);
+      console.error('Error verificando actividades del negocio:', err);
+      setTieneActividades(false);
       setPuedeSerVirtual(false);
     }
   };
@@ -205,6 +209,7 @@ export default function Centros() {
     setErrorMessage(null);
     setPuedeSerVirtual(false);
     setYaTieneVirtual(false);
+    setTieneActividades(false);
     setModalMode('add');
   };
 
@@ -271,6 +276,10 @@ export default function Centros() {
   const validarFormulario = (): boolean => {
     if (!formData.negocioId) {
       setErrorMessage('Debe seleccionar un negocio');
+      return false;
+    }
+    if (!tieneActividades) {
+      setErrorMessage('Este negocio no tiene actividades asignadas. Debe asignar al menos una actividad antes de crear un centro.');
       return false;
     }
     if (!formData.nombre.trim()) {
@@ -461,7 +470,7 @@ export default function Centros() {
     estado: c.fecha_baja ? 'Inactivo' : 'Activo'
   }));
 
-  const mostrarCheckboxVirtual = puedeSerVirtual && !yaTieneVirtual && modalMode === 'add';
+  const mostrarCheckboxVirtual = puedeSerVirtual && !yaTieneVirtual && modalMode === 'add' && tieneActividades;
 
   return (
     <div className="tm-page">
@@ -573,9 +582,10 @@ export default function Centros() {
                   const nuevoNegocioId = e.target.value;
                   setFormData({ ...formData, negocioId: nuevoNegocioId, es_virtual: false, domicilio: null });
                   if (nuevoNegocioId) {
-                    await verificarActividadesVirtuales(parseInt(nuevoNegocioId));
+                    await verificarActividadesDelNegocio(parseInt(nuevoNegocioId));
                     await verificarYaTieneVirtual(parseInt(nuevoNegocioId));
                   } else {
+                    setTieneActividades(false);
                     setPuedeSerVirtual(false);
                     setYaTieneVirtual(false);
                   }
@@ -657,7 +667,6 @@ export default function Centros() {
                   limitMaxLength={true}
                 />
                 <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
-                <p className="text-sm text-amber-600 mt-2">⚠️ Este es un centro virtual. No requiere domicilio.</p>
               </div>
             )}
 
@@ -720,7 +729,6 @@ export default function Centros() {
                     className="tm-phone-input"
                     limitMaxLength={true}
                   />
-                  <p className="text-sm text-amber-600 mt-2">⚠️ Este es un centro virtual. No requiere domicilio.</p>
                 </div>
               </>
             ) : (
