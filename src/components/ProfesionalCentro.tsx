@@ -62,6 +62,8 @@ const ESPECIALIDADES_URL = `${API_BASE_URL}/especialidades`;
 const NEGOCIOS_URL = `${API_BASE_URL}/negocios`;
 const CENTROS_URL = `${API_BASE_URL}/centros`;
 const PROFESIONAL_ESPECIALIDAD_URL = `${API_BASE_URL}/profesional-especialidad`;
+const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
+const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 
 // Avatar por defecto
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
@@ -71,6 +73,7 @@ export default function ProfesionalCentro() {
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
+  const [negociosFiltrados, setNegociosFiltrados] = useState<Negocio[]>([]);
   const [centros, setCentros] = useState<Centro[]>([]);
   const [centrosFiltrados, setCentrosFiltrados] = useState<Centro[]>([]);
   const [loading, setLoading] = useState(false);
@@ -178,6 +181,44 @@ export default function ProfesionalCentro() {
       setCentros(data.filter((c: Centro) => !c.fecha_baja));
     } catch (err) {
       console.error('Error al cargar centros:', err);
+    }
+  };
+
+  // NUEVA FUNCIÓN: Filtrar negocios por actividad de especialidad
+  const filtrarNegociosPorEspecialidad = async (especialidadId: number) => {
+    try {
+      // 1. Obtener la actividad de la especialidad
+      const actividadRes = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/por-especialidad/${especialidadId}`);
+      const actividadesRelacion = await actividadRes.json();
+      
+      if (!actividadesRelacion || actividadesRelacion.length === 0) {
+        setNegociosFiltrados([]);
+        setErrorMessage('La especialidad no tiene una actividad asociada');
+        return;
+      }
+      
+      const actividadId = actividadesRelacion[0].actividadId;
+      
+      // 2. Obtener los negocios que tienen esa actividad
+      const negocioActividadRes = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/actividad/${actividadId}`);
+      const relacionesNegocioActividad = await negocioActividadRes.json();
+      
+      // 3. Extraer IDs de negocio únicos
+      const negocioIds = [...new Set(relacionesNegocioActividad.map((r: any) => r.negocioId))];
+      
+      // 4. Filtrar la lista de negocios cargada
+      const negociosFiltradosLista = negocios.filter(n => negocioIds.includes(n.id));
+      setNegociosFiltrados(negociosFiltradosLista);
+      
+      if (negociosFiltradosLista.length === 0) {
+        setErrorMessage('No hay negocios que ofrezcan la actividad requerida para esta especialidad');
+      } else {
+        setErrorMessage(null);
+      }
+    } catch (err) {
+      console.error('Error filtrando negocios:', err);
+      setNegociosFiltrados([]);
+      setErrorMessage('Error al cargar negocios disponibles');
     }
   };
 
@@ -379,6 +420,7 @@ export default function ProfesionalCentro() {
     setNegocioSeleccionado('');
     setCentroSeleccionado('');
     setEspecialidadesDisponibles([]);
+    setNegociosFiltrados([]);
     setCentrosFiltrados([]);
     setBusquedaError('');
     setErrorMessage(null);
@@ -429,6 +471,7 @@ export default function ProfesionalCentro() {
       setEspecialidadSeleccionada('');
       setNegocioSeleccionado('');
       setCentroSeleccionado('');
+      setNegociosFiltrados([]);
       setErrorMessage(null);
       fetchRelaciones();
     } catch (err) {
@@ -485,10 +528,9 @@ export default function ProfesionalCentro() {
     setPaginaActual(1);
   };
 
-  // Preparar datos para TablaMaestra
+  // Preparar datos para TablaMaestra (sin columna avatar duplicada)
   const datosTabla = relacionesPaginadas.map(r => ({
     ...r,
-    avatar: obtenerAvatar(r.profesional),
     documento: r.profesional?.documento || '-',
     profesionalNombre: r.profesional?.nombre || '-',
     especialidadNombre: r.especialidad?.nombre || '-',
@@ -569,7 +611,7 @@ export default function ProfesionalCentro() {
 
           <TablaMaestra
             columnas={[
-              { key: 'avatar', label: 'AVATAR' },
+              // AVATAR eliminado de aquí - ahora solo se muestra por la prop avatar de TablaMaestra
               { key: 'documento', label: 'DOCUMENTO' },
               { key: 'profesionalNombre', label: 'PROFESIONAL' },
               { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
@@ -581,7 +623,7 @@ export default function ProfesionalCentro() {
               { key: 'estado', label: 'ESTADO' }
             ]}
             datos={datosTabla}
-            avatar={(item) => item.avatar}
+            avatar={(item) => obtenerAvatar(relacionesPaginadas.find(r => r.id === item.id)?.profesional)}
             onAdd={(item) => item.fecha_baja && handleReactivar(item)}
             onEdit={undefined}
             onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
@@ -661,7 +703,18 @@ export default function ProfesionalCentro() {
                 {especialidadesDisponibles.length > 0 ? (
                   <select
                     value={especialidadSeleccionada}
-                    onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
+                    onChange={async (e) => {
+                      const espId = e.target.value;
+                      setEspecialidadSeleccionada(espId);
+                      setNegocioSeleccionado('');
+                      setCentroSeleccionado('');
+                      setCentrosFiltrados([]);
+                      if (espId) {
+                        await filtrarNegociosPorEspecialidad(parseInt(espId));
+                      } else {
+                        setNegociosFiltrados([]);
+                      }
+                    }}
                     className="tm-modal-input"
                     required
                   >
@@ -684,8 +737,8 @@ export default function ProfesionalCentro() {
               </div>
             )}
 
-            {/* PASO 3: Seleccionar negocio */}
-            {profesionalSeleccionado && especialidadesDisponibles.length > 0 && (
+            {/* PASO 3: Seleccionar negocio - AHORA FILTRADO */}
+            {profesionalSeleccionado && especialidadesDisponibles.length > 0 && especialidadSeleccionada && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Negocio *</label>
                 <select
@@ -699,10 +752,13 @@ export default function ProfesionalCentro() {
                   required
                 >
                   <option value="">Seleccionar negocio...</option>
-                  {negocios.map(n => (
+                  {negociosFiltrados.map(n => (
                     <option key={n.id} value={n.id}>{n.nombre} ({n.url})</option>
                   ))}
                 </select>
+                {negociosFiltrados.length === 0 && (
+                  <p className="text-sm text-amber-600 mt-1">No hay negocios disponibles para esta especialidad</p>
+                )}
               </div>
             )}
 
