@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
+import ProfesionalEspecialidadModal from './modals/ProfesionalEspecialidadModal';
 import '../styles/tablas-maestras.css';
 
 interface Profesional {
@@ -44,6 +45,9 @@ export default function ProfesionalEspecialidad() {
   const [loading, setLoading] = useState(false);
   const [selectedRelacion, setSelectedRelacion] = useState<Relacion | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
+  const [showEspecialidadModal, setShowEspecialidadModal] = useState(false);
+  const [profesionalSeleccionadoId, setProfesionalSeleccionadoId] = useState<number | null>(null);
+  const [profesionalSeleccionadoNombre, setProfesionalSeleccionadoNombre] = useState<string>('');
   const [formData, setFormData] = useState({ 
     profesionalId: '', 
     especialidadId: '',
@@ -190,6 +194,18 @@ export default function ProfesionalEspecialidad() {
 
   const handleEliminar = (relacion: Relacion) => setConfirmDelete(relacion);
   const handleReactivar = (relacion: Relacion) => relacion.fecha_baja && setConfirmReactivar(relacion);
+
+  // Abrir modal reutilizable de especialidad
+  const abrirModalEspecialidad = () => {
+    if (!formData.profesionalId) {
+      setErrorMessage('Debe seleccionar un profesional primero');
+      return;
+    }
+    const profesional = profesionales.find(p => p.id === parseInt(formData.profesionalId));
+    setProfesionalSeleccionadoId(parseInt(formData.profesionalId));
+    setProfesionalSeleccionadoNombre(profesional?.nombre || '');
+    setShowEspecialidadModal(true);
+  };
 
   const validarFormulario = (): boolean => {
     if (!formData.profesionalId) {
@@ -406,11 +422,13 @@ export default function ProfesionalEspecialidad() {
         </div>
       )}
 
-      {/* MODAL AGREGAR */}
-      {modalMode === 'add' && (
+      {/* MODAL AGREGAR/EDITAR (versión simplificada) */}
+      {(modalMode === 'add' || modalMode === 'edit') && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Asignar Especialidad a Profesional</h3>
+            <h3 className="tm-modal-titulo">
+              {modalMode === 'add' ? 'Asignar Especialidad a Profesional' : 'Editar Relación'}
+            </h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
             
             <div className="tm-modal-campo">
@@ -444,12 +462,18 @@ export default function ProfesionalEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadesAsignadas.includes(e.id))
+                  .filter(e => !especialidadesAsignadas.includes(e.id) || (modalMode === 'edit' && selectedRelacion?.especialidadId === e.id))
                   .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
               </select>
               {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.profesionalId && (
                 <p className="text-sm text-amber-600 mt-1">
-                  ⚠️ No hay especialidades disponibles. Todas las especialidades ya están asignadas a este profesional.
+                  ⚠️ No hay especialidades disponibles. 
+                  <button
+                    onClick={abrirModalEspecialidad}
+                    className="ml-2 text-blue-600 underline"
+                  >
+                    ¿Crear nueva especialidad?
+                  </button>
                 </p>
               )}
             </div>
@@ -466,73 +490,6 @@ export default function ProfesionalEspecialidad() {
               <small className="tm-ayuda-texto">Descripción de la especialidad para este profesional (opcional)</small>
             </div>
 
-            <div className="tm-modal-acciones">
-              <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EDITAR */}
-      {modalMode === 'edit' && selectedRelacion && (
-        <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Editar Relación</h3>
-            {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
-            
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Profesional *</label>
-              <select 
-                value={formData.profesionalId} 
-                onChange={(e) => {
-                  const nuevoProfesionalId = e.target.value;
-                  setFormData({ ...formData, profesionalId: nuevoProfesionalId, especialidadId: '' });
-                  if (nuevoProfesionalId) {
-                    cargarEspecialidadesAsignadas(parseInt(nuevoProfesionalId));
-                  } else {
-                    setEspecialidadesAsignadas([]);
-                  }
-                }} 
-                className="tm-modal-input" 
-                required
-              >
-                <option value="">Seleccionar profesional...</option>
-                {profesionales.map(p => (<option key={p.id} value={p.id}>{p.nombre} ({p.documento})</option>))}
-              </select>
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Especialidad *</label>
-              <select
-                value={formData.especialidadId}
-                onChange={(e) => setFormData({ ...formData, especialidadId: e.target.value })}
-                className="tm-modal-input"
-                required
-              >
-                <option value="">Seleccionar especialidad...</option>
-                {especialidades
-                  .filter(e => !especialidadesAsignadas.includes(e.id) || e.id === selectedRelacion?.especialidadId)
-                  .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
-              </select>
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Descripción</label>
-              <textarea
-                value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="tm-modal-input tm-input-descripcion"
-                rows={3}
-              />
-            </div>
-
-            {selectedRelacion.ultimoMovimiento && (
-              <div className="tm-modal-detalle-movimiento activo">
-                <span className="tm-modal-detalle-label">Último Movimiento</span>
-                <p className="tm-modal-detalle-valor">{selectedRelacion.ultimoMovimiento.replace('demo', 'DEMO')}</p>
-              </div>
-            )}
             <div className="tm-modal-acciones">
               <button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cancelar</button>
               <button onClick={guardarRelacion} className="tm-btn-primario">Guardar</button>
@@ -588,6 +545,22 @@ export default function ProfesionalEspecialidad() {
           </div>
         </div>
       )}
+
+      {/* MODAL REUTILIZABLE PARA CREAR ESPECIALIDAD (si decides implementarlo después) */}
+      <ProfesionalEspecialidadModal
+        isOpen={showEspecialidadModal}
+        onClose={() => setShowEspecialidadModal(false)}
+        onSuccess={() => {
+          setShowEspecialidadModal(false);
+          // Recargar especialidades y refrescar el formulario
+          fetchEspecialidades();
+          if (formData.profesionalId) {
+            cargarEspecialidadesAsignadas(parseInt(formData.profesionalId));
+          }
+        }}
+        profesionalId={profesionalSeleccionadoId}
+        profesionalNombre={profesionalSeleccionadoNombre}
+      />
     </div>
   );
 }
