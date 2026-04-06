@@ -109,15 +109,19 @@ export default function ProfesionalEspecialidad() {
   };
 
   const cargarEspecialidadesAsignadas = async (profesionalId: number) => {
+    console.log('Cargando especialidades para profesional:', profesionalId);
     if (!profesionalId) {
       setEspecialidadesAsignadas([]);
       return;
     }
     try {
       const res = await fetch(`${RELACIONES_URL}/por-profesional/${profesionalId}`);
+      console.log('Respuesta de especialidades asignadas:', res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log('Datos recibidos:', data);
         const ids = data.map((r: Relacion) => r.especialidadId);
+        console.log('IDs de especialidades asignadas:', ids);
         setEspecialidadesAsignadas(ids);
       } else {
         setEspecialidadesAsignadas([]);
@@ -195,7 +199,6 @@ export default function ProfesionalEspecialidad() {
   const handleEliminar = (relacion: Relacion) => setConfirmDelete(relacion);
   const handleReactivar = (relacion: Relacion) => relacion.fecha_baja && setConfirmReactivar(relacion);
 
-  // Abrir modal reutilizable de especialidad
   const abrirModalEspecialidad = () => {
     if (!formData.profesionalId) {
       setErrorMessage('Debe seleccionar un profesional primero');
@@ -225,7 +228,6 @@ export default function ProfesionalEspecialidad() {
     const profesionalIdNum = parseInt(formData.profesionalId);
     const especialidadIdNum = parseInt(formData.especialidadId);
 
-    // Validación adicional para evitar duplicados
     if (especialidadesAsignadas.includes(especialidadIdNum)) {
       setErrorMessage('Este profesional ya tiene asignada esta especialidad');
       return;
@@ -320,7 +322,6 @@ export default function ProfesionalEspecialidad() {
     setPaginaActual(1);
   };
 
-  // Preparar datos para TablaMaestra
   const datosTabla = relacionesPaginadas.map(r => ({
     ...r,
     profesionalNombre: r.profesional?.nombre || `ID: ${r.profesionalId}`,
@@ -422,7 +423,7 @@ export default function ProfesionalEspecialidad() {
         </div>
       )}
 
-      {/* MODAL AGREGAR/EDITAR (versión simplificada) */}
+      {/* MODAL AGREGAR/EDITAR */}
       {(modalMode === 'add' || modalMode === 'edit') && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -462,18 +463,24 @@ export default function ProfesionalEspecialidad() {
               >
                 <option value="">Seleccionar especialidad...</option>
                 {especialidades
-                  .filter(e => !especialidadesAsignadas.includes(e.id) || (modalMode === 'edit' && selectedRelacion?.especialidadId === e.id))
+                  .filter(e => {
+                    if (modalMode === 'edit' && selectedRelacion?.especialidadId === e.id) {
+                      return true;
+                    }
+                    return !especialidadesAsignadas.includes(e.id);
+                  })
                   .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
               </select>
+              
+              {/* Información de depuración */}
+              <div className="text-xs text-gray-400 mt-1">
+                Total: {especialidades.length} | Asignadas: {especialidadesAsignadas.length} | 
+                Disponibles: {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length}
+              </div>
+              
               {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length === 0 && formData.profesionalId && (
                 <p className="text-sm text-amber-600 mt-1">
-                  ⚠️ No hay especialidades disponibles. 
-                  <button
-                    onClick={abrirModalEspecialidad}
-                    className="ml-2 text-blue-600 underline"
-                  >
-                    ¿Crear nueva especialidad?
-                  </button>
+                  ⚠️ No hay especialidades disponibles para asignar. El profesional ya tiene todas las especialidades.
                 </p>
               )}
             </div>
@@ -546,13 +553,12 @@ export default function ProfesionalEspecialidad() {
         </div>
       )}
 
-      {/* MODAL REUTILIZABLE PARA CREAR ESPECIALIDAD (si decides implementarlo después) */}
+      {/* MODAL REUTILIZABLE PARA CREAR ESPECIALIDAD (catálogo) */}
       <ProfesionalEspecialidadModal
         isOpen={showEspecialidadModal}
         onClose={() => setShowEspecialidadModal(false)}
         onSuccess={() => {
           setShowEspecialidadModal(false);
-          // Recargar especialidades y refrescar el formulario
           fetchEspecialidades();
           if (formData.profesionalId) {
             cargarEspecialidadesAsignadas(parseInt(formData.profesionalId));
