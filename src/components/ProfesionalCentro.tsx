@@ -184,7 +184,7 @@ export default function ProfesionalCentro() {
     }
   };
 
-  // NUEVA FUNCIÓN: Filtrar negocios por actividad de especialidad
+  // Filtrar negocios por actividad de especialidad
   const filtrarNegociosPorEspecialidad = async (especialidadId: number) => {
     try {
       // 1. Obtener la actividad de la especialidad
@@ -528,9 +528,10 @@ export default function ProfesionalCentro() {
     setPaginaActual(1);
   };
 
-  // Preparar datos para TablaMaestra (sin columna avatar duplicada)
+  // Preparar datos para TablaMaestra (INCLUYENDO profesional para el avatar)
   const datosTabla = relacionesPaginadas.map(r => ({
     ...r,
+    profesional: r.profesional,  // ← CLAVE: incluir el objeto profesional
     documento: r.profesional?.documento || '-',
     profesionalNombre: r.profesional?.nombre || '-',
     especialidadNombre: r.especialidad?.nombre || '-',
@@ -611,7 +612,6 @@ export default function ProfesionalCentro() {
 
           <TablaMaestra
             columnas={[
-              // AVATAR eliminado de aquí - ahora solo se muestra por la prop avatar de TablaMaestra
               { key: 'documento', label: 'DOCUMENTO' },
               { key: 'profesionalNombre', label: 'PROFESIONAL' },
               { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
@@ -623,7 +623,7 @@ export default function ProfesionalCentro() {
               { key: 'estado', label: 'ESTADO' }
             ]}
             datos={datosTabla}
-            avatar={(item) => obtenerAvatar(relacionesPaginadas.find(r => r.id === item.id)?.profesional)}
+            avatar={(item) => obtenerAvatar(item.profesional)}
             onAdd={(item) => item.fecha_baja && handleReactivar(item)}
             onEdit={undefined}
             onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
