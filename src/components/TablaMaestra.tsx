@@ -14,6 +14,7 @@ interface TablaMaestraProps {
   onEdit?: (item: any) => void;
   onDelete?: (item: any) => void;
   onView?: (item: any) => void;
+  onSchedule?: (item: any) => void;  // 👈 NUEVO: para agenda
   esInactivo?: (item: any) => boolean;
   tamañoIconos?: 'md' | 'lg';
   avatar?: (item: any) => React.ReactNode;
@@ -26,6 +27,7 @@ export default function TablaMaestra({
   onEdit,
   onDelete,
   onView,
+  onSchedule,  // 👈 NUEVO
   esInactivo,
   tamañoIconos = 'md',
   avatar
@@ -59,14 +61,17 @@ export default function TablaMaestra({
                   onEdit={() => onEdit?.(item)}
                   onDelete={() => onDelete?.(item)}
                   onView={() => onView?.(item)}
+                  onSchedule={() => onSchedule?.(item)}  // 👈 NUEVO
                   showAdd={!!onAdd}
                   showEdit={!!onEdit}
                   showDelete={!!onDelete}
                   showView={!!onView}
+                  showSchedule={!!onSchedule}  // 👈 NUEVO
                   disabledAdd={!esInactivo?.(item)}
                   disabledEdit={esInactivo?.(item)}
                   disabledDelete={esInactivo?.(item)}
                   disabledView={false}
+                  disabledSchedule={false}  // 👈 NUEVO
                   size={tamañoIconos}
                 />
               </td>
