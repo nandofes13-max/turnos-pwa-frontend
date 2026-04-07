@@ -514,11 +514,6 @@ export default function ProfesionalCentro() {
         import React from 'react';
 import ActionIcons from './ActionIcons';
 
-interface Columna {
-  key: string;
-  label: string;
-  align?: 'left' | 'center' | 'right';
-}
 
 interface TablaMaestraProps {
   columnas: Columna[];
