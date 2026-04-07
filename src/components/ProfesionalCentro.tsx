@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';  // 👈 NUEVO
+import { useNavigate } from 'react-router-dom';
 import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
 import ProfesionalFormModal from './modals/ProfesionalFormModal';
@@ -69,7 +69,7 @@ const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function ProfesionalCentro() {
-  const navigate = useNavigate();  // 👈 NUEVO
+  const navigate = useNavigate();
   const [relaciones, setRelaciones] = useState<Relacion[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
@@ -81,7 +81,6 @@ export default function ProfesionalCentro() {
   const [selectedRelacion, setSelectedRelacion] = useState<Relacion | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'add' | 'reactivate' | null>(null);
   
-  // Estados para el flujo de creación
   const [documentoBusqueda, setDocumentoBusqueda] = useState('');
   const [profesionalSeleccionado, setProfesionalSeleccionado] = useState<Profesional | null>(null);
   const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<Especialidad[]>([]);
@@ -90,7 +89,6 @@ export default function ProfesionalCentro() {
   const [centroSeleccionado, setCentroSeleccionado] = useState('');
   const [busquedaError, setBusquedaError] = useState('');
   
-  // Modales reutilizables
   const [showProfesionalFormModal, setShowProfesionalFormModal] = useState(false);
   const [showEspecialidadModal, setShowEspecialidadModal] = useState(false);
   const [profesionalParaEspecialidad, setProfesionalParaEspecialidad] = useState<{ id: number; nombre: string } | null>(null);
@@ -99,7 +97,6 @@ export default function ProfesionalCentro() {
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroProfesional, setFiltroProfesional] = useState('');
   const [filtroCentro, setFiltroCentro] = useState('');
@@ -331,8 +328,6 @@ export default function ProfesionalCentro() {
 
   const handleEliminar = (relacion: Relacion) => setConfirmDelete(relacion);
   const handleReactivar = (relacion: Relacion) => relacion.fecha_baja && setConfirmReactivar(relacion);
-
-  // 👈 NUEVA FUNCIÓN PARA NAVEGAR A AGENDA
   const handleAgenda = (profesionalCentroId: number) => {
     navigate(`/agenda-disponibilidad/${profesionalCentroId}`);
   };
@@ -511,98 +506,28 @@ export default function ProfesionalCentro() {
             </div>
           </div>
 
-        import React from 'react';
-import ActionIcons from './ActionIcons';
-
-
-interface TablaMaestraProps {
-  columnas: Columna[];
-  datos: any[];
-  onAdd?: (item: any) => void;
-  onEdit?: (item: any) => void;
-  onDelete?: (item: any) => void;
-  onView?: (item: any) => void;
-  onSchedule?: (item: any) => void;  // 👈 AGREGAR
-  esInactivo?: (item: any) => boolean;
-  tamañoIconos?: 'md' | 'lg';
-  avatar?: (item: any) => React.ReactNode;
-  renderActions?: (item: any) => React.ReactNode;  // 👈 AGREGAR
-}
-
-export default function TablaMaestra({
-  columnas,
-  datos,
-  onAdd,
-  onEdit,
-  onDelete,
-  onView,
-  onSchedule,  // 👈 AGREGAR
-  esInactivo,
-  tamañoIconos = 'md',
-  avatar,
-  renderActions  // 👈 AGREGAR
-}: TablaMaestraProps) {
-  return (
-    <div className="tm-tabla-centrado">
-      <table className="tm-tabla">
-        <thead>
-          <tr>
-            {avatar && <th>AVATAR</th>}
-            {columnas.map(col => (
-              <th key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
-                {col.label}
-              </th>
-            ))}
-            <th>ACCIONES</th>
-          </tr>
-        </thead>
-        <tbody>
-          {datos.map((item, idx) => (
-            <tr key={idx} className={esInactivo?.(item) ? 'tm-fila-inactiva' : ''}>
-              {avatar && <td className="text-center">{avatar(item)}</td>}
-              {columnas.map(col => (
-                <td key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
-                  {item[col.key] ?? '-'}
-                </td>
-              ))}
-              <td>
-                {renderActions ? (
-                  renderActions(item)
-                ) : (
-                  <ActionIcons
-                    onAdd={() => onAdd?.(item)}
-                    onEdit={() => onEdit?.(item)}
-                    onDelete={() => onDelete?.(item)}
-                    onView={() => onView?.(item)}
-                    onSchedule={() => onSchedule?.(item)}  // 👈 AGREGAR
-                    showAdd={!!onAdd}
-                    showEdit={!!onEdit}
-                    showDelete={!!onDelete}
-                    showView={!!onView}
-                    showSchedule={!!onSchedule}  // 👈 AGREGAR
-                    disabledAdd={!esInactivo?.(item)}
-                    disabledEdit={esInactivo?.(item)}
-                    disabledDelete={esInactivo?.(item)}
-                    disabledView={false}
-                    disabledSchedule={false}  // 👈 AGREGAR
-                    size={tamañoIconos}
-                  />
-                )}
-              </td>
-            </tr>
-          ))}
-          {datos.length === 0 && (
-            <tr>
-              <td colSpan={columnas.length + (avatar ? 2 : 1)} className="tm-fila-vacia">
-                No hay registros que coincidan
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}          
+          <TablaMaestra
+            columnas={[
+              { key: 'documento', label: 'DOCUMENTO' },
+              { key: 'profesionalNombre', label: 'PROFESIONAL' },
+              { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
+              { key: 'urlNegocio', label: 'URL NEGOCIO' },
+              { key: 'codigoCentro', label: 'CÓDIGO' },
+              { key: 'centroNombre', label: 'CENTRO' },
+              { key: 'whatsapp', label: 'WHATSAPP' },
+              { key: 'domicilio', label: 'DOMICILIO' },
+              { key: 'estado', label: 'ESTADO' }
+            ]}
+            datos={datosTabla}
+            avatar={(item) => obtenerAvatar(item.profesional)}
+            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
+            onEdit={undefined}
+            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
+            onView={(item) => handleVerDetalle(item)}
+            onSchedule={(item) => handleAgenda(item.id)}
+            esInactivo={(item) => item.fecha_baja}
+          />
+          
           {relacionesFiltradas.length > 0 && (
             <div className="tm-paginacion">
               <button onClick={() => irAPagina(paginaActual - 1)} disabled={paginaActual === 1} className="tm-paginacion-btn">←</button>
@@ -621,7 +546,6 @@ export default function TablaMaestra({
             <h3 className="tm-modal-titulo">Asignar Profesional a Centro</h3>
             {errorMessage && <div className="tm-modal-error">{errorMessage}</div>}
             
-            {/* PASO 1: Buscar profesional */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Documento del Profesional *</label>
               <div className="flex gap-2">
@@ -655,7 +579,6 @@ export default function TablaMaestra({
               )}
             </div>
 
-            {/* Profesional seleccionado */}
             {profesionalSeleccionado && (
               <div className="tm-modal-campo bg-gray-50 p-2 rounded">
                 <div className="flex items-center gap-3">
@@ -668,7 +591,6 @@ export default function TablaMaestra({
               </div>
             )}
 
-            {/* PASO 2: Seleccionar especialidad */}
             {profesionalSeleccionado && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Especialidad *</label>
@@ -717,7 +639,6 @@ export default function TablaMaestra({
               </div>
             )}
 
-            {/* PASO 3: Seleccionar negocio */}
             {profesionalSeleccionado && especialidadesDisponibles.length > 0 && especialidadSeleccionada && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Negocio *</label>
@@ -742,7 +663,6 @@ export default function TablaMaestra({
               </div>
             )}
 
-            {/* PASO 4: Seleccionar centro */}
             {negocioSeleccionado && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Centro *</label>
@@ -779,7 +699,6 @@ export default function TablaMaestra({
         </div>
       )}
 
-      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedRelacion && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -798,7 +717,6 @@ export default function TablaMaestra({
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -812,7 +730,6 @@ export default function TablaMaestra({
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -826,7 +743,6 @@ export default function TablaMaestra({
         </div>
       )}
 
-      {/* MODAL REUTILIZABLE PARA CREAR PROFESIONAL */}
       <ProfesionalFormModal
         isOpen={showProfesionalFormModal}
         onClose={() => setShowProfesionalFormModal(false)}
@@ -847,7 +763,6 @@ export default function TablaMaestra({
         modo="add"
       />
 
-      {/* MODAL REUTILIZABLE PARA ASIGNAR ESPECIALIDAD */}
       <ProfesionalEspecialidadModal
         isOpen={showEspecialidadModal}
         onClose={() => {
