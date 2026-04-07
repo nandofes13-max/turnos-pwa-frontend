@@ -6,14 +6,17 @@ interface ActionIconsProps {
   onAdd?:    () => void;
   onEdit?:   () => void;
   onDelete?: () => void;
+  onSchedule?: () => void;  // 👈 NUEVO: para agenda
 
   showAdd?:    boolean;
   showEdit?:   boolean;
   showDelete?: boolean;
+  showSchedule?: boolean;  // 👈 NUEVO
 
   disabledAdd?:    boolean;
   disabledEdit?:   boolean;
   disabledDelete?: boolean;
+  disabledSchedule?: boolean;  // 👈 NUEVO
 
   size?: 'sm' | 'md' | 'lg';
 }
@@ -22,12 +25,15 @@ export default function ActionIcons({
   onAdd,
   onEdit,
   onDelete,
+  onSchedule,  // 👈 NUEVO
   showAdd    = true,
   showEdit   = true,
   showDelete = true,
+  showSchedule = true,  // 👈 NUEVO (por defecto visible)
   disabledAdd    = false,
   disabledEdit   = false,
   disabledDelete = false,
+  disabledSchedule = false,  // 👈 NUEVO
   size = 'md',
 }: ActionIconsProps) {
 
@@ -42,6 +48,40 @@ export default function ActionIcons({
 
   return (
     <div className="tm-acciones">
+
+      {/* AGENDA / CALENDARIO - NUEVO */}
+      {showSchedule && (
+        <button
+          className={`tm-accion-btn tm-accion-agenda`}
+          onClick={disabledSchedule ? undefined : onSchedule}
+          disabled={disabledSchedule}
+          onMouseEnter={() => setTooltip('Agenda')}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <circle cx="12" cy="15" r="1"></circle>
+            <circle cx="16" cy="15" r="1"></circle>
+            <circle cx="8" cy="15" r="1"></circle>
+          </svg>
+          {tooltip === 'Agenda' && (
+            <span className="tm-accion-tooltip">Agenda</span>
+          )}
+        </button>
+      )}
 
       {/* ALTA */}
       {showAdd && (
