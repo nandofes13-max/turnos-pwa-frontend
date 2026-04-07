@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import ProfesionalFormModal from './modals/ProfesionalFormModal';
+import ProfesionalEspecialidadModal from './modals/ProfesionalEspecialidadModal';
 import '../styles/tablas-maestras.css';
 
 interface Profesional {
@@ -65,7 +65,6 @@ const PROFESIONAL_ESPECIALIDAD_URL = `${API_BASE_URL}/profesional-especialidad`;
 const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
 const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 
-// Avatar por defecto
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function ProfesionalCentro() {
@@ -89,23 +88,10 @@ export default function ProfesionalCentro() {
   const [centroSeleccionado, setCentroSeleccionado] = useState('');
   const [busquedaError, setBusquedaError] = useState('');
   
-  // Modal de creación de profesional
-  const [showCrearProfesional, setShowCrearProfesional] = useState(false);
-  const [nuevoProfesional, setNuevoProfesional] = useState({
-    documento: '',
-    nombre: '',
-    email: '',
-    genero: '',
-    matricula: '',
-    foto: ''
-  });
-  const [nuevoPhoneValue, setNuevoPhoneValue] = useState<string>();
-  const [creandoProfesional, setCreandoProfesional] = useState(false);
-  
-  // Modal de asignación de especialidad
-  const [showAsignarEspecialidad, setShowAsignarEspecialidad] = useState(false);
-  const [especialidadAsignar, setEspecialidadAsignar] = useState('');
-  const [descripcionAsignar, setDescripcionAsignar] = useState('');
+  // Modales reutilizables
+  const [showProfesionalFormModal, setShowProfesionalFormModal] = useState(false);
+  const [showEspecialidadModal, setShowEspecialidadModal] = useState(false);
+  const [profesionalParaEspecialidad, setProfesionalParaEspecialidad] = useState<{ id: number; nombre: string } | null>(null);
   
   const [confirmDelete, setConfirmDelete] = useState<Relacion | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Relacion | null>(null);
@@ -184,10 +170,8 @@ export default function ProfesionalCentro() {
     }
   };
 
-  // Filtrar negocios por actividad de especialidad
   const filtrarNegociosPorEspecialidad = async (especialidadId: number) => {
     try {
-      // 1. Obtener la actividad de la especialidad
       const actividadRes = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/por-especialidad/${especialidadId}`);
       const actividadesRelacion = await actividadRes.json();
       
@@ -198,15 +182,9 @@ export default function ProfesionalCentro() {
       }
       
       const actividadId = actividadesRelacion[0].actividadId;
-      
-      // 2. Obtener los negocios que tienen esa actividad
       const negocioActividadRes = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/actividad/${actividadId}`);
       const relacionesNegocioActividad = await negocioActividadRes.json();
-      
-      // 3. Extraer IDs de negocio únicos
       const negocioIds = [...new Set(relacionesNegocioActividad.map((r: any) => r.negocioId))];
-      
-      // 4. Filtrar la lista de negocios cargada
       const negociosFiltradosLista = negocios.filter(n => negocioIds.includes(n.id));
       setNegociosFiltrados(negociosFiltradosLista);
       
@@ -265,80 +243,6 @@ export default function ProfesionalCentro() {
     }
   };
 
-  const handleCrearProfesional = async () => {
-    if (!nuevoProfesional.documento.trim() || !nuevoProfesional.nombre.trim() || !nuevoProfesional.email.trim() || !nuevoPhoneValue) {
-      setErrorMessage('Complete todos los campos obligatorios');
-      return;
-    }
-
-    setCreandoProfesional(true);
-    try {
-      const { country_code, national_number } = parsePhoneE164(nuevoPhoneValue);
-      const res = await fetch(PROFESIONALES_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documento: nuevoProfesional.documento,
-          nombre: nuevoProfesional.nombre.toUpperCase(),
-          email: nuevoProfesional.email,
-          country_code,
-          national_number,
-          genero: nuevoProfesional.genero || null,
-          matricula: nuevoProfesional.matricula || null,
-          foto: nuevoProfesional.foto || null
-        }),
-      });
-      
-      if (!res.ok) throw new Error('Error al crear profesional');
-      
-      const nuevo = await res.json();
-      setProfesionalSeleccionado(nuevo);
-      setShowCrearProfesional(false);
-      setNuevoProfesional({ documento: '', nombre: '', email: '', genero: '', matricula: '', foto: '' });
-      setNuevoPhoneValue(undefined);
-      await fetchProfesionales();
-      const tieneEspecialidades = await cargarEspecialidadesDelProfesional(nuevo.id);
-      if (!tieneEspecialidades) {
-        setErrorMessage('El profesional no tiene especialidades asignadas. Debe asignarle una especialidad.');
-      }
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Error al crear profesional');
-    } finally {
-      setCreandoProfesional(false);
-    }
-  };
-
-  const handleAsignarEspecialidad = async () => {
-    if (!especialidadAsignar) {
-      setErrorMessage('Debe seleccionar una especialidad');
-      return;
-    }
-
-    try {
-      const res = await fetch(PROFESIONAL_ESPECIALIDAD_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profesionalId: profesionalSeleccionado?.id,
-          especialidadId: parseInt(especialidadAsignar),
-          descripcion: descripcionAsignar || null
-        }),
-      });
-      
-      if (!res.ok) throw new Error('Error al asignar especialidad');
-      
-      setShowAsignarEspecialidad(false);
-      setEspecialidadAsignar('');
-      setDescripcionAsignar('');
-      await cargarEspecialidadesDelProfesional(profesionalSeleccionado!.id);
-      setErrorMessage(null);
-    } catch (err) {
-      console.error(err);
-      setErrorMessage('Error al asignar especialidad');
-    }
-  };
-
   const actualizarCentrosPorNegocio = (negocioId: string) => {
     if (!negocioId) {
       setCentrosFiltrados([]);
@@ -361,15 +265,6 @@ export default function ProfesionalCentro() {
       );
     }
     return <img src={AVATAR_VACIO} alt={profesional.nombre} className="w-8 h-8 rounded-full object-cover" />;
-  };
-
-  const parsePhoneE164 = (phone: string | undefined) => {
-    if (!phone) return { country_code: null, national_number: '' };
-    const match = phone.match(/^\+(\d{1,3})(\d+)$/);
-    if (match) {
-      return { country_code: parseInt(match[1], 10), national_number: match[2] };
-    }
-    return { country_code: null, national_number: '' };
   };
 
   const obtenerTipoMovimiento = (r: Relacion): string => {
@@ -528,10 +423,9 @@ export default function ProfesionalCentro() {
     setPaginaActual(1);
   };
 
-  // Preparar datos para TablaMaestra (INCLUYENDO profesional para el avatar)
   const datosTabla = relacionesPaginadas.map(r => ({
     ...r,
-    profesional: r.profesional,  // ← CLAVE: incluir el objeto profesional
+    profesional: r.profesional,
     documento: r.profesional?.documento || '-',
     profesionalNombre: r.profesional?.nombre || '-',
     especialidadNombre: r.especialidad?.nombre || '-',
@@ -673,7 +567,7 @@ export default function ProfesionalCentro() {
                   <span className="text-red-600">{busquedaError}</span>
                   {busquedaError.includes('¿Desea crearlo?') && (
                     <button
-                      onClick={() => setShowCrearProfesional(true)}
+                      onClick={() => setShowProfesionalFormModal(true)}
                       className="ml-2 text-blue-600 underline"
                     >
                       Crear profesional
@@ -727,7 +621,15 @@ export default function ProfesionalCentro() {
                   <div className="text-sm text-amber-600">
                     No tiene especialidades asignadas.
                     <button
-                      onClick={() => setShowAsignarEspecialidad(true)}
+                      onClick={() => {
+                        if (profesionalSeleccionado) {
+                          setProfesionalParaEspecialidad({
+                            id: profesionalSeleccionado.id,
+                            nombre: profesionalSeleccionado.nombre
+                          });
+                          setShowEspecialidadModal(true);
+                        }
+                      }}
                       className="ml-2 text-blue-600 underline"
                     >
                       Asignar especialidad
@@ -737,7 +639,7 @@ export default function ProfesionalCentro() {
               </div>
             )}
 
-            {/* PASO 3: Seleccionar negocio - AHORA FILTRADO */}
+            {/* PASO 3: Seleccionar negocio */}
             {profesionalSeleccionado && especialidadesDisponibles.length > 0 && especialidadSeleccionada && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Negocio *</label>
@@ -818,143 +720,6 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
-      {/* MODAL CREAR PROFESIONAL */}
-      {showCrearProfesional && (
-        <div className="tm-modal-overlay" onClick={() => setShowCrearProfesional(false)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Crear Nuevo Profesional</h3>
-            
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Documento *</label>
-              <input
-                type="text"
-                value={nuevoProfesional.documento}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, documento: e.target.value })}
-                placeholder="DNI / CUIT / CUIL"
-                className="tm-modal-input"
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Nombre *</label>
-              <input
-                type="text"
-                value={nuevoProfesional.nombre}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, nombre: e.target.value.toUpperCase() })}
-                placeholder="Nombre completo"
-                className="tm-modal-input"
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Email *</label>
-              <input
-                type="email"
-                value={nuevoProfesional.email}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, email: e.target.value })}
-                placeholder="ejemplo@mail.com"
-                className="tm-modal-input"
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Género</label>
-              <select
-                value={nuevoProfesional.genero}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, genero: e.target.value })}
-                className="tm-modal-input"
-              >
-                <option value="">Seleccionar...</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-                <option value="X">No Binario</option>
-              </select>
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">WhatsApp *</label>
-              <PhoneInput
-                international
-                defaultCountry="AR"
-                value={nuevoPhoneValue}
-                onChange={setNuevoPhoneValue}
-                className="tm-phone-input"
-                limitMaxLength={true}
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Matrícula</label>
-              <input
-                type="text"
-                value={nuevoProfesional.matricula}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, matricula: e.target.value })}
-                placeholder="Opcional"
-                className="tm-modal-input"
-              />
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Foto (URL)</label>
-              <input
-                type="text"
-                value={nuevoProfesional.foto}
-                onChange={(e) => setNuevoProfesional({ ...nuevoProfesional, foto: e.target.value })}
-                placeholder="https://ejemplo.com/foto.jpg"
-                className="tm-modal-input"
-              />
-            </div>
-
-            <div className="tm-modal-acciones">
-              <button onClick={() => setShowCrearProfesional(false)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={handleCrearProfesional} className="tm-btn-primario" disabled={creandoProfesional}>
-                {creandoProfesional ? 'Creando...' : 'Crear Profesional'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL ASIGNAR ESPECIALIDAD */}
-      {showAsignarEspecialidad && (
-        <div className="tm-modal-overlay" onClick={() => setShowAsignarEspecialidad(false)}>
-          <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-titulo">Asignar Especialidad a {profesionalSeleccionado?.nombre}</h3>
-            
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Especialidad *</label>
-              <select
-                value={especialidadAsignar}
-                onChange={(e) => setEspecialidadAsignar(e.target.value)}
-                className="tm-modal-input"
-                required
-              >
-                <option value="">Seleccionar especialidad...</option>
-                {especialidades.map(e => (
-                  <option key={e.id} value={e.id}>{e.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="tm-modal-campo">
-              <label className="tm-modal-label">Descripción</label>
-              <textarea
-                value={descripcionAsignar}
-                onChange={(e) => setDescripcionAsignar(e.target.value)}
-                placeholder="Descripción de la especialidad para este profesional (opcional)"
-                className="tm-modal-input tm-input-descripcion"
-                rows={3}
-              />
-            </div>
-
-            <div className="tm-modal-acciones">
-              <button onClick={() => setShowAsignarEspecialidad(false)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={handleAsignarEspecialidad} className="tm-btn-primario">Asignar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
@@ -982,6 +747,49 @@ export default function ProfesionalCentro() {
           </div>
         </div>
       )}
+
+      {/* MODAL REUTILIZABLE PARA CREAR PROFESIONAL */}
+      <ProfesionalFormModal
+        isOpen={showProfesionalFormModal}
+        onClose={() => setShowProfesionalFormModal(false)}
+        onSuccess={(nuevoProfesional) => {
+          setShowProfesionalFormModal(false);
+          if (nuevoProfesional) {
+            setProfesionalSeleccionado(nuevoProfesional);
+            setBusquedaError('');
+            // Después de crear el profesional, abrir modal para asignar especialidad
+            setProfesionalParaEspecialidad({
+              id: nuevoProfesional.id,
+              nombre: nuevoProfesional.nombre
+            });
+            setShowEspecialidadModal(true);
+          }
+          fetchProfesionales();
+        }}
+        profesional={null}
+        modo="add"
+      />
+
+      {/* MODAL REUTILIZABLE PARA ASIGNAR ESPECIALIDAD */}
+      <ProfesionalEspecialidadModal
+        isOpen={showEspecialidadModal}
+        onClose={() => {
+          setShowEspecialidadModal(false);
+          setProfesionalParaEspecialidad(null);
+        }}
+        onSuccess={() => {
+          setShowEspecialidadModal(false);
+          if (profesionalSeleccionado) {
+            cargarEspecialidadesDelProfesional(profesionalSeleccionado.id);
+          }
+          if (profesionalParaEspecialidad) {
+            cargarEspecialidadesDelProfesional(profesionalParaEspecialidad.id);
+          }
+          setErrorMessage(null);
+        }}
+        profesionalId={profesionalParaEspecialidad?.id || null}
+        profesionalNombre={profesionalParaEspecialidad?.nombre || ''}
+      />
     </div>
   );
 }
