@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';  // 👈 NUEVO
 import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
 import ProfesionalFormModal from './modals/ProfesionalFormModal';
@@ -68,6 +69,7 @@ const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 const AVATAR_VACIO = 'https://via.placeholder.com/96?text=Sin+foto';
 
 export default function ProfesionalCentro() {
+  const navigate = useNavigate();  // 👈 NUEVO
   const [relaciones, setRelaciones] = useState<Relacion[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
@@ -330,6 +332,11 @@ export default function ProfesionalCentro() {
   const handleEliminar = (relacion: Relacion) => setConfirmDelete(relacion);
   const handleReactivar = (relacion: Relacion) => relacion.fecha_baja && setConfirmReactivar(relacion);
 
+  // 👈 NUEVA FUNCIÓN PARA NAVEGAR A AGENDA
+  const handleAgenda = (profesionalCentroId: number) => {
+    navigate(`/agenda-disponibilidad/${profesionalCentroId}`);
+  };
+
   const guardarRelacion = async () => {
     if (!profesionalSeleccionado) {
       setErrorMessage('Debe seleccionar un profesional');
@@ -523,6 +530,26 @@ export default function ProfesionalCentro() {
             onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
             onView={(item) => handleVerDetalle(item)}
             esInactivo={(item) => item.fecha_baja}
+            renderActions={(item) => (
+              <ActionIcons
+                onAdd={() => item.fecha_baja && handleReactivar(item)}
+                onEdit={undefined}
+                onDelete={() => !item.fecha_baja && handleEliminar(item)}
+                onView={() => handleVerDetalle(item)}
+                onSchedule={() => handleAgenda(item.id)}  // 👈 NUEVO
+                showAdd={true}
+                showEdit={false}
+                showDelete={true}
+                showView={true}
+                showSchedule={true}  // 👈 NUEVO
+                disabledAdd={!item.fecha_baja}
+                disabledEdit={false}
+                disabledDelete={!!item.fecha_baja}
+                disabledView={false}
+                disabledSchedule={false}  // 👈 NUEVO
+                size="md"
+              />
+            )}
           />
           
           {relacionesFiltradas.length > 0 && (
@@ -757,7 +784,6 @@ export default function ProfesionalCentro() {
           if (nuevoProfesional) {
             setProfesionalSeleccionado(nuevoProfesional);
             setBusquedaError('');
-            // Después de crear el profesional, abrir modal para asignar especialidad
             setProfesionalParaEspecialidad({
               id: nuevoProfesional.id,
               nombre: nuevoProfesional.nombre
