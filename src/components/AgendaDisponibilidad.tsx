@@ -23,7 +23,8 @@ interface BloqueHorario {
   duracionTurno: number;
   fechaDesde: string;
   fechaHasta: string | null;
-  horariosHabilitados: { [key: string]: string[] };
+  horarios: string[];  // Lista de todos los horarios posibles
+  horariosDeshabilitados: number[]; // Índices de horarios deshabilitados
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -38,6 +39,23 @@ const generarOpcionesHora = (duracion: number): string[] => {
     }
   }
   return opciones;
+};
+
+const generarHorarios = (desde: string, hasta: string, duracion: number): string[] => {
+  const horarios: string[] = [];
+  let actual = desde;
+  while (actual < hasta) {
+    horarios.push(actual);
+    const [h, m] = actual.split(':').map(Number);
+    let minutos = m + duracion;
+    let horas = h;
+    if (minutos >= 60) {
+      horas += Math.floor(minutos / 60);
+      minutos = minutos % 60;
+    }
+    actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+  }
+  return horarios;
 };
 
 export default function AgendaDisponibilidad() {
@@ -77,23 +95,6 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
-  const generarHorarios = (desde: string, hasta: string, duracion: number): string[] => {
-    const horarios: string[] = [];
-    let actual = desde;
-    while (actual < hasta) {
-      horarios.push(actual);
-      const [h, m] = actual.split(':').map(Number);
-      let minutos = m + duracion;
-      let horas = h;
-      if (minutos >= 60) {
-        horas += Math.floor(minutos / 60);
-        minutos = minutos % 60;
-      }
-      actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-    }
-    return horarios;
-  };
-
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -105,11 +106,7 @@ export default function AgendaDisponibilidad() {
       const dataAgendas = await resAgendas.json();
       
       const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => {
-        const horariosBase = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
-        const horariosHabilitados: { [key: string]: string[] } = {};
-        DIAS_CORTO.forEach((_, idx) => {
-          horariosHabilitados[idx] = [...horariosBase];
-        });
+        const horarios = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
         return {
           id: ag.id,
           diasHabilitados: ag.diaSemana !== undefined && ag.diaSemana >= 0 ? [ag.diaSemana] : [],
@@ -118,7 +115,8 @@ export default function AgendaDisponibilidad() {
           duracionTurno: ag.duracionTurno,
           fechaDesde: ag.fechaDesde,
           fechaHasta: ag.fechaHasta,
-          horariosHabilitados
+          horarios: horarios,
+          horariosDeshabilitados: []
         };
       });
       setBloques(bloquesCargados);
@@ -141,11 +139,7 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    const horariosBase = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
-    const horariosIniciales: { [key: string]: string[] } = {};
-    DIAS_CORTO.forEach((_, idx) => {
-      horariosIniciales[idx] = [...horariosBase];
-    });
+    const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
     
     const nuevoBloque: BloqueHorario = {
       diasHabilitados: [],
@@ -154,7 +148,8 @@ export default function AgendaDisponibilidad() {
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horariosHabilitados: horariosIniciales
+      horarios: horarios,
+      horariosDeshabilitados: []
     };
     
     setBloques([...bloques, nuevoBloque]);
@@ -190,15 +185,20 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  const toggleHorario = (bloqueIndex: number, diaIdx: number, horario: string) => {
+  // Alternar habilitado/deshabilitado de un horario (NO eliminar)
+  const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
-    const horarios = bloque.horariosHabilitados[diaIdx];
-    if (horarios.includes(horario)) {
-      bloque.horariosHabilitados[diaIdx] = horarios.filter(h => h !== horario);
+    const deshabilitados = bloque.horariosDeshabilitados;
+    
+    if (deshabilitados.includes(horarioIndex)) {
+      // Si está deshabilitado, lo habilitamos (lo sacamos del array)
+      bloque.horariosDeshabilitados = deshabilitados.filter(i => i !== horarioIndex);
     } else {
-      bloque.horariosHabilitados[diaIdx] = [...horarios, horario].sort();
+      // Si está habilitado, lo deshabilitamos (lo agregamos al array)
+      bloque.horariosDeshabilitados = [...deshabilitados, horarioIndex];
     }
+    
     setBloques(nuevosBloques);
     setTieneCambios(true);
   };
@@ -240,19 +240,22 @@ export default function AgendaDisponibilidad() {
     
     setGuardando(true);
     try {
-      // Eliminar agendas existentes para este profesional-centro
-      const agendasExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const existentes = await agendasExistentes.json();
+      // Eliminar agendas existentes
+      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const existentes = await resExistentes.json();
       for (const agenda of existentes) {
         await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
       }
       
-      // Crear nuevas agendas por cada día habilitado en cada bloque
+      // Crear nuevas agendas
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
+          // Ajustar día: 1=Lunes, 7=Domingo
+          const diaSemana = diaIdx + 1;
+          
           const payload = {
             profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaIdx + 1, // Ajuste: 0=Domingo, pero nuestro array empieza en Lunes
+            diaSemana: diaSemana,
             horaDesde: bloque.horaDesde,
             horaHasta: bloque.horaHasta,
             duracionTurno: bloque.duracionTurno,
@@ -312,8 +315,11 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
+      {/* Sección Agregar Bloque + Bloquear Fechas al mismo nivel */}
       <div className="agenda-form-section">
-        <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
+        <h3 className="agenda-form-title">Configuración de Bloques</h3>
+        
+        {/* Fila 1: Datos del bloque */}
         <div className="agenda-form-row">
           <div className="agenda-form-field">
             <label className="agenda-form-label">Duración (min)</label>
@@ -372,44 +378,45 @@ export default function AgendaDisponibilidad() {
           </div>
         </div>
         
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
-          <div className="agenda-form-row">
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Bloquear Desde</label>
-              <input 
-                type="date" 
-                value={rangoBloqueoInicio} 
-                min={hoy}
-                onChange={(e) => setRangoBloqueoInicio(e.target.value)} 
-                className="agenda-form-input" 
-              />
-            </div>
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Bloquear Hasta</label>
-              <input 
-                type="date" 
-                value={rangoBloqueoFin} 
-                min={rangoBloqueoInicio || hoy}
-                onChange={(e) => setRangoBloqueoFin(e.target.value)} 
-                className="agenda-form-input" 
-              />
-            </div>
-            <div>
-              <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
-            </div>
-            <div>
-              <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas">
-                📅 Ver Fechas Bloqueadas ({fechasBloqueadas.length})
-              </button>
-            </div>
+        {/* Fila 2: Bloquear Fechas (mismo nivel) */}
+        <div className="agenda-form-row" style={{ marginTop: '16px' }}>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Bloquear Desde</label>
+            <input 
+              type="date" 
+              value={rangoBloqueoInicio} 
+              min={hoy}
+              onChange={(e) => setRangoBloqueoInicio(e.target.value)} 
+              className="agenda-form-input" 
+            />
+          </div>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Bloquear Hasta</label>
+            <input 
+              type="date" 
+              value={rangoBloqueoFin} 
+              min={rangoBloqueoInicio || hoy}
+              onChange={(e) => setRangoBloqueoFin(e.target.value)} 
+              className="agenda-form-input" 
+            />
+          </div>
+          <div>
+            <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
+          </div>
+          <div>
+            <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas">
+              📅 Ver Fechas Bloqueadas ({fechasBloqueadas.length})
+            </button>
           </div>
         </div>
         
+        {/* Botón Agregar Bloque */}
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
         </div>
       </div>
 
+      {/* Lista de bloques configurados */}
       {bloques.map((bloque, idx) => (
         <div key={idx} className="agenda-bloque">
           <div className="agenda-bloque-header">
@@ -436,15 +443,18 @@ export default function AgendaDisponibilidad() {
                 
                 {bloque.diasHabilitados.includes(diaIdx) && (
                   <div className="agenda-horarios">
-                    {bloque.horariosHabilitados[diaIdx].map(horario => (
-                      <button
-                        key={horario}
-                        onClick={() => toggleHorario(idx, diaIdx, horario)}
-                        className={`agenda-horario-boton habilitado`}
-                      >
-                        {horario}
-                      </button>
-                    ))}
+                    {bloque.horarios.map((horario, horarioIdx) => {
+                      const isDeshabilitado = bloque.horariosDeshabilitados.includes(horarioIdx);
+                      return (
+                        <button
+                          key={horarioIdx}
+                          onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                          className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                        >
+                          {horario} {isDeshabilitado && '🔒'}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
