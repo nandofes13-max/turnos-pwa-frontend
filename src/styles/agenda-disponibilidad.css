@@ -1,0 +1,209 @@
+/* src/styles/agenda-disponibilidad.css */
+
+/* Encabezado */
+.agenda-header {
+  margin-bottom: 32px;
+}
+
+.agenda-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.agenda-info p {
+  color: #0066cc;
+  margin: 0;
+}
+
+/* Formularios */
+.agenda-form-section {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.agenda-form-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.agenda-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.agenda-form-field {
+  min-width: 120px;
+}
+
+.agenda-form-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.agenda-form-input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+/* Fechas bloqueadas */
+.agenda-fechas-bloqueadas {
+  margin-top: 16px;
+}
+
+.agenda-fechas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.agenda-fecha-item {
+  background: #fee2e2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Bloques */
+.agenda-bloque {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.agenda-bloque-header {
+  background: #f0f0f0;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agenda-bloque-info {
+  font-size: 14px;
+}
+
+.agenda-bloque-info strong {
+  font-weight: 600;
+}
+
+/* Grilla de días */
+.agenda-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 16px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+/* Columna de día */
+.agenda-dia-columna {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Botón del día */
+.agenda-dia-boton {
+  width: 100%;
+  padding: 12px 8px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.agenda-dia-boton.activo {
+  background-color: #10b981;
+  color: white;
+}
+
+.agenda-dia-boton.inactivo {
+  background-color: #ef4444;
+  color: white;
+}
+
+.agenda-dia-boton.inactivo:hover {
+  background-color: #f59e0b;
+}
+
+.agenda-dia-icono {
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+/* Horarios */
+.agenda-horarios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.agenda-horario-boton {
+  padding: 8px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.agenda-horario-boton.habilitado {
+  background-color: #10b981;
+  color: white;
+}
+
+.agenda-horario-boton.deshabilitado {
+  background-color: #9ca3af;
+  color: white;
+}
+
+.agenda-horario-boton.deshabilitado:hover {
+  background-color: #f59e0b;
+}
+
+/* Botones de acción */
+.agenda-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+  margin-bottom: 32px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .agenda-grilla {
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .agenda-dia-boton {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .agenda-dia-icono {
+    font-size: 16px;
+  }
+  
+  .agenda-horario-boton {
+    padding: 6px;
+    font-size: 12px;
+  }
+}
