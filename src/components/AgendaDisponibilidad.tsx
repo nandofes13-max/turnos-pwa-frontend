@@ -236,11 +236,8 @@ export default function AgendaDisponibilidad() {
   };
 
   const guardarAgenda = async () => {
-  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-  
-  setGuardando(true);
-  try {
-    // Mostrar qué días se van a guardar (DIAGNÓSTICO)
+    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+    
     console.log('===== DIAGNÓSTICO DE AGENDA =====');
     for (const bloque of bloques) {
       console.log(`Bloque: ${bloque.horaDesde} a ${bloque.horaHasta}`);
@@ -257,53 +254,54 @@ export default function AgendaDisponibilidad() {
       }
     }
     
-    // Eliminar agendas existentes
-    const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-    const existentes = await resExistentes.json();
-    for (const agenda of existentes) {
-      await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
-    }
-    
-    for (const bloque of bloques) {
-      for (const diaIdx of bloque.diasHabilitados) {
-        let diaSemana;
-        if (diaIdx === 6) {
-          diaSemana = 0;
-        } else {
-          diaSemana = diaIdx + 1;
-        }
-        
-        const payload = {
-          profesionalCentroId: parseInt(profesionalCentroId!),
-          diaSemana: diaSemana,
-          horaDesde: bloque.horaDesde,
-          horaHasta: bloque.horaHasta,
-          duracionTurno: bloque.duracionTurno,
-          bufferMinutos: 0,
-          fechaDesde: bloque.fechaDesde,
-          fechaHasta: bloque.fechaHasta
-        };
-        
-        console.log('Enviando payload:', payload); // DIAGNÓSTICO
-        
-        await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    setGuardando(true);
+    try {
+      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const existentes = await resExistentes.json();
+      for (const agenda of existentes) {
+        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
       }
+      
+      for (const bloque of bloques) {
+        for (const diaIdx of bloque.diasHabilitados) {
+          let diaSemana;
+          if (diaIdx === 6) {
+            diaSemana = 0;
+          } else {
+            diaSemana = diaIdx + 1;
+          }
+          
+          const payload = {
+            profesionalCentroId: parseInt(profesionalCentroId!),
+            diaSemana: diaSemana,
+            horaDesde: bloque.horaDesde,
+            horaHasta: bloque.horaHasta,
+            duracionTurno: bloque.duracionTurno,
+            bufferMinutos: 0,
+            fechaDesde: bloque.fechaDesde,
+            fechaHasta: bloque.fechaHasta
+          };
+          
+          console.log('Enviando payload:', payload);
+          
+          await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+      }
+      
+      alert('Agenda guardada correctamente');
+      setTieneCambios(false);
+      cargarDatos();
+    } catch (err) {
+      console.error('Error guardando agenda:', err);
+      alert('Error al guardar la agenda');
+    } finally {
+      setGuardando(false);
     }
-    
-    alert('Agenda guardada correctamente');
-    setTieneCambios(false);
-    cargarDatos();
-  } catch (err) {
-    console.error('Error guardando agenda:', err);
-    alert('Error al guardar la agenda');
-  } finally {
-    setGuardando(false);
-  }
-};
+  };
 
   const handleClose = () => {
     if (tieneCambios) {
@@ -339,12 +337,12 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Formulario único con botón Agregar al lado del título */}
+      {/* Formulario */}
       <div className="agenda-form-section">
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
-  <h3 className="agenda-form-title" style={{ marginBottom: 0, display: 'inline-block', width: 'auto' }}>Agregar Bloque Horario - Bloquear Fechas</h3>
-  <button onClick={agregarBloque} className="tm-btn-agregar" style={{ padding: '6px 12px', fontSize: '13px' }}>+ Agregar Bloque</button>
-</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <h3 className="agenda-form-title" style={{ marginBottom: 0, display: 'inline-block', width: 'auto' }}>Agregar Bloque Horario - Bloquear Fechas</h3>
+          <button onClick={agregarBloque} className="tm-btn-agregar" style={{ padding: '6px 12px', fontSize: '13px' }}>+ Agregar Bloque</button>
+        </div>
         <div className="agenda-form-row">
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
