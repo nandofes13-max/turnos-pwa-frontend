@@ -312,77 +312,74 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Dos columnas: Agregar Bloque + Bloquear Fechas */}
-      <div className="agenda-dos-columnas">
+      {/* Formulario único: Agregar Bloque Horario + Bloquear Fechas */}
+      <div className="agenda-form-section">
+        <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
         
-        {/* Columna 1: Agregar Bloque Horario */}
-        <div className="agenda-columna">
-          <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
-          <div className="agenda-form-row">
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Duración (min)</label>
-              <select 
-                value={nuevaDuracion} 
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (val === 0) {
-                    setMostrarOtraDuracion(true);
-                  } else {
-                    setNuevaDuracion(val);
-                    setMostrarOtraDuracion(false);
-                  }
-                }} 
+        <div className="agenda-form-row">
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Duración (min)</label>
+            <select 
+              value={nuevaDuracion} 
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                if (val === 0) {
+                  setMostrarOtraDuracion(true);
+                } else {
+                  setNuevaDuracion(val);
+                  setMostrarOtraDuracion(false);
+                }
+              }} 
+              className="agenda-form-input"
+            >
+              <option value={15}>15 minutos</option>
+              <option value={30}>30 minutos</option>
+              <option value={45}>45 minutos</option>
+              <option value={0}>Otro...</option>
+            </select>
+            {mostrarOtraDuracion && (
+              <input 
+                type="number" 
+                placeholder="Ingrese duración" 
+                value={otraDuracion} 
+                onChange={(e) => setOtraDuracion(e.target.value)} 
                 className="agenda-form-input"
-              >
-                <option value={15}>15 minutos</option>
-                <option value={30}>30 minutos</option>
-                <option value={45}>45 minutos</option>
-                <option value={0}>Otro...</option>
-              </select>
-              {mostrarOtraDuracion && (
-                <input 
-                  type="number" 
-                  placeholder="Ingrese duración" 
-                  value={otraDuracion} 
-                  onChange={(e) => setOtraDuracion(e.target.value)} 
-                  className="agenda-form-input"
-                  style={{ marginTop: '8px' }}
-                />
-              )}
-            </div>
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Desde</label>
-              <select value={nuevoDesde} onChange={(e) => setNuevoDesde(e.target.value)} className="agenda-form-input">
-                {opcionesHora.map(hora => (
-                  <option key={hora} value={hora}>{hora}</option>
-                ))}
-              </select>
-            </div>
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Hasta</label>
-              <select value={nuevoHasta} onChange={(e) => setNuevoHasta(e.target.value)} className="agenda-form-input">
-                {opcionesHora.map(hora => (
-                  <option key={hora} value={hora}>{hora}</option>
-                ))}
-              </select>
-            </div>
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Vigencia Desde</label>
-              <input type="date" value={nuevaFechaDesde} onChange={(e) => setNuevaFechaDesde(e.target.value)} className="agenda-form-input" />
-            </div>
-            <div className="agenda-form-field">
-              <label className="agenda-form-label">Vigencia Hasta</label>
-              <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} className="agenda-form-input" />
-            </div>
+                style={{ marginTop: '8px' }}
+              />
+            )}
           </div>
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Desde</label>
+            <select value={nuevoDesde} onChange={(e) => setNuevoDesde(e.target.value)} className="agenda-form-input">
+              {opcionesHora.map(hora => (
+                <option key={hora} value={hora}>{hora}</option>
+              ))}
+            </select>
+          </div>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Hasta</label>
+            <select value={nuevoHasta} onChange={(e) => setNuevoHasta(e.target.value)} className="agenda-form-input">
+              {opcionesHora.map(hora => (
+                <option key={hora} value={hora}>{hora}</option>
+              ))}
+            </select>
+          </div>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Vigencia Desde</label>
+            <input type="date" value={nuevaFechaDesde} onChange={(e) => setNuevaFechaDesde(e.target.value)} className="agenda-form-input" />
+          </div>
+          <div className="agenda-form-field">
+            <label className="agenda-form-label">Vigencia Hasta</label>
+            <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} className="agenda-form-input" />
           </div>
         </div>
         
-        {/* Columna 2: Bloquear Fechas */}
-        <div className="agenda-columna">
-          <h3 className="agenda-form-title">Bloquear Fechas</h3>
+        {/* Separador visual */}
+        <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e0e0e0' }} />
+        
+        {/* Bloquear Fechas dentro del mismo formulario */}
+        <div>
+          <h4 style={{ marginTop: 0, marginBottom: '16px', fontSize: '16px' }}>Bloquear Fechas</h4>
           <div className="agenda-form-row">
             <div className="agenda-form-field">
               <label className="agenda-form-label">Desde</label>
@@ -404,15 +401,21 @@ export default function AgendaDisponibilidad() {
                 className="agenda-form-input" 
               />
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', justifyContent: 'center' }}>
-            <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
-            <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas">
-              📅 Ver Fechas Bloqueadas ({fechasBloqueadas.length})
-            </button>
+            <div>
+              <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
+            </div>
+            <div>
+              <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas">
+                📅 Ver Fechas Bloqueadas ({fechasBloqueadas.length})
+              </button>
+            </div>
           </div>
         </div>
         
+        {/* Botón Agregar Bloque */}
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+        </div>
       </div>
 
       {/* Bloques configurados */}
