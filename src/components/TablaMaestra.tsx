@@ -18,7 +18,9 @@ interface TablaMaestraProps {
   esInactivo?: (item: any) => boolean;
   tamañoIconos?: 'md' | 'lg';
   avatar?: (item: any) => React.ReactNode;
-  showSchedule?: boolean;  // 👈 NUEVA PROP EXPLÍCITA
+  showSchedule?: boolean;
+  // 👈 NUEVA PROP: función que construye la card para móvil
+  renderCard?: (item: any) => React.ReactNode;
 }
 
 export default function TablaMaestra({
@@ -32,65 +34,79 @@ export default function TablaMaestra({
   esInactivo,
   tamañoIconos = 'md',
   avatar,
-  showSchedule  // 👈 RECIBIR LA PROP
+  showSchedule,
+  renderCard  // 👈 NUEVA PROP
 }: TablaMaestraProps) {
-  // Determinar si mostrar el ícono de agenda
   const mostrarSchedule = showSchedule !== undefined ? showSchedule : !!onSchedule;
 
   return (
-    <div className="tm-tabla-centrado">
-      <table className="tm-tabla">
-        <thead>
-          <tr>
-            {avatar && <th>AVATAR</th>}
-            {columnas.map(col => (
-              <th key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
-                {col.label}
-              </th>
-            ))}
-            <th>ACCIONES</th>
-          </tr>
-        </thead>
-        <tbody>
-          {datos.map((item, idx) => (
-            <tr key={idx} className={esInactivo?.(item) ? 'tm-fila-inactiva' : ''}>
-              {avatar && <td className="text-center">{avatar(item)}</td>}
-              {columnas.map(col => (
-                <td key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
-                  {item[col.key] ?? '-'}
-                </td>
-              ))}
-              <td>
-                <ActionIcons
-                  onAdd={() => onAdd?.(item)}
-                  onEdit={() => onEdit?.(item)}
-                  onDelete={() => onDelete?.(item)}
-                  onView={() => onView?.(item)}
-                  onSchedule={() => onSchedule?.(item)}
-                  showAdd={!!onAdd}
-                  showEdit={!!onEdit}
-                  showDelete={!!onDelete}
-                  showView={!!onView}
-                  showSchedule={mostrarSchedule}  // 👈 USAR LA VARIABLE
-                  disabledAdd={!esInactivo?.(item)}
-                  disabledEdit={esInactivo?.(item)}
-                  disabledDelete={esInactivo?.(item)}
-                  disabledView={false}
-                  disabledSchedule={false}
-                  size={tamañoIconos}
-                />
-              </td>
-            </tr>
-          ))}
-          {datos.length === 0 && (
+    <div>
+      {/* TABLA PARA DESKTOP */}
+      <div className="tm-tabla-centrado">
+        <table className="tm-tabla">
+          <thead>
             <tr>
-              <td colSpan={columnas.length + (avatar ? 2 : 1)} className="tm-fila-vacia">
-                No hay registros que coincidan
-              </td>
+              {avatar && <th>AVATAR</th>}
+              {columnas.map(col => (
+                <th key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
+                  {col.label}
+                </th>
+              ))}
+              <th>ACCIONES</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {datos.map((item, idx) => (
+              <tr key={idx} className={esInactivo?.(item) ? 'tm-fila-inactiva' : ''}>
+                {avatar && <td className="text-center">{avatar(item)}</td>}
+                {columnas.map(col => (
+                  <td key={col.key} className={col.align === 'center' ? 'text-center' : ''}>
+                    {item[col.key] ?? '-'}
+                  </td>
+                ))}
+                <td>
+                  <ActionIcons
+                    onAdd={() => onAdd?.(item)}
+                    onEdit={() => onEdit?.(item)}
+                    onDelete={() => onDelete?.(item)}
+                    onView={() => onView?.(item)}
+                    onSchedule={() => onSchedule?.(item)}
+                    showAdd={!!onAdd}
+                    showEdit={!!onEdit}
+                    showDelete={!!onDelete}
+                    showView={!!onView}
+                    showSchedule={mostrarSchedule}
+                    disabledAdd={!esInactivo?.(item)}
+                    disabledEdit={esInactivo?.(item)}
+                    disabledDelete={esInactivo?.(item)}
+                    disabledView={false}
+                    disabledSchedule={false}
+                    size={tamañoIconos}
+                  />
+                </td>
+              </tr>
+            ))}
+            {datos.length === 0 && (
+              <tr>
+                <td colSpan={columnas.length + (avatar ? 2 : 1)} className="tm-fila-vacia">
+                  No hay registros que coincidan
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* CARDS PARA MÓVIL - SOLO SI EXISTE renderCard */}
+      {renderCard && (
+        <div className="tm-cards">
+          {datos.map((item, idx) => (
+            <React.Fragment key={idx}>
+              {renderCard(item)}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
