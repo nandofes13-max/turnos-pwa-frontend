@@ -314,11 +314,10 @@ export default function AgendaDisponibilidad() {
 
       {/* Formulario único con botón Agregar al lado del título */}
       <div className="agenda-form-section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario - Bloquear Fechas</h3>
-          <button onClick={agregarBloque} className="tm-btn-agregar" style={{ padding: '6px 12px', fontSize: '13px' }}>+ Agregar Bloque</button>
-        </div>
-        
+     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+  <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario - Bloquear Fechas</h3>
+  <button onClick={agregarBloque} className="tm-btn-agregar" style={{ padding: '6px 12px', fontSize: '13px' }}>+ Agregar Bloque</button>
+</div>        
         <div className="agenda-form-row">
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
