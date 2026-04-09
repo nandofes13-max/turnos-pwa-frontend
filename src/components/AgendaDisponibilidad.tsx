@@ -236,47 +236,57 @@ export default function AgendaDisponibilidad() {
   };
 
   const guardarAgenda = async () => {
-    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-    
-    setGuardando(true);
-    try {
-      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const existentes = await resExistentes.json();
-      for (const agenda of existentes) {
-        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
-      }
-      
-      for (const bloque of bloques) {
-        for (const diaIdx of bloque.diasHabilitados) {
-          const diaSemana = diaIdx + 1;
-          const payload = {
-            profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaSemana,
-            horaDesde: bloque.horaDesde,
-            horaHasta: bloque.horaHasta,
-            duracionTurno: bloque.duracionTurno,
-            bufferMinutos: 0,
-            fechaDesde: bloque.fechaDesde,
-            fechaHasta: bloque.fechaHasta
-          };
-          await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        }
-      }
-      
-      alert('Agenda guardada correctamente');
-      setTieneCambios(false);
-      cargarDatos();
-    } catch (err) {
-      console.error('Error guardando agenda:', err);
-      alert('Error al guardar la agenda');
-    } finally {
-      setGuardando(false);
+  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+  
+  setGuardando(true);
+  try {
+    // Eliminar agendas existentes
+    const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+    const existentes = await resExistentes.json();
+    for (const agenda of existentes) {
+      await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
     }
-  };
+    
+    for (const bloque of bloques) {
+      for (const diaIdx of bloque.diasHabilitados) {
+        // ✅ CORRECCIÓN: Mapear según PostgreSQL (0=Domingo, 1=Lunes, ...)
+        // diaIdx: 0=LUN, 1=MAR, 2=MIÉ, 3=JUE, 4=VIE, 5=SÁB, 6=DOM
+        // PostgreSQL: 1=LUN, 2=MAR, 3=MIÉ, 4=JUE, 5=VIE, 6=SÁB, 0=DOM
+        let diaSemana;
+        if (diaIdx === 6) {
+          diaSemana = 0; // DOMINGO
+        } else {
+          diaSemana = diaIdx + 1; // LUN a SÁB
+        }
+        
+        const payload = {
+          profesionalCentroId: parseInt(profesionalCentroId!),
+          diaSemana: diaSemana,
+          horaDesde: bloque.horaDesde,
+          horaHasta: bloque.horaHasta,
+          duracionTurno: bloque.duracionTurno,
+          bufferMinutos: 0,
+          fechaDesde: bloque.fechaDesde,
+          fechaHasta: bloque.fechaHasta
+        };
+        await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+    
+    alert('Agenda guardada correctamente');
+    setTieneCambios(false);
+    cargarDatos();
+  } catch (err) {
+    console.error('Error guardando agenda:', err);
+    alert('Error al guardar la agenda');
+  } finally {
+    setGuardando(false);
+  }
+};
 
   const handleClose = () => {
     if (tieneCambios) {
