@@ -21,23 +21,17 @@
   font-weight: bold;
 }
 
-/* Dos columnas al mismo nivel */
-.agenda-dos-columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.agenda-columna {
-  flex: 1;
-  min-width: 280px;
+/* Formulario */
+.agenda-form-section {
   background: #f5f5f5;
   padding: 20px;
   border-radius: 8px;
+  margin-bottom: 24px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Formulario */
 .agenda-form-title {
   margin-top: 0;
   margin-bottom: 20px;
@@ -53,22 +47,22 @@
 
 .agenda-form-field {
   flex: 1;
-  min-width: 120px;
+  min-width: 90px;
 }
 
 .agenda-form-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .agenda-form-input {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
   width: 100%;
-  font-size: 14px;
+  font-size: 13px;
   box-sizing: border-box;
 }
 
@@ -83,10 +77,10 @@
   background-color: #6c757d;
   color: white;
   border: none;
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   transition: background 0.2s;
 }
 
@@ -192,15 +186,15 @@
   align-items: center;
 }
 
-/* Botón del día */
+/* Botón del día - ALTERNATIVA MEDIANA */
 .agenda-dia-boton {
   width: 100%;
-  padding: 12px 8px;
+  padding: 8px 4px;
   border-radius: 50px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   transition: all 0.2s;
   margin-bottom: 12px;
 }
@@ -224,8 +218,8 @@
 }
 
 .agenda-dia-icono {
-  font-size: 18px;
-  margin-top: 4px;
+  font-size: 14px;
+  margin-top: 2px;
 }
 
 /* Horarios */
@@ -237,17 +231,17 @@
 }
 
 .agenda-horario-boton {
-  padding: 8px;
+  padding: 6px;
   border-radius: 50px;
   border: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.2s;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .agenda-horario-boton.habilitado {
@@ -289,15 +283,6 @@
 
 /* Móvil (menos de 768px) */
 @media (max-width: 767px) {
-  .agenda-dos-columnas {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .agenda-columna {
-    min-width: auto;
-  }
-  
   .agenda-form-row {
     flex-direction: column;
     align-items: stretch;
@@ -305,6 +290,7 @@
   
   .agenda-form-field {
     width: 100%;
+    min-width: auto;
   }
   
   .agenda-grilla {
@@ -321,7 +307,12 @@
   }
   
   .agenda-dia-boton {
-    margin-bottom: 8px;
+    padding: 10px 4px;
+    font-size: 14px;
+  }
+  
+  .agenda-dia-icono {
+    font-size: 16px;
   }
   
   .agenda-horarios {
@@ -333,7 +324,8 @@
   
   .agenda-horario-boton {
     flex: 0 0 auto;
-    min-width: 70px;
+    min-width: 65px;
+    padding: 8px;
   }
   
   .agenda-bloque-header {
@@ -348,6 +340,11 @@
   .agenda-acciones button {
     width: 100%;
   }
+  
+  /* En móvil, los botones de acción de los días se agrandan para mejor touch */
+  .agenda-dia-boton {
+    padding: 10px 4px;
+  }
 }
 
 /* Desktop pequeño */
@@ -359,6 +356,6 @@
   
   .agenda-dia-boton {
     font-size: 12px;
-    padding: 10px 4px;
+    padding: 8px 2px;
   }
 }
