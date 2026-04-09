@@ -95,37 +95,46 @@ export default function AgendaDisponibilidad() {
   }, [profesionalCentroId]);
 
   const cargarDatos = async () => {
-    setLoading(true);
-    try {
-      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
-      const dataRelacion = await resRelacion.json();
-      setRelacion(dataRelacion);
+  setLoading(true);
+  try {
+    const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
+    const dataRelacion = await resRelacion.json();
+    setRelacion(dataRelacion);
+    
+    const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+    const dataAgendas = await resAgendas.json();
+    
+    const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => {
+      const horarios = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
       
-      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const dataAgendas = await resAgendas.json();
+      // ✅ CONVERSIÓN: diaSemana de BD a índice frontend
+      let diaIdx = ag.diaSemana;
+      if (diaIdx === 0) {
+        diaIdx = 6; // Domingo (BD) → Domingo (frontend)
+      } else {
+        diaIdx = diaIdx - 1; // Lunes a Sábado
+      }
       
-      const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => {
-        const horarios = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
-        return {
-          id: ag.id,
-          diasHabilitados: ag.diaSemana !== undefined && ag.diaSemana >= 0 ? [ag.diaSemana] : [],
-          horaDesde: ag.horaDesde,
-          horaHasta: ag.horaHasta,
-          duracionTurno: ag.duracionTurno,
-          fechaDesde: ag.fechaDesde,
-          fechaHasta: ag.fechaHasta,
-          horarios: horarios,
-          horariosDeshabilitados: {}
-        };
-      });
-      setBloques(bloquesCargados);
-      
-    } catch (err) {
-      console.error('Error cargando datos:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return {
+        id: ag.id,
+        diasHabilitados: [diaIdx],
+        horaDesde: ag.horaDesde,
+        horaHasta: ag.horaHasta,
+        duracionTurno: ag.duracionTurno,
+        fechaDesde: ag.fechaDesde,
+        fechaHasta: ag.fechaHasta,
+        horarios: horarios,
+        horariosDeshabilitados: {}
+      };
+    });
+    setBloques(bloquesCargados);
+    
+  } catch (err) {
+    console.error('Error cargando datos:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const obtenerDuracionFinal = () => {
     return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
