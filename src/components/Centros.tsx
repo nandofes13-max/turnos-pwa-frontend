@@ -3,7 +3,6 @@ import ActionIcons from './ActionIcons';
 import MapaSelector from './MapaSelector';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
 import styles from '../styles/Centros.module.css';
 
@@ -463,13 +462,6 @@ export default function Centros() {
     );
   };
 
-  const datosTabla = centrosPaginados.map(c => ({
-    ...c,
-    urlWithTooltip: <UrlCell negocio={c.negocio} />,
-    direccion: c.es_virtual ? 'Virtual' : (formatearDireccion(c).substring(0, 40) || '-'),
-    estado: c.fecha_baja ? 'Inactivo' : 'Activo'
-  }));
-
   const mostrarCheckboxVirtual = puedeSerVirtual && !yaTieneVirtual && modalMode === 'add' && tieneActividades;
 
   return (
@@ -539,22 +531,87 @@ export default function Centros() {
             </div>
           </div>
 
-          <TablaMaestra
-            columnas={[
-              { key: 'codigo', label: 'CÓDIGO' },
-              { key: 'urlWithTooltip', label: 'URL NEGOCIO' },
-              { key: 'nombre', label: 'NOMBRE' },
-              { key: 'whatsapp_e164', label: 'WHATSAPP' },
-              { key: 'direccion', label: 'DOMICILIO' },
-              { key: 'estado', label: 'ESTADO' }
-            ]}
-            datos={datosTabla}
-            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
-            onEdit={(item) => !item.fecha_baja && handleEditar(item)}
-            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
-            onView={(item) => handleVerDetalle(item)}
-            esInactivo={(item) => item.fecha_baja}
-          />
+          {/* TABLA PARA DESKTOP */}
+          <div className="tm-tabla-centrado">
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>URL NEGOCIO</th>
+                  <th>NOMBRE</th>
+                  <th>WHATSAPP</th>
+                  <th>DOMICILIO</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {centrosPaginados.map((c) => (
+                  <tr key={c.id} className={c.fecha_baja ? 'tm-fila-inactiva' : ''}>
+                    <td>{c.codigo}</td>
+                    <td><UrlCell negocio={c.negocio} /></td>
+                    <td>{c.nombre} </td>
+                    <td>{c.whatsapp_e164 || '-'} </td>
+                    <td>{c.es_virtual ? 'Virtual' : (formatearDireccion(c).substring(0, 40) || '-')} </td>
+                    <td>{c.fecha_baja ? 'Inactivo' : 'Activo'} </td>
+                    <td>
+                      <ActionIcons
+                        onAdd={() => c.fecha_baja && handleReactivar(c)}
+                        onEdit={() => !c.fecha_baja && handleEditar(c)}
+                        onDelete={() => !c.fecha_baja && handleEliminar(c)}
+                        onView={() => handleVerDetalle(c)}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
+                        showView={true}
+                        disabledAdd={!c.fecha_baja}
+                        disabledEdit={!!c.fecha_baja}
+                        disabledDelete={!!c.fecha_baja}
+                        disabledView={false}
+                        size="md"
+                      />
+                     </td>
+                   </tr>
+                ))}
+                {centrosPaginados.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="tm-fila-vacia">No hay centros que coincidan</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* CARDS PARA MÓVIL */}
+          <div className="tm-cards">
+            {centrosPaginados.map((c) => (
+              <div key={`card-${c.id}`} className={`tm-card-item ${c.fecha_baja ? 'inactiva' : ''}`}>
+                <div className="tm-card-codigo">Código: {c.codigo}</div>
+                <div className="tm-card-url">Negocio: {c.negocio?.url || '-'}</div>
+                <div className="tm-card-nombre"><strong>{c.nombre}</strong></div>
+                <div className="tm-card-whatsapp">WhatsApp: {c.whatsapp_e164 || '-'}</div>
+                <div className="tm-card-domicilio">Domicilio: {c.es_virtual ? 'Virtual' : (formatearDireccion(c).substring(0, 40) || '-')}</div>
+                <div className="tm-card-estado">Estado: {c.fecha_baja ? 'Inactivo' : 'Activo'}</div>
+                <div className="tm-card-acciones mt-2">
+                  <ActionIcons
+                    onAdd={() => c.fecha_baja && handleReactivar(c)}
+                    onEdit={() => !c.fecha_baja && handleEditar(c)}
+                    onDelete={() => !c.fecha_baja && handleEliminar(c)}
+                    onView={() => handleVerDetalle(c)}
+                    showAdd={true}
+                    showEdit={true}
+                    showDelete={true}
+                    showView={true}
+                    disabledAdd={!c.fecha_baja}
+                    disabledEdit={!!c.fecha_baja}
+                    disabledDelete={!!c.fecha_baja}
+                    disabledView={false}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
           
           {centrosFiltrados.length > 0 && (
             <div className="tm-paginacion">
