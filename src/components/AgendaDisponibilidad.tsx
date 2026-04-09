@@ -17,20 +17,19 @@ interface ProfesionalCentro {
 
 interface BloqueHorario {
   id?: number;
-  diaSemana: number;
+  diasHabilitados: number[];
   horaDesde: string;
   horaHasta: string;
   duracionTurno: number;
   fechaDesde: string;
   fechaHasta: string | null;
-  horariosHabilitados: string[];
+  horariosHabilitados: { [key: string]: string[] };
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-const DIAS_CORTO = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
-const DIAS_TOOLTIP = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-// Generar opciones de hora según duración
 const generarOpcionesHora = (duracion: number): string[] => {
   const opciones: string[] = [];
   for (let h = 0; h < 24; h++) {
@@ -50,6 +49,7 @@ export default function AgendaDisponibilidad() {
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [tieneCambios, setTieneCambios] = useState(false);
+  const [showFechasModal, setShowFechasModal] = useState(false);
   
   const [nuevoDesde, setNuevoDesde] = useState('08:00');
   const [nuevoHasta, setNuevoHasta] = useState('12:00');
@@ -59,15 +59,11 @@ export default function AgendaDisponibilidad() {
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [nuevaFechaHasta, setNuevaFechaHasta] = useState('');
   
-  // Bloqueo de fechas
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
-  
-  // Opciones de hora según duración
   const [opcionesHora, setOpcionesHora] = useState<string[]>(generarOpcionesHora(30));
 
-  // Actualizar opciones de hora cuando cambia la duración
   useEffect(() => {
     const duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
     if (duracion && duracion > 0) {
@@ -80,35 +76,6 @@ export default function AgendaDisponibilidad() {
       cargarDatos();
     }
   }, [profesionalCentroId]);
-
-  const cargarDatos = async () => {
-    setLoading(true);
-    try {
-      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
-      const dataRelacion = await resRelacion.json();
-      setRelacion(dataRelacion);
-      
-      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const dataAgendas = await resAgendas.json();
-      
-      const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => ({
-        id: ag.id,
-        diaSemana: ag.diaSemana,
-        horaDesde: ag.horaDesde,
-        horaHasta: ag.horaHasta,
-        duracionTurno: ag.duracionTurno,
-        fechaDesde: ag.fechaDesde,
-        fechaHasta: ag.fechaHasta,
-        horariosHabilitados: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno)
-      }));
-      setBloques(bloquesCargados);
-      
-    } catch (err) {
-      console.error('Error cargando datos:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const generarHorarios = (desde: string, hasta: string, duracion: number): string[] => {
     const horarios: string[] = [];
@@ -127,6 +94,42 @@ export default function AgendaDisponibilidad() {
     return horarios;
   };
 
+  const cargarDatos = async () => {
+    setLoading(true);
+    try {
+      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
+      const dataRelacion = await resRelacion.json();
+      setRelacion(dataRelacion);
+      
+      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const dataAgendas = await resAgendas.json();
+      
+      const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => {
+        const horariosBase = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
+        const horariosHabilitados: { [key: string]: string[] } = {};
+        DIAS_CORTO.forEach((_, idx) => {
+          horariosHabilitados[idx] = [...horariosBase];
+        });
+        return {
+          id: ag.id,
+          diasHabilitados: ag.diaSemana !== undefined && ag.diaSemana >= 0 ? [ag.diaSemana] : [],
+          horaDesde: ag.horaDesde,
+          horaHasta: ag.horaHasta,
+          duracionTurno: ag.duracionTurno,
+          fechaDesde: ag.fechaDesde,
+          fechaHasta: ag.fechaHasta,
+          horariosHabilitados
+        };
+      });
+      setBloques(bloquesCargados);
+      
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const obtenerDuracionFinal = () => {
     return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
   };
@@ -138,14 +141,20 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
+    const horariosBase = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
+    const horariosIniciales: { [key: string]: string[] } = {};
+    DIAS_CORTO.forEach((_, idx) => {
+      horariosIniciales[idx] = [...horariosBase];
+    });
+    
     const nuevoBloque: BloqueHorario = {
-      diaSemana: -1,
+      diasHabilitados: [],
       horaDesde: nuevoDesde,
       horaHasta: nuevoHasta,
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horariosHabilitados: generarHorarios(nuevoDesde, nuevoHasta, duracionFinal)
+      horariosHabilitados: horariosIniciales
     };
     
     setBloques([...bloques, nuevoBloque]);
@@ -169,26 +178,26 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  const toggleDia = (bloqueIndex: number, diaSemana: number) => {
+  const toggleDia = (bloqueIndex: number, diaIdx: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
-    if (bloque.diaSemana === diaSemana) {
-      bloque.diaSemana = -1;
+    if (bloque.diasHabilitados.includes(diaIdx)) {
+      bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
     } else {
-      bloque.diaSemana = diaSemana;
+      bloque.diasHabilitados.push(diaIdx);
     }
     setBloques(nuevosBloques);
     setTieneCambios(true);
   };
 
-  const toggleHorario = (bloqueIndex: number, horario: string) => {
+  const toggleHorario = (bloqueIndex: number, diaIdx: number, horario: string) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
-    if (bloque.horariosHabilitados.includes(horario)) {
-      bloque.horariosHabilitados = bloque.horariosHabilitados.filter(h => h !== horario);
+    const horarios = bloque.horariosHabilitados[diaIdx];
+    if (horarios.includes(horario)) {
+      bloque.horariosHabilitados[diaIdx] = horarios.filter(h => h !== horario);
     } else {
-      bloque.horariosHabilitados.push(horario);
-      bloque.horariosHabilitados.sort();
+      bloque.horariosHabilitados[diaIdx] = [...horarios, horario].sort();
     }
     setBloques(nuevosBloques);
     setTieneCambios(true);
@@ -231,11 +240,19 @@ export default function AgendaDisponibilidad() {
     
     setGuardando(true);
     try {
+      // Eliminar agendas existentes para este profesional-centro
+      const agendasExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const existentes = await agendasExistentes.json();
+      for (const agenda of existentes) {
+        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
+      }
+      
+      // Crear nuevas agendas por cada día habilitado en cada bloque
       for (const bloque of bloques) {
-        if (bloque.diaSemana >= 0 && bloque.diaSemana <= 6) {
+        for (const diaIdx of bloque.diasHabilitados) {
           const payload = {
             profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: bloque.diaSemana,
+            diaSemana: diaIdx + 1, // Ajuste: 0=Domingo, pero nuestro array empieza en Lunes
             horaDesde: bloque.horaDesde,
             horaHasta: bloque.horaHasta,
             duracionTurno: bloque.duracionTurno,
@@ -243,20 +260,11 @@ export default function AgendaDisponibilidad() {
             fechaDesde: bloque.fechaDesde,
             fechaHasta: bloque.fechaHasta
           };
-          
-          if (bloque.id) {
-            await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-          } else {
-            await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-          }
+          await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
         }
       }
       
@@ -294,7 +302,6 @@ export default function AgendaDisponibilidad() {
 
   return (
     <div className="tm-page">
-      {/* Encabezado */}
       <div className="agenda-header">
         <h1 className="tm-titulo">Configuración de Agenda</h1>
         <div className="agenda-info">
@@ -305,7 +312,6 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Formulario para agregar bloque */}
       <div className="agenda-form-section">
         <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
         <div className="agenda-form-row">
@@ -366,7 +372,6 @@ export default function AgendaDisponibilidad() {
           </div>
         </div>
         
-        {/* Bloquear Fechas dentro de la misma sección */}
         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
           <div className="agenda-form-row">
             <div className="agenda-form-field">
@@ -392,19 +397,12 @@ export default function AgendaDisponibilidad() {
             <div>
               <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
             </div>
-          </div>
-          {fechasBloqueadas.length > 0 && (
-            <div className="agenda-fechas-bloqueadas">
-              <strong>Fechas bloqueadas:</strong>
-              <div className="agenda-fechas-lista">
-                {fechasBloqueadas.map(fecha => (
-                  <span key={fecha} onClick={() => eliminarFechaBloqueada(fecha)} className="agenda-fecha-item">
-                    {fecha} ✖
-                  </span>
-                ))}
-              </div>
+            <div>
+              <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas">
+                📅 Ver Fechas Bloqueadas ({fechasBloqueadas.length})
+              </button>
             </div>
-          )}
+          </div>
         </div>
         
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -412,7 +410,6 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Lista de bloques configurados */}
       {bloques.map((bloque, idx) => (
         <div key={idx} className="agenda-bloque">
           <div className="agenda-bloque-header">
@@ -421,7 +418,7 @@ export default function AgendaDisponibilidad() {
               <strong> Duración:</strong> {bloque.duracionTurno} min | 
               <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
             </span>
-            <button onClick={() => eliminarBloque(idx)} className="tm-btn-danger" style={{ padding: '4px 12px' }}>Eliminar Bloque</button>
+            <button onClick={() => eliminarBloque(idx)} className="tm-btn-secundario" style={{ padding: '4px 12px' }}>Eliminar Bloque</button>
           </div>
           
           <div className="agenda-grilla">
@@ -429,22 +426,21 @@ export default function AgendaDisponibilidad() {
               <div key={diaIdx} className="agenda-dia-columna">
                 <button
                   onClick={() => toggleDia(idx, diaIdx)}
-                  className={`agenda-dia-boton ${bloque.diaSemana === diaIdx ? 'habilitado' : 'deshabilitado'}`}
-                  data-tooltip={bloque.diaSemana === diaIdx ? `Deshabilitar ${DIAS_TOOLTIP[diaIdx]}` : `Habilitar ${DIAS_TOOLTIP[diaIdx]}`}
+                  className={`agenda-dia-boton ${bloque.diasHabilitados.includes(diaIdx) ? 'habilitado' : 'deshabilitado'}`}
                 >
                   {dia}
                   <div className="agenda-dia-icono">
-                    {bloque.diaSemana === diaIdx ? '✅' : '🔒'}
+                    {bloque.diasHabilitados.includes(diaIdx) ? '✅' : '🔒'}
                   </div>
                 </button>
                 
-                {bloque.diaSemana === diaIdx && (
+                {bloque.diasHabilitados.includes(diaIdx) && (
                   <div className="agenda-horarios">
-                    {bloque.horariosHabilitados.map(horario => (
+                    {bloque.horariosHabilitados[diaIdx].map(horario => (
                       <button
                         key={horario}
-                        onClick={() => toggleHorario(idx, horario)}
-                        className={`agenda-horario-boton ${bloque.horariosHabilitados.includes(horario) ? 'habilitado' : 'deshabilitado'}`}
+                        onClick={() => toggleHorario(idx, diaIdx, horario)}
+                        className={`agenda-horario-boton habilitado`}
                       >
                         {horario}
                       </button>
@@ -457,13 +453,36 @@ export default function AgendaDisponibilidad() {
         </div>
       ))}
 
-      {/* Botones de acción */}
       <div className="agenda-acciones">
         <button onClick={handleClose} className="tm-btn-secundario">Cancelar</button>
         <button onClick={guardarAgenda} className="tm-btn-primario" disabled={guardando}>
           {guardando ? 'Guardando...' : 'Guardar Agenda'}
         </button>
       </div>
+
+      {/* Modal de fechas bloqueadas */}
+      {showFechasModal && (
+        <div className="agenda-modal-overlay" onClick={() => setShowFechasModal(false)}>
+          <div className="agenda-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="agenda-modal-title">Fechas Bloqueadas</h3>
+            <div className="agenda-modal-lista">
+              {fechasBloqueadas.length === 0 ? (
+                <p>No hay fechas bloqueadas</p>
+              ) : (
+                fechasBloqueadas.map(fecha => (
+                  <div key={fecha} className="agenda-modal-fecha-item">
+                    <span>{fecha}</span>
+                    <button onClick={() => eliminarFechaBloqueada(fecha)}>✖</button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button onClick={() => setShowFechasModal(false)} className="tm-btn-secundario">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
