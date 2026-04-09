@@ -397,20 +397,81 @@ export default function ProfesionalEspecialidad() {
             </div>
           </div>
 
-          <TablaMaestra
-            columnas={[
-              { key: 'profesionalNombre', label: 'PROFESIONAL' },
-              { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
-              { key: 'descripcion', label: 'DESCRIPCIÓN' },
-              { key: 'estado', label: 'ESTADO' }
-            ]}
-            datos={datosTabla}
-            onAdd={(item) => item.fecha_baja && handleReactivar(item)}
-            onEdit={(item) => !item.fecha_baja && handleEditar(item)}
-            onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
-            onView={(item) => handleVerDetalle(item)}
-            esInactivo={(item) => item.fecha_baja}
-          />
+          {/* TABLA PARA DESKTOP */}
+          <div className="tm-tabla-centrado">
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th>PROFESIONAL</th>
+                  <th>ESPECIALIDAD</th>
+                  <th>DESCRIPCIÓN</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {relacionesPaginadas.map((r) => (
+                  <tr key={r.id} className={r.fecha_baja ? 'tm-fila-inactiva' : ''}>
+                    <td>{r.profesional?.nombre || `ID: ${r.profesionalId}`}</td>
+                    <td>{r.especialidad?.nombre || `ID: ${r.especialidadId}`}</td>
+                    <td>{r.descripcion || '-'}</td>
+                    <td>{r.fecha_baja ? 'Inactivo' : 'Activo'}</td>
+                    <td>
+                      <ActionIcons
+                        onAdd={() => r.fecha_baja && handleReactivar(r)}
+                        onEdit={() => !r.fecha_baja && handleEditar(r)}
+                        onDelete={() => !r.fecha_baja && handleEliminar(r)}
+                        onView={() => handleVerDetalle(r)}
+                        showAdd={true}
+                        showEdit={true}
+                        showDelete={true}
+                        showView={true}
+                        disabledAdd={!r.fecha_baja}
+                        disabledEdit={!!r.fecha_baja}
+                        disabledDelete={!!r.fecha_baja}
+                        disabledView={false}
+                        size="md"
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {relacionesPaginadas.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="tm-fila-vacia">No hay registros que coincidan</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* CARDS PARA MÓVIL */}
+          <div className="tm-cards">
+            {relacionesPaginadas.map((r) => (
+              <div key={`card-${r.id}`} className={`tm-card-item ${r.fecha_baja ? 'inactiva' : ''}`}>
+                <div className="tm-card-nombre"><strong>{r.profesional?.nombre || `ID: ${r.profesionalId}`}</strong></div>
+                <div className="tm-card-especialidad">Especialidad: {r.especialidad?.nombre || `ID: ${r.especialidadId}`}</div>
+                <div className="tm-card-descripcion">Descripción: {r.descripcion || '-'}</div>
+                <div className="tm-card-estado">Estado: {r.fecha_baja ? 'Inactivo' : 'Activo'}</div>
+                <div className="tm-card-acciones mt-2">
+                  <ActionIcons
+                    onAdd={() => r.fecha_baja && handleReactivar(r)}
+                    onEdit={() => !r.fecha_baja && handleEditar(r)}
+                    onDelete={() => !r.fecha_baja && handleEliminar(r)}
+                    onView={() => handleVerDetalle(r)}
+                    showAdd={true}
+                    showEdit={true}
+                    showDelete={true}
+                    showView={true}
+                    disabledAdd={!r.fecha_baja}
+                    disabledEdit={!!r.fecha_baja}
+                    disabledDelete={!!r.fecha_baja}
+                    disabledView={false}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
           
           {relacionesFiltradas.length > 0 && (
             <div className="tm-paginacion">
@@ -472,7 +533,6 @@ export default function ProfesionalEspecialidad() {
                   .map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
               </select>
               
-              {/* Información de depuración */}
               <div className="text-xs text-gray-400 mt-1">
                 Total: {especialidades.length} | Asignadas: {especialidadesAsignadas.length} | 
                 Disponibles: {especialidades.filter(e => !especialidadesAsignadas.includes(e.id)).length}
