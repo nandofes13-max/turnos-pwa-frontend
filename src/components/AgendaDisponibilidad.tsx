@@ -23,13 +23,12 @@ interface BloqueHorario {
   duracionTurno: number;
   fechaDesde: string;
   fechaHasta: string | null;
-  horarios: string[];  // Lista de todos los horarios posibles
-  horariosDeshabilitados: number[]; // Índices de horarios deshabilitados
+  horarios: string[];
+  horariosDeshabilitados: { [diaIdx: number]: number[] }; // 👈 CLAVE: por día
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const generarOpcionesHora = (duracion: number): string[] => {
   const opciones: string[] = [];
@@ -116,7 +115,7 @@ export default function AgendaDisponibilidad() {
           fechaDesde: ag.fechaDesde,
           fechaHasta: ag.fechaHasta,
           horarios: horarios,
-          horariosDeshabilitados: []
+          horariosDeshabilitados: {}  // Inicialmente vacío por día
         };
       });
       setBloques(bloquesCargados);
@@ -149,7 +148,7 @@ export default function AgendaDisponibilidad() {
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
       horarios: horarios,
-      horariosDeshabilitados: []
+      horariosDeshabilitados: {}
     };
     
     setBloques([...bloques, nuevoBloque]);
@@ -185,18 +184,24 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  // Alternar habilitado/deshabilitado de un horario (NO eliminar)
+  // Alternar habilitado/deshabilitado de un horario para un día específico
   const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
-    const deshabilitados = bloque.horariosDeshabilitados;
     
-    if (deshabilitados.includes(horarioIndex)) {
-      // Si está deshabilitado, lo habilitamos (lo sacamos del array)
-      bloque.horariosDeshabilitados = deshabilitados.filter(i => i !== horarioIndex);
+    // Obtener los deshabilitados para este día (o array vacío)
+    const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+    
+    if (deshabilitadosDia.includes(horarioIndex)) {
+      // Habilitar: quitar del array
+      bloque.horariosDeshabilitados[diaIdx] = deshabilitadosDia.filter(i => i !== horarioIndex);
+      // Si el array queda vacío, eliminar la clave para limpiar
+      if (bloque.horariosDeshabilitados[diaIdx].length === 0) {
+        delete bloque.horariosDeshabilitados[diaIdx];
+      }
     } else {
-      // Si está habilitado, lo deshabilitamos (lo agregamos al array)
-      bloque.horariosDeshabilitados = [...deshabilitados, horarioIndex];
+      // Deshabilitar: agregar al array
+      bloque.horariosDeshabilitados[diaIdx] = [...deshabilitadosDia, horarioIndex];
     }
     
     setBloques(nuevosBloques);
@@ -247,12 +252,10 @@ export default function AgendaDisponibilidad() {
         await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
       }
       
-      // Crear nuevas agendas
+      // Crear nuevas agendas por cada día habilitado
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
-          // Ajustar día: 1=Lunes, 7=Domingo
           const diaSemana = diaIdx + 1;
-          
           const payload = {
             profesionalCentroId: parseInt(profesionalCentroId!),
             diaSemana: diaSemana,
@@ -305,6 +308,7 @@ export default function AgendaDisponibilidad() {
 
   return (
     <div className="tm-page">
+      {/* Encabezado */}
       <div className="agenda-header">
         <h1 className="tm-titulo">Configuración de Agenda</h1>
         <div className="agenda-info">
@@ -315,11 +319,9 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Sección Agregar Bloque + Bloquear Fechas al mismo nivel */}
+      {/* SECCIÓN 1: Agregar Bloque Horario */}
       <div className="agenda-form-section">
-        <h3 className="agenda-form-title">Configuración de Bloques</h3>
-        
-        {/* Fila 1: Datos del bloque */}
+        <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
         <div className="agenda-form-row">
           <div className="agenda-form-field">
             <label className="agenda-form-label">Duración (min)</label>
@@ -377,11 +379,17 @@ export default function AgendaDisponibilidad() {
             <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} className="agenda-form-input" />
           </div>
         </div>
-        
-        {/* Fila 2: Bloquear Fechas (mismo nivel) */}
-        <div className="agenda-form-row" style={{ marginTop: '16px' }}>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+        </div>
+      </div>
+
+      {/* SECCIÓN 2: Bloquear Fechas (separada, mismo nivel visual) */}
+      <div className="agenda-form-section">
+        <h3 className="agenda-form-title">Bloquear Fechas</h3>
+        <div className="agenda-form-row">
           <div className="agenda-form-field">
-            <label className="agenda-form-label">Bloquear Desde</label>
+            <label className="agenda-form-label">Desde</label>
             <input 
               type="date" 
               value={rangoBloqueoInicio} 
@@ -391,7 +399,7 @@ export default function AgendaDisponibilidad() {
             />
           </div>
           <div className="agenda-form-field">
-            <label className="agenda-form-label">Bloquear Hasta</label>
+            <label className="agenda-form-label">Hasta</label>
             <input 
               type="date" 
               value={rangoBloqueoFin} 
@@ -409,14 +417,9 @@ export default function AgendaDisponibilidad() {
             </button>
           </div>
         </div>
-        
-        {/* Botón Agregar Bloque */}
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
-        </div>
       </div>
 
-      {/* Lista de bloques configurados */}
+      {/* Bloques configurados */}
       {bloques.map((bloque, idx) => (
         <div key={idx} className="agenda-bloque">
           <div className="agenda-bloque-header">
@@ -429,36 +432,40 @@ export default function AgendaDisponibilidad() {
           </div>
           
           <div className="agenda-grilla">
-            {DIAS_CORTO.map((dia, diaIdx) => (
-              <div key={diaIdx} className="agenda-dia-columna">
-                <button
-                  onClick={() => toggleDia(idx, diaIdx)}
-                  className={`agenda-dia-boton ${bloque.diasHabilitados.includes(diaIdx) ? 'habilitado' : 'deshabilitado'}`}
-                >
-                  {dia}
-                  <div className="agenda-dia-icono">
-                    {bloque.diasHabilitados.includes(diaIdx) ? '✅' : '🔒'}
-                  </div>
-                </button>
-                
-                {bloque.diasHabilitados.includes(diaIdx) && (
-                  <div className="agenda-horarios">
-                    {bloque.horarios.map((horario, horarioIdx) => {
-                      const isDeshabilitado = bloque.horariosDeshabilitados.includes(horarioIdx);
-                      return (
-                        <button
-                          key={horarioIdx}
-                          onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
-                          className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
-                        >
-                          {horario} {isDeshabilitado && '🔒'}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+            {DIAS_CORTO.map((dia, diaIdx) => {
+              const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+              return (
+                <div key={diaIdx} className="agenda-dia-columna">
+                  <button
+                    onClick={() => toggleDia(idx, diaIdx)}
+                    className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+                  >
+                    {dia}
+                    <div className="agenda-dia-icono">
+                      {estaHabilitado ? '✅' : '🔒'}
+                    </div>
+                  </button>
+                  
+                  {estaHabilitado && (
+                    <div className="agenda-horarios">
+                      {bloque.horarios.map((horario, horarioIdx) => {
+                        const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+                        const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
+                        return (
+                          <button
+                            key={horarioIdx}
+                            onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                            className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                          >
+                            {horario} {isDeshabilitado && '🔒'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
