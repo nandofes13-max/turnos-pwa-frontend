@@ -240,6 +240,23 @@ export default function AgendaDisponibilidad() {
   
   setGuardando(true);
   try {
+    // Mostrar qué días se van a guardar (DIAGNÓSTICO)
+    console.log('===== DIAGNÓSTICO DE AGENDA =====');
+    for (const bloque of bloques) {
+      console.log(`Bloque: ${bloque.horaDesde} a ${bloque.horaHasta}`);
+      console.log('diasHabilitados (índices frontend):', bloque.diasHabilitados);
+      
+      for (const diaIdx of bloque.diasHabilitados) {
+        let diaSemana;
+        if (diaIdx === 6) {
+          diaSemana = 0;
+        } else {
+          diaSemana = diaIdx + 1;
+        }
+        console.log(`  día ${diaIdx} (${DIAS_CORTO[diaIdx]}) → diaSemana ${diaSemana}`);
+      }
+    }
+    
     // Eliminar agendas existentes
     const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
     const existentes = await resExistentes.json();
@@ -249,14 +266,11 @@ export default function AgendaDisponibilidad() {
     
     for (const bloque of bloques) {
       for (const diaIdx of bloque.diasHabilitados) {
-        // ✅ CORRECCIÓN: Mapear según PostgreSQL (0=Domingo, 1=Lunes, ...)
-        // diaIdx: 0=LUN, 1=MAR, 2=MIÉ, 3=JUE, 4=VIE, 5=SÁB, 6=DOM
-        // PostgreSQL: 1=LUN, 2=MAR, 3=MIÉ, 4=JUE, 5=VIE, 6=SÁB, 0=DOM
         let diaSemana;
         if (diaIdx === 6) {
-          diaSemana = 0; // DOMINGO
+          diaSemana = 0;
         } else {
-          diaSemana = diaIdx + 1; // LUN a SÁB
+          diaSemana = diaIdx + 1;
         }
         
         const payload = {
@@ -269,6 +283,9 @@ export default function AgendaDisponibilidad() {
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta
         };
+        
+        console.log('Enviando payload:', payload); // DIAGNÓSTICO
+        
         await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
