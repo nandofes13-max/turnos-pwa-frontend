@@ -186,17 +186,17 @@
   align-items: center;
 }
 
-/* Botón del día - ALTERNATIVA MEDIANA */
+/* Botón del día - COMPACTO */
 .agenda-dia-boton {
   width: 100%;
-  padding: 8px 4px;
+  padding: 4px 2px;
   border-radius: 50px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
   transition: all 0.2s;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .agenda-dia-boton.habilitado {
@@ -218,10 +218,9 @@
 }
 
 .agenda-dia-icono {
-  font-size: 14px;
+  font-size: 10px;
   margin-top: 2px;
 }
-
 /* Horarios */
 .agenda-horarios {
   display: flex;
