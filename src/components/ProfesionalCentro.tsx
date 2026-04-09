@@ -427,7 +427,7 @@ export default function ProfesionalCentro() {
 
   const datosTabla = relacionesPaginadas.map(r => ({
     ...r,
-    profesional: r.profesional,
+    avatar: obtenerAvatar(r.profesional),
     documento: r.profesional?.documento || '-',
     profesionalNombre: r.profesional?.nombre || '-',
     especialidadNombre: r.especialidad?.nombre || '-',
@@ -436,7 +436,8 @@ export default function ProfesionalCentro() {
     centroNombre: r.centro?.nombre || '-',
     whatsapp: r.centro?.whatsapp_e164 || '-',
     domicilio: r.centro?.es_virtual ? 'Virtual' : (r.centro?.formatted_address?.substring(0, 40) || '-'),
-    estado: r.fecha_baja ? 'Inactivo' : 'Activo'
+    estado: r.fecha_baja ? 'Inactivo' : 'Activo',
+    fecha_baja: r.fecha_baja
   }));
 
   return (
@@ -519,13 +520,48 @@ export default function ProfesionalCentro() {
               { key: 'estado', label: 'ESTADO' }
             ]}
             datos={datosTabla}
-            avatar={(item) => obtenerAvatar(item.profesional)}
+            avatar={(item) => item.avatar}
             onAdd={(item) => item.fecha_baja && handleReactivar(item)}
             onEdit={undefined}
             onDelete={(item) => !item.fecha_baja && handleEliminar(item)}
             onView={(item) => handleVerDetalle(item)}
             onSchedule={(item) => handleAgenda(item.id)}
             esInactivo={(item) => item.fecha_baja}
+            renderCard={(item) => (
+              <div className={`tm-card-item ${item.fecha_baja ? 'inactiva' : ''}`}>
+                <div className="flex items-center gap-3 mb-2">
+                  {item.avatar}
+                  <div className="tm-card-nombre"><strong>{item.profesionalNombre}</strong></div>
+                </div>
+                <div className="tm-card-documento">Documento: {item.documento}</div>
+                <div className="tm-card-especialidad">Especialidad: {item.especialidadNombre}</div>
+                <div className="tm-card-negocio">Negocio: {item.urlNegocio}</div>
+                <div className="tm-card-centro">Centro: {item.codigoCentro} - {item.centroNombre}</div>
+                <div className="tm-card-whatsapp">WhatsApp: {item.whatsapp}</div>
+                <div className="tm-card-domicilio">Domicilio: {item.domicilio}</div>
+                <div className="tm-card-estado">Estado: {item.estado}</div>
+                <div className="tm-card-acciones mt-2">
+                  <ActionIcons
+                    onAdd={() => item.fecha_baja && handleReactivar(item)}
+                    onEdit={undefined}
+                    onDelete={() => !item.fecha_baja && handleEliminar(item)}
+                    onView={() => handleVerDetalle(item)}
+                    onSchedule={() => handleAgenda(item.id)}
+                    showAdd={true}
+                    showEdit={false}
+                    showDelete={true}
+                    showView={true}
+                    showSchedule={true}
+                    disabledAdd={!item.fecha_baja}
+                    disabledEdit={false}
+                    disabledDelete={!!item.fecha_baja}
+                    disabledView={false}
+                    disabledSchedule={false}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            )}
           />
           
           {relacionesFiltradas.length > 0 && (
@@ -699,6 +735,7 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedRelacion && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -717,6 +754,7 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -730,6 +768,7 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
+      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
