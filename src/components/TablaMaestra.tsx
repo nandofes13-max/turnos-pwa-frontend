@@ -14,10 +14,11 @@ interface TablaMaestraProps {
   onEdit?: (item: any) => void;
   onDelete?: (item: any) => void;
   onView?: (item: any) => void;
-  onSchedule?: (item: any) => void;  // 👈 NUEVO: para agenda
+  onSchedule?: (item: any) => void;
   esInactivo?: (item: any) => boolean;
   tamañoIconos?: 'md' | 'lg';
   avatar?: (item: any) => React.ReactNode;
+  showSchedule?: boolean;  // 👈 NUEVA PROP EXPLÍCITA
 }
 
 export default function TablaMaestra({
@@ -27,11 +28,15 @@ export default function TablaMaestra({
   onEdit,
   onDelete,
   onView,
-  onSchedule,  // 👈 NUEVO
+  onSchedule,
   esInactivo,
   tamañoIconos = 'md',
-  avatar
+  avatar,
+  showSchedule  // 👈 RECIBIR LA PROP
 }: TablaMaestraProps) {
+  // Determinar si mostrar el ícono de agenda
+  const mostrarSchedule = showSchedule !== undefined ? showSchedule : !!onSchedule;
+
   return (
     <div className="tm-tabla-centrado">
       <table className="tm-tabla">
@@ -61,17 +66,17 @@ export default function TablaMaestra({
                   onEdit={() => onEdit?.(item)}
                   onDelete={() => onDelete?.(item)}
                   onView={() => onView?.(item)}
-                  onSchedule={() => onSchedule?.(item)}  // 👈 NUEVO
+                  onSchedule={() => onSchedule?.(item)}
                   showAdd={!!onAdd}
                   showEdit={!!onEdit}
                   showDelete={!!onDelete}
                   showView={!!onView}
-                  showSchedule={!!onSchedule}  // 👈 NUEVO
+                  showSchedule={mostrarSchedule}  // 👈 USAR LA VARIABLE
                   disabledAdd={!esInactivo?.(item)}
                   disabledEdit={esInactivo?.(item)}
                   disabledDelete={esInactivo?.(item)}
                   disabledView={false}
-                  disabledSchedule={false}  // 👈 NUEVO
+                  disabledSchedule={false}
                   size={tamañoIconos}
                 />
               </td>
