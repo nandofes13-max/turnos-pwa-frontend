@@ -6,17 +6,17 @@ interface ActionIconsProps {
   onAdd?:    () => void;
   onEdit?:   () => void;
   onDelete?: () => void;
-  onSchedule?: () => void;  // 👈 NUEVO: para agenda
+  onSchedule?: () => void;
 
   showAdd?:    boolean;
   showEdit?:   boolean;
   showDelete?: boolean;
-  showSchedule?: boolean;  // 👈 NUEVO
+  showSchedule?: boolean;
 
   disabledAdd?:    boolean;
   disabledEdit?:   boolean;
   disabledDelete?: boolean;
-  disabledSchedule?: boolean;  // 👈 NUEVO
+  disabledSchedule?: boolean;
 
   size?: 'sm' | 'md' | 'lg';
 }
@@ -25,15 +25,15 @@ export default function ActionIcons({
   onAdd,
   onEdit,
   onDelete,
-  onSchedule,  // 👈 NUEVO
+  onSchedule,
   showAdd    = true,
   showEdit   = true,
   showDelete = true,
-  showSchedule = true,  // 👈 NUEVO (por defecto visible)
+  showSchedule = false,  // 👈 CAMBIADO: ahora false por defecto
   disabledAdd    = false,
   disabledEdit   = false,
   disabledDelete = false,
-  disabledSchedule = false,  // 👈 NUEVO
+  disabledSchedule = false,
   size = 'md',
 }: ActionIconsProps) {
 
@@ -49,7 +49,7 @@ export default function ActionIcons({
   return (
     <div className="tm-acciones">
 
-      {/* AGENDA / CALENDARIO - NUEVO */}
+      {/* AGENDA / CALENDARIO */}
       {showSchedule && (
         <button
           className={`tm-accion-btn tm-accion-agenda`}
