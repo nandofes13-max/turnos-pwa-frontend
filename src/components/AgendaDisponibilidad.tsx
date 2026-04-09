@@ -28,6 +28,18 @@ interface BloqueHorario {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+const DIAS_TOOLTIP = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+// Generar opciones de hora según duración
+const generarOpcionesHora = (duracion: number): string[] => {
+  const opciones: string[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += duracion) {
+      opciones.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+    }
+  }
+  return opciones;
+};
 
 export default function AgendaDisponibilidad() {
   const { profesionalCentroId } = useParams<{ profesionalCentroId: string }>();
@@ -47,9 +59,21 @@ export default function AgendaDisponibilidad() {
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [nuevaFechaHasta, setNuevaFechaHasta] = useState('');
   
-  const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
+  // Bloqueo de fechas
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
+  const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
+  
+  // Opciones de hora según duración
+  const [opcionesHora, setOpcionesHora] = useState<string[]>(generarOpcionesHora(30));
+
+  // Actualizar opciones de hora cuando cambia la duración
+  useEffect(() => {
+    const duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
+    if (duracion && duracion > 0) {
+      setOpcionesHora(generarOpcionesHora(duracion));
+    }
+  }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
 
   useEffect(() => {
     if (profesionalCentroId) {
@@ -170,6 +194,8 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
+  const hoy = new Date().toISOString().split('T')[0];
+
   const agregarFechaBloqueada = () => {
     if (rangoBloqueoInicio) {
       const nuevasFechas = [...fechasBloqueadas];
@@ -272,10 +298,10 @@ export default function AgendaDisponibilidad() {
       <div className="agenda-header">
         <h1 className="tm-titulo">Configuración de Agenda</h1>
         <div className="agenda-info">
-          <p><strong>Negocio:</strong> {relacion?.centro.negocio.nombre} ({relacion?.centro.negocio.url})</p>
-          <p><strong>Centro:</strong> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}</p>
-          <p><strong>Especialidad:</strong> {relacion?.especialidad.nombre}</p>
-          <p><strong>Profesional:</strong> {relacion?.profesional.nombre} (DNI: {relacion?.profesional.documento})</p>
+          <p className="agenda-info-item"><span className="agenda-info-label">Negocio:</span> {relacion?.centro.negocio.nombre} ({relacion?.centro.negocio.url})</p>
+          <p className="agenda-info-item"><span className="agenda-info-label">Centro:</span> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}</p>
+          <p className="agenda-info-item"><span className="agenda-info-label">Especialidad:</span> {relacion?.especialidad.nombre}</p>
+          <p className="agenda-info-item"><span className="agenda-info-label">Profesional:</span> {relacion?.profesional.nombre} (DNI: {relacion?.profesional.documento})</p>
         </div>
       </div>
 
@@ -316,11 +342,19 @@ export default function AgendaDisponibilidad() {
           </div>
           <div className="agenda-form-field">
             <label className="agenda-form-label">Desde</label>
-            <input type="time" value={nuevoDesde} onChange={(e) => setNuevoDesde(e.target.value)} className="agenda-form-input" />
+            <select value={nuevoDesde} onChange={(e) => setNuevoDesde(e.target.value)} className="agenda-form-input">
+              {opcionesHora.map(hora => (
+                <option key={hora} value={hora}>{hora}</option>
+              ))}
+            </select>
           </div>
           <div className="agenda-form-field">
             <label className="agenda-form-label">Hasta</label>
-            <input type="time" value={nuevoHasta} onChange={(e) => setNuevoHasta(e.target.value)} className="agenda-form-input" />
+            <select value={nuevoHasta} onChange={(e) => setNuevoHasta(e.target.value)} className="agenda-form-input">
+              {opcionesHora.map(hora => (
+                <option key={hora} value={hora}>{hora}</option>
+              ))}
+            </select>
           </div>
           <div className="agenda-form-field">
             <label className="agenda-form-label">Vigencia Desde</label>
@@ -330,40 +364,52 @@ export default function AgendaDisponibilidad() {
             <label className="agenda-form-label">Vigencia Hasta</label>
             <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} className="agenda-form-input" />
           </div>
-          <div>
-            <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
-          </div>
         </div>
-      </div>
-
-      {/* Bloqueo de fechas */}
-      <div className="agenda-form-section">
-        <h3 className="agenda-form-title">Bloquear Fechas</h3>
-        <div className="agenda-form-row">
-          <div className="agenda-form-field">
-            <label className="agenda-form-label">Desde</label>
-            <input type="date" value={rangoBloqueoInicio} onChange={(e) => setRangoBloqueoInicio(e.target.value)} className="agenda-form-input" />
-          </div>
-          <div className="agenda-form-field">
-            <label className="agenda-form-label">Hasta</label>
-            <input type="date" value={rangoBloqueoFin} onChange={(e) => setRangoBloqueoFin(e.target.value)} className="agenda-form-input" />
-          </div>
-          <div>
-            <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
-          </div>
-        </div>
-        {fechasBloqueadas.length > 0 && (
-          <div className="agenda-fechas-bloqueadas">
-            <strong>Fechas bloqueadas:</strong>
-            <div className="agenda-fechas-lista">
-              {fechasBloqueadas.map(fecha => (
-                <span key={fecha} onClick={() => eliminarFechaBloqueada(fecha)} className="agenda-fecha-item">
-                  {fecha} ✖
-                </span>
-              ))}
+        
+        {/* Bloquear Fechas dentro de la misma sección */}
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
+          <div className="agenda-form-row">
+            <div className="agenda-form-field">
+              <label className="agenda-form-label">Bloquear Desde</label>
+              <input 
+                type="date" 
+                value={rangoBloqueoInicio} 
+                min={hoy}
+                onChange={(e) => setRangoBloqueoInicio(e.target.value)} 
+                className="agenda-form-input" 
+              />
+            </div>
+            <div className="agenda-form-field">
+              <label className="agenda-form-label">Bloquear Hasta</label>
+              <input 
+                type="date" 
+                value={rangoBloqueoFin} 
+                min={rangoBloqueoInicio || hoy}
+                onChange={(e) => setRangoBloqueoFin(e.target.value)} 
+                className="agenda-form-input" 
+              />
+            </div>
+            <div>
+              <button onClick={agregarFechaBloqueada} className="tm-btn-secundario">Bloquear</button>
             </div>
           </div>
-        )}
+          {fechasBloqueadas.length > 0 && (
+            <div className="agenda-fechas-bloqueadas">
+              <strong>Fechas bloqueadas:</strong>
+              <div className="agenda-fechas-lista">
+                {fechasBloqueadas.map(fecha => (
+                  <span key={fecha} onClick={() => eliminarFechaBloqueada(fecha)} className="agenda-fecha-item">
+                    {fecha} ✖
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+        </div>
       </div>
 
       {/* Lista de bloques configurados */}
@@ -383,7 +429,8 @@ export default function AgendaDisponibilidad() {
               <div key={diaIdx} className="agenda-dia-columna">
                 <button
                   onClick={() => toggleDia(idx, diaIdx)}
-                  className={`agenda-dia-boton ${bloque.diaSemana === diaIdx ? 'activo' : 'inactivo'}`}
+                  className={`agenda-dia-boton ${bloque.diaSemana === diaIdx ? 'habilitado' : 'deshabilitado'}`}
+                  data-tooltip={bloque.diaSemana === diaIdx ? `Deshabilitar ${DIAS_TOOLTIP[diaIdx]}` : `Habilitar ${DIAS_TOOLTIP[diaIdx]}`}
                 >
                   {dia}
                   <div className="agenda-dia-icono">
