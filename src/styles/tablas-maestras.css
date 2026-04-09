@@ -882,3 +882,24 @@
     max-height: 90vh;
   }
 }
+/* =============================================
+   CONTENEDOR RESPONSIVE PARA TABLA MAESTRA
+   ============================================= */
+
+/* Wrapper con scroll horizontal para la tabla */
+.tm-tabla-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Ajuste para que la tabla no se aplaste en móvil */
+@media (max-width: 768px) {
+  .tm-tabla-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tm-tabla {
+    min-width: 600px;
+  }
+}
