@@ -522,7 +522,7 @@ export default function AgendaDisponibilidad() {
       <div className="agenda-form-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario</h3>
-          <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button onClick={() => navigate('/profesional-centro')} className="tm-btn-agregar" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 14L4 9l5-5"/>
               <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
