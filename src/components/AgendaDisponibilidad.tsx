@@ -87,6 +87,7 @@ export default function AgendaDisponibilidad() {
   const [tieneCambios, setTieneCambios] = useState(false);
   const [showFechasModal, setShowFechasModal] = useState(false);
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const [nuevoDesde, setNuevoDesde] = useState('08:00');
   const [nuevoHasta, setNuevoHasta] = useState('12:00');
@@ -235,14 +236,53 @@ export default function AgendaDisponibilidad() {
     return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
   };
 
-  const agregarBloque = () => {
-    const duracionFinal = obtenerDuracionFinal();
-    if (!nuevoDesde || !nuevoHasta || !duracionFinal || nuevoDesde >= nuevoHasta) {
-      alert('Complete los campos del bloque correctamente');
-      return;
+  const validarHorario = () => {
+    if (!nuevoDesde || !nuevoHasta) {
+      alert('Complete los horarios');
+      return false;
+    }
+    if (nuevoDesde >= nuevoHasta) {
+      alert('La hora "Desde" debe ser menor a la hora "Hasta"');
+      return false;
     }
     
+    const duracionFinal = obtenerDuracionFinal();
+    if (!duracionFinal || duracionFinal <= 0) {
+      alert('La duración del turno debe ser mayor a 0');
+      return false;
+    }
+    
+    // Validar que haya al menos un turno en el rango
+    const [desdeH, desdeM] = nuevoDesde.split(':').map(Number);
+    const [hastaH, hastaM] = nuevoHasta.split(':').map(Number);
+    const minutosTotales = (hastaH * 60 + hastaM) - (desdeH * 60 + desdeM);
+    if (minutosTotales < duracionFinal) {
+      alert(`El rango horario es menor a la duración del turno (${duracionFinal} min)`);
+      return false;
+    }
+    
+    return true;
+  };
+
+  const agregarBloque = () => {
+    if (!validarHorario()) return;
+    
+    const duracionFinal = obtenerDuracionFinal();
     const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
+    
+    // Verificar si ya existe un bloque con los mismos datos (para evitar duplicados antes de guardar)
+    const yaExiste = bloques.some(bloque => 
+      bloque.horaDesde === nuevoDesde && 
+      bloque.horaHasta === nuevoHasta && 
+      bloque.duracionTurno === duracionFinal &&
+      bloque.fechaDesde === nuevaFechaDesde &&
+      bloque.fechaHasta === (nuevaFechaHasta || null)
+    );
+    
+    if (yaExiste) {
+      alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
+      return;
+    }
     
     const nuevoBloque: BloqueHorario = {
       diasHabilitados: [],
@@ -266,6 +306,7 @@ export default function AgendaDisponibilidad() {
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
+    setErrorMessage(null);
   };
 
   const toggleActivarBloque = async (index: number) => {
@@ -274,7 +315,7 @@ export default function AgendaDisponibilidad() {
     
     try {
       const newFechaBaja = bloque.fecha_baja ? null : new Date().toISOString();
-      await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
+      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -283,14 +324,19 @@ export default function AgendaDisponibilidad() {
         })
       });
       
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al cambiar estado');
+      }
+      
       const nuevosBloques = [...bloques];
       nuevosBloques[index].fecha_baja = newFechaBaja;
       setBloques(nuevosBloques);
       setTieneCambios(true);
       alert(bloque.fecha_baja ? 'Bloque reactivado' : 'Bloque desactivado');
-    } catch (err) {
-      console.error('Error al cambiar estado del bloque:', err);
-      alert('Error al cambiar estado del bloque');
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al cambiar estado del bloque');
     }
   };
 
@@ -376,8 +422,25 @@ export default function AgendaDisponibilidad() {
   const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
+    // Verificar que no haya bloques sin días habilitados
+    const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
+    if (bloquesSinDias.length > 0) {
+      alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
+      return;
+    }
+    
     setGuardando(true);
+    setErrorMessage(null);
+    
     try {
+      // Primero, eliminar todas las agendas existentes
+      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const existentes = await resExistentes.json();
+      for (const agenda of existentes) {
+        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
+      }
+      
+      // Luego, crear nuevas agendas para cada bloque y día
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
           let diaSemana;
@@ -398,28 +461,23 @@ export default function AgendaDisponibilidad() {
             fechaHasta: bloque.fechaHasta
           };
           
-          let response;
-          if (bloque.id) {
-            response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-          } else {
-            response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
+          const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Error al guardar la agenda');
           }
           
           const agendaGuardada = await response.json();
-          const agendaId = agendaGuardada.id || bloque.id;
           
           const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-          if (horariosDeshabilitadosDia.length > 0 && agendaId) {
+          if (horariosDeshabilitadosDia.length > 0) {
             await sincronizarExcepciones(
-              agendaId,
+              agendaGuardada.id,
               horariosDeshabilitadosDia,
               bloque.fechaDesde,
               bloque.fechaHasta,
@@ -434,9 +492,9 @@ export default function AgendaDisponibilidad() {
       alert('Agenda guardada correctamente');
       setTieneCambios(false);
       cargarDatos();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      alert('Error al guardar la agenda');
+      alert(err.message || 'Error al guardar la agenda');
     } finally {
       setGuardando(false);
     }
@@ -476,21 +534,13 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Botón Volver arriba a la izquierda */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 14L4 9l5-5"/>
-            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-          </svg>
-          Profesional-Centro
-        </button>
-        <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
-      </div>
-
       {/* Formulario para agregar bloque */}
       <div className="agenda-form-section">
-        <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario</h3>
+          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+        </div>
+        
         <div className="agenda-form-row">
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
@@ -586,6 +636,17 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
+      {/* Botón Volver */}
+      <div style={{ marginBottom: '16px' }}>
+        <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 14L4 9l5-5"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+          </svg>
+          Profesional-Centro
+        </button>
+      </div>
+
       {/* Bloques configurados */}
       {bloques.map((bloque, idx) => {
         const estaActivo = !bloque.fecha_baja;
@@ -594,15 +655,13 @@ export default function AgendaDisponibilidad() {
         return (
           <div key={idx} className="agenda-bloque">
             <div className="agenda-bloque-header">
-              <div>
-                <div className="agenda-bloque-info">
-                  <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
-                  <strong> Duración:</strong> {bloque.duracionTurno} min | 
-                  <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
-                </div>
-                <div className="agenda-bloque-info" style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+              <div className="agenda-bloque-info">
+                <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
+                <strong> Duración:</strong> {bloque.duracionTurno} min | 
+                <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
+                <span style={{ marginLeft: '16px', fontSize: '12px', color: '#666' }}>
                   NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})-BL({bloque.id || 'nuevo'})
-                </div>
+                </span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button 
