@@ -25,6 +25,7 @@ interface BloqueHorario {
   fechaHasta: string | null;
   horarios: string[];
   horariosDeshabilitados: { [diaIdx: number]: number[] };
+  fecha_baja?: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -42,8 +43,6 @@ const generarOpcionesHora = (duracion: number): string[] => {
 
 const generarHorarios = (desde: string, hasta: string, duracion: number): string[] => {
   const horarios: string[] = [];
-  
-  // Normalizar: eliminar segundos si existen
   const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
   let actual = normalizar(desde);
   const horaFin = normalizar(hasta);
@@ -71,8 +70,6 @@ const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, horaHast
     minutos = minutos % 60;
   }
   const horaCalculada = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-  
-  // Validar que la hora calculada sea menor que horaHasta
   if (horaCalculada >= horaHasta) {
     return null;
   }
@@ -89,6 +86,7 @@ export default function AgendaDisponibilidad() {
   const [guardando, setGuardando] = useState(false);
   const [tieneCambios, setTieneCambios] = useState(false);
   const [showFechasModal, setShowFechasModal] = useState(false);
+  const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   
   const [nuevoDesde, setNuevoDesde] = useState('08:00');
   const [nuevoHasta, setNuevoHasta] = useState('12:00');
@@ -125,14 +123,12 @@ export default function AgendaDisponibilidad() {
     horaHasta: string,
     duracionTurno: number
   ) => {
-    // Primero, eliminar excepciones existentes para esta agenda
     const resExistentes = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${agendaId}`);
     const existentes = await resExistentes.json();
     for (const excepcion of existentes) {
       await fetch(`${API_BASE_URL}/agenda-excepciones/${excepcion.id}`, { method: 'DELETE' });
     }
     
-    // Generar la lista de fechas dentro del rango
     const fechas: string[] = [];
     let fechaActual = new Date(fechaDesde);
     const fechaFin = fechaHasta ? new Date(fechaHasta) : new Date(fechaDesde);
@@ -142,7 +138,6 @@ export default function AgendaDisponibilidad() {
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
-    // Para cada horario deshabilitado, crear una excepción para cada fecha en el rango
     for (const horarioIdx of horariosDeshabilitados) {
       const hora = calcularHoraDesdeIndice(horarioIdx, horaDesde, horaHasta, duracionTurno);
       if (hora) {
@@ -172,7 +167,6 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // Cargar excepciones para cada agenda
       const excepcionesPorAgenda: { [key: number]: { fecha: string; hora: string }[] } = {};
       for (const ag of dataAgendas) {
         const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
@@ -180,13 +174,11 @@ export default function AgendaDisponibilidad() {
         excepcionesPorAgenda[ag.id] = excepciones;
       }
       
-      // Agrupar por bloque (misma horaDesde, horaHasta, duracionTurno, fechas)
       const grupos: { [key: string]: any } = {};
       
       for (const ag of dataAgendas) {
         const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
         
-        // Convertir día de BD a índice frontend
         let diaIdx = ag.diaSemana;
         if (diaIdx === 0) {
           diaIdx = 6;
@@ -204,7 +196,8 @@ export default function AgendaDisponibilidad() {
             fechaHasta: ag.fechaHasta,
             horarios: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno),
             horariosDeshabilitados: {},
-            diasHabilitados: []
+            diasHabilitados: [],
+            fecha_baja: ag.fecha_baja
           };
         }
         
@@ -212,14 +205,11 @@ export default function AgendaDisponibilidad() {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
         
-        // Asignar excepciones para este día específico
         const excepciones = excepcionesPorAgenda[ag.id] || [];
         const horariosDeshabilitadosSet = new Set<number>();
         
         for (const excepcion of excepciones) {
-          // Normalizar la hora de la excepción (sin segundos)
           const horaExcepcion = excepcion.hora.split(':').slice(0, 2).join(':');
-          // Buscar el índice del horario que coincide con la hora de la excepción
           const horarioIndex = grupos[clave].horarios.findIndex((h: string) => h === horaExcepcion);
           if (horarioIndex !== -1) {
             horariosDeshabilitadosSet.add(horarioIndex);
@@ -232,7 +222,6 @@ export default function AgendaDisponibilidad() {
       }
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
-      console.log('Bloques cargados:', bloquesCargados);
       setBloques(bloquesCargados);
       
     } catch (err) {
@@ -263,7 +252,8 @@ export default function AgendaDisponibilidad() {
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
       horarios: horarios,
-      horariosDeshabilitados: {}
+      horariosDeshabilitados: {},
+      fecha_baja: null
     };
     
     setBloques([...bloques, nuevoBloque]);
@@ -276,6 +266,32 @@ export default function AgendaDisponibilidad() {
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
+  };
+
+  const toggleActivarBloque = async (index: number) => {
+    const bloque = bloques[index];
+    if (!bloque.id) return;
+    
+    try {
+      const newFechaBaja = bloque.fecha_baja ? null : new Date().toISOString();
+      await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fecha_baja: newFechaBaja,
+          usuario_baja: newFechaBaja ? 'demo' : null
+        })
+      });
+      
+      const nuevosBloques = [...bloques];
+      nuevosBloques[index].fecha_baja = newFechaBaja;
+      setBloques(nuevosBloques);
+      setTieneCambios(true);
+      alert(bloque.fecha_baja ? 'Bloque reactivado' : 'Bloque desactivado');
+    } catch (err) {
+      console.error('Error al cambiar estado del bloque:', err);
+      alert('Error al cambiar estado del bloque');
+    }
   };
 
   const eliminarBloque = (index: number) => {
@@ -318,6 +334,13 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
+  const toggleExpandirBloque = (index: number) => {
+    setBloquesExpandidos(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   const hoy = new Date().toISOString().split('T')[0];
 
   const agregarFechaBloqueada = () => {
@@ -353,31 +376,8 @@ export default function AgendaDisponibilidad() {
   const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
-    console.log('===== DIAGNÓSTICO DE AGENDA =====');
-    for (const bloque of bloques) {
-      console.log(`Bloque: ${bloque.horaDesde} a ${bloque.horaHasta}`);
-      console.log('diasHabilitados (índices frontend):', bloque.diasHabilitados);
-      console.log('horariosDeshabilitados:', bloque.horariosDeshabilitados);
-      
-      for (const diaIdx of bloque.diasHabilitados) {
-        let diaSemana;
-        if (diaIdx === 6) {
-          diaSemana = 0;
-        } else {
-          diaSemana = diaIdx + 1;
-        }
-        console.log(`  día ${diaIdx} (${DIAS_CORTO[diaIdx]}) → diaSemana ${diaSemana}`);
-      }
-    }
-    
     setGuardando(true);
     try {
-      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const existentes = await resExistentes.json();
-      for (const agenda of existentes) {
-        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
-      }
-      
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
           let diaSemana;
@@ -398,21 +398,28 @@ export default function AgendaDisponibilidad() {
             fechaHasta: bloque.fechaHasta
           };
           
-          console.log('Enviando payload:', payload);
-          
-          const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
+          let response;
+          if (bloque.id) {
+            response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          }
           
           const agendaGuardada = await response.json();
+          const agendaId = agendaGuardada.id || bloque.id;
           
-          // Sincronizar excepciones para esta agenda
           const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-          if (horariosDeshabilitadosDia.length > 0) {
+          if (horariosDeshabilitadosDia.length > 0 && agendaId) {
             await sincronizarExcepciones(
-              agendaGuardada.id,
+              agendaId,
               horariosDeshabilitadosDia,
               bloque.fechaDesde,
               bloque.fechaHasta,
@@ -469,12 +476,21 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Formulario */}
+      {/* Botón Volver arriba a la izquierda */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 14L4 9l5-5"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+          </svg>
+          Profesional-Centro
+        </button>
+        <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+      </div>
+
+      {/* Formulario para agregar bloque */}
       <div className="agenda-form-section">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <h3 className="agenda-form-title" style={{ marginBottom: 0, display: 'inline-block', width: 'auto' }}>Agregar Bloque Horario - Bloquear Fechas</h3>
-          <button onClick={agregarBloque} className="tm-btn-agregar" style={{ padding: '6px 12px', fontSize: '13px' }}>+ Agregar Bloque</button>
-        </div>
+        <h3 className="agenda-form-title">Agregar Bloque Horario</h3>
         <div className="agenda-form-row">
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
@@ -571,62 +587,95 @@ export default function AgendaDisponibilidad() {
       </div>
 
       {/* Bloques configurados */}
-      {bloques.map((bloque, idx) => (
-        <div key={idx} className="agenda-bloque">
-          <div className="agenda-bloque-header">
-            <span className="agenda-bloque-info">
-              <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
-              <strong> Duración:</strong> {bloque.duracionTurno} min | 
-              <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
-            </span>
-            <button onClick={() => eliminarBloque(idx)} className="tm-btn-secundario" style={{ padding: '4px 12px' }}>Eliminar Bloque</button>
-          </div>
-          
-          <div className="agenda-grilla">
-            {DIAS_CORTO.map((dia, diaIdx) => {
-              const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
-              return (
-                <div key={diaIdx} className="agenda-dia-columna">
-                  <button
-                    onClick={() => toggleDia(idx, diaIdx)}
-                    className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
-                  >
-                    {dia}
-                    <div className="agenda-dia-icono">
-                      {estaHabilitado ? '✅' : '🔒'}
-                    </div>
-                  </button>
-                  
-                  {estaHabilitado && (
-                    <div className="agenda-horarios">
-                      {bloque.horarios.map((horario, horarioIdx) => {
-                        const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-                        const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
-                        return (
-                          <button
-                            key={horarioIdx}
-                            onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
-                            className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
-                          >
-                            {horario} {isDeshabilitado && '🔒'}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+      {bloques.map((bloque, idx) => {
+        const estaActivo = !bloque.fecha_baja;
+        const estaExpandido = bloquesExpandidos[idx];
+        
+        return (
+          <div key={idx} className="agenda-bloque">
+            <div className="agenda-bloque-header">
+              <div>
+                <div className="agenda-bloque-info">
+                  <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
+                  <strong> Duración:</strong> {bloque.duracionTurno} min | 
+                  <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
                 </div>
-              );
-            })}
+                <div className="agenda-bloque-info" style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})-BL({bloque.id || 'nuevo'})
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => toggleExpandirBloque(idx)} 
+                  className="tm-btn-secundario" 
+                  style={{ padding: '4px 12px' }}
+                >
+                  {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
+                </button>
+                <button 
+                  onClick={() => toggleActivarBloque(idx)} 
+                  className={estaActivo ? 'tm-btn-danger' : 'tm-btn-success'}
+                  style={{ padding: '4px 12px' }}
+                >
+                  {estaActivo ? 'Desactivar' : 'Activar'}
+                </button>
+              </div>
+            </div>
+            
+            {estaActivo && estaExpandido && (
+              <div className="agenda-grilla">
+                {DIAS_CORTO.map((dia, diaIdx) => {
+                  const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+                  return (
+                    <div key={diaIdx} className="agenda-dia-columna">
+                      <button
+                        onClick={() => toggleDia(idx, diaIdx)}
+                        className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+                      >
+                        {dia}
+                        <div className="agenda-dia-icono">
+                          {estaHabilitado ? '✅' : '🔒'}
+                        </div>
+                      </button>
+                      
+                      {estaHabilitado && (
+                        <div className="agenda-horarios">
+                          {bloque.horarios.map((horario, horarioIdx) => {
+                            const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+                            const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
+                            return (
+                              <button
+                                key={horarioIdx}
+                                onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                                className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                              >
+                                {horario} {isDeshabilitado && '🔒'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {!estaActivo && (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                Bloque inactivo. Presione "Activar" para habilitarlo.
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Botones de acción */}
       <div className="agenda-acciones">
-        <button onClick={handleClose} className="tm-btn-secundario">Cancelar</button>
         <button onClick={guardarAgenda} className="tm-btn-primario" disabled={guardando}>
           {guardando ? 'Guardando...' : 'Guardar Agenda'}
         </button>
+        <button onClick={handleClose} className="tm-btn-secundario">Cancelar</button>
       </div>
 
       {/* Modal de fechas bloqueadas */}
