@@ -338,15 +338,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  const eliminarBloque = (index: number) => {
-    if (window.confirm('¿Eliminar este bloque horario?')) {
-      const nuevosBloques = [...bloques];
-      nuevosBloques.splice(index, 1);
-      setBloques(nuevosBloques);
-      setTieneCambios(true);
-    }
-  };
-
   const toggleDia = (bloqueIndex: number, diaIdx: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
@@ -518,7 +509,6 @@ export default function AgendaDisponibilidad() {
 
   return (
     <div className="tm-page">
-      {/* Encabezado */}
       <div className="agenda-header">
         <h1 className="tm-titulo">Configuración de Agenda</h1>
         <div className="agenda-info">
@@ -529,19 +519,17 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Formulario para agregar bloque - CON BOTONES DENTRO */}
       <div className="agenda-form-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
-  <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario</h3>
-  <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 14L4 9l5-5"/>
-      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-    </svg>
-    Profesional-Centro
-  </button>
-  <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
-</div>
+          <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario</h3>
+          <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 14L4 9l5-5"/>
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+            </svg>
+            Profesional-Centro
+          </button>
+          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
         </div>
         
         <div className="agenda-form-row">
@@ -639,7 +627,6 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Bloques configurados */}
       {bloques.map((bloque, idx) => {
         const estaActivo = !bloque.fecha_baja;
         const estaExpandido = bloquesExpandidos[idx];
@@ -723,7 +710,6 @@ export default function AgendaDisponibilidad() {
         );
       })}
 
-      {/* Botones de acción */}
       <div className="agenda-acciones">
         <button onClick={guardarAgenda} className="tm-btn-primario" disabled={guardando}>
           {guardando ? 'Guardando...' : 'Guardar Agenda'}
@@ -731,7 +717,6 @@ export default function AgendaDisponibilidad() {
         <button onClick={handleClose} className="tm-btn-secundario">Cancelar</button>
       </div>
 
-      {/* Modal de fechas bloqueadas */}
       {showFechasModal && (
         <div className="agenda-modal-overlay" onClick={() => setShowFechasModal(false)}>
           <div className="agenda-modal" onClick={(e) => e.stopPropagation()}>
