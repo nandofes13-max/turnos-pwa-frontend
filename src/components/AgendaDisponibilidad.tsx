@@ -57,6 +57,17 @@ const generarHorarios = (desde: string, hasta: string, duracion: number): string
   return horarios;
 };
 
+const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
+  const [h, m] = horaDesde.split(':').map(Number);
+  let minutos = m + (horarioIdx * duracionTurno);
+  let horas = h;
+  if (minutos >= 60) {
+    horas += Math.floor(minutos / 60);
+    minutos = minutos % 60;
+  }
+  return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+};
+
 export default function AgendaDisponibilidad() {
   const { profesionalCentroId } = useParams<{ profesionalCentroId: string }>();
   const navigate = useNavigate();
@@ -94,58 +105,127 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
-  const cargarDatos = async () => {
-  setLoading(true);
-  try {
-    const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
-    const dataRelacion = await resRelacion.json();
-    setRelacion(dataRelacion);
-    
-    const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-    const dataAgendas = await resAgendas.json();
-    
-    // Agrupar por bloque (misma horaDesde, horaHasta, duracionTurno, fechas)
-    const grupos: { [key: string]: any } = {};
-    
-    for (const ag of dataAgendas) {
-      const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
-      
-      if (!grupos[clave]) {
-        grupos[clave] = {
-          id: ag.id,
-          horaDesde: ag.horaDesde,
-          horaHasta: ag.horaHasta,
-          duracionTurno: ag.duracionTurno,
-          fechaDesde: ag.fechaDesde,
-          fechaHasta: ag.fechaHasta,
-          horarios: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno),
-          horariosDeshabilitados: {},
-          diasHabilitados: []
-        };
-      }
-      
-      // Convertir día de BD a índice frontend
-      let diaIdx = ag.diaSemana;
-      if (diaIdx === 0) {
-        diaIdx = 6;
-      } else {
-        diaIdx = diaIdx - 1;
-      }
-      
-      if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
-        grupos[clave].diasHabilitados.push(diaIdx);
-      }
+  const sincronizarExcepciones = async (
+    agendaId: number, 
+    horariosDeshabilitados: number[], 
+    fechaDesde: string, 
+    fechaHasta: string | null, 
+    horaDesde: string, 
+    duracionTurno: number
+  ) => {
+    // Primero, eliminar excepciones existentes para esta agenda
+    const resExistentes = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${agendaId}`);
+    const existentes = await resExistentes.json();
+    for (const excepcion of existentes) {
+      await fetch(`${API_BASE_URL}/agenda-excepciones/${excepcion.id}`, { method: 'DELETE' });
     }
     
-    const bloquesCargados: BloqueHorario[] = Object.values(grupos);
-    setBloques(bloquesCargados);
+    // Generar la lista de fechas dentro del rango
+    const fechas: string[] = [];
+    let fechaActual = new Date(fechaDesde);
+    const fechaFin = fechaHasta ? new Date(fechaHasta) : new Date(fechaDesde);
     
-  } catch (err) {
-    console.error('Error cargando datos:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+    while (fechaActual <= fechaFin) {
+      fechas.push(fechaActual.toISOString().split('T')[0]);
+      fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+    
+    // Para cada horario deshabilitado, crear una excepción para cada fecha en el rango
+    for (const horarioIdx of horariosDeshabilitados) {
+      const hora = calcularHoraDesdeIndice(horarioIdx, horaDesde, duracionTurno);
+      
+      for (const fecha of fechas) {
+        await fetch(`${API_BASE_URL}/agenda-excepciones`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agendaDisponibilidadId: agendaId,
+            fecha: fecha,
+            hora: hora,
+            tipo: 'deshabilitado'
+          })
+        });
+      }
+    }
+  };
+
+  const cargarDatos = async () => {
+    setLoading(true);
+    try {
+      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
+      const dataRelacion = await resRelacion.json();
+      setRelacion(dataRelacion);
+      
+      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const dataAgendas = await resAgendas.json();
+      
+      // Cargar excepciones para cada agenda
+      const excepcionesPorAgenda: { [key: number]: { fecha: string; hora: string }[] } = {};
+      for (const ag of dataAgendas) {
+        const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
+        const excepciones = await resExcepciones.json();
+        excepcionesPorAgenda[ag.id] = excepciones;
+      }
+      
+      // Agrupar por bloque
+      const grupos: { [key: string]: any } = {};
+      
+      for (const ag of dataAgendas) {
+        const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
+        
+        if (!grupos[clave]) {
+          grupos[clave] = {
+            id: ag.id,
+            horaDesde: ag.horaDesde,
+            horaHasta: ag.horaHasta,
+            duracionTurno: ag.duracionTurno,
+            fechaDesde: ag.fechaDesde,
+            fechaHasta: ag.fechaHasta,
+            horarios: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno),
+            horariosDeshabilitados: {},
+            diasHabilitados: []
+          };
+        }
+        
+        // Convertir día de BD a índice frontend
+        let diaIdx = ag.diaSemana;
+        if (diaIdx === 0) {
+          diaIdx = 6;
+        } else {
+          diaIdx = diaIdx - 1;
+        }
+        
+        if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
+          grupos[clave].diasHabilitados.push(diaIdx);
+        }
+        
+        // Cargar horarios deshabilitados desde excepciones
+        const excepciones = excepcionesPorAgenda[ag.id] || [];
+        const horariosDeshabilitadosSet = new Set<number>();
+        
+        for (const excepcion of excepciones) {
+          // Buscar el índice del horario que coincide con la hora de la excepción
+          const horarioIndex = grupos[clave].horarios.findIndex((h: string) => h === excepcion.hora);
+          if (horarioIndex !== -1) {
+            horariosDeshabilitadosSet.add(horarioIndex);
+          }
+        }
+        
+        if (horariosDeshabilitadosSet.size > 0) {
+          grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
+        }
+      }
+      
+      const bloquesCargados: BloqueHorario[] = Object.values(grupos);
+      setBloques(bloquesCargados);
+      
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const obtenerDuracionFinal = () => {
     return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
   };
@@ -261,6 +341,7 @@ export default function AgendaDisponibilidad() {
     for (const bloque of bloques) {
       console.log(`Bloque: ${bloque.horaDesde} a ${bloque.horaHasta}`);
       console.log('diasHabilitados (índices frontend):', bloque.diasHabilitados);
+      console.log('horariosDeshabilitados:', bloque.horariosDeshabilitados);
       
       for (const diaIdx of bloque.diasHabilitados) {
         let diaSemana;
@@ -303,11 +384,26 @@ export default function AgendaDisponibilidad() {
           
           console.log('Enviando payload:', payload);
           
-          await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+          const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
+          
+          const agendaGuardada = await response.json();
+          
+          // Sincronizar excepciones para esta agenda (horarios deshabilitados para este día específico)
+          const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+          if (horariosDeshabilitadosDia.length > 0) {
+            await sincronizarExcepciones(
+              agendaGuardada.id,
+              horariosDeshabilitadosDia,
+              bloque.fechaDesde,
+              bloque.fechaHasta,
+              bloque.horaDesde,
+              bloque.duracionTurno
+            );
+          }
         }
       }
       
