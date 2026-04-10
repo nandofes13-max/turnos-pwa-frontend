@@ -104,29 +104,40 @@ export default function AgendaDisponibilidad() {
     const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
     const dataAgendas = await resAgendas.json();
     
-    const bloquesCargados: BloqueHorario[] = dataAgendas.map((ag: any) => {
-      const horarios = generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
+    // Agrupar por bloque (misma horaDesde, horaHasta, duracionTurno, fechas)
+    const grupos: { [key: string]: any } = {};
+    
+    for (const ag of dataAgendas) {
+      const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
       
-      // ✅ CONVERSIÓN: diaSemana de BD a índice frontend
-      let diaIdx = ag.diaSemana;
-      if (diaIdx === 0) {
-        diaIdx = 6; // Domingo (BD) → Domingo (frontend)
-      } else {
-        diaIdx = diaIdx - 1; // Lunes a Sábado
+      if (!grupos[clave]) {
+        grupos[clave] = {
+          id: ag.id,
+          horaDesde: ag.horaDesde,
+          horaHasta: ag.horaHasta,
+          duracionTurno: ag.duracionTurno,
+          fechaDesde: ag.fechaDesde,
+          fechaHasta: ag.fechaHasta,
+          horarios: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno),
+          horariosDeshabilitados: {},
+          diasHabilitados: []
+        };
       }
       
-      return {
-        id: ag.id,
-        diasHabilitados: [diaIdx],
-        horaDesde: ag.horaDesde,
-        horaHasta: ag.horaHasta,
-        duracionTurno: ag.duracionTurno,
-        fechaDesde: ag.fechaDesde,
-        fechaHasta: ag.fechaHasta,
-        horarios: horarios,
-        horariosDeshabilitados: {}
-      };
-    });
+      // Convertir día de BD a índice frontend
+      let diaIdx = ag.diaSemana;
+      if (diaIdx === 0) {
+        diaIdx = 6;
+      } else {
+        diaIdx = diaIdx - 1;
+      }
+      
+      if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
+        grupos[clave].diasHabilitados.push(diaIdx);
+      }
+    }
+    
+    const bloquesCargados: BloqueHorario[] = Object.values(grupos);
     setBloques(bloquesCargados);
     
   } catch (err) {
@@ -135,7 +146,6 @@ export default function AgendaDisponibilidad() {
     setLoading(false);
   }
 };
-
   const obtenerDuracionFinal = () => {
     return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
   };
