@@ -252,7 +252,6 @@ export default function AgendaDisponibilidad() {
       return false;
     }
     
-    // Validar que haya al menos un turno en el rango
     const [desdeH, desdeM] = nuevoDesde.split(':').map(Number);
     const [hastaH, hastaM] = nuevoHasta.split(':').map(Number);
     const minutosTotales = (hastaH * 60 + hastaM) - (desdeH * 60 + desdeM);
@@ -270,7 +269,6 @@ export default function AgendaDisponibilidad() {
     const duracionFinal = obtenerDuracionFinal();
     const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
     
-    // Verificar si ya existe un bloque con los mismos datos (para evitar duplicados antes de guardar)
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
       bloque.horaHasta === nuevoHasta && 
@@ -422,7 +420,6 @@ export default function AgendaDisponibilidad() {
   const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
-    // Verificar que no haya bloques sin días habilitados
     const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
     if (bloquesSinDias.length > 0) {
       alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
@@ -433,14 +430,12 @@ export default function AgendaDisponibilidad() {
     setErrorMessage(null);
     
     try {
-      // Primero, eliminar todas las agendas existentes
       const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const existentes = await resExistentes.json();
       for (const agenda of existentes) {
         await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
       }
       
-      // Luego, crear nuevas agendas para cada bloque y día
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
           let diaSemana;
@@ -534,11 +529,20 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Formulario para agregar bloque */}
+      {/* Formulario para agregar bloque - CON BOTONES DENTRO */}
       <div className="agenda-form-section">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <h3 className="agenda-form-title" style={{ marginBottom: 0 }}>Agregar Bloque Horario</h3>
-          <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 14L4 9l5-5"/>
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+              </svg>
+              Profesional-Centro
+            </button>
+            <button onClick={agregarBloque} className="tm-btn-agregar">+ Agregar Bloque</button>
+          </div>
         </div>
         
         <div className="agenda-form-row">
@@ -636,17 +640,6 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* Botón Volver */}
-      <div style={{ marginBottom: '16px' }}>
-        <button onClick={() => navigate('/profesional-centro')} className="tm-btn-secundario" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 14L4 9l5-5"/>
-            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-          </svg>
-          Profesional-Centro
-        </button>
-      </div>
-
       {/* Bloques configurados */}
       {bloques.map((bloque, idx) => {
         const estaActivo = !bloque.fecha_baja;
@@ -655,11 +648,13 @@ export default function AgendaDisponibilidad() {
         return (
           <div key={idx} className="agenda-bloque">
             <div className="agenda-bloque-header">
-              <div className="agenda-bloque-info">
-                <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
-                <strong> Duración:</strong> {bloque.duracionTurno} min | 
-                <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
-                <span style={{ marginLeft: '16px', fontSize: '12px', color: '#666' }}>
+              <div className="agenda-bloque-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span>
+                  <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
+                  <strong> Duración:</strong> {bloque.duracionTurno} min | 
+                  <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
+                </span>
+                <span style={{ fontSize: '12px', color: '#666' }}>
                   NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})-BL({bloque.id || 'nuevo'})
                 </span>
               </div>
