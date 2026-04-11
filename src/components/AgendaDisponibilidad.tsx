@@ -18,7 +18,7 @@ interface ProfesionalCentro {
 interface BloqueHorario {
   id?: number;
   diasHabilitados: number[];
-  diasIds?: number[];  // 👈 NUEVO: almacena los IDs de cada día
+  diasIds?: number[];
   horaDesde: string;
   horaHasta: string;
   duracionTurno: number;
@@ -231,7 +231,7 @@ export default function AgendaDisponibilidad() {
         if (!grupos[clave]) {
           grupos[clave] = {
             id: ag.id,
-            diasIds: [],  // 👈 NUEVO
+            diasIds: [],
             horaDesde: ag.horaDesde,
             horaHasta: ag.horaHasta,
             duracionTurno: ag.duracionTurno,
@@ -243,6 +243,9 @@ export default function AgendaDisponibilidad() {
             fecha_baja: ag.fecha_baja
           };
         }
+        
+        // 👇 IMPORTANTE: Agregar el ID a la lista (esto debe ejecutarse siempre)
+        grupos[clave].diasIds.push(ag.id);
         
         if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
           grupos[clave].diasHabilitados.push(diaIdx);
@@ -699,16 +702,10 @@ export default function AgendaDisponibilidad() {
                   <strong> Duración:</strong> {bloque.duracionTurno} min | 
                   <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
                 </span>
-                
                 <span style={{ fontSize: '12px', color: '#666' }}>
-  NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})
-  -BLs(
-    {bloque.diasIds && bloque.diasIds.length > 0 
-      ? bloque.diasIds.join(',') 
-      : (bloque.id || 'nuevo')}
-  )
-</span>
-              
+                  NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})
+                  -BLs({bloque.diasIds && bloque.diasIds.length > 0 ? bloque.diasIds.join(',') : (bloque.id || 'nuevo')})
+                </span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button 
