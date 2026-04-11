@@ -100,63 +100,54 @@ export default function AgendaDisponibilidad() {
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para el formulario
-  const [nuevoDesde, setNuevoDesde] = useState('08:00');
-  const [nuevoHasta, setNuevoHasta] = useState('12:00');
+  const [nuevoDesde, setNuevoDesde] = useState('');
+  const [nuevoHasta, setNuevoHasta] = useState('');
   const [nuevaDuracion, setNuevaDuracion] = useState(0);
   const [otraDuracion, setOtraDuracion] = useState('');
   const [mostrarOtraDuracion, setMostrarOtraDuracion] = useState(false);
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [nuevaFechaHasta, setNuevaFechaHasta] = useState('');
   
-  // Estados para habilitación de campos
   const [duracionValida, setDuracionValida] = useState(false);
   const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
   
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
-  const [opcionesHora, setOpcionesHora] = useState<string[]>(generarOpcionesHora(30));
+  const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
- // Actualizar opciones de hora cuando cambia la duración
-useEffect(() => {
-  let duracion = nuevaDuracion;
-  if (mostrarOtraDuracion && otraDuracion) {
-    duracion = parseInt(otraDuracion);
-  }
-  if (duracion && duracion > 0) {
-    setOpcionesHora(generarOpcionesHora(duracion));
-    setDuracionValida(true);
-    // Resetear Desde y Hasta cuando cambia la duración
-    setNuevoDesde('');
-    setNuevoHasta('');
-    setDesdeSeleccionado(false);
-  } else {
-    setOpcionesHora([]);
-    setDuracionValida(false);
-    setDesdeSeleccionado(false);
-    setNuevoDesde('');
-    setNuevoHasta('');
-  }
-}, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
-  
-  // Detectar cuando Desde cambia
-useEffect(() => {
-  if (duracionValida) {
-    // Solo considerar seleccionado si el valor no está vacío
-    setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '' && nuevoDesde !== '00:00');
-    const duracion = obtenerDuracionFinal();
-    if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
-      const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
-      if (nuevoHasta < horaMinima) {
-        setNuevoHasta(horaMinima);
+  useEffect(() => {
+    let duracion = nuevaDuracion;
+    if (mostrarOtraDuracion && otraDuracion) {
+      duracion = parseInt(otraDuracion);
+    }
+    if (duracion && duracion > 0) {
+      setOpcionesHora(generarOpcionesHora(duracion));
+      setDuracionValida(true);
+      setNuevoDesde('');
+      setNuevoHasta('');
+      setDesdeSeleccionado(false);
+    } else {
+      setOpcionesHora([]);
+      setDuracionValida(false);
+      setDesdeSeleccionado(false);
+      setNuevoDesde('');
+      setNuevoHasta('');
+    }
+  }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
+
+  useEffect(() => {
+    if (duracionValida) {
+      setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '' && nuevoDesde !== '00:00');
+      const duracion = obtenerDuracionFinal();
+      if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
+        const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
+        if (nuevoHasta < horaMinima) {
+          setNuevoHasta(horaMinima);
+        }
       }
     }
-  }
-}, [nuevoDesde, duracionValida]);
-      
-    }
-  }, [nuevoDesde, nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
+  }, [nuevoDesde, duracionValida]);
 
   useEffect(() => {
     if (profesionalCentroId) {
@@ -282,9 +273,9 @@ useEffect(() => {
   };
 
   const obtenerDuracionFinal = () => {
-  let duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
-  return isNaN(duracion) || duracion <= 0 ? 0 : duracion;
-};
+    let duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
+    return isNaN(duracion) || duracion <= 0 ? 0 : duracion;
+  };
 
   const validarHorario = () => {
     if (!nuevoDesde || !nuevoHasta) {
@@ -347,9 +338,9 @@ useEffect(() => {
     setBloques([...bloques, nuevoBloque]);
     setTieneCambios(true);
     
-    setNuevoDesde('08:00');
-    setNuevoHasta('12:00');
-    setNuevaDuracion(30);
+    setNuevoDesde('');
+    setNuevoHasta('');
+    setNuevaDuracion(0);
     setMostrarOtraDuracion(false);
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
@@ -586,29 +577,29 @@ useEffect(() => {
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
             <select 
-  value={nuevaDuracion} 
-  onChange={(e) => {
-    const val = parseInt(e.target.value);
-    if (val === 0) {
-      setMostrarOtraDuracion(true);
-      setNuevaDuracion(0);
-    } else {
-      setNuevaDuracion(val);
-      setMostrarOtraDuracion(false);
-    }
-  }} 
-  className="agenda-form-input"
->
-  <option value={0} disabled>Seleccionar duración...</option>
-  <option value={15}>15 minutos</option>
-  <option value={30}>30 minutos</option>
-  <option value={45}>45 minutos</option>
-  <option value={0}>Otro</option>
-</select>
+              value={nuevaDuracion} 
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                if (val === 0) {
+                  setMostrarOtraDuracion(true);
+                  setNuevaDuracion(0);
+                } else {
+                  setNuevaDuracion(val);
+                  setMostrarOtraDuracion(false);
+                }
+              }} 
+              className="agenda-form-input"
+            >
+              <option value={0} disabled>Seleccionar duración...</option>
+              <option value={15}>15 minutos</option>
+              <option value={30}>30 minutos</option>
+              <option value={45}>45 minutos</option>
+              <option value={0}>Otro</option>
+            </select>
             {mostrarOtraDuracion && (
               <input 
                 type="number" 
-                placeholder="Duración" 
+                placeholder="Ingrese duración" 
                 value={otraDuracion} 
                 onChange={(e) => setOtraDuracion(e.target.value)} 
                 className="agenda-form-input"
@@ -620,33 +611,34 @@ useEffect(() => {
           <div className="agenda-form-field" style={{ minWidth: '90px' }}>
             <label className="agenda-form-label">Desde</label>
             <select 
-  value={nuevoDesde || ''} 
-  onChange={(e) => setNuevoDesde(e.target.value)} 
-  className="agenda-form-input"
-  disabled={!duracionValida}
->
-  <option value="" disabled>Seleccionar hora...</option>
-  {opcionesHora.map(hora => (
-    <option key={hora} value={hora}>{hora}</option>
-  ))}
-</select>
+              value={nuevoDesde || ''} 
+              onChange={(e) => setNuevoDesde(e.target.value)} 
+              className="agenda-form-input"
+              disabled={!duracionValida}
+            >
+              <option value="" disabled>Seleccionar hora...</option>
+              {opcionesHora.map(hora => (
+                <option key={hora} value={hora}>{hora}</option>
+              ))}
+            </select>
           </div>
           
           <div className="agenda-form-field" style={{ minWidth: '90px' }}>
             <label className="agenda-form-label">Hasta</label>
             <select 
-  value={nuevoHasta || ''} 
-  onChange={(e) => setNuevoHasta(e.target.value)} 
-  className="agenda-form-input"
-  disabled={!duracionValida || !desdeSeleccionado}
->
-  <option value="" disabled>Seleccionar hora...</option>
-  {opcionesHora
-    .filter(hora => desdeSeleccionado && hora >= calcularHoraMinima(nuevoDesde, obtenerDuracionFinal()))
-    .map(hora => (
-      <option key={hora} value={hora}>{hora}</option>
-    ))}
-</select>          </div>
+              value={nuevoHasta || ''} 
+              onChange={(e) => setNuevoHasta(e.target.value)} 
+              className="agenda-form-input"
+              disabled={!duracionValida || !desdeSeleccionado}
+            >
+              <option value="" disabled>Seleccionar hora...</option>
+              {opcionesHora
+                .filter(hora => desdeSeleccionado && hora >= calcularHoraMinima(nuevoDesde, obtenerDuracionFinal()))
+                .map(hora => (
+                  <option key={hora} value={hora}>{hora}</option>
+                ))}
+            </select>
+          </div>
           
           <div className="agenda-form-field" style={{ minWidth: '110px' }}>
             <label className="agenda-form-label">Vigencia Desde</label>
