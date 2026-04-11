@@ -76,6 +76,17 @@ const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, horaHast
   return horaCalculada;
 };
 
+const calcularHoraMinima = (desde: string, duracion: number): string => {
+  const [h, m] = desde.split(':').map(Number);
+  let minutos = m + duracion;
+  let horas = h;
+  if (minutos >= 60) {
+    horas += Math.floor(minutos / 60);
+    minutos = minutos % 60;
+  }
+  return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+};
+
 export default function AgendaDisponibilidad() {
   const { profesionalCentroId } = useParams<{ profesionalCentroId: string }>();
   const navigate = useNavigate();
@@ -89,6 +100,7 @@ export default function AgendaDisponibilidad() {
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
+  // Estados para el formulario
   const [nuevoDesde, setNuevoDesde] = useState('08:00');
   const [nuevoHasta, setNuevoHasta] = useState('12:00');
   const [nuevaDuracion, setNuevaDuracion] = useState(30);
@@ -97,17 +109,38 @@ export default function AgendaDisponibilidad() {
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [nuevaFechaHasta, setNuevaFechaHasta] = useState('');
   
+  // Estados para habilitación de campos
+  const [duracionValida, setDuracionValida] = useState(false);
+  const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
+  
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
   const [opcionesHora, setOpcionesHora] = useState<string[]>(generarOpcionesHora(30));
 
+  // Actualizar opciones de hora cuando cambia la duración
   useEffect(() => {
     const duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
     if (duracion && duracion > 0) {
       setOpcionesHora(generarOpcionesHora(duracion));
+      setDuracionValida(true);
+    } else {
+      setDuracionValida(false);
     }
   }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
+
+  // Detectar cuando Desde cambia
+  useEffect(() => {
+    setDesdeSeleccionado(!!nuevoDesde);
+    // Si el Hasta actual es menor que la hora mínima, actualizarlo
+    const duracion = obtenerDuracionFinal();
+    if (duracion > 0 && nuevoDesde) {
+      const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
+      if (nuevoHasta < horaMinima) {
+        setNuevoHasta(horaMinima);
+      }
+    }
+  }, [nuevoDesde, nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
 
   useEffect(() => {
     if (profesionalCentroId) {
@@ -567,7 +600,13 @@ export default function AgendaDisponibilidad() {
           
           <div className="agenda-form-field" style={{ minWidth: '90px' }}>
             <label className="agenda-form-label">Desde</label>
-            <select value={nuevoDesde} onChange={(e) => setNuevoDesde(e.target.value)} className="agenda-form-input">
+            <select 
+              value={nuevoDesde} 
+              onChange={(e) => setNuevoDesde(e.target.value)} 
+              className="agenda-form-input"
+              disabled={!duracionValida}
+            >
+              <option value="">Seleccionar hora...</option>
               {opcionesHora.map(hora => (
                 <option key={hora} value={hora}>{hora}</option>
               ))}
@@ -576,10 +615,18 @@ export default function AgendaDisponibilidad() {
           
           <div className="agenda-form-field" style={{ minWidth: '90px' }}>
             <label className="agenda-form-label">Hasta</label>
-            <select value={nuevoHasta} onChange={(e) => setNuevoHasta(e.target.value)} className="agenda-form-input">
-              {opcionesHora.map(hora => (
-                <option key={hora} value={hora}>{hora}</option>
-              ))}
+            <select 
+              value={nuevoHasta} 
+              onChange={(e) => setNuevoHasta(e.target.value)} 
+              className="agenda-form-input"
+              disabled={!duracionValida || !desdeSeleccionado}
+            >
+              <option value="">Seleccionar hora...</option>
+              {opcionesHora
+                .filter(hora => desdeSeleccionado && hora >= calcularHoraMinima(nuevoDesde, obtenerDuracionFinal()))
+                .map(hora => (
+                  <option key={hora} value={hora}>{hora}</option>
+                ))}
             </select>
           </div>
           
