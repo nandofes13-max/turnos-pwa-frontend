@@ -103,7 +103,7 @@ export default function AgendaDisponibilidad() {
   // Estados para el formulario
   const [nuevoDesde, setNuevoDesde] = useState('08:00');
   const [nuevoHasta, setNuevoHasta] = useState('12:00');
-  const [nuevaDuracion, setNuevaDuracion] = useState(30);
+  const [nuevaDuracion, setNuevaDuracion] = useState(0);
   const [otraDuracion, setOtraDuracion] = useState('');
   const [mostrarOtraDuracion, setMostrarOtraDuracion] = useState(false);
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
@@ -120,14 +120,26 @@ export default function AgendaDisponibilidad() {
 
   // Actualizar opciones de hora cuando cambia la duración
   useEffect(() => {
-    const duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
-    if (duracion && duracion > 0) {
-      setOpcionesHora(generarOpcionesHora(duracion));
-      setDuracionValida(true);
-    } else {
-      setDuracionValida(false);
+  let duracion = nuevaDuracion;
+  if (mostrarOtraDuracion && otraDuracion) {
+    duracion = parseInt(otraDuracion);
+  }
+  if (duracion && duracion > 0) {
+    setOpcionesHora(generarOpcionesHora(duracion));
+    setDuracionValida(true);
+    // Si la duración es válida y hay un Desde seleccionado, actualizar Hasta
+    if (nuevoDesde && nuevoDesde !== '') {
+      const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
+      if (nuevoHasta < horaMinima) {
+        setNuevoHasta(horaMinima);
+      }
     }
-  }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
+  } else {
+    setOpcionesHora([]);
+    setDuracionValida(false);
+    setDesdeSeleccionado(false);
+  }
+}, [nuevaDuracion, otraDuracion, mostrarOtraDuracion, nuevoDesde]);
 
   // Detectar cuando Desde cambia
   useEffect(() => {
@@ -266,8 +278,9 @@ export default function AgendaDisponibilidad() {
   };
 
   const obtenerDuracionFinal = () => {
-    return mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
-  };
+  let duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
+  return isNaN(duracion) || duracion <= 0 ? 0 : duracion;
+};
 
   const validarHorario = () => {
     if (!nuevoDesde || !nuevoHasta) {
@@ -569,23 +582,25 @@ export default function AgendaDisponibilidad() {
           <div className="agenda-form-field" style={{ minWidth: '100px' }}>
             <label className="agenda-form-label">Duración (min)</label>
             <select 
-              value={nuevaDuracion} 
-              onChange={(e) => {
-                const val = parseInt(e.target.value);
-                if (val === 0) {
-                  setMostrarOtraDuracion(true);
-                } else {
-                  setNuevaDuracion(val);
-                  setMostrarOtraDuracion(false);
-                }
-              }} 
-              className="agenda-form-input"
-            >
-              <option value={15}>15</option>
-              <option value={30}>30</option>
-              <option value={45}>45</option>
-              <option value={0}>Otro</option>
-            </select>
+  value={nuevaDuracion} 
+  onChange={(e) => {
+    const val = parseInt(e.target.value);
+    if (val === 0) {
+      setMostrarOtraDuracion(true);
+      setNuevaDuracion(0);
+    } else {
+      setNuevaDuracion(val);
+      setMostrarOtraDuracion(false);
+    }
+  }} 
+  className="agenda-form-input"
+>
+  <option value={0} disabled>Seleccionar duración...</option>
+  <option value={15}>15 minutos</option>
+  <option value={30}>30 minutos</option>
+  <option value={45}>45 minutos</option>
+  <option value={0}>Otro</option>
+</select>
             {mostrarOtraDuracion && (
               <input 
                 type="number" 
