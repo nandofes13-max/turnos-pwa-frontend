@@ -155,18 +155,18 @@ export default function AgendaDisponibilidad() {
   }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
 
   useEffect(() => {
-    if (duracionValida) {
-      setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '' && nuevoDesde !== '00:00');
-      const duracion = obtenerDuracionFinal();
-      if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
-        const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
-        if (nuevoHasta < horaMinima) {
-          setNuevoHasta(horaMinima);
-        }
+  if (duracionValida) {
+    setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '');
+    const duracion = obtenerDuracionFinal();
+    if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
+      const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
+      if (nuevoHasta < horaMinima) {
+        setNuevoHasta(horaMinima);
       }
     }
-  }, [nuevoDesde, duracionValida]);
-
+  }
+}, [nuevoDesde, duracionValida]);
+  
   useEffect(() => {
     if (profesionalCentroId) {
       cargarDatos();
