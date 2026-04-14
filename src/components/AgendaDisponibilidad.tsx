@@ -325,18 +325,12 @@ export default function AgendaDisponibilidad() {
     return true;
   };
 
-  const verificarSolapamientoConBloques = (desde: string, hasta: string): boolean => {
-    // Esta validación se hará al guardar, ya que los días aún no están seleccionados
-    return false;
-  };
-
   const agregarBloque = () => {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
     const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
     
-    // Validar duplicado exacto
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
       bloque.horaHasta === nuevoHasta && 
@@ -548,9 +542,25 @@ export default function AgendaDisponibilidad() {
       cargarDatos();
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      // Mostrar mensaje específico para solapamiento
+      
+      // Mensaje específico para solapamiento
       if (err.message && (err.message.includes('solapa') || err.message.includes('exclusion') || err.message.includes('conflicto'))) {
-        alert('No se puede guardar: Este horario solapa con una agenda existente para el mismo día. Por favor, revise los días y horarios configurados.');
+        const eliminar = window.confirm(
+          'No se puede guardar: Este horario solapa con una agenda existente para el mismo día.\n\n' +
+          '¿Desea eliminar el bloque conflictivo y continuar con el guardado?'
+        );
+        
+        if (eliminar) {
+          const nuevosBloques = [...bloques];
+          nuevosBloques.pop();
+          setBloques(nuevosBloques);
+          setTieneCambios(true);
+          setTimeout(() => guardarAgenda(), 100);
+        } else {
+          alert('No se guardaron los cambios. Revise los bloques conflictivos.');
+        }
+      } else if (err.message === 'Failed to fetch') {
+        alert('Error de conexión con el servidor. Verifique su conexión a internet y vuelva a intentarlo.');
       } else {
         alert(err.message || 'Error al guardar la agenda');
       }
