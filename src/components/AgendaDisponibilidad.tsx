@@ -631,18 +631,30 @@ export default function AgendaDisponibilidad() {
           <div className="agenda-form-field" style={{ minWidth: '90px' }}>
             <label className="agenda-form-label">Hasta</label>
             <select 
-              value={nuevoHasta || ''} 
-              onChange={(e) => setNuevoHasta(e.target.value)} 
-              className="agenda-form-input"
-              disabled={!duracionValida || !desdeSeleccionado}
-            >
-              <option value="" disabled>Seleccionar hora...</option>
-              {opcionesHora
-                .filter(hora => desdeSeleccionado && hora >= calcularHoraMinima(nuevoDesde, obtenerDuracionFinal()))
-                .map(hora => (
-                  <option key={hora} value={hora}>{hora}</option>
-                ))}
-            </select>
+  value={nuevoHasta || ''} 
+  onChange={(e) => setNuevoHasta(e.target.value)} 
+  className="agenda-form-input"
+  disabled={!duracionValida || !desdeSeleccionado}
+>
+  <option value="" disabled>Seleccionar hora...</option>
+  {opcionesHora
+    .filter(hora => {
+      if (!desdeSeleccionado || !nuevoDesde) return false;
+      const duracion = obtenerDuracionFinal();
+      if (duracion <= 0) return false;
+      
+      // Calcular minutos desde la hora Desde hasta esta hora
+      const [desdeH, desdeM] = nuevoDesde.split(':').map(Number);
+      const [hastaH, hastaM] = hora.split(':').map(Number);
+      let minutosDesde = (hastaH * 60 + hastaM) - (desdeH * 60 + desdeM);
+      
+      // Solo mostrar horas donde la diferencia sea múltiplo de la duración
+      return minutosDesde > 0 && minutosDesde % duracion === 0;
+    })
+    .map(hora => (
+      <option key={hora} value={hora}>{hora}</option>
+    ))}
+</select>
           </div>
           
           <div className="agenda-form-field" style={{ minWidth: '110px' }}>
