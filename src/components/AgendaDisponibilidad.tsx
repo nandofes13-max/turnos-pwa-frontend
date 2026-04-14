@@ -155,18 +155,18 @@ export default function AgendaDisponibilidad() {
   }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
 
   useEffect(() => {
-  if (duracionValida) {
-    setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '');
-    const duracion = obtenerDuracionFinal();
-    if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
-      const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
-      if (nuevoHasta < horaMinima) {
-        setNuevoHasta(horaMinima);
+    if (duracionValida) {
+      setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '');
+      const duracion = obtenerDuracionFinal();
+      if (duracion > 0 && nuevoDesde && nuevoDesde !== '') {
+        const horaMinima = calcularHoraMinima(nuevoDesde, duracion);
+        if (nuevoHasta < horaMinima) {
+          setNuevoHasta(horaMinima);
+        }
       }
     }
-  }
-}, [nuevoDesde, duracionValida]);
-  
+  }, [nuevoDesde, duracionValida]);
+
   useEffect(() => {
     if (profesionalCentroId) {
       cargarDatos();
@@ -325,12 +325,18 @@ export default function AgendaDisponibilidad() {
     return true;
   };
 
+  const verificarSolapamientoConBloques = (desde: string, hasta: string): boolean => {
+    // Esta validación se hará al guardar, ya que los días aún no están seleccionados
+    return false;
+  };
+
   const agregarBloque = () => {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
     const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
     
+    // Validar duplicado exacto
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
       bloque.horaHasta === nuevoHasta && 
@@ -542,7 +548,12 @@ export default function AgendaDisponibilidad() {
       cargarDatos();
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      alert(err.message || 'Error al guardar la agenda');
+      // Mostrar mensaje específico para solapamiento
+      if (err.message && (err.message.includes('solapa') || err.message.includes('exclusion') || err.message.includes('conflicto'))) {
+        alert('No se puede guardar: Este horario solapa con una agenda existente para el mismo día. Por favor, revise los días y horarios configurados.');
+      } else {
+        alert(err.message || 'Error al guardar la agenda');
+      }
     } finally {
       setGuardando(false);
     }
@@ -663,12 +674,12 @@ export default function AgendaDisponibilidad() {
           
           <div className="agenda-form-field" style={{ minWidth: '110px' }}>
             <label className="agenda-form-label">Vigencia Desde</label>
-            <input type="date" value={nuevaFechaDesde} onChange={(e) => setNuevaFechaDesde(e.target.value)} className="agenda-form-input" />
+            <input type="date" value={nuevaFechaDesde} onChange={(e) => setNuevaFechaDesde(e.target.value)} min={hoy} className="agenda-form-input" />
           </div>
           
           <div className="agenda-form-field" style={{ minWidth: '110px' }}>
             <label className="agenda-form-label">Vigencia Hasta</label>
-            <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} className="agenda-form-input" />
+            <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} min={nuevaFechaDesde} className="agenda-form-input" />
           </div>
           
           <div className="agenda-form-field" style={{ minWidth: '110px' }}>
