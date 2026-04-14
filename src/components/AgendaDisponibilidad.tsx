@@ -88,6 +88,23 @@ const calcularHoraMinima = (desde: string, duracion: number): string => {
   return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
 };
 
+const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
+  if (!desde || duracion <= 0) return [];
+  
+  const opciones: string[] = [];
+  const [desdeH, desdeM] = desde.split(':').map(Number);
+  let minutos = desdeH * 60 + desdeM + duracion;
+  
+  while (minutos <= 23 * 60 + 59) {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    opciones.push(`${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`);
+    minutos += duracion;
+  }
+  
+  return opciones;
+};
+
 export default function AgendaDisponibilidad() {
   const { profesionalCentroId } = useParams<{ profesionalCentroId: string }>();
   const navigate = useNavigate();
@@ -636,22 +653,11 @@ export default function AgendaDisponibilidad() {
               disabled={!duracionValida || !desdeSeleccionado}
             >
               <option value="" disabled>Seleccionar hora...</option>
-              {opcionesHora
-                .filter(hora => {
-                  if (!desdeSeleccionado || !nuevoDesde) return false;
-                  const duracion = obtenerDuracionFinal();
-                  if (duracion <= 0) return false;
-                  
-                  const [desdeH, desdeM] = nuevoDesde.split(':').map(Number);
-                  const [hastaH, hastaM] = hora.split(':').map(Number);
-                  let minutosDesde = (hastaH * 60 + hastaM) - (desdeH * 60 + desdeM);
-                  
-                  // Mostrar horas donde la diferencia sea múltiplo de la duración y mayor o igual a la duración
-                  return minutosDesde >= duracion && minutosDesde % duracion === 0;
-                })
-                .map(hora => (
+              {desdeSeleccionado && nuevoDesde && duracionValida && (
+                generarOpcionesHasta(nuevoDesde, obtenerDuracionFinal()).map(hora => (
                   <option key={hora} value={hora}>{hora}</option>
-                ))}
+                ))
+              )}
             </select>
           </div>
           
