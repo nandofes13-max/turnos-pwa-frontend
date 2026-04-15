@@ -470,7 +470,7 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-    const guardarAgenda = async () => {
+      const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
     const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
