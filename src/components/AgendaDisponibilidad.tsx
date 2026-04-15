@@ -470,7 +470,7 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  const guardarAgenda = async () => {
+    const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
     const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
@@ -516,7 +516,6 @@ export default function AgendaDisponibilidad() {
           });
           
           if (!response.ok) {
-            // Intentar obtener el mensaje de error del backend
             let errorMessageText = 'Error al guardar la agenda';
             try {
               const errorData = await response.json();
@@ -552,27 +551,25 @@ export default function AgendaDisponibilidad() {
       
       const errorMessageText = err.message || '';
       
-      // Mostrar el mensaje del backend directamente
+      // Mostrar el mensaje del backend
       alert(errorMessageText);
       
-      // Si el error es de solapamiento, ofrecer eliminar el bloque conflictivo
+      // Si el error es de solapamiento, eliminar automáticamente el último bloque
       if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
-        const eliminar = window.confirm(
-          '¿Desea eliminar el último bloque agregado para resolver el conflicto?'
-        );
+        const nuevosBloques = [...bloques];
+        const bloqueEliminado = nuevosBloques.pop();
         
-        if (eliminar) {
-          const nuevosBloques = [...bloques];
-          nuevosBloques.pop();
+        if (bloqueEliminado) {
           setBloques(nuevosBloques);
           setTieneCambios(true);
+          alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
         }
       }
     } finally {
       setGuardando(false);
     }
   };
-
+  
   const handleClose = () => {
     if (tieneCambios) {
       if (window.confirm('Hay cambios sin guardar. ¿Desea guardarlos antes de salir?')) {
