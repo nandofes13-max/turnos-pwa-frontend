@@ -552,11 +552,13 @@ export default function AgendaDisponibilidad() {
       
       const errorMessageText = err.message || '';
       
-      // Mensaje específico para solapamiento
+      // Mostrar el mensaje del backend directamente
+      alert(errorMessageText);
+      
+      // Si el error es de solapamiento, ofrecer eliminar el bloque conflictivo
       if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
         const eliminar = window.confirm(
-          'No se puede guardar: Este horario solapa con una agenda existente para el mismo día.\n\n' +
-          '¿Desea eliminar el bloque conflictivo y continuar con el guardado?'
+          '¿Desea eliminar el último bloque agregado para resolver el conflicto?'
         );
         
         if (eliminar) {
@@ -564,14 +566,7 @@ export default function AgendaDisponibilidad() {
           nuevosBloques.pop();
           setBloques(nuevosBloques);
           setTieneCambios(true);
-          setTimeout(() => guardarAgenda(), 100);
-        } else {
-          alert('No se guardaron los cambios. Revise los bloques conflictivos.');
         }
-      } else if (errorMessageText.includes('Failed to fetch')) {
-        alert('Error de conexión con el servidor. Verifique su conexión a internet y vuelva a intentarlo.');
-      } else {
-        alert(errorMessageText || 'Error al guardar la agenda');
       }
     } finally {
       setGuardando(false);
