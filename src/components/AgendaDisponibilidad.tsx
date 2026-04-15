@@ -516,8 +516,15 @@ export default function AgendaDisponibilidad() {
           });
           
           if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Error al guardar la agenda');
+            // Intentar obtener el mensaje de error del backend
+            let errorMessageText = 'Error al guardar la agenda';
+            try {
+              const errorData = await response.json();
+              errorMessageText = errorData.message || errorMessageText;
+            } catch (e) {
+              errorMessageText = response.statusText || errorMessageText;
+            }
+            throw new Error(errorMessageText);
           }
           
           const agendaGuardada = await response.json();
@@ -543,8 +550,10 @@ export default function AgendaDisponibilidad() {
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
       
+      const errorMessageText = err.message || '';
+      
       // Mensaje específico para solapamiento
-      if (err.message && (err.message.includes('solapa') || err.message.includes('exclusion') || err.message.includes('conflicto'))) {
+      if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
         const eliminar = window.confirm(
           'No se puede guardar: Este horario solapa con una agenda existente para el mismo día.\n\n' +
           '¿Desea eliminar el bloque conflictivo y continuar con el guardado?'
@@ -559,10 +568,10 @@ export default function AgendaDisponibilidad() {
         } else {
           alert('No se guardaron los cambios. Revise los bloques conflictivos.');
         }
-      } else if (err.message === 'Failed to fetch') {
+      } else if (errorMessageText.includes('Failed to fetch')) {
         alert('Error de conexión con el servidor. Verifique su conexión a internet y vuelva a intentarlo.');
       } else {
-        alert(err.message || 'Error al guardar la agenda');
+        alert(errorMessageText || 'Error al guardar la agenda');
       }
     } finally {
       setGuardando(false);
