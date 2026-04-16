@@ -29,6 +29,12 @@ interface BloqueHorario {
   fecha_baja?: string | null;
 }
 
+interface SlotBackend {
+  hora: string;
+  bloqueado: boolean;
+  disponible: boolean;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -40,26 +46,6 @@ const generarOpcionesHora = (duracion: number): string[] => {
     }
   }
   return opciones;
-};
-
-const generarHorarios = (desde: string, hasta: string, duracion: number): string[] => {
-  const horarios: string[] = [];
-  const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
-  let actual = normalizar(desde);
-  const horaFin = normalizar(hasta);
-  
-  while (actual < horaFin) {
-    horarios.push(actual);
-    const [h, m] = actual.split(':').map(Number);
-    let minutos = m + duracion;
-    let horas = h;
-    if (minutos >= 60) {
-      horas += Math.floor(minutos / 60);
-      minutos = minutos % 60;
-    }
-    actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-  }
-  return horarios;
 };
 
 const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
@@ -169,6 +155,19 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
+  const cargarSlotsDesdeBackend = async (profesionalCentroId: number, fecha: string): Promise<SlotBackend[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots/${profesionalCentroId}?fecha=${fecha}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar slots');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error cargando slots:', error);
+      return [];
+    }
+  };
+
   const sincronizarExcepciones = async (
     agendaId: number, 
     horariosDeshabilitados: number[], 
@@ -177,14 +176,12 @@ export default function AgendaDisponibilidad() {
     horaDesde: string,
     duracionTurno: number
   ) => {
-    // Primero, eliminar excepciones existentes para esta agenda
     const resExistentes = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${agendaId}`);
     const existentes = await resExistentes.json();
     for (const excepcion of existentes) {
       await fetch(`${API_BASE_URL}/agenda-excepciones/${excepcion.id}`, { method: 'DELETE' });
     }
     
-    // Generar la lista de fechas dentro del rango
     const fechas: string[] = [];
     let fechaActual = new Date(fechaDesde);
     const fechaFin = fechaHasta ? new Date(fechaHasta) : new Date(fechaDesde);
@@ -194,10 +191,8 @@ export default function AgendaDisponibilidad() {
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
-    // Agrupar horarios deshabilitados contiguos en rangos
     if (horariosDeshabilitados.length === 0) return;
     
-    // Ordenar los índices
     const sorted = [...horariosDeshabilitados].sort((a, b) => a - b);
     const rangos: { inicio: number; fin: number }[] = [];
     let inicio = sorted[0];
@@ -214,16 +209,13 @@ export default function AgendaDisponibilidad() {
     }
     rangos.push({ inicio, fin });
     
-    // Para cada rango, crear una excepción
     for (const rango of rangos) {
       const horaDesdeRango = calcularHoraDesdeIndice(rango.inicio, horaDesde, duracionTurno);
-      // Calcular hora hasta: el siguiente horario después del último índice
       const siguienteIndice = rango.fin + 1;
       let horaHastaRango;
       if (siguienteIndice * duracionTurno + parseInt(horaDesde.split(':')[1]) < 60 * 24) {
         horaHastaRango = calcularHoraDesdeIndice(siguienteIndice, horaDesde, duracionTurno);
       } else {
-        // Si es el último horario del día, usar la hora de fin del bloque
         horaHastaRango = '23:59';
       }
       
@@ -253,7 +245,7 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // Cargar excepciones para cada agenda (ahora con rangos)
+      // Cargar excepciones para cada agenda
       const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
       for (const ag of dataAgendas) {
         const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
@@ -283,7 +275,7 @@ export default function AgendaDisponibilidad() {
             duracionTurno: ag.duracionTurno,
             fechaDesde: ag.fechaDesde,
             fechaHasta: ag.fechaHasta,
-            horarios: generarHorarios(ag.horaDesde, ag.horaHasta, ag.duracionTurno),
+            horarios: [], // Se llenará desde el backend
             horariosDeshabilitados: {},
             diasHabilitados: [],
             fecha_baja: ag.fecha_baja
@@ -300,22 +292,38 @@ export default function AgendaDisponibilidad() {
         const excepciones = excepcionesPorAgenda[ag.id] || [];
         const horariosDeshabilitadosSet = new Set<number>();
         
-        for (const excepcion of excepciones) {
-          // Encontrar los índices de horarios que caen dentro del rango de la excepción
-          for (let i = 0; i < grupos[clave].horarios.length; i++) {
-            const horario = grupos[clave].horarios[i];
-            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-              horariosDeshabilitadosSet.add(i);
-            }
-          }
-        }
-        
-        if (horariosDeshabilitadosSet.size > 0) {
-          grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
-        }
+        // Necesitamos los horarios del backend para esto, pero aún no los tenemos
+        // Por ahora, guardamos las excepciones y las procesaremos después
+        grupos[clave].excepciones = excepciones;
       }
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
+      
+      // Para cada bloque, cargar los horarios desde el backend (usando una fecha de ejemplo)
+      for (const bloque of bloquesCargados) {
+        if (bloque.diasHabilitados.length > 0) {
+          // Usar la fecha desde del bloque como referencia
+          const fechaEjemplo = bloque.fechaDesde;
+          const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaEjemplo);
+          bloque.horarios = slots.map(slot => slot.hora);
+          
+          // Procesar excepciones para marcar horarios deshabilitados
+          if (bloque.excepciones) {
+            for (const excepcion of bloque.excepciones) {
+              for (let i = 0; i < bloque.horarios.length; i++) {
+                const horario = bloque.horarios[i];
+                if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+                  if (!bloque.horariosDeshabilitados[excepcion.diaIdx]) {
+                    bloque.horariosDeshabilitados[excepcion.diaIdx] = [];
+                  }
+                  bloque.horariosDeshabilitados[excepcion.diaIdx].push(i);
+                }
+              }
+            }
+          }
+        }
+      }
+      
       setBloques(bloquesCargados);
       
     } catch (err) {
@@ -361,7 +369,6 @@ export default function AgendaDisponibilidad() {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
-    const horarios = generarHorarios(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
@@ -383,7 +390,7 @@ export default function AgendaDisponibilidad() {
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horarios: horarios,
+      horarios: [],
       horariosDeshabilitados: {},
       fecha_baja: null
     };
@@ -792,7 +799,7 @@ export default function AgendaDisponibilidad() {
               </div>
             </div>
             
-            {estaActivo && estaExpandido && (
+            {estaActivo && estaExpandido && bloque.horarios.length > 0 && (
               <div className="agenda-grilla">
                 {DIAS_CORTO.map((dia, diaIdx) => {
                   const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
