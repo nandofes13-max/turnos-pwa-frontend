@@ -799,44 +799,44 @@ export default function AgendaDisponibilidad() {
               </div>
             </div>
             
-            {estaActivo && estaExpandido && bloque.horarios.length > 0 && (
-              <div className="agenda-grilla">
-                {DIAS_CORTO.map((dia, diaIdx) => {
-                  const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
-                  return (
-                    <div key={diaIdx} className="agenda-dia-columna">
-                      <button
-                        onClick={() => toggleDia(idx, diaIdx)}
-                        className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
-                      >
-                        {dia}
-                        <div className="agenda-dia-icono">
-                          {estaHabilitado ? '✅' : '🔒'}
-                        </div>
-                      </button>
-                      
-                      {estaHabilitado && (
-                        <div className="agenda-horarios">
-                          {bloque.horarios.map((horario, horarioIdx) => {
-                            const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-                            const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
-                            return (
-                              <button
-                                key={horarioIdx}
-                                onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
-                                className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
-                              >
-                                {horario} {isDeshabilitado && '🔒'}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {estaActivo && estaExpandido && (
+  <div className="agenda-grilla">
+    {DIAS_CORTO.map((dia, diaIdx) => {
+      const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+      return (
+        <div key={diaIdx} className="agenda-dia-columna">
+          <button
+            onClick={() => toggleDia(idx, diaIdx)}
+            className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+          >
+            {dia}
+            <div className="agenda-dia-icono">
+              {estaHabilitado ? '✅' : '🔒'}
+            </div>
+          </button>
+          
+          {estaHabilitado && bloque.horarios.length > 0 && (
+            <div className="agenda-horarios">
+              {bloque.horarios.map((horario, horarioIdx) => {
+                const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+                const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
+                return (
+                  <button
+                    key={horarioIdx}
+                    onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                    className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                  >
+                    {horario} {isDeshabilitado && '🔒'}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+)}
             
             {!estaActivo && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
