@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } } from 'react-router-dom';
 import '../styles/agenda-disponibilidad.css';
 
 interface ProfesionalCentro {
@@ -188,22 +188,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  // ============================================================
-  // FUNCIÓN sincronizarExcepciones COMENTADA (usa agenda-excepciones)
-  // ============================================================
-  /*
-  const sincronizarExcepciones = async (
-    agendaId: number, 
-    horariosDeshabilitados: number[], 
-    fechaDesde: string, 
-    fechaHasta: string | null, 
-    horaDesde: string,
-    duracionTurno: number
-  ) => {
-    // ... código comentado ...
-  };
-  */
-
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -216,15 +200,8 @@ export default function AgendaDisponibilidad() {
       
       // ============================================================
       // CARGA DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
+      // Reemplazar cuando se implementen excepciones-fechas/recurrentes
       // ============================================================
-      // const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
-      // for (const ag of dataAgendas) {
-      //   const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
-      //   const excepciones = await resExcepciones.json();
-      //   excepcionesPorAgenda[ag.id] = excepciones;
-      // }
-      
-      // Inicializamos un objeto vacío para evitar errores
       const excepcionesPorAgenda = {};
       
       // Agrupar por bloque
@@ -262,30 +239,7 @@ export default function AgendaDisponibilidad() {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
         
-        // ============================================================
-        // PROCESAMIENTO DE EXCEPCIONES COMENTADO
-        // ============================================================
-        /*
-        const excepciones = excepcionesPorAgenda[ag.id] || [];
-        const horariosDeshabilitadosSet = new Set<number>();
-        const horariosTemp = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
-        
-        for (const excepcion of excepciones) {
-          for (let i = 0; i < horariosTemp.length; i++) {
-            const horario = horariosTemp[i];
-            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-              horariosDeshabilitadosSet.add(i);
-            }
-          }
-        }
-        
-        if (horariosDeshabilitadosSet.size > 0) {
-          if (!grupos[clave].horariosDeshabilitados[diaIdx]) {
-            grupos[clave].horariosDeshabilitados[diaIdx] = [];
-          }
-          grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
-        }
-        */
+        // Procesamiento de excepciones comentado
       }
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
@@ -551,20 +505,8 @@ export default function AgendaDisponibilidad() {
           
           // ============================================================
           // SINCRONIZACIÓN DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
+          // Reemplazar cuando se implementen excepciones-fechas/recurrentes
           // ============================================================
-          /*
-          const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-          if (horariosDeshabilitadosDia.length > 0) {
-            await sincronizarExcepciones(
-              agendaGuardada.id,
-              horariosDeshabilitadosDia,
-              bloque.fechaDesde,
-              bloque.fechaHasta,
-              bloque.horaDesde,
-              bloque.duracionTurno
-            );
-          }
-          */
         }
       }
       
@@ -576,32 +518,15 @@ export default function AgendaDisponibilidad() {
       
       const errorMessageText = err.message || '';
       
+      // ✅ Mostrar errores de validación del backend (duplicados, solapamiento, etc.)
       if (errorMessageText.includes('Ya existe una agenda activa con los mismos datos')) {
-        const nuevosBloques = [...bloques];
-        const bloqueEliminado = nuevosBloques.pop();
-        
-        if (bloqueEliminado) {
-          setBloques(nuevosBloques);
-          setTieneCambios(true);
-          alert(`El bloque (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) ya existe en el sistema y no se puede duplicar.\n\nSe ha eliminado el bloque conflictivo. Por favor, revise la configuración.`);
-        } else {
-          alert(errorMessageText);
-        }
+        alert(`❌ ${errorMessageText}\n\nNo se puede duplicar un bloque horario.`);
       }
       else if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
-        const nuevosBloques = [...bloques];
-        const bloqueEliminado = nuevosBloques.pop();
-        
-        if (bloqueEliminado) {
-          setBloques(nuevosBloques);
-          setTieneCambios(true);
-          alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
-        } else {
-          alert(errorMessageText);
-        }
+        alert(`❌ Solapamiento de horarios: ${errorMessageText}\n\nEl horario ingresado entra en conflicto con una agenda existente.`);
       }
       else {
-        alert(errorMessageText);
+        alert(`❌ Error: ${errorMessageText}`);
       }
     } finally {
       setGuardando(false);
