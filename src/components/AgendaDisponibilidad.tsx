@@ -188,6 +188,10 @@ export default function AgendaDisponibilidad() {
     }
   };
 
+  // ============================================================
+  // FUNCIÓN sincronizarExcepciones COMENTADA (usa agenda-excepciones)
+  // ============================================================
+  /*
   const sincronizarExcepciones = async (
     agendaId: number, 
     horariosDeshabilitados: number[], 
@@ -196,167 +200,120 @@ export default function AgendaDisponibilidad() {
     horaDesde: string,
     duracionTurno: number
   ) => {
-    const resExistentes = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${agendaId}`);
-    const existentes = await resExistentes.json();
-    for (const excepcion of existentes) {
-      await fetch(`${API_BASE_URL}/agenda-excepciones/${excepcion.id}`, { method: 'DELETE' });
-    }
-    
-    const fechas: string[] = [];
-    let fechaActual = new Date(fechaDesde);
-    const fechaFin = fechaHasta ? new Date(fechaHasta) : new Date(fechaDesde);
-    
-    while (fechaActual <= fechaFin) {
-      fechas.push(fechaActual.toISOString().split('T')[0]);
-      fechaActual.setDate(fechaActual.getDate() + 1);
-    }
-    
-    if (horariosDeshabilitados.length === 0) return;
-    
-    const sorted = [...horariosDeshabilitados].sort((a, b) => a - b);
-    const rangos: { inicio: number; fin: number }[] = [];
-    let inicio = sorted[0];
-    let fin = sorted[0];
-    
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] === fin + 1) {
-        fin = sorted[i];
-      } else {
-        rangos.push({ inicio, fin });
-        inicio = sorted[i];
-        fin = sorted[i];
-      }
-    }
-    rangos.push({ inicio, fin });
-    
-    for (const rango of rangos) {
-      const horaDesdeRango = calcularHoraDesdeIndice(rango.inicio, horaDesde, duracionTurno);
-      const siguienteIndice = rango.fin + 1;
-      let horaHastaRango;
-      if (siguienteIndice * duracionTurno + parseInt(horaDesde.split(':')[1]) < 60 * 24) {
-        horaHastaRango = calcularHoraDesdeIndice(siguienteIndice, horaDesde, duracionTurno);
-      } else {
-        horaHastaRango = '23:59';
-      }
-      
-      for (const fecha of fechas) {
-        await fetch(`${API_BASE_URL}/agenda-excepciones`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agendaDisponibilidadId: agendaId,
-            fecha: fecha,
-            horaDesde: horaDesdeRango,
-            horaHasta: horaHastaRango,
-            tipo: 'deshabilitado'
-          })
-        });
-      }
-    }
+    // ... código comentado ...
   };
+  */
 
   const cargarDatos = async () => {
-  setLoading(true);
-  try {
-    const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
-    const dataRelacion = await resRelacion.json();
-    setRelacion(dataRelacion);
-    
-    const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-    const dataAgendas = await resAgendas.json();
-    
-    // Cargar excepciones para cada agenda
-    const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
-    for (const ag of dataAgendas) {
-      const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
-      const excepciones = await resExcepciones.json();
-      excepcionesPorAgenda[ag.id] = excepciones;
-    }
-    
-    // Agrupar por bloque
-    const grupos: { [key: string]: any } = {};
-    
-    for (const ag of dataAgendas) {
-      const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
+    setLoading(true);
+    try {
+      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
+      const dataRelacion = await resRelacion.json();
+      setRelacion(dataRelacion);
       
-      let diaIdx = ag.diaSemana;
-      if (diaIdx === 0) {
-        diaIdx = 6;
-      } else {
-        diaIdx = diaIdx - 1;
-      }
+      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+      const dataAgendas = await resAgendas.json();
       
-      if (!grupos[clave]) {
-        grupos[clave] = {
-          id: ag.id,
-          diasIds: [],
-          horaDesde: ag.horaDesde,
-          horaHasta: ag.horaHasta,
-          duracionTurno: ag.duracionTurno,
-          fechaDesde: ag.fechaDesde,
-          fechaHasta: ag.fechaHasta,
-          horarios: [],
-          horariosDeshabilitados: {},
-          diasHabilitados: [],
-          fecha_baja: ag.fecha_baja
-        };
-      }
+      // ============================================================
+      // CARGA DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
+      // ============================================================
+      // const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
+      // for (const ag of dataAgendas) {
+      //   const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
+      //   const excepciones = await resExcepciones.json();
+      //   excepcionesPorAgenda[ag.id] = excepciones;
+      // }
       
-      grupos[clave].diasIds.push(ag.id);
+      // Inicializamos un objeto vacío para evitar errores
+      const excepcionesPorAgenda = {};
       
-      if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
-        grupos[clave].diasHabilitados.push(diaIdx);
-      }
+      // Agrupar por bloque
+      const grupos: { [key: string]: any } = {};
       
-      // 👇 PROCESAR EXCEPCIONES PARA ESTA AGENDA (este día específico)
-      const excepciones = excepcionesPorAgenda[ag.id] || [];
-      const horariosDeshabilitadosSet = new Set<number>();
-      
-      // Generar horarios temporalmente para este bloque (para saber los índices)
-      const horariosTemp = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
-      
-      for (const excepcion of excepciones) {
-        for (let i = 0; i < horariosTemp.length; i++) {
-          const horario = horariosTemp[i];
-          if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-            horariosDeshabilitadosSet.add(i);
+      for (const ag of dataAgendas) {
+        const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
+        
+        let diaIdx = ag.diaSemana;
+        if (diaIdx === 0) {
+          diaIdx = 6;
+        } else {
+          diaIdx = diaIdx - 1;
+        }
+        
+        if (!grupos[clave]) {
+          grupos[clave] = {
+            id: ag.id,
+            diasIds: [],
+            horaDesde: ag.horaDesde,
+            horaHasta: ag.horaHasta,
+            duracionTurno: ag.duracionTurno,
+            fechaDesde: ag.fechaDesde,
+            fechaHasta: ag.fechaHasta,
+            horarios: [],
+            horariosDeshabilitados: {},
+            diasHabilitados: [],
+            fecha_baja: ag.fecha_baja
+          };
+        }
+        
+        grupos[clave].diasIds.push(ag.id);
+        
+        if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
+          grupos[clave].diasHabilitados.push(diaIdx);
+        }
+        
+        // ============================================================
+        // PROCESAMIENTO DE EXCEPCIONES COMENTADO
+        // ============================================================
+        /*
+        const excepciones = excepcionesPorAgenda[ag.id] || [];
+        const horariosDeshabilitadosSet = new Set<number>();
+        const horariosTemp = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
+        
+        for (const excepcion of excepciones) {
+          for (let i = 0; i < horariosTemp.length; i++) {
+            const horario = horariosTemp[i];
+            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+              horariosDeshabilitadosSet.add(i);
+            }
           }
         }
+        
+        if (horariosDeshabilitadosSet.size > 0) {
+          if (!grupos[clave].horariosDeshabilitados[diaIdx]) {
+            grupos[clave].horariosDeshabilitados[diaIdx] = [];
+          }
+          grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
+        }
+        */
       }
       
-      if (horariosDeshabilitadosSet.size > 0) {
-        if (!grupos[clave].horariosDeshabilitados[diaIdx]) {
-          grupos[clave].horariosDeshabilitados[diaIdx] = [];
-        }
-        grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
-      }
-    }
-    
-    const bloquesCargados: BloqueHorario[] = Object.values(grupos);
-    
-    // Cargar horarios para cada bloque
-    for (const bloque of bloquesCargados) {
-      if (bloque.id) {
-        const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
-        const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-        if (slots.length > 0) {
-          bloque.horarios = slots.map(slot => slot.hora);
+      const bloquesCargados: BloqueHorario[] = Object.values(grupos);
+      
+      // Cargar horarios para cada bloque
+      for (const bloque of bloquesCargados) {
+        if (bloque.id) {
+          const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
+          const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
+          if (slots.length > 0) {
+            bloque.horarios = slots.map(slot => slot.hora);
+          } else {
+            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+          }
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
-      } else {
-        bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
       }
+      
+      setBloques(bloquesCargados);
+      
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+    } finally {
+      setLoading(false);
     }
-    
-    setBloques(bloquesCargados);
-    
-  } catch (err) {
-    console.error('Error cargando datos:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
   const obtenerDuracionFinal = () => {
     let duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
     return isNaN(duracion) || duracion <= 0 ? 0 : duracion;
@@ -535,119 +492,121 @@ export default function AgendaDisponibilidad() {
   };
 
   const guardarAgenda = async () => {
-  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-  
-  const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
-  if (bloquesSinDias.length > 0) {
-    alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
-    return;
-  }
-  
-  setGuardando(true);
-  setErrorMessage(null);
-  
-  try {
-    for (const bloque of bloques) {
-      for (const diaIdx of bloque.diasHabilitados) {
-        let diaSemana;
-        if (diaIdx === 6) {
-          diaSemana = 0;
-        } else {
-          diaSemana = diaIdx + 1;
-        }
-        
-        const payload = {
-          profesionalCentroId: parseInt(profesionalCentroId!),
-          diaSemana: diaSemana,
-          horaDesde: bloque.horaDesde,
-          horaHasta: bloque.horaHasta,
-          duracionTurno: bloque.duracionTurno,
-          bufferMinutos: 0,
-          fechaDesde: bloque.fechaDesde,
-          fechaHasta: bloque.fechaHasta
-        };
-
-        // 👇 AGREGAR ESTE LOG
-        console.log('Payload enviado:', JSON.stringify(payload, null, 2));
-        
-        const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-          let errorMessageText = 'Error al guardar la agenda';
-          try {
-            const errorData = await response.json();
-            errorMessageText = errorData.message || errorMessageText;
-          } catch (e) {
-            errorMessageText = response.statusText || errorMessageText;
+    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+    
+    const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
+    if (bloquesSinDias.length > 0) {
+      alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
+      return;
+    }
+    
+    setGuardando(true);
+    setErrorMessage(null);
+    
+    try {
+      for (const bloque of bloques) {
+        for (const diaIdx of bloque.diasHabilitados) {
+          let diaSemana;
+          if (diaIdx === 6) {
+            diaSemana = 0;
+          } else {
+            diaSemana = diaIdx + 1;
           }
-          throw new Error(errorMessageText);
-        }
-        
-        const agendaGuardada = await response.json();
-        
-        if (!bloque.id) {
-          bloque.id = agendaGuardada.id;
-        }
-        
-        const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-        if (horariosDeshabilitadosDia.length > 0) {
-          await sincronizarExcepciones(
-            agendaGuardada.id,
-            horariosDeshabilitadosDia,
-            bloque.fechaDesde,
-            bloque.fechaHasta,
-            bloque.horaDesde,
-            bloque.duracionTurno
-          );
+          
+          const payload = {
+            profesionalCentroId: parseInt(profesionalCentroId!),
+            diaSemana: diaSemana,
+            horaDesde: bloque.horaDesde,
+            horaHasta: bloque.horaHasta,
+            duracionTurno: bloque.duracionTurno,
+            bufferMinutos: 0,
+            fechaDesde: bloque.fechaDesde,
+            fechaHasta: bloque.fechaHasta
+          };
+
+          console.log('Payload enviado:', JSON.stringify(payload, null, 2));
+          
+          const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!response.ok) {
+            let errorMessageText = 'Error al guardar la agenda';
+            try {
+              const errorData = await response.json();
+              errorMessageText = errorData.message || errorMessageText;
+            } catch (e) {
+              errorMessageText = response.statusText || errorMessageText;
+            }
+            throw new Error(errorMessageText);
+          }
+          
+          const agendaGuardada = await response.json();
+          
+          if (!bloque.id) {
+            bloque.id = agendaGuardada.id;
+          }
+          
+          // ============================================================
+          // SINCRONIZACIÓN DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
+          // ============================================================
+          /*
+          const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+          if (horariosDeshabilitadosDia.length > 0) {
+            await sincronizarExcepciones(
+              agendaGuardada.id,
+              horariosDeshabilitadosDia,
+              bloque.fechaDesde,
+              bloque.fechaHasta,
+              bloque.horaDesde,
+              bloque.duracionTurno
+            );
+          }
+          */
         }
       }
-    }
-    
-    alert('Agenda guardada correctamente');
-    setTieneCambios(false);
-    cargarDatos();
-  } catch (err: any) {
-    console.error('Error guardando agenda:', err);
-    
-    const errorMessageText = err.message || '';
-    
-    // Mensaje específico para duplicado
-    if (errorMessageText.includes('Ya existe una agenda activa con los mismos datos')) {
-      const nuevosBloques = [...bloques];
-      const bloqueEliminado = nuevosBloques.pop();
       
-      if (bloqueEliminado) {
-        setBloques(nuevosBloques);
-        setTieneCambios(true);
-        alert(`El bloque (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) ya existe en el sistema y no se puede duplicar.\n\nSe ha eliminado el bloque conflictivo. Por favor, revise la configuración.`);
-      } else {
+      alert('Agenda guardada correctamente');
+      setTieneCambios(false);
+      cargarDatos();
+    } catch (err: any) {
+      console.error('Error guardando agenda:', err);
+      
+      const errorMessageText = err.message || '';
+      
+      if (errorMessageText.includes('Ya existe una agenda activa con los mismos datos')) {
+        const nuevosBloques = [...bloques];
+        const bloqueEliminado = nuevosBloques.pop();
+        
+        if (bloqueEliminado) {
+          setBloques(nuevosBloques);
+          setTieneCambios(true);
+          alert(`El bloque (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) ya existe en el sistema y no se puede duplicar.\n\nSe ha eliminado el bloque conflictivo. Por favor, revise la configuración.`);
+        } else {
+          alert(errorMessageText);
+        }
+      }
+      else if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
+        const nuevosBloques = [...bloques];
+        const bloqueEliminado = nuevosBloques.pop();
+        
+        if (bloqueEliminado) {
+          setBloques(nuevosBloques);
+          setTieneCambios(true);
+          alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
+        } else {
+          alert(errorMessageText);
+        }
+      }
+      else {
         alert(errorMessageText);
       }
+    } finally {
+      setGuardando(false);
     }
-    // Mensaje específico para solapamiento
-    else if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
-      const nuevosBloques = [...bloques];
-      const bloqueEliminado = nuevosBloques.pop();
-      
-      if (bloqueEliminado) {
-        setBloques(nuevosBloques);
-        setTieneCambios(true);
-        alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
-      } else {
-        alert(errorMessageText);
-      }
-    }
-    else {
-      alert(errorMessageText);
-    }
-  } finally {
-    setGuardando(false);
-  }
-};
+  };
   
   const handleClose = () => {
     if (tieneCambios) {
