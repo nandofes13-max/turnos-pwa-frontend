@@ -1,5 +1,6 @@
+// src/components/AgendaDisponibilidad.tsx
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate  } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/agenda-disponibilidad.css';
 
 interface ProfesionalCentro {
@@ -35,6 +36,25 @@ interface SlotBackend {
   disponible: boolean;
 }
 
+interface ExcepcionRecurrente {
+  id: number;
+  agendaDisponibilidadId: number;
+  diaSemana: number;
+  horaDesde: string;
+  horaHasta: string;
+  tipo: string;
+}
+
+interface ExcepcionFecha {
+  id: number;
+  agendaDisponibilidadId: number;
+  fechaDesde: string;
+  fechaHasta: string | null;
+  horaDesde: string | null;
+  horaHasta: string | null;
+  tipo: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -46,37 +66,6 @@ const generarOpcionesHora = (duracion: number): string[] => {
     }
   }
   return opciones;
-};
-
-const generarHorariosLocal = (desde: string, hasta: string, duracion: number): string[] => {
-  const horarios: string[] = [];
-  const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
-  let actual = normalizar(desde);
-  const horaFin = normalizar(hasta);
-  
-  while (actual < horaFin) {
-    horarios.push(actual);
-    const [h, m] = actual.split(':').map(Number);
-    let minutos = m + duracion;
-    let horas = h;
-    if (minutos >= 60) {
-      horas += Math.floor(minutos / 60);
-      minutos = minutos % 60;
-    }
-    actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-  }
-  return horarios;
-};
-
-const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
-  const [h, m] = horaDesde.split(':').map(Number);
-  let minutos = m + (horarioIdx * duracionTurno);
-  let horas = h;
-  if (minutos >= 60) {
-    horas += Math.floor(minutos / 60);
-    minutos = minutos % 60;
-  }
-  return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
 };
 
 const calcularHoraMinima = (desde: string, duracion: number): string => {
@@ -118,7 +107,6 @@ export default function AgendaDisponibilidad() {
   const [tieneCambios, setTieneCambios] = useState(false);
   const [showFechasModal, setShowFechasModal] = useState(false);
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const [nuevoDesde, setNuevoDesde] = useState('');
   const [nuevoHasta, setNuevoHasta] = useState('');
@@ -133,7 +121,7 @@ export default function AgendaDisponibilidad() {
   
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
-  const [fechasBloqueadas, setFechasBloqueadas] = useState<string[]>([]);
+  const [fechasBloqueadas, setFechasBloqueadas] = useState<ExcepcionFecha[]>([]);
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
   useEffect(() => {
@@ -175,6 +163,7 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
+  // Cargar slots desde el backend (ya aplica excepciones)
   const cargarSlotsDesdeBackend = async (profesionalCentroId: number, fecha: string): Promise<SlotBackend[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots/${profesionalCentroId}?fecha=${fecha}`);
@@ -188,6 +177,30 @@ export default function AgendaDisponibilidad() {
     }
   };
 
+  // Cargar excepciones recurrentes para una agenda
+  const cargarExcepcionesRecurrentes = async (agendaId: number): Promise<ExcepcionRecurrente[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes/por-agenda/${agendaId}`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error cargando excepciones recurrentes:', error);
+      return [];
+    }
+  };
+
+  // Cargar excepciones de fechas para una agenda
+  const cargarExcepcionesFechas = async (agendaId: number): Promise<ExcepcionFecha[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/excepciones-fechas/por-agenda/${agendaId}`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error cargando excepciones de fechas:', error);
+      return [];
+    }
+  };
+
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -197,12 +210,6 @@ export default function AgendaDisponibilidad() {
       
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
-      
-      // ============================================================
-      // CARGA DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
-      // Reemplazar cuando se implementen excepciones-fechas/recurrentes
-      // ============================================================
-      const excepcionesPorAgenda = {};
       
       // Agrupar por bloque
       const grupos: { [key: string]: any } = {};
@@ -238,24 +245,49 @@ export default function AgendaDisponibilidad() {
         if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
-        
-        // Procesamiento de excepciones comentado
       }
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
       
-      // Cargar horarios para cada bloque
+      // Cargar horarios y excepciones para cada bloque
       for (const bloque of bloquesCargados) {
         if (bloque.id) {
+          // Cargar slots desde backend
           const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
           const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-          if (slots.length > 0) {
-            bloque.horarios = slots.map(slot => slot.hora);
-          } else {
-            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+          bloque.horarios = slots.map(slot => slot.hora);
+          
+          // Cargar excepciones recurrentes
+          const excepcionesRecurrentes = await cargarExcepcionesRecurrentes(bloque.id);
+          
+          // Cargar excepciones de fechas (para el modal)
+          const excepcionesFechas = await cargarExcepcionesFechas(bloque.id);
+          setFechasBloqueadas(excepcionesFechas);
+          
+          // Convertir excepciones recurrentes a horariosDeshabilitados
+          for (const excepcion of excepcionesRecurrentes) {
+            let diaIdx = excepcion.diaSemana;
+            if (diaIdx === 0) {
+              diaIdx = 6;
+            } else {
+              diaIdx = diaIdx - 1;
+            }
+            
+            if (bloque.diasHabilitados.includes(diaIdx)) {
+              // Encontrar índices de horarios que coinciden con el rango
+              for (let i = 0; i < bloque.horarios.length; i++) {
+                const horario = bloque.horarios[i];
+                if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+                  if (!bloque.horariosDeshabilitados[diaIdx]) {
+                    bloque.horariosDeshabilitados[diaIdx] = [];
+                  }
+                  if (!bloque.horariosDeshabilitados[diaIdx].includes(i)) {
+                    bloque.horariosDeshabilitados[diaIdx].push(i);
+                  }
+                }
+              }
+            }
           }
-        } else {
-          bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
       }
       
@@ -304,7 +336,6 @@ export default function AgendaDisponibilidad() {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
-    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
@@ -326,7 +357,7 @@ export default function AgendaDisponibilidad() {
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horarios: horarios,
+      horarios: [],
       horariosDeshabilitados: {},
       fecha_baja: null
     };
@@ -341,7 +372,6 @@ export default function AgendaDisponibilidad() {
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
-    setErrorMessage(null);
   };
 
   const toggleActivarBloque = async (index: number) => {
@@ -375,35 +405,130 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  const toggleDia = (bloqueIndex: number, diaIdx: number) => {
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
-    if (bloque.diasHabilitados.includes(diaIdx)) {
-      bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
+  const toggleDia = async (bloqueIndex: number, diaIdx: number) => {
+    const bloque = bloques[bloqueIndex];
+    if (!bloque.id) return;
+    
+    const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+    let diaSemana = diaIdx;
+    if (diaSemana === 6) {
+      diaSemana = 0;
     } else {
-      bloque.diasHabilitados.push(diaIdx);
+      diaSemana = diaIdx + 1;
     }
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
+    
+    try {
+      if (estaHabilitado) {
+        // Deshabilitar el día completo: crear excepción recurrente
+        const payload = {
+          agendaDisponibilidadId: bloque.id,
+          diaSemana: diaSemana,
+          horaDesde: "00:00:00",
+          horaHasta: "23:59:59",
+          tipo: "deshabilitado"
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Error al deshabilitar el día');
+        }
+      } else {
+        // Habilitar el día: eliminar excepciones recurrentes para ese día
+        const excepciones = await cargarExcepcionesRecurrentes(bloque.id);
+        const excepcionesDia = excepciones.filter(e => e.diaSemana === diaSemana);
+        
+        for (const excepcion of excepcionesDia) {
+          await fetch(`${API_BASE_URL}/excepciones-recurrentes/${excepcion.id}`, {
+            method: 'DELETE'
+          });
+        }
+      }
+      
+      // Recargar datos
+      await cargarDatos();
+      setTieneCambios(true);
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al cambiar estado del día');
+    }
   };
 
-  const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
+  const toggleHorario = async (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
+    const bloque = bloques[bloqueIndex];
+    if (!bloque.id) return;
     
-    const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-    
-    if (deshabilitadosDia.includes(horarioIndex)) {
-      bloque.horariosDeshabilitados[diaIdx] = deshabilitadosDia.filter(i => i !== horarioIndex);
-      if (bloque.horariosDeshabilitados[diaIdx].length === 0) {
-        delete bloque.horariosDeshabilitados[diaIdx];
+    const horario = bloque.horarios[horarioIndex];
+    const siguienteHorario = bloque.horarios[horarioIndex + 1];
+    const horaHasta = siguienteHorario || (() => {
+      const [h, m] = horario.split(':').map(Number);
+      let minutos = m + bloque.duracionTurno;
+      let horas = h;
+      if (minutos >= 60) {
+        horas += Math.floor(minutos / 60);
+        minutos = minutos % 60;
       }
+      return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    })();
+    
+    let diaSemana = diaIdx;
+    if (diaSemana === 6) {
+      diaSemana = 0;
     } else {
-      bloque.horariosDeshabilitados[diaIdx] = [...deshabilitadosDia, horarioIndex];
+      diaSemana = diaIdx + 1;
     }
     
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
+    const estaDeshabilitado = bloque.horariosDeshabilitados[diaIdx]?.includes(horarioIndex);
+    
+    try {
+      if (!estaDeshabilitado) {
+        // Deshabilitar horario: crear excepción recurrente
+        const payload = {
+          agendaDisponibilidadId: bloque.id,
+          diaSemana: diaSemana,
+          horaDesde: `${horario}:00`,
+          horaHasta: `${horaHasta}:00`,
+          tipo: "deshabilitado"
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Error al deshabilitar el horario');
+        }
+      } else {
+        // Habilitar horario: eliminar excepción específica
+        const excepciones = await cargarExcepcionesRecurrentes(bloque.id);
+        const excepcionHorario = excepciones.find(e => 
+          e.diaSemana === diaSemana && 
+          e.horaDesde === `${horario}:00` && 
+          e.horaHasta === `${horaHasta}:00`
+        );
+        
+        if (excepcionHorario) {
+          await fetch(`${API_BASE_URL}/excepciones-recurrentes/${excepcionHorario.id}`, {
+            method: 'DELETE'
+          });
+        }
+      }
+      
+      // Recargar datos
+      await cargarDatos();
+      setTieneCambios(true);
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al cambiar estado del horario');
+    }
   };
 
   const toggleExpandirBloque = (index: number) => {
@@ -415,34 +540,66 @@ export default function AgendaDisponibilidad() {
 
   const hoy = new Date().toISOString().split('T')[0];
 
-  const agregarFechaBloqueada = () => {
-    if (rangoBloqueoInicio) {
-      const nuevasFechas = [...fechasBloqueadas];
-      if (rangoBloqueoFin && rangoBloqueoFin > rangoBloqueoInicio) {
-        let actual = new Date(rangoBloqueoInicio);
-        const fin = new Date(rangoBloqueoFin);
-        while (actual <= fin) {
-          const fechaStr = actual.toISOString().split('T')[0];
-          if (!nuevasFechas.includes(fechaStr)) {
-            nuevasFechas.push(fechaStr);
-          }
-          actual.setDate(actual.getDate() + 1);
-        }
-      } else {
-        if (!nuevasFechas.includes(rangoBloqueoInicio)) {
-          nuevasFechas.push(rangoBloqueoInicio);
-        }
+  const agregarFechaBloqueada = async () => {
+    if (!rangoBloqueoInicio) return;
+    
+    // Encontrar el primer bloque activo (usar el primero como referencia)
+    const bloqueActivo = bloques.find(b => b.id);
+    if (!bloqueActivo || !bloqueActivo.id) {
+      alert('No hay bloques de agenda guardados. Primero debe guardar la agenda base.');
+      return;
+    }
+    
+    try {
+      const payload: any = {
+        agendaDisponibilidadId: bloqueActivo.id,
+        fechaDesde: rangoBloqueoInicio,
+        tipo: "deshabilitado"
+      };
+      
+      if (rangoBloqueoFin) {
+        payload.fechaHasta = rangoBloqueoFin;
       }
-      setFechasBloqueadas(nuevasFechas);
+      
+      // Si se seleccionaron horas específicas
+      if (nuevoDesde && nuevoHasta) {
+        payload.horaDesde = `${nuevoDesde}:00`;
+        payload.horaHasta = `${nuevoHasta}:00`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/excepciones-fechas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al bloquear fechas');
+      }
+      
       setRangoBloqueoInicio('');
       setRangoBloqueoFin('');
       setTieneCambios(true);
+      await cargarDatos();
+      alert('Fechas bloqueadas correctamente');
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al bloquear fechas');
     }
   };
 
-  const eliminarFechaBloqueada = (fecha: string) => {
-    setFechasBloqueadas(fechasBloqueadas.filter(f => f !== fecha));
-    setTieneCambios(true);
+  const eliminarFechaBloqueada = async (fecha: ExcepcionFecha) => {
+    try {
+      await fetch(`${API_BASE_URL}/excepciones-fechas/${fecha.id}`, {
+        method: 'DELETE'
+      });
+      setTieneCambios(true);
+      await cargarDatos();
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al eliminar la fecha bloqueada');
+    }
   };
 
   const guardarAgenda = async () => {
@@ -455,7 +612,6 @@ export default function AgendaDisponibilidad() {
     }
     
     setGuardando(true);
-    setErrorMessage(null);
     
     try {
       for (const bloque of bloques) {
@@ -477,8 +633,6 @@ export default function AgendaDisponibilidad() {
             fechaDesde: bloque.fechaDesde,
             fechaHasta: bloque.fechaHasta
           };
-
-          console.log('Payload enviado:', JSON.stringify(payload, null, 2));
           
           const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
             method: 'POST',
@@ -502,23 +656,17 @@ export default function AgendaDisponibilidad() {
           if (!bloque.id) {
             bloque.id = agendaGuardada.id;
           }
-          
-          // ============================================================
-          // SINCRONIZACIÓN DE EXCEPCIONES COMENTADA (usa agenda-excepciones)
-          // Reemplazar cuando se implementen excepciones-fechas/recurrentes
-          // ============================================================
         }
       }
       
       alert('Agenda guardada correctamente');
       setTieneCambios(false);
-      cargarDatos();
+      await cargarDatos();
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
       
       const errorMessageText = err.message || '';
       
-      // ✅ Mostrar errores de validación del backend (duplicados, solapamiento, etc.)
       if (errorMessageText.includes('Ya existe una agenda activa con los mismos datos')) {
         alert(`❌ ${errorMessageText}\n\nNo se puede duplicar un bloque horario.`);
       }
@@ -790,8 +938,12 @@ export default function AgendaDisponibilidad() {
                 <p>No hay fechas bloqueadas</p>
               ) : (
                 fechasBloqueadas.map(fecha => (
-                  <div key={fecha} className="agenda-modal-fecha-item">
-                    <span>{fecha}</span>
+                  <div key={fecha.id} className="agenda-modal-fecha-item">
+                    <span>
+                      {fecha.fechaDesde}
+                      {fecha.fechaHasta ? ` - ${fecha.fechaHasta}` : ''}
+                      {fecha.horaDesde ? ` (${fecha.horaDesde.slice(0,5)} a ${fecha.horaHasta?.slice(0,5)})` : ' (día completo)'}
+                    </span>
                     <button onClick={() => eliminarFechaBloqueada(fecha)}>✖</button>
                   </div>
                 ))
