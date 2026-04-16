@@ -439,18 +439,46 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  const toggleDia = (bloqueIndex: number, diaIdx: number) => {
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
-    if (bloque.diasHabilitados.includes(diaIdx)) {
-      bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
-    } else {
-      bloque.diasHabilitados.push(diaIdx);
+ const toggleDia = async (bloqueIndex: number, diaIdx: number) => {
+  const nuevosBloques = [...bloques];
+  const bloque = nuevosBloques[bloqueIndex];
+  const estabaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+  
+  if (estabaHabilitado) {
+    bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
+  } else {
+    bloque.diasHabilitados.push(diaIdx);
+    
+    // Si el bloque no tiene horarios cargados, cargarlos desde el backend
+    if (bloque.horarios.length === 0 && bloque.id) {
+      // Usar la fecha desde del bloque o la fecha actual
+      const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
+      const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
+      bloque.horarios = slots.map(slot => slot.hora);
+      
+      // También cargar excepciones si existen
+      if (bloque.id) {
+        const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${bloque.id}`);
+        const excepciones = await resExcepciones.json();
+        const horariosDeshabilitadosSet = new Set<number>();
+        for (const excepcion of excepciones) {
+          for (let i = 0; i < bloque.horarios.length; i++) {
+            const horario = bloque.horarios[i];
+            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+              horariosDeshabilitadosSet.add(i);
+            }
+          }
+        }
+        if (horariosDeshabilitadosSet.size > 0) {
+          bloque.horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
+        }
+      }
     }
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
-  };
-
+  }
+  
+  setBloques(nuevosBloques);
+  setTieneCambios(true);
+};
   const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
