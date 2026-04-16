@@ -48,7 +48,6 @@ const generarOpcionesHora = (duracion: number): string[] => {
   return opciones;
 };
 
-// 👇 FUNCIÓN PARA GENERAR HORARIOS LOCALMENTE (para bloques nuevos)
 const generarHorariosLocal = (desde: string, hasta: string, duracion: number): string[] => {
   const horarios: string[] = [];
   const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
@@ -266,7 +265,6 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // Cargar excepciones para cada agenda
       const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
       for (const ag of dataAgendas) {
         const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
@@ -274,7 +272,6 @@ export default function AgendaDisponibilidad() {
         excepcionesPorAgenda[ag.id] = excepciones;
       }
       
-      // Agrupar por bloque
       const grupos: { [key: string]: any } = {};
       
       for (const ag of dataAgendas) {
@@ -296,7 +293,7 @@ export default function AgendaDisponibilidad() {
             duracionTurno: ag.duracionTurno,
             fechaDesde: ag.fechaDesde,
             fechaHasta: ag.fechaHasta,
-            horarios: [], // Se llenará después
+            horarios: [],
             horariosDeshabilitados: {},
             diasHabilitados: [],
             fecha_baja: ag.fecha_baja,
@@ -313,31 +310,24 @@ export default function AgendaDisponibilidad() {
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
       
-      // Para cada bloque, cargar horarios (desde backend o localmente)
       for (const bloque of bloquesCargados) {
         if (bloque.id) {
-          // Si tiene ID, intentar cargar desde backend
           const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
           const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
           if (slots.length > 0) {
             bloque.horarios = slots.map(slot => slot.hora);
           } else {
-            // Si el backend no devuelve nada, generar localmente
             bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
           }
         } else {
-          // Si no tiene ID, generar localmente
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
         
-        // Procesar excepciones para marcar horarios deshabilitados
         if (bloque.excepciones) {
           for (const excepcion of bloque.excepciones) {
             for (let i = 0; i < bloque.horarios.length; i++) {
               const horario = bloque.horarios[i];
               if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-                // Necesitamos saber a qué día pertenece esta excepción
-                // Por ahora, asumimos que es para todos los días habilitados
                 for (const dia of bloque.diasHabilitados) {
                   if (!bloque.horariosDeshabilitados[dia]) {
                     bloque.horariosDeshabilitados[dia] = [];
@@ -417,7 +407,7 @@ export default function AgendaDisponibilidad() {
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horarios: horarios, // 👈 AHORA TIENE HORARIOS LOCALMENTE
+      horarios: horarios,
       horariosDeshabilitados: {},
       fecha_baja: null
     };
@@ -549,11 +539,8 @@ export default function AgendaDisponibilidad() {
     setErrorMessage(null);
     
     try {
-      const resExistentes = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const existentes = await resExistentes.json();
-      for (const agenda of existentes) {
-        await fetch(`${API_BASE_URL}/agenda-disponibilidad/${agenda.id}`, { method: 'DELETE' });
-      }
+      // ✅ ELIMINADO: Ya no se eliminan todas las agendas existentes
+      // El backend se encarga de reactivar o crear según corresponda
       
       for (const bloque of bloques) {
         for (const diaIdx of bloque.diasHabilitados) {
@@ -594,7 +581,6 @@ export default function AgendaDisponibilidad() {
           
           const agendaGuardada = await response.json();
           
-          // Actualizar el ID del bloque en el estado local
           if (!bloque.id) {
             bloque.id = agendaGuardada.id;
           }
