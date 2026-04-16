@@ -48,6 +48,27 @@ const generarOpcionesHora = (duracion: number): string[] => {
   return opciones;
 };
 
+// 👇 FUNCIÓN PARA GENERAR HORARIOS LOCALMENTE (para bloques nuevos)
+const generarHorariosLocal = (desde: string, hasta: string, duracion: number): string[] => {
+  const horarios: string[] = [];
+  const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
+  let actual = normalizar(desde);
+  const horaFin = normalizar(hasta);
+  
+  while (actual < horaFin) {
+    horarios.push(actual);
+    const [h, m] = actual.split(':').map(Number);
+    let minutos = m + duracion;
+    let horas = h;
+    if (minutos >= 60) {
+      horas += Math.floor(minutos / 60);
+      minutos = minutos % 60;
+    }
+    actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+  }
+  return horarios;
+};
+
 const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
   const [h, m] = horaDesde.split(':').map(Number);
   let minutos = m + (horarioIdx * duracionTurno);
@@ -275,10 +296,11 @@ export default function AgendaDisponibilidad() {
             duracionTurno: ag.duracionTurno,
             fechaDesde: ag.fechaDesde,
             fechaHasta: ag.fechaHasta,
-            horarios: [], // Se llenará desde el backend
+            horarios: [], // Se llenará después
             horariosDeshabilitados: {},
             diasHabilitados: [],
-            fecha_baja: ag.fecha_baja
+            fecha_baja: ag.fecha_baja,
+            excepciones: excepcionesPorAgenda[ag.id] || []
           };
         }
         
@@ -287,36 +309,40 @@ export default function AgendaDisponibilidad() {
         if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
-        
-        // Convertir excepciones de rango a índices de horarios deshabilitados
-        const excepciones = excepcionesPorAgenda[ag.id] || [];
-        const horariosDeshabilitadosSet = new Set<number>();
-        
-        // Necesitamos los horarios del backend para esto, pero aún no los tenemos
-        // Por ahora, guardamos las excepciones y las procesaremos después
-        grupos[clave].excepciones = excepciones;
       }
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
       
-      // Para cada bloque, cargar los horarios desde el backend (usando una fecha de ejemplo)
+      // Para cada bloque, cargar horarios (desde backend o localmente)
       for (const bloque of bloquesCargados) {
-        if (bloque.diasHabilitados.length > 0) {
-          // Usar la fecha desde del bloque como referencia
-          const fechaEjemplo = bloque.fechaDesde;
-          const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaEjemplo);
-          bloque.horarios = slots.map(slot => slot.hora);
-          
-          // Procesar excepciones para marcar horarios deshabilitados
-          if (bloque.excepciones) {
-            for (const excepcion of bloque.excepciones) {
-              for (let i = 0; i < bloque.horarios.length; i++) {
-                const horario = bloque.horarios[i];
-                if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-                  if (!bloque.horariosDeshabilitados[excepcion.diaIdx]) {
-                    bloque.horariosDeshabilitados[excepcion.diaIdx] = [];
+        if (bloque.id) {
+          // Si tiene ID, intentar cargar desde backend
+          const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
+          const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
+          if (slots.length > 0) {
+            bloque.horarios = slots.map(slot => slot.hora);
+          } else {
+            // Si el backend no devuelve nada, generar localmente
+            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+          }
+        } else {
+          // Si no tiene ID, generar localmente
+          bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+        }
+        
+        // Procesar excepciones para marcar horarios deshabilitados
+        if (bloque.excepciones) {
+          for (const excepcion of bloque.excepciones) {
+            for (let i = 0; i < bloque.horarios.length; i++) {
+              const horario = bloque.horarios[i];
+              if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+                // Necesitamos saber a qué día pertenece esta excepción
+                // Por ahora, asumimos que es para todos los días habilitados
+                for (const dia of bloque.diasHabilitados) {
+                  if (!bloque.horariosDeshabilitados[dia]) {
+                    bloque.horariosDeshabilitados[dia] = [];
                   }
-                  bloque.horariosDeshabilitados[excepcion.diaIdx].push(i);
+                  bloque.horariosDeshabilitados[dia].push(i);
                 }
               }
             }
@@ -369,6 +395,7 @@ export default function AgendaDisponibilidad() {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
+    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
       bloque.horaDesde === nuevoDesde && 
@@ -390,7 +417,7 @@ export default function AgendaDisponibilidad() {
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
-      horarios: [],
+      horarios: horarios, // 👈 AHORA TIENE HORARIOS LOCALMENTE
       horariosDeshabilitados: {},
       fecha_baja: null
     };
@@ -439,46 +466,18 @@ export default function AgendaDisponibilidad() {
     }
   };
 
- const toggleDia = async (bloqueIndex: number, diaIdx: number) => {
-  const nuevosBloques = [...bloques];
-  const bloque = nuevosBloques[bloqueIndex];
-  const estabaHabilitado = bloque.diasHabilitados.includes(diaIdx);
-  
-  if (estabaHabilitado) {
-    bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
-  } else {
-    bloque.diasHabilitados.push(diaIdx);
-    
-    // Si el bloque no tiene horarios cargados, cargarlos desde el backend
-    if (bloque.horarios.length === 0 && bloque.id) {
-      // Usar la fecha desde del bloque o la fecha actual
-      const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
-      const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-      bloque.horarios = slots.map(slot => slot.hora);
-      
-      // También cargar excepciones si existen
-      if (bloque.id) {
-        const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${bloque.id}`);
-        const excepciones = await resExcepciones.json();
-        const horariosDeshabilitadosSet = new Set<number>();
-        for (const excepcion of excepciones) {
-          for (let i = 0; i < bloque.horarios.length; i++) {
-            const horario = bloque.horarios[i];
-            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-              horariosDeshabilitadosSet.add(i);
-            }
-          }
-        }
-        if (horariosDeshabilitadosSet.size > 0) {
-          bloque.horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
-        }
-      }
+  const toggleDia = (bloqueIndex: number, diaIdx: number) => {
+    const nuevosBloques = [...bloques];
+    const bloque = nuevosBloques[bloqueIndex];
+    if (bloque.diasHabilitados.includes(diaIdx)) {
+      bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
+    } else {
+      bloque.diasHabilitados.push(diaIdx);
     }
-  }
-  
-  setBloques(nuevosBloques);
-  setTieneCambios(true);
-};
+    setBloques(nuevosBloques);
+    setTieneCambios(true);
+  };
+
   const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
@@ -594,6 +593,11 @@ export default function AgendaDisponibilidad() {
           }
           
           const agendaGuardada = await response.json();
+          
+          // Actualizar el ID del bloque en el estado local
+          if (!bloque.id) {
+            bloque.id = agendaGuardada.id;
+          }
           
           const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
           if (horariosDeshabilitadosDia.length > 0) {
@@ -828,43 +832,43 @@ export default function AgendaDisponibilidad() {
             </div>
             
             {estaActivo && estaExpandido && (
-  <div className="agenda-grilla">
-    {DIAS_CORTO.map((dia, diaIdx) => {
-      const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
-      return (
-        <div key={diaIdx} className="agenda-dia-columna">
-          <button
-            onClick={() => toggleDia(idx, diaIdx)}
-            className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
-          >
-            {dia}
-            <div className="agenda-dia-icono">
-              {estaHabilitado ? '✅' : '🔒'}
-            </div>
-          </button>
-          
-          {estaHabilitado && bloque.horarios.length > 0 && (
-            <div className="agenda-horarios">
-              {bloque.horarios.map((horario, horarioIdx) => {
-                const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-                const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
-                return (
-                  <button
-                    key={horarioIdx}
-                    onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
-                    className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
-                  >
-                    {horario} {isDeshabilitado && '🔒'}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-)}
+              <div className="agenda-grilla">
+                {DIAS_CORTO.map((dia, diaIdx) => {
+                  const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
+                  return (
+                    <div key={diaIdx} className="agenda-dia-columna">
+                      <button
+                        onClick={() => toggleDia(idx, diaIdx)}
+                        className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+                      >
+                        {dia}
+                        <div className="agenda-dia-icono">
+                          {estaHabilitado ? '✅' : '🔒'}
+                        </div>
+                      </button>
+                      
+                      {estaHabilitado && bloque.horarios.length > 0 && (
+                        <div className="agenda-horarios">
+                          {bloque.horarios.map((horario, horarioIdx) => {
+                            const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+                            const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
+                            return (
+                              <button
+                                key={horarioIdx}
+                                onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                                className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                              >
+                                {horario} {isDeshabilitado && '🔒'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             
             {!estaActivo && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
