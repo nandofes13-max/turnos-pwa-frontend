@@ -256,99 +256,107 @@ export default function AgendaDisponibilidad() {
   };
 
   const cargarDatos = async () => {
-    setLoading(true);
-    try {
-      const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
-      const dataRelacion = await resRelacion.json();
-      setRelacion(dataRelacion);
+  setLoading(true);
+  try {
+    const resRelacion = await fetch(`${API_BASE_URL}/profesional-centro/${profesionalCentroId}`);
+    const dataRelacion = await resRelacion.json();
+    setRelacion(dataRelacion);
+    
+    const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
+    const dataAgendas = await resAgendas.json();
+    
+    // Cargar excepciones para cada agenda
+    const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
+    for (const ag of dataAgendas) {
+      const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
+      const excepciones = await resExcepciones.json();
+      excepcionesPorAgenda[ag.id] = excepciones;
+    }
+    
+    // Agrupar por bloque
+    const grupos: { [key: string]: any } = {};
+    
+    for (const ag of dataAgendas) {
+      const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
       
-      const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
-      const dataAgendas = await resAgendas.json();
-      
-      const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
-      for (const ag of dataAgendas) {
-        const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
-        const excepciones = await resExcepciones.json();
-        excepcionesPorAgenda[ag.id] = excepciones;
+      let diaIdx = ag.diaSemana;
+      if (diaIdx === 0) {
+        diaIdx = 6;
+      } else {
+        diaIdx = diaIdx - 1;
       }
       
-      const grupos: { [key: string]: any } = {};
-      
-      for (const ag of dataAgendas) {
-        const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
-        
-        let diaIdx = ag.diaSemana;
-        if (diaIdx === 0) {
-          diaIdx = 6;
-        } else {
-          diaIdx = diaIdx - 1;
-        }
-        
-        if (!grupos[clave]) {
-          grupos[clave] = {
-            id: ag.id,
-            diasIds: [],
-            horaDesde: ag.horaDesde,
-            horaHasta: ag.horaHasta,
-            duracionTurno: ag.duracionTurno,
-            fechaDesde: ag.fechaDesde,
-            fechaHasta: ag.fechaHasta,
-            horarios: [],
-            horariosDeshabilitados: {},
-            diasHabilitados: [],
-            fecha_baja: ag.fecha_baja,
-            excepciones: excepcionesPorAgenda[ag.id] || []
-          };
-        }
-        
-        grupos[clave].diasIds.push(ag.id);
-        
-        if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
-          grupos[clave].diasHabilitados.push(diaIdx);
-        }
+      if (!grupos[clave]) {
+        grupos[clave] = {
+          id: ag.id,
+          diasIds: [],
+          horaDesde: ag.horaDesde,
+          horaHasta: ag.horaHasta,
+          duracionTurno: ag.duracionTurno,
+          fechaDesde: ag.fechaDesde,
+          fechaHasta: ag.fechaHasta,
+          horarios: [],
+          horariosDeshabilitados: {},
+          diasHabilitados: [],
+          fecha_baja: ag.fecha_baja
+        };
       }
       
-      const bloquesCargados: BloqueHorario[] = Object.values(grupos);
+      grupos[clave].diasIds.push(ag.id);
       
-      for (const bloque of bloquesCargados) {
-        if (bloque.id) {
-          const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
-          const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-          if (slots.length > 0) {
-            bloque.horarios = slots.map(slot => slot.hora);
-          } else {
-            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+      if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
+        grupos[clave].diasHabilitados.push(diaIdx);
+      }
+      
+      // 👇 PROCESAR EXCEPCIONES PARA ESTA AGENDA (este día específico)
+      const excepciones = excepcionesPorAgenda[ag.id] || [];
+      const horariosDeshabilitadosSet = new Set<number>();
+      
+      // Generar horarios temporalmente para este bloque (para saber los índices)
+      const horariosTemp = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
+      
+      for (const excepcion of excepciones) {
+        for (let i = 0; i < horariosTemp.length; i++) {
+          const horario = horariosTemp[i];
+          if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+            horariosDeshabilitadosSet.add(i);
           }
+        }
+      }
+      
+      if (horariosDeshabilitadosSet.size > 0) {
+        if (!grupos[clave].horariosDeshabilitados[diaIdx]) {
+          grupos[clave].horariosDeshabilitados[diaIdx] = [];
+        }
+        grupos[clave].horariosDeshabilitados[diaIdx] = Array.from(horariosDeshabilitadosSet);
+      }
+    }
+    
+    const bloquesCargados: BloqueHorario[] = Object.values(grupos);
+    
+    // Cargar horarios para cada bloque
+    for (const bloque of bloquesCargados) {
+      if (bloque.id) {
+        const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
+        const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
+        if (slots.length > 0) {
+          bloque.horarios = slots.map(slot => slot.hora);
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
-        
-        if (bloque.excepciones) {
-          for (const excepcion of bloque.excepciones) {
-            for (let i = 0; i < bloque.horarios.length; i++) {
-              const horario = bloque.horarios[i];
-              if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
-                for (const dia of bloque.diasHabilitados) {
-                  if (!bloque.horariosDeshabilitados[dia]) {
-                    bloque.horariosDeshabilitados[dia] = [];
-                  }
-                  bloque.horariosDeshabilitados[dia].push(i);
-                }
-              }
-            }
-          }
-        }
+      } else {
+        bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
       }
-      
-      setBloques(bloquesCargados);
-      
-    } catch (err) {
-      console.error('Error cargando datos:', err);
-    } finally {
-      setLoading(false);
     }
-  };
-
+    
+    setBloques(bloquesCargados);
+    
+  } catch (err) {
+    console.error('Error cargando datos:', err);
+  } finally {
+    setLoading(false);
+  }
+};
   const obtenerDuracionFinal = () => {
     let duracion = mostrarOtraDuracion ? parseInt(otraDuracion) : nuevaDuracion;
     return isNaN(duracion) || duracion <= 0 ? 0 : duracion;
