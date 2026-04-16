@@ -558,6 +558,9 @@ export default function AgendaDisponibilidad() {
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta
         };
+
+        // 👇 AGREGAR ESTE LOG
+        console.log('Payload enviado:', JSON.stringify(payload, null, 2));
         
         const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
           method: 'POST',
