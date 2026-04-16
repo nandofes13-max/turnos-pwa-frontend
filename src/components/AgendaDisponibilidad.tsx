@@ -527,102 +527,116 @@ export default function AgendaDisponibilidad() {
   };
 
   const guardarAgenda = async () => {
-    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-    
-    const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
-    if (bloquesSinDias.length > 0) {
-      alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
-      return;
-    }
-    
-    setGuardando(true);
-    setErrorMessage(null);
-    
-    try {
-      // ✅ ELIMINADO: Ya no se eliminan todas las agendas existentes
-      // El backend se encarga de reactivar o crear según corresponda
-      
-      for (const bloque of bloques) {
-        for (const diaIdx of bloque.diasHabilitados) {
-          let diaSemana;
-          if (diaIdx === 6) {
-            diaSemana = 0;
-          } else {
-            diaSemana = diaIdx + 1;
-          }
-          
-          const payload = {
-            profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaSemana,
-            horaDesde: bloque.horaDesde,
-            horaHasta: bloque.horaHasta,
-            duracionTurno: bloque.duracionTurno,
-            bufferMinutos: 0,
-            fechaDesde: bloque.fechaDesde,
-            fechaHasta: bloque.fechaHasta
-          };
-          
-          const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
-          if (!response.ok) {
-            let errorMessageText = 'Error al guardar la agenda';
-            try {
-              const errorData = await response.json();
-              errorMessageText = errorData.message || errorMessageText;
-            } catch (e) {
-              errorMessageText = response.statusText || errorMessageText;
-            }
-            throw new Error(errorMessageText);
-          }
-          
-          const agendaGuardada = await response.json();
-          
-          if (!bloque.id) {
-            bloque.id = agendaGuardada.id;
-          }
-          
-          const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-          if (horariosDeshabilitadosDia.length > 0) {
-            await sincronizarExcepciones(
-              agendaGuardada.id,
-              horariosDeshabilitadosDia,
-              bloque.fechaDesde,
-              bloque.fechaHasta,
-              bloque.horaDesde,
-              bloque.duracionTurno
-            );
-          }
+  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+  
+  const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
+  if (bloquesSinDias.length > 0) {
+    alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
+    return;
+  }
+  
+  setGuardando(true);
+  setErrorMessage(null);
+  
+  try {
+    for (const bloque of bloques) {
+      for (const diaIdx of bloque.diasHabilitados) {
+        let diaSemana;
+        if (diaIdx === 6) {
+          diaSemana = 0;
+        } else {
+          diaSemana = diaIdx + 1;
         }
-      }
-      
-      alert('Agenda guardada correctamente');
-      setTieneCambios(false);
-      cargarDatos();
-    } catch (err: any) {
-      console.error('Error guardando agenda:', err);
-      
-      const errorMessageText = err.message || '';
-      
-      alert(errorMessageText);
-      
-      if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
-        const nuevosBloques = [...bloques];
-        const bloqueEliminado = nuevosBloques.pop();
         
-        if (bloqueEliminado) {
-          setBloques(nuevosBloques);
-          setTieneCambios(true);
-          alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
+        const payload = {
+          profesionalCentroId: parseInt(profesionalCentroId!),
+          diaSemana: diaSemana,
+          horaDesde: bloque.horaDesde,
+          horaHasta: bloque.horaHasta,
+          duracionTurno: bloque.duracionTurno,
+          bufferMinutos: 0,
+          fechaDesde: bloque.fechaDesde,
+          fechaHasta: bloque.fechaHasta
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          let errorMessageText = 'Error al guardar la agenda';
+          try {
+            const errorData = await response.json();
+            errorMessageText = errorData.message || errorMessageText;
+          } catch (e) {
+            errorMessageText = response.statusText || errorMessageText;
+          }
+          throw new Error(errorMessageText);
+        }
+        
+        const agendaGuardada = await response.json();
+        
+        if (!bloque.id) {
+          bloque.id = agendaGuardada.id;
+        }
+        
+        const horariosDeshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+        if (horariosDeshabilitadosDia.length > 0) {
+          await sincronizarExcepciones(
+            agendaGuardada.id,
+            horariosDeshabilitadosDia,
+            bloque.fechaDesde,
+            bloque.fechaHasta,
+            bloque.horaDesde,
+            bloque.duracionTurno
+          );
         }
       }
-    } finally {
-      setGuardando(false);
     }
-  };
+    
+    alert('Agenda guardada correctamente');
+    setTieneCambios(false);
+    cargarDatos();
+  } catch (err: any) {
+    console.error('Error guardando agenda:', err);
+    
+    const errorMessageText = err.message || '';
+    
+    // Mensaje específico para duplicado
+    if (errorMessageText.includes('Ya existe una agenda activa con los mismos datos')) {
+      const nuevosBloques = [...bloques];
+      const bloqueEliminado = nuevosBloques.pop();
+      
+      if (bloqueEliminado) {
+        setBloques(nuevosBloques);
+        setTieneCambios(true);
+        alert(`El bloque (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) ya existe en el sistema y no se puede duplicar.\n\nSe ha eliminado el bloque conflictivo. Por favor, revise la configuración.`);
+      } else {
+        alert(errorMessageText);
+      }
+    }
+    // Mensaje específico para solapamiento
+    else if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
+      const nuevosBloques = [...bloques];
+      const bloqueEliminado = nuevosBloques.pop();
+      
+      if (bloqueEliminado) {
+        setBloques(nuevosBloques);
+        setTieneCambios(true);
+        alert(`Se ha eliminado automáticamente el bloque conflictivo (${bloqueEliminado.horaDesde} a ${bloqueEliminado.horaHasta}) para resolver el solapamiento.\n\nPor favor, revise la configuración y vuelva a intentarlo.`);
+      } else {
+        alert(errorMessageText);
+      }
+    }
+    else {
+      alert(errorMessageText);
+    }
+  } finally {
+    setGuardando(false);
+  }
+};
   
   const handleClose = () => {
     if (tieneCambios) {
