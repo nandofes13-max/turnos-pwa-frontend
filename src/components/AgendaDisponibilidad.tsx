@@ -62,7 +62,7 @@ const generarHorarios = (desde: string, hasta: string, duracion: number): string
   return horarios;
 };
 
-const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, horaHasta: string, duracionTurno: number): string | null => {
+const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
   const [h, m] = horaDesde.split(':').map(Number);
   let minutos = m + (horarioIdx * duracionTurno);
   let horas = h;
@@ -70,11 +70,7 @@ const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, horaHast
     horas += Math.floor(minutos / 60);
     minutos = minutos % 60;
   }
-  const horaCalculada = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-  if (horaCalculada >= horaHasta) {
-    return null;
-  }
-  return horaCalculada;
+  return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
 };
 
 const calcularHoraMinima = (desde: string, duracion: number): string => {
@@ -179,15 +175,16 @@ export default function AgendaDisponibilidad() {
     fechaDesde: string, 
     fechaHasta: string | null, 
     horaDesde: string,
-    horaHasta: string,
     duracionTurno: number
   ) => {
+    // Primero, eliminar excepciones existentes para esta agenda
     const resExistentes = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${agendaId}`);
     const existentes = await resExistentes.json();
     for (const excepcion of existentes) {
       await fetch(`${API_BASE_URL}/agenda-excepciones/${excepcion.id}`, { method: 'DELETE' });
     }
     
+    // Generar la lista de fechas dentro del rango
     const fechas: string[] = [];
     let fechaActual = new Date(fechaDesde);
     const fechaFin = fechaHasta ? new Date(fechaHasta) : new Date(fechaDesde);
@@ -197,21 +194,51 @@ export default function AgendaDisponibilidad() {
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
-    for (const horarioIdx of horariosDeshabilitados) {
-      const hora = calcularHoraDesdeIndice(horarioIdx, horaDesde, horaHasta, duracionTurno);
-      if (hora) {
-        for (const fecha of fechas) {
-          await fetch(`${API_BASE_URL}/agenda-excepciones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              agendaDisponibilidadId: agendaId,
-              fecha: fecha,
-              hora: hora,
-              tipo: 'deshabilitado'
-            })
-          });
-        }
+    // Agrupar horarios deshabilitados contiguos en rangos
+    if (horariosDeshabilitados.length === 0) return;
+    
+    // Ordenar los índices
+    const sorted = [...horariosDeshabilitados].sort((a, b) => a - b);
+    const rangos: { inicio: number; fin: number }[] = [];
+    let inicio = sorted[0];
+    let fin = sorted[0];
+    
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === fin + 1) {
+        fin = sorted[i];
+      } else {
+        rangos.push({ inicio, fin });
+        inicio = sorted[i];
+        fin = sorted[i];
+      }
+    }
+    rangos.push({ inicio, fin });
+    
+    // Para cada rango, crear una excepción
+    for (const rango of rangos) {
+      const horaDesdeRango = calcularHoraDesdeIndice(rango.inicio, horaDesde, duracionTurno);
+      // Calcular hora hasta: el siguiente horario después del último índice
+      const siguienteIndice = rango.fin + 1;
+      let horaHastaRango;
+      if (siguienteIndice * duracionTurno + parseInt(horaDesde.split(':')[1]) < 60 * 24) {
+        horaHastaRango = calcularHoraDesdeIndice(siguienteIndice, horaDesde, duracionTurno);
+      } else {
+        // Si es el último horario del día, usar la hora de fin del bloque
+        horaHastaRango = '23:59';
+      }
+      
+      for (const fecha of fechas) {
+        await fetch(`${API_BASE_URL}/agenda-excepciones`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agendaDisponibilidadId: agendaId,
+            fecha: fecha,
+            horaDesde: horaDesdeRango,
+            horaHasta: horaHastaRango,
+            tipo: 'deshabilitado'
+          })
+        });
       }
     }
   };
@@ -226,13 +253,15 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      const excepcionesPorAgenda: { [key: number]: { fecha: string; hora: string }[] } = {};
+      // Cargar excepciones para cada agenda (ahora con rangos)
+      const excepcionesPorAgenda: { [key: number]: { fecha: string; horaDesde: string; horaHasta: string }[] } = {};
       for (const ag of dataAgendas) {
         const resExcepciones = await fetch(`${API_BASE_URL}/agenda-excepciones/por-agenda/${ag.id}`);
         const excepciones = await resExcepciones.json();
         excepcionesPorAgenda[ag.id] = excepciones;
       }
       
+      // Agrupar por bloque
       const grupos: { [key: string]: any } = {};
       
       for (const ag of dataAgendas) {
@@ -267,14 +296,17 @@ export default function AgendaDisponibilidad() {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
         
+        // Convertir excepciones de rango a índices de horarios deshabilitados
         const excepciones = excepcionesPorAgenda[ag.id] || [];
         const horariosDeshabilitadosSet = new Set<number>();
         
         for (const excepcion of excepciones) {
-          const horaExcepcion = excepcion.hora.split(':').slice(0, 2).join(':');
-          const horarioIndex = grupos[clave].horarios.findIndex((h: string) => h === horaExcepcion);
-          if (horarioIndex !== -1) {
-            horariosDeshabilitadosSet.add(horarioIndex);
+          // Encontrar los índices de horarios que caen dentro del rango de la excepción
+          for (let i = 0; i < grupos[clave].horarios.length; i++) {
+            const horario = grupos[clave].horarios[i];
+            if (horario >= excepcion.horaDesde && horario < excepcion.horaHasta) {
+              horariosDeshabilitadosSet.add(i);
+            }
           }
         }
         
@@ -470,7 +502,7 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-      const guardarAgenda = async () => {
+  const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
     const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
@@ -536,7 +568,6 @@ export default function AgendaDisponibilidad() {
               bloque.fechaDesde,
               bloque.fechaHasta,
               bloque.horaDesde,
-              bloque.horaHasta,
               bloque.duracionTurno
             );
           }
@@ -551,10 +582,8 @@ export default function AgendaDisponibilidad() {
       
       const errorMessageText = err.message || '';
       
-      // Mostrar el mensaje del backend
       alert(errorMessageText);
       
-      // Si el error es de solapamiento, eliminar automáticamente el último bloque
       if (errorMessageText.includes('solapa') || errorMessageText.includes('exclusion') || errorMessageText.includes('conflicto') || errorMessageText.includes('violates exclusion constraint')) {
         const nuevosBloques = [...bloques];
         const bloqueEliminado = nuevosBloques.pop();
