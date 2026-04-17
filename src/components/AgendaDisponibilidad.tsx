@@ -436,49 +436,65 @@ export default function AgendaDisponibilidad() {
   };
 
   const agregarBloque = () => {
-    if (!validarHorario()) return;
-    
-    const duracionFinal = obtenerDuracionFinal();
-    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-    
-    const yaExiste = bloques.some(bloque => 
-      bloque.horaDesde === nuevoDesde && 
-      bloque.horaHasta === nuevoHasta && 
-      bloque.duracionTurno === duracionFinal &&
-      bloque.fechaDesde === nuevaFechaDesde &&
-      bloque.fechaHasta === (nuevaFechaHasta || null)
-    );
-    
-    if (yaExiste) {
-      alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
-      return;
-    }
-    
-    const nuevoBloque: BloqueHorario = {
-      diasHabilitados: [],
-      horaDesde: nuevoDesde,
-      horaHasta: nuevoHasta,
-      duracionTurno: duracionFinal,
-      fechaDesde: nuevaFechaDesde,
-      fechaHasta: nuevaFechaHasta || null,
-      horarios: horarios,
-      horariosDeshabilitados: {},
-      fecha_baja: null
-    };
-    
-    setBloques([...bloques, nuevoBloque]);
-    setTieneCambios(true);
-    
-    setNuevoDesde('');
-    setNuevoHasta('');
-    setNuevaDuracion(0);
-    setMostrarOtraDuracion(false);
-    setOtraDuracion('');
-    setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-    setNuevaFechaHasta('');
-    setErrorMessage(null);
+  if (!validarHorario()) return;
+  
+  const duracionFinal = obtenerDuracionFinal();
+  
+  // ============================================================
+  // VALIDACIÓN DE DUPLICADO (Ajuste 1 - Frontend)
+  // Verificar si existe un bloque ACTIVO con mismo horario y duración
+  // ============================================================
+  const bloqueActivoExistente = bloques.some(bloque => 
+    bloque.fecha_baja === null && // Solo bloques activos
+    bloque.horaDesde === nuevoDesde && 
+    bloque.horaHasta === nuevoHasta && 
+    bloque.duracionTurno === duracionFinal
+  );
+  
+  if (bloqueActivoExistente) {
+    alert('Ya existe un bloque activo con el mismo horario y duración');
+    return;
+  }
+  
+  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+  
+  const yaExiste = bloques.some(bloque => 
+    bloque.horaDesde === nuevoDesde && 
+    bloque.horaHasta === nuevoHasta && 
+    bloque.duracionTurno === duracionFinal &&
+    bloque.fechaDesde === nuevaFechaDesde &&
+    bloque.fechaHasta === (nuevaFechaHasta || null)
+  );
+  
+  if (yaExiste) {
+    alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
+    return;
+  }
+  
+  const nuevoBloque: BloqueHorario = {
+    diasHabilitados: [],
+    horaDesde: nuevoDesde,
+    horaHasta: nuevoHasta,
+    duracionTurno: duracionFinal,
+    fechaDesde: nuevaFechaDesde,
+    fechaHasta: nuevaFechaHasta || null,
+    horarios: horarios,
+    horariosDeshabilitados: {},
+    fecha_baja: null
   };
-
+  
+  setBloques([...bloques, nuevoBloque]);
+  setTieneCambios(true);
+  
+  setNuevoDesde('');
+  setNuevoHasta('');
+  setNuevaDuracion(0);
+  setMostrarOtraDuracion(false);
+  setOtraDuracion('');
+  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+  setNuevaFechaHasta('');
+  setErrorMessage(null);
+};
   const toggleActivarBloque = async (index: number) => {
     const bloque = bloques[index];
     if (!bloque.id) return;
