@@ -495,37 +495,45 @@ export default function AgendaDisponibilidad() {
   setNuevaFechaHasta('');
   setErrorMessage(null);
 };
+  
   const toggleActivarBloque = async (index: number) => {
-    const bloque = bloques[index];
-    if (!bloque.id) return;
+  const bloque = bloques[index];
+  if (!bloque.diasIds || bloque.diasIds.length === 0) {
+    alert('No se encontraron IDs para este bloque');
+    return;
+  }
+  
+  const estaActivo = !bloque.fecha_baja;
+  const accion = estaActivo ? 'desactivar' : 'activar';
+  
+  if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) return;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/activar-desactivar`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: bloque.diasIds,
+        activar: !estaActivo  // true = activar, false = desactivar
+      })
+    });
     
-    try {
-      const newFechaBaja = bloque.fecha_baja ? null : new Date().toISOString();
-      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/${bloque.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fecha_baja: newFechaBaja,
-          usuario_baja: newFechaBaja ? 'demo' : null
-        })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al cambiar estado');
-      }
-      
-      const nuevosBloques = [...bloques];
-      nuevosBloques[index].fecha_baja = newFechaBaja;
-      setBloques(nuevosBloques);
-      setTieneCambios(true);
-      alert(bloque.fecha_baja ? 'Bloque reactivado' : 'Bloque desactivado');
-    } catch (err: any) {
-      console.error('Error:', err);
-      alert(err.message || 'Error al cambiar estado del bloque');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Error al ${accion} el bloque`);
     }
-  };
-
+    
+    // Recargar datos para actualizar la vista
+    await cargarDatos();
+    setTieneCambios(true);
+    
+    // Ajuste 3: Mensaje correcto según la acción
+    alert(estaActivo ? 'Bloque desactivado' : 'Bloque activado');
+  } catch (err: any) {
+    console.error('Error:', err);
+    alert(err.message || `Error al ${accion} el bloque`);
+  }
+};
   const toggleDia = (bloqueIndex: number, diaIdx: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
