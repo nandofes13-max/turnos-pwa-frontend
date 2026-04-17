@@ -329,11 +329,16 @@ export default function AgendaDisponibilidad() {
         if (bloque.id) {
           const fechaReferencia = bloque.fechaDesde || new Date().toISOString().split('T')[0];
           const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-          if (slots.length > 0) {
-            bloque.horarios = slots.map(slot => slot.hora);
-          } else {
-            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
-          }
+       
+          if (slots && slots.length > 0) {
+  bloque.horarios = slots.map(slot => slot.hora);
+  console.log(`[Bloque ${bloque.id}] Usando ${bloque.horarios.length} horarios del backend`);
+} else {
+  // Si no hay slots del backend, generar localmente igualmente
+  bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+  console.log(`[Bloque ${bloque.id}] Usando horarios locales (${bloque.horarios.length}) porque slots está vacío`);
+}
+          
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
@@ -363,6 +368,12 @@ export default function AgendaDisponibilidad() {
           }
         }
       }
+
+      console.log('=== DEBUG BLOQUES ===');
+console.log('Bloques a mostrar:', bloquesCargados.length);
+console.log('Primer bloque:', bloquesCargados[0]);
+console.log('==================');
+
       
       setBloques(bloquesCargados);
       
