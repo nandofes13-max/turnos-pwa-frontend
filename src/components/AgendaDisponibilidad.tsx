@@ -376,7 +376,7 @@ console.log('==================');
 
       
       setBloques(bloquesCargados);
-      
+      console.log('cargarDatos - FINALIZADO, bloques cargados:', bloquesCargados.length);
     } catch (err) {
       console.error('Error cargando datos:', err);
     } finally {
