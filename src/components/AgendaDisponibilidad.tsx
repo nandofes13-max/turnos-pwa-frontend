@@ -440,12 +440,8 @@ export default function AgendaDisponibilidad() {
   
   const duracionFinal = obtenerDuracionFinal();
   
-  // ============================================================
-  // VALIDACIÓN DE DUPLICADO (Ajuste 1 - Frontend)
-  // Verificar si existe un bloque ACTIVO con mismo horario y duración
-  // ============================================================
   const bloqueActivoExistente = bloques.some(bloque => 
-    bloque.fecha_baja === null && // Solo bloques activos
+    bloque.fecha_baja === null &&
     bloque.horaDesde === nuevoDesde && 
     bloque.horaHasta === nuevoHasta && 
     bloque.duracionTurno === duracionFinal
@@ -514,7 +510,7 @@ export default function AgendaDisponibilidad() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ids: bloque.diasIds,
-        activar: !estaActivo  // true = activar, false = desactivar
+        activar: !estaActivo
       })
     });
     
@@ -523,17 +519,16 @@ export default function AgendaDisponibilidad() {
       throw new Error(error.message || `Error al ${accion} el bloque`);
     }
     
-    // Recargar datos para actualizar la vista
     await cargarDatos();
     setTieneCambios(true);
     
-    // Ajuste 3: Mensaje correcto según la acción
     alert(estaActivo ? 'Bloque desactivado' : 'Bloque activado');
   } catch (err: any) {
     console.error('Error:', err);
     alert(err.message || `Error al ${accion} el bloque`);
   }
 };
+  
   const toggleDia = (bloqueIndex: number, diaIdx: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
@@ -957,6 +952,27 @@ export default function AgendaDisponibilidad() {
         const estaActivo = !bloque.fecha_baja;
         const estaExpandido = bloquesExpandidos[idx];
         
+        // Formatear la vigencia según el estado del bloque
+        const formatVigencia = () => {
+          const fechaDesdeStr = bloque.fechaDesde;
+          if (bloque.fecha_baja) {
+            const fechaBajaDate = new Date(bloque.fecha_baja);
+            const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
+              timeZone: 'America/Argentina/Buenos_Aires',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            }).replace(',', '');
+            return `Desde ${fechaDesdeStr} Hasta ${fechaBajaFormateada} hs`;
+          } else {
+            return `Desde ${fechaDesdeStr} indefinida`;
+          }
+        };
+        
         return (
           <div key={idx} className="agenda-bloque">
             <div className="agenda-bloque-header">
@@ -964,7 +980,7 @@ export default function AgendaDisponibilidad() {
                 <span>
                   <strong>Bloque:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
                   <strong> Duración:</strong> {bloque.duracionTurno} min | 
-                  <strong> Vigencia:</strong> {bloque.fechaDesde} {bloque.fechaHasta ? `hasta ${bloque.fechaHasta}` : 'indefinida'}
+                  <strong> Vigencia:</strong> {formatVigencia()}
                 </span>
                 <span style={{ fontSize: '12px', color: '#666' }}>
                   NE({relacion?.centro.negocio.id})-CE({relacion?.centro.id})-ES({relacion?.especialidad.id})-PR({relacion?.profesional.id})
@@ -989,15 +1005,17 @@ export default function AgendaDisponibilidad() {
               </div>
             </div>
             
-            {estaActivo && estaExpandido && (
+            {/* Ajuste 4: Mostrar grilla si está expandido, independientemente de si está activo */}
+            {estaExpandido && (
               <div className="agenda-grilla">
                 {DIAS_CORTO.map((dia, diaIdx) => {
                   const estaHabilitado = bloque.diasHabilitados.includes(diaIdx);
                   return (
                     <div key={diaIdx} className="agenda-dia-columna">
                       <button
-                        onClick={() => toggleDia(idx, diaIdx)}
+                        onClick={() => estaActivo && toggleDia(idx, diaIdx)}
                         className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+                        disabled={!estaActivo}
                       >
                         {dia}
                         <div className="agenda-dia-icono">
@@ -1013,8 +1031,9 @@ export default function AgendaDisponibilidad() {
                             return (
                               <button
                                 key={horarioIdx}
-                                onClick={() => toggleHorario(idx, diaIdx, horarioIdx)}
+                                onClick={() => estaActivo && toggleHorario(idx, diaIdx, horarioIdx)}
                                 className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
+                                disabled={!estaActivo}
                               >
                                 {horario} {isDeshabilitado && '🔒'}
                               </button>
@@ -1025,12 +1044,6 @@ export default function AgendaDisponibilidad() {
                     </div>
                   );
                 })}
-              </div>
-            )}
-            
-            {!estaActivo && (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                Bloque inactivo. Presione "Activar" para habilitarlo.
               </div>
             )}
           </div>
