@@ -45,16 +45,6 @@ interface ExcepcionRecurrente {
   tipo: string;
 }
 
-interface ExcepcionFecha {
-  id: number;
-  agendaDisponibilidadId: number;
-  fechaDesde: string;
-  fechaHasta: string | null;
-  horaDesde: string | null;
-  horaHasta: string | null;
-  tipo: string;
-}
-
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -136,7 +126,6 @@ export default function AgendaDisponibilidad() {
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [tieneCambios, setTieneCambios] = useState(false);
-  const [showFechasModal, setShowFechasModal] = useState(false);
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -153,7 +142,6 @@ export default function AgendaDisponibilidad() {
   
   const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
-  const [fechasBloqueadas, setFechasBloqueadas] = useState<ExcepcionFecha[]>([]);
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
   useEffect(() => {
@@ -215,17 +203,6 @@ export default function AgendaDisponibilidad() {
       return await response.json();
     } catch (error) {
       console.error('Error cargando excepciones recurrentes:', error);
-      return [];
-    }
-  };
-
-  const cargarExcepcionesFechas = async (agendaId: number): Promise<ExcepcionFecha[]> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/excepciones-fechas/por-agenda/${agendaId}`);
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (error) {
-      console.error('Error cargando excepciones de fechas:', error);
       return [];
     }
   };
@@ -305,18 +282,14 @@ export default function AgendaDisponibilidad() {
       const dataAgendas = await resAgendas.json();
       
       const excepcionesRecurrentesPorAgenda: { [key: number]: ExcepcionRecurrente[] } = {};
-      const excepcionesFechasPorAgenda: { [key: number]: ExcepcionFecha[] } = {};
       
       for (const ag of dataAgendas) {
         excepcionesRecurrentesPorAgenda[ag.id] = await cargarExcepcionesRecurrentes(ag.id);
-        excepcionesFechasPorAgenda[ag.id] = await cargarExcepcionesFechas(ag.id);
       }
       
       const grupos: { [key: string]: any } = {};
       
       for (const ag of dataAgendas) {
-        // 👇 AGREGAR ESTE LOG
-  console.log(`[cargarDatos] Procesando agenda: id=${ag.id}, diaSemana=${ag.diaSemana}, tipo=${typeof ag.id}`);
         const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
         
         let diaIdx = ag.diaSemana;
@@ -339,29 +312,16 @@ export default function AgendaDisponibilidad() {
             horariosDeshabilitados: {},
             diasHabilitados: [],
             fecha_baja: ag.fecha_baja,
-            excepcionesRecurrentes: excepcionesRecurrentesPorAgenda[ag.id] || [],
-            excepcionesFechas: excepcionesFechasPorAgenda[ag.id] || []
+            excepcionesRecurrentes: excepcionesRecurrentesPorAgenda[ag.id] || []
           };
         }
         
         grupos[clave].diasIds.push(ag.id);
-         // 👇 AGREGAR ESTE LOG
-  console.log(`[cargarDatos] diasIds actualizado para clave ${clave}:`, grupos[clave].diasIds);
-  //
+        
         if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
       }
-      // 👇 AGREGAR ESTOS LOGS
-console.log('=== GRUPOS FORMADOS ===');
-Object.keys(grupos).forEach(clave => {
-  console.log(`Grupo ${clave}:`, {
-    id: grupos[clave].id,
-    diasIds: grupos[clave].diasIds,
-    horaDesde: grupos[clave].horaDesde,
-    duracionTurno: grupos[clave].duracionTurno
-  });
-});
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
       
@@ -401,10 +361,6 @@ Object.keys(grupos).forEach(clave => {
               }
             }
           }
-        }
-        
-        if (bloque.excepcionesFechas && bloque.excepcionesFechas.length > 0) {
-          setFechasBloqueadas(bloque.excepcionesFechas);
         }
       }
       
@@ -450,166 +406,106 @@ Object.keys(grupos).forEach(clave => {
   };
 
   const agregarBloque = () => {
-  if (!validarHorario()) return;
-  
-  const duracionFinal = obtenerDuracionFinal();
-  
-  const bloqueActivoExistente = bloques.some(bloque => 
-    bloque.fecha_baja === null &&
-    bloque.horaDesde === nuevoDesde && 
-    bloque.horaHasta === nuevoHasta && 
-    bloque.duracionTurno === duracionFinal
-  );
-  
-  if (bloqueActivoExistente) {
-    alert('Ya existe un bloque activo con el mismo horario y duración');
-    return;
-  }
-  
-  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-  
-  const yaExiste = bloques.some(bloque => 
-    bloque.horaDesde === nuevoDesde && 
-    bloque.horaHasta === nuevoHasta && 
-    bloque.duracionTurno === duracionFinal &&
-    bloque.fechaDesde === nuevaFechaDesde &&
-    bloque.fechaHasta === (nuevaFechaHasta || null)
-  );
-  
-  if (yaExiste) {
-    alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
-    return;
-  }
-  
-  const nuevoBloque: BloqueHorario = {
-    diasHabilitados: [],
-    horaDesde: nuevoDesde,
-    horaHasta: nuevoHasta,
-    duracionTurno: duracionFinal,
-    fechaDesde: nuevaFechaDesde,
-    fechaHasta: nuevaFechaHasta || null,
-    horarios: horarios,
-    horariosDeshabilitados: {},
-    fecha_baja: null
-  };
-  
-  setBloques([...bloques, nuevoBloque]);
-  setTieneCambios(true);
-  
-  setNuevoDesde('');
-  setNuevoHasta('');
-  setNuevaDuracion(0);
-  setMostrarOtraDuracion(false);
-  setOtraDuracion('');
-  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-  setNuevaFechaHasta('');
-  setErrorMessage(null);
-};
-  
-  const toggleActivarBloque = async (index: number) => {
-  const bloque = bloques[index];
-  
-  // ============================================================
-  // LOG 1: Información del bloque
-  // ============================================================
-  console.log('=== TOGGLE ACTIVAR BLOQUE ===');
-  console.log('Índice:', index);
-  console.log('Bloque completo:', bloque);
-  console.log('bloque.diasIds:', bloque.diasIds);
-  console.log('bloque.id:', bloque.id);
-  console.log('bloque.fecha_baja:', bloque.fecha_baja);
-  
-  if (!bloque.diasIds || bloque.diasIds.length === 0) {
-    console.error('ERROR: No se encontraron diasIds para este bloque');
-    alert('No se encontraron IDs para este bloque. Revisa la consola para más detalles.');
-    return;
-  }
-  
-  // ============================================================
-  // LOG 2: Validación de IDs
-  // ============================================================
-  console.log('IDs originales:', bloque.diasIds);
-  console.log('Tipos de los IDs:', bloque.diasIds.map(id => typeof id));
-  
-  // Filtrar solo IDs numéricos válidos
-  const idsValidos = bloque.diasIds.filter(id => {
-    const esNumero = typeof id === 'number' && !isNaN(id);
-    if (!esNumero) {
-      console.warn(`ID inválido encontrado: ${id} (tipo: ${typeof id})`);
-    }
-    return esNumero;
-  });
-  
-  console.log('IDs válidos después del filtro:', idsValidos);
-  
-  if (idsValidos.length === 0) {
-    console.error('ERROR: No hay IDs válidos para enviar al backend');
-    alert('No hay IDs válidos para este bloque. Los IDs originales son: ' + JSON.stringify(bloque.diasIds));
-    return;
-  }
-  
-  const estaActivo = !bloque.fecha_baja;
-  const accion = estaActivo ? 'desactivar' : 'activar';
-  
-  console.log(`Estado actual: ${estaActivo ? 'ACTIVO' : 'INACTIVO'}`);
-  console.log(`Acción a realizar: ${accion}`);
-  console.log(`Enviando al backend:`, {
-    ids: idsValidos,
-    activar: !estaActivo
-  });
-  
-  if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) {
-    console.log('Acción cancelada por el usuario');
-    return;
-  }
-  
-  try {
-    console.log('⏳ Enviando solicitud PUT a /agenda-disponibilidad/activar-desactivar...');
+    if (!validarHorario()) return;
     
-    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/activar-desactivar`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ids: idsValidos,
-        activar: !estaActivo
-      })
-    });
+    const duracionFinal = obtenerDuracionFinal();
     
-    console.log('Respuesta recibida - Status:', response.status, response.statusText);
+    const bloqueActivoExistente = bloques.some(bloque => 
+      bloque.fecha_baja === null &&
+      bloque.horaDesde === nuevoDesde && 
+      bloque.horaHasta === nuevoHasta && 
+      bloque.duracionTurno === duracionFinal
+    );
     
-    if (!response.ok) {
-      let errorMessage = `Error ${response.status}: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        console.error('Error del backend:', errorData);
-        errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-        console.error('No se pudo parsear el error del backend');
-      }
-      throw new Error(errorMessage);
+    if (bloqueActivoExistente) {
+      alert('Ya existe un bloque activo con el mismo horario y duración');
+      return;
     }
     
-    const responseData = await response.json();
-    console.log('Respuesta exitosa del backend:', responseData);
+    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
-    console.log('🔄 Recargando datos...');
-    await cargarDatos();
+    const yaExiste = bloques.some(bloque => 
+      bloque.horaDesde === nuevoDesde && 
+      bloque.horaHasta === nuevoHasta && 
+      bloque.duracionTurno === duracionFinal &&
+      bloque.fechaDesde === nuevaFechaDesde &&
+      bloque.fechaHasta === (nuevaFechaHasta || null)
+    );
+    
+    if (yaExiste) {
+      alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
+      return;
+    }
+    
+    const nuevoBloque: BloqueHorario = {
+      diasHabilitados: [],
+      horaDesde: nuevoDesde,
+      horaHasta: nuevoHasta,
+      duracionTurno: duracionFinal,
+      fechaDesde: nuevaFechaDesde,
+      fechaHasta: nuevaFechaHasta || null,
+      horarios: horarios,
+      horariosDeshabilitados: {},
+      fecha_baja: null
+    };
+    
+    setBloques([...bloques, nuevoBloque]);
     setTieneCambios(true);
     
-    const mensaje = estaActivo ? 'Bloque desactivado' : 'Bloque activado';
-    console.log(`✅ ${mensaje}`);
-    alert(mensaje);
+    setNuevoDesde('');
+    setNuevoHasta('');
+    setNuevaDuracion(0);
+    setMostrarOtraDuracion(false);
+    setOtraDuracion('');
+    setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+    setNuevaFechaHasta('');
+    setErrorMessage(null);
+  };
+  
+  const toggleActivarBloque = async (index: number) => {
+    const bloque = bloques[index];
     
-  } catch (err: any) {
-    console.error('❌ ERROR en toggleActivarBloque:', err);
-    console.error('Detalles del error:', {
-      message: err.message,
-      stack: err.stack,
-      cause: err.cause
-    });
-    alert(`Error al ${accion} el bloque: ${err.message}\n\nRevisa la consola (F12) para más detalles.`);
-  }
-};
+    if (!bloque.diasIds || bloque.diasIds.length === 0) {
+      alert('No se encontraron IDs para este bloque');
+      return;
+    }
+    
+    const idsValidos = bloque.diasIds.filter(id => typeof id === 'number' && !isNaN(id));
+    
+    if (idsValidos.length === 0) {
+      alert('No hay IDs válidos para este bloque');
+      return;
+    }
+    
+    const estaActivo = !bloque.fecha_baja;
+    const accion = estaActivo ? 'desactivar' : 'activar';
+    
+    if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/activar-desactivar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: idsValidos,
+          activar: !estaActivo
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Error al ${accion} el bloque`);
+      }
+      
+      await cargarDatos();
+      setTieneCambios(true);
+      
+      alert(estaActivo ? 'Bloque desactivado' : 'Bloque activado');
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || `Error al ${accion} el bloque`);
+    }
+  };
   
   const toggleDia = (bloqueIndex: number, diaIdx: number) => {
     const nuevosBloques = [...bloques];
@@ -705,61 +601,6 @@ Object.keys(grupos).forEach(clave => {
   };
 
   const hoy = new Date().toISOString().split('T')[0];
-
-  const agregarFechaBloqueada = async () => {
-    if (!rangoBloqueoInicio) return;
-    
-    const bloqueConId = bloques.find(b => b.id);
-    if (!bloqueConId || !bloqueConId.id) {
-      alert('Primero debe guardar la agenda base antes de bloquear fechas.');
-      return;
-    }
-    
-    try {
-      const payload: any = {
-        agendaDisponibilidadId: bloqueConId.id,
-        fechaDesde: rangoBloqueoInicio,
-        tipo: 'deshabilitado'
-      };
-      
-      if (rangoBloqueoFin) {
-        payload.fechaHasta = rangoBloqueoFin;
-      }
-      
-      const response = await fetch(`${API_BASE_URL}/excepciones-fechas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al bloquear fechas');
-      }
-      
-      setRangoBloqueoInicio('');
-      setRangoBloqueoFin('');
-      setTieneCambios(true);
-      await cargarDatos();
-      alert('Fechas bloqueadas correctamente');
-    } catch (err: any) {
-      console.error('Error:', err);
-      alert(err.message || 'Error al bloquear fechas');
-    }
-  };
-
-  const eliminarFechaBloqueada = async (fecha: ExcepcionFecha) => {
-    try {
-      await fetch(`${API_BASE_URL}/excepciones-fechas/${fecha.id}`, {
-        method: 'DELETE'
-      });
-      setTieneCambios(true);
-      await cargarDatos();
-    } catch (err: any) {
-      console.error('Error:', err);
-      alert(err.message || 'Error al eliminar la fecha bloqueada');
-    }
-  };
 
   const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
@@ -995,38 +836,6 @@ Object.keys(grupos).forEach(clave => {
             <label className="agenda-form-label">Vigencia Hasta</label>
             <input type="date" value={nuevaFechaHasta} onChange={(e) => setNuevaFechaHasta(e.target.value)} min={nuevaFechaDesde} className="agenda-form-input" />
           </div>
-          
-          <div className="agenda-form-field" style={{ minWidth: '110px' }}>
-            <label className="agenda-form-label">Bloquear Desde</label>
-            <input 
-              type="date" 
-              value={rangoBloqueoInicio} 
-              min={hoy}
-              onChange={(e) => setRangoBloqueoInicio(e.target.value)} 
-              className="agenda-form-input" 
-            />
-          </div>
-          
-          <div className="agenda-form-field" style={{ minWidth: '110px' }}>
-            <label className="agenda-form-label">Bloquear Hasta</label>
-            <input 
-              type="date" 
-              value={rangoBloqueoFin} 
-              min={rangoBloqueoInicio || hoy}
-              onChange={(e) => setRangoBloqueoFin(e.target.value)} 
-              className="agenda-form-input" 
-            />
-          </div>
-          
-          <div>
-            <button onClick={agregarFechaBloqueada} className="tm-btn-secundario" style={{ marginTop: '24px' }}>Bloquear</button>
-          </div>
-          
-          <div>
-            <button onClick={() => setShowFechasModal(true)} className="agenda-btn-fechas" style={{ marginTop: '24px' }}>
-              📅 Ver ({fechasBloqueadas.length})
-            </button>
-          </div>
         </div>
       </div>
 
@@ -1034,7 +843,6 @@ Object.keys(grupos).forEach(clave => {
         const estaActivo = !bloque.fecha_baja;
         const estaExpandido = bloquesExpandidos[idx];
         
-        // Formatear la vigencia según el estado del bloque
         const formatVigencia = () => {
           const fechaDesdeStr = bloque.fechaDesde;
           if (bloque.fecha_baja) {
@@ -1087,7 +895,6 @@ Object.keys(grupos).forEach(clave => {
               </div>
             </div>
             
-            {/* Ajuste 4: Mostrar grilla si está expandido, independientemente de si está activo */}
             {estaExpandido && (
               <div className="agenda-grilla">
                 {DIAS_CORTO.map((dia, diaIdx) => {
@@ -1138,33 +945,6 @@ Object.keys(grupos).forEach(clave => {
         </button>
         <button onClick={handleClose} className="tm-btn-secundario">Cancelar</button>
       </div>
-
-      {showFechasModal && (
-        <div className="agenda-modal-overlay" onClick={() => setShowFechasModal(false)}>
-          <div className="agenda-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="agenda-modal-title">Fechas Bloqueadas</h3>
-            <div className="agenda-modal-lista">
-              {fechasBloqueadas.length === 0 ? (
-                <p>No hay fechas bloqueadas</p>
-              ) : (
-                fechasBloqueadas.map(fecha => (
-                  <div key={fecha.id} className="agenda-modal-fecha-item">
-                    <span>
-                      {fecha.fechaDesde}
-                      {fecha.fechaHasta ? ` - ${fecha.fechaHasta}` : ''}
-                      {fecha.horaDesde ? ` (${fecha.horaDesde.slice(0,5)} a ${fecha.horaHasta?.slice(0,5)})` : ' (día completo)'}
-                    </span>
-                    <button onClick={() => eliminarFechaBloqueada(fecha)}>✖</button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <button onClick={() => setShowFechasModal(false)} className="tm-btn-secundario">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
