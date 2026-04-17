@@ -855,24 +855,35 @@ console.log('==================');
         const estaExpandido = bloquesExpandidos[idx];
         
         const formatVigencia = () => {
-          const fechaDesdeStr = bloque.fechaDesde;
-          if (bloque.fecha_baja) {
-            const fechaBajaDate = new Date(bloque.fecha_baja);
-            const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
-              timeZone: 'America/Argentina/Buenos_Aires',
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hour12: false
-            }).replace(',', '');
-            return `Desde ${fechaDesdeStr} Hasta ${fechaBajaFormateada} hs`;
-          } else {
-            return `Desde ${fechaDesdeStr} indefinida`;
-          }
-        };
+  const fechaDesdeDate = new Date(bloque.fechaDesde);
+  const fechaDesdeFormateada = fechaDesdeDate.toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(',', '');
+  
+  if (bloque.fecha_baja) {
+    const fechaBajaDate = new Date(bloque.fecha_baja);
+    const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).replace(',', '');
+    return `Desde ${fechaDesdeFormateada} hs Hasta ${fechaBajaFormateada} hs`;
+  } else {
+    return `Desde ${fechaDesdeFormateada} hs indefinida`;
+  }
+};
         
         return (
           <div key={idx} className="agenda-bloque">
