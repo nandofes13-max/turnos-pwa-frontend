@@ -36,7 +36,6 @@ interface SlotBackend {
   disponible: boolean;
 }
 
-// Interfaces para las nuevas excepciones
 interface ExcepcionRecurrente {
   id: number;
   agendaDisponibilidadId: number;
@@ -209,11 +208,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  // ============================================================
-  // NUEVAS FUNCIONES PARA EXCEPCIONES (reemplazan agenda-excepciones)
-  // ============================================================
-  
-  // Cargar excepciones recurrentes
   const cargarExcepcionesRecurrentes = async (agendaId: number): Promise<ExcepcionRecurrente[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes/por-agenda/${agendaId}`);
@@ -225,7 +219,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  // Cargar excepciones de fechas
   const cargarExcepcionesFechas = async (agendaId: number): Promise<ExcepcionFecha[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/excepciones-fechas/por-agenda/${agendaId}`);
@@ -237,7 +230,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  // Sincronizar excepciones (reemplaza la antigua sincronizarExcepciones)
   const sincronizarExcepciones = async (
     agendaId: number,
     horariosDeshabilitados: number[],
@@ -246,7 +238,6 @@ export default function AgendaDisponibilidad() {
     horaDesde: string,
     duracionTurno: number
   ) => {
-    // 1. Eliminar excepciones recurrentes existentes para esta agenda
     const excepcionesExistentes = await cargarExcepcionesRecurrentes(agendaId);
     for (const excepcion of excepcionesExistentes) {
       await fetch(`${API_BASE_URL}/excepciones-recurrentes/${excepcion.id}`, { method: 'DELETE' });
@@ -254,7 +245,6 @@ export default function AgendaDisponibilidad() {
     
     if (horariosDeshabilitados.length === 0) return;
     
-    // 2. Generar rangos de horarios deshabilitados
     const sorted = [...horariosDeshabilitados].sort((a, b) => a - b);
     const rangos: { inicio: number; fin: number }[] = [];
     let inicio = sorted[0];
@@ -271,7 +261,6 @@ export default function AgendaDisponibilidad() {
     }
     rangos.push({ inicio, fin });
     
-    // 3. Crear nuevas excepciones recurrentes
     for (const rango of rangos) {
       const horaDesdeRango = calcularHoraDesdeIndice(rango.inicio, horaDesde, duracionTurno);
       const siguienteIndice = rango.fin + 1;
@@ -282,9 +271,6 @@ export default function AgendaDisponibilidad() {
         horaHastaRango = '23:59';
       }
       
-      // Obtener el día de semana desde la agenda (se pasa por parámetro o se calcula)
-      // Por ahora, creamos una excepción que aplica a TODOS los días habilitados
-      // Esto es simplificado - idealmente deberíamos saber qué día específico se está guardando
       for (const diaIdx of [0, 1, 2, 3, 4, 5, 6]) {
         let diaSemana = diaIdx;
         if (diaSemana === 6) {
@@ -318,7 +304,6 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // Cargar excepciones desde los nuevos endpoints
       const excepcionesRecurrentesPorAgenda: { [key: number]: ExcepcionRecurrente[] } = {};
       const excepcionesFechasPorAgenda: { [key: number]: ExcepcionFecha[] } = {};
       
@@ -379,10 +364,8 @@ export default function AgendaDisponibilidad() {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
         
-        // Aplicar excepciones recurrentes a los horarios deshabilitados
         if (bloque.excepcionesRecurrentes) {
           for (const excepcion of bloque.excepcionesRecurrentes) {
-            // Convertir diaSemana (0=Domingo) a diaIdx (0=Lunes)
             let diaIdx = excepcion.diaSemana;
             if (diaIdx === 0) {
               diaIdx = 6;
@@ -406,7 +389,6 @@ export default function AgendaDisponibilidad() {
           }
         }
         
-        // Guardar excepciones de fechas para el modal
         if (bloque.excepcionesFechas && bloque.excepcionesFechas.length > 0) {
           setFechasBloqueadas(bloque.excepcionesFechas);
         }
@@ -540,23 +522,78 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
+  const toggleHorario = async (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
+    const bloque = bloques[bloqueIndex];
+    if (!bloque.id) return;
     
-    const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-    
-    if (deshabilitadosDia.includes(horarioIndex)) {
-      bloque.horariosDeshabilitados[diaIdx] = deshabilitadosDia.filter(i => i !== horarioIndex);
-      if (bloque.horariosDeshabilitados[diaIdx].length === 0) {
-        delete bloque.horariosDeshabilitados[diaIdx];
+    const horario = bloque.horarios[horarioIndex];
+    const siguienteHorario = bloque.horarios[horarioIndex + 1];
+    const horaHasta = siguienteHorario || (() => {
+      const [h, m] = horario.split(':').map(Number);
+      let minutos = m + bloque.duracionTurno;
+      let horas = h;
+      if (minutos >= 60) {
+        horas += Math.floor(minutos / 60);
+        minutos = minutos % 60;
       }
+      return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    })();
+    
+    let diaSemana = diaIdx;
+    if (diaSemana === 6) {
+      diaSemana = 0;
     } else {
-      bloque.horariosDeshabilitados[diaIdx] = [...deshabilitadosDia, horarioIndex];
+      diaSemana = diaIdx + 1;
     }
     
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
+    const estaDeshabilitado = bloque.horariosDeshabilitados[diaIdx]?.includes(horarioIndex);
+    
+    try {
+      if (!estaDeshabilitado) {
+        const payload = {
+          agendaDisponibilidadId: bloque.id,
+          diaSemana: diaSemana,
+          horaDesde: `${horario}:00`,
+          horaHasta: `${horaHasta}:00`,
+          tipo: "deshabilitado"
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Error al deshabilitar el horario');
+        }
+      } else {
+        const payload = {
+          agendaDisponibilidadId: bloque.id,
+          diaSemana: diaSemana,
+          horaDesde: `${horario}:00`,
+          horaHasta: `${horaHasta}:00`
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes/habilitar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Error al habilitar el horario');
+        }
+      }
+      
+      await cargarDatos();
+      setTieneCambios(true);
+    } catch (err: any) {
+      console.error('Error:', err);
+      alert(err.message || 'Error al cambiar estado del horario');
+    }
   };
 
   const toggleExpandirBloque = (index: number) => {
@@ -571,7 +608,6 @@ export default function AgendaDisponibilidad() {
   const agregarFechaBloqueada = async () => {
     if (!rangoBloqueoInicio) return;
     
-    // Encontrar el primer bloque con ID para asociar la excepción
     const bloqueConId = bloques.find(b => b.id);
     if (!bloqueConId || !bloqueConId.id) {
       alert('Primero debe guardar la agenda base antes de bloquear fechas.');
