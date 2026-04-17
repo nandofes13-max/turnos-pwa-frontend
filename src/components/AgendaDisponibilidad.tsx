@@ -315,6 +315,8 @@ export default function AgendaDisponibilidad() {
       const grupos: { [key: string]: any } = {};
       
       for (const ag of dataAgendas) {
+        // 👇 AGREGAR ESTE LOG
+  console.log(`[cargarDatos] Procesando agenda: id=${ag.id}, diaSemana=${ag.diaSemana}, tipo=${typeof ag.id}`);
         const clave = `${ag.horaDesde}|${ag.horaHasta}|${ag.duracionTurno}|${ag.fechaDesde}|${ag.fechaHasta}`;
         
         let diaIdx = ag.diaSemana;
@@ -343,11 +345,23 @@ export default function AgendaDisponibilidad() {
         }
         
         grupos[clave].diasIds.push(ag.id);
-        
+         // 👇 AGREGAR ESTE LOG
+  console.log(`[cargarDatos] diasIds actualizado para clave ${clave}:`, grupos[clave].diasIds);
+  //
         if (!grupos[clave].diasHabilitados.includes(diaIdx)) {
           grupos[clave].diasHabilitados.push(diaIdx);
         }
       }
+      // 👇 AGREGAR ESTOS LOGS
+console.log('=== GRUPOS FORMADOS ===');
+Object.keys(grupos).forEach(clave => {
+  console.log(`Grupo ${clave}:`, {
+    id: grupos[clave].id,
+    diasIds: grupos[clave].diasIds,
+    horaDesde: grupos[clave].horaDesde,
+    duracionTurno: grupos[clave].duracionTurno
+  });
+});
       
       const bloquesCargados: BloqueHorario[] = Object.values(grupos);
       
@@ -494,38 +508,106 @@ export default function AgendaDisponibilidad() {
   
   const toggleActivarBloque = async (index: number) => {
   const bloque = bloques[index];
+  
+  // ============================================================
+  // LOG 1: Información del bloque
+  // ============================================================
+  console.log('=== TOGGLE ACTIVAR BLOQUE ===');
+  console.log('Índice:', index);
+  console.log('Bloque completo:', bloque);
+  console.log('bloque.diasIds:', bloque.diasIds);
+  console.log('bloque.id:', bloque.id);
+  console.log('bloque.fecha_baja:', bloque.fecha_baja);
+  
   if (!bloque.diasIds || bloque.diasIds.length === 0) {
-    alert('No se encontraron IDs para este bloque');
+    console.error('ERROR: No se encontraron diasIds para este bloque');
+    alert('No se encontraron IDs para este bloque. Revisa la consola para más detalles.');
+    return;
+  }
+  
+  // ============================================================
+  // LOG 2: Validación de IDs
+  // ============================================================
+  console.log('IDs originales:', bloque.diasIds);
+  console.log('Tipos de los IDs:', bloque.diasIds.map(id => typeof id));
+  
+  // Filtrar solo IDs numéricos válidos
+  const idsValidos = bloque.diasIds.filter(id => {
+    const esNumero = typeof id === 'number' && !isNaN(id);
+    if (!esNumero) {
+      console.warn(`ID inválido encontrado: ${id} (tipo: ${typeof id})`);
+    }
+    return esNumero;
+  });
+  
+  console.log('IDs válidos después del filtro:', idsValidos);
+  
+  if (idsValidos.length === 0) {
+    console.error('ERROR: No hay IDs válidos para enviar al backend');
+    alert('No hay IDs válidos para este bloque. Los IDs originales son: ' + JSON.stringify(bloque.diasIds));
     return;
   }
   
   const estaActivo = !bloque.fecha_baja;
   const accion = estaActivo ? 'desactivar' : 'activar';
   
-  if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) return;
+  console.log(`Estado actual: ${estaActivo ? 'ACTIVO' : 'INACTIVO'}`);
+  console.log(`Acción a realizar: ${accion}`);
+  console.log(`Enviando al backend:`, {
+    ids: idsValidos,
+    activar: !estaActivo
+  });
+  
+  if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) {
+    console.log('Acción cancelada por el usuario');
+    return;
+  }
   
   try {
+    console.log('⏳ Enviando solicitud PUT a /agenda-disponibilidad/activar-desactivar...');
+    
     const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/activar-desactivar`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ids: bloque.diasIds,
+        ids: idsValidos,
         activar: !estaActivo
       })
     });
     
+    console.log('Respuesta recibida - Status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `Error al ${accion} el bloque`);
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        console.error('Error del backend:', errorData);
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        console.error('No se pudo parsear el error del backend');
+      }
+      throw new Error(errorMessage);
     }
     
+    const responseData = await response.json();
+    console.log('Respuesta exitosa del backend:', responseData);
+    
+    console.log('🔄 Recargando datos...');
     await cargarDatos();
     setTieneCambios(true);
     
-    alert(estaActivo ? 'Bloque desactivado' : 'Bloque activado');
+    const mensaje = estaActivo ? 'Bloque desactivado' : 'Bloque activado';
+    console.log(`✅ ${mensaje}`);
+    alert(mensaje);
+    
   } catch (err: any) {
-    console.error('Error:', err);
-    alert(err.message || `Error al ${accion} el bloque`);
+    console.error('❌ ERROR en toggleActivarBloque:', err);
+    console.error('Detalles del error:', {
+      message: err.message,
+      stack: err.stack,
+      cause: err.cause
+    });
+    alert(`Error al ${accion} el bloque: ${err.message}\n\nRevisa la consola (F12) para más detalles.`);
   }
 };
   
