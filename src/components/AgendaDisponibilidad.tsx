@@ -445,7 +445,44 @@ console.log('==================');
     return;
   }
   
-  // ... resto del código
+  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+  
+  const yaExiste = bloques.some(bloque => 
+    bloque.horaDesde === nuevoDesde && 
+    bloque.horaHasta === nuevoHasta && 
+    bloque.duracionTurno === duracionFinal &&
+    bloque.fechaDesde === nuevaFechaDesde &&
+    bloque.fechaHasta === (nuevaFechaHasta || null)
+  );
+  
+  if (yaExiste) {
+    alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
+    return;
+  }
+  
+  const nuevoBloque: BloqueHorario = {
+    diasHabilitados: [],
+    horaDesde: nuevoDesde,
+    horaHasta: nuevoHasta,
+    duracionTurno: duracionFinal,
+    fechaDesde: nuevaFechaDesde,
+    fechaHasta: nuevaFechaHasta || null,
+    horarios: horarios,
+    horariosDeshabilitados: {},
+    fecha_baja: null
+  };
+  
+  setBloques([...bloques, nuevoBloque]);
+  setTieneCambios(true);
+  
+  setNuevoDesde('');
+  setNuevoHasta('');
+  setNuevaDuracion(0);
+  setMostrarOtraDuracion(false);
+  setOtraDuracion('');
+  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+  setNuevaFechaHasta('');
+  setErrorMessage(null);
 };    
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
