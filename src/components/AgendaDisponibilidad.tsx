@@ -417,22 +417,36 @@ console.log('==================');
   };
 
   const agregarBloque = () => {
-    if (!validarHorario()) return;
-    
-    const duracionFinal = obtenerDuracionFinal();
-    
-    const bloqueActivoExistente = bloques.some(bloque => 
-      bloque.fecha_baja === null &&
-      bloque.horaDesde === nuevoDesde && 
-      bloque.horaHasta === nuevoHasta && 
-      bloque.duracionTurno === duracionFinal
-    );
-    
-    if (bloqueActivoExistente) {
-      alert('Ya existe un bloque activo con el mismo horario y duración');
-      return;
-    }
-    
+  if (!validarHorario()) return;
+  
+  const duracionFinal = obtenerDuracionFinal();
+  
+  console.log('=== AGREGAR BLOQUE ===');
+  console.log('Nuevo bloque:', { nuevoDesde, nuevoHasta, duracionFinal });
+  console.log('Bloques existentes:', bloques.map(b => ({
+    id: b.id,
+    horaDesde: b.horaDesde,
+    horaHasta: b.horaHasta,
+    duracionTurno: b.duracionTurno,
+    fecha_baja: b.fecha_baja
+  })));
+  
+  const bloqueActivoExistente = bloques.some(bloque => 
+    bloque.fecha_baja === null &&
+    bloque.horaDesde === nuevoDesde && 
+    bloque.horaHasta === nuevoHasta && 
+    bloque.duracionTurno === duracionFinal
+  );
+  
+  console.log('¿Existe bloque activo?', bloqueActivoExistente);
+  
+  if (bloqueActivoExistente) {
+    alert('Ya existe un bloque activo con el mismo horario y duración');
+    return;
+  }
+  
+  // ... resto del código
+};    
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
