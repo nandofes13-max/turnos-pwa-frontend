@@ -331,14 +331,12 @@ export default function AgendaDisponibilidad() {
           const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
        
           if (slots && slots.length > 0) {
-  bloque.horarios = slots.map(slot => slot.hora);
-  console.log(`[Bloque ${bloque.id}] Usando ${bloque.horarios.length} horarios del backend`);
-} else {
-  // Si no hay slots del backend, generar localmente igualmente
-  bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
-  console.log(`[Bloque ${bloque.id}] Usando horarios locales (${bloque.horarios.length}) porque slots está vacío`);
-}
-          
+            bloque.horarios = slots.map(slot => slot.hora);
+            console.log(`[Bloque ${bloque.id}] Usando ${bloque.horarios.length} horarios del backend`);
+          } else {
+            bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
+            console.log(`[Bloque ${bloque.id}] Usando horarios locales (${bloque.horarios.length}) porque slots está vacío`);
+          }
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
@@ -370,10 +368,9 @@ export default function AgendaDisponibilidad() {
       }
 
       console.log('=== DEBUG BLOQUES ===');
-console.log('Bloques a mostrar:', bloquesCargados.length);
-console.log('Primer bloque:', bloquesCargados[0]);
-console.log('==================');
-
+      console.log('Bloques a mostrar:', bloquesCargados.length);
+      console.log('Primer bloque:', bloquesCargados[0]);
+      console.log('==================');
       
       setBloques(bloquesCargados);
       console.log('cargarDatos - FINALIZADO, bloques cargados:', bloquesCargados.length);
@@ -417,73 +414,34 @@ console.log('==================');
   };
 
   const agregarBloque = () => {
-  if (!validarHorario()) return;
-  
-  const duracionFinal = obtenerDuracionFinal();
-  
-  console.log('=== AGREGAR BLOQUE ===');
-  console.log('Nuevo bloque:', { nuevoDesde, nuevoHasta, duracionFinal });
-  console.log('Bloques existentes:', bloques.map(b => ({
-    id: b.id,
-    horaDesde: b.horaDesde,
-    horaHasta: b.horaHasta,
-    duracionTurno: b.duracionTurno,
-    fecha_baja: b.fecha_baja
-  })));
-  
-  const bloqueActivoExistente = bloques.some(bloque => 
-    bloque.fecha_baja === null &&
-    bloque.horaDesde === nuevoDesde && 
-    bloque.horaHasta === nuevoHasta && 
-    bloque.duracionTurno === duracionFinal
-  );
-  
-  console.log('¿Existe bloque activo?', bloqueActivoExistente);
-  
-  if (bloqueActivoExistente) {
-    alert('Ya existe un bloque activo con el mismo horario y duración');
-    return;
-  }
-  
-  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-  
-  const yaExiste = bloques.some(bloque => 
-    bloque.horaDesde === nuevoDesde && 
-    bloque.horaHasta === nuevoHasta && 
-    bloque.duracionTurno === duracionFinal &&
-    bloque.fechaDesde === nuevaFechaDesde &&
-    bloque.fechaHasta === (nuevaFechaHasta || null)
-  );
-  
-  if (yaExiste) {
-    alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
-    return;
-  }
-  
-  const nuevoBloque: BloqueHorario = {
-    diasHabilitados: [],
-    horaDesde: nuevoDesde,
-    horaHasta: nuevoHasta,
-    duracionTurno: duracionFinal,
-    fechaDesde: nuevaFechaDesde,
-    fechaHasta: nuevaFechaHasta || null,
-    horarios: horarios,
-    horariosDeshabilitados: {},
-    fecha_baja: null
-  };
-  
-  setBloques([...bloques, nuevoBloque]);
-  setTieneCambios(true);
-  
-  setNuevoDesde('');
-  setNuevoHasta('');
-  setNuevaDuracion(0);
-  setMostrarOtraDuracion(false);
-  setOtraDuracion('');
-  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-  setNuevaFechaHasta('');
-  setErrorMessage(null);
-};    
+    if (!validarHorario()) return;
+    
+    const duracionFinal = obtenerDuracionFinal();
+    
+    console.log('=== AGREGAR BLOQUE ===');
+    console.log('Nuevo bloque:', { nuevoDesde, nuevoHasta, duracionFinal });
+    console.log('Bloques existentes:', bloques.map(b => ({
+      id: b.id,
+      horaDesde: b.horaDesde,
+      horaHasta: b.horaHasta,
+      duracionTurno: b.duracionTurno,
+      fecha_baja: b.fecha_baja
+    })));
+    
+    const bloqueActivoExistente = bloques.some(bloque => 
+      bloque.fecha_baja === null &&
+      bloque.horaDesde === nuevoDesde && 
+      bloque.horaHasta === nuevoHasta && 
+      bloque.duracionTurno === duracionFinal
+    );
+    
+    console.log('¿Existe bloque activo?', bloqueActivoExistente);
+    
+    if (bloqueActivoExistente) {
+      alert('Ya existe un bloque activo con el mismo horario y duración');
+      return;
+    }
+    
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
@@ -665,99 +623,94 @@ console.log('==================');
   const hoy = new Date().toISOString().split('T')[0];
 
   const guardarAgenda = async () => {
-  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-  
-  // Validar que todos los bloques tengan al menos un día habilitado
-  const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
-  if (bloquesSinDias.length > 0) {
-    alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
-    return;
-  }
-  
-  setGuardando(true);
-  setErrorMessage(null);
-  
-  try {
-    // Procesar cada bloque
-    for (const bloque of bloques) {
-      // Construir lista de días habilitados (convertir de diaIdx a diaSemana)
-      const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
-        if (diaIdx === 6) return 0;  // DOMINGO
-        return diaIdx + 1;            // LUN=1, MAR=2, etc.
-      });
-      
-      // Construir lista de excepciones de horarios
-      const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
-      
-      // Recorrer cada día habilitado para obtener sus horarios deshabilitados
-      for (const diaIdx of bloque.diasHabilitados) {
-        const diaSemana = diaIdx === 6 ? 0 : diaIdx + 1;
-        const horariosDeshabilitados = bloque.horariosDeshabilitados[diaIdx] || [];
-        
-        for (const horarioIndex of horariosDeshabilitados) {
-          const horaDesde = bloque.horarios[horarioIndex];
-          // Calcular hora hasta (próximo horario o fin del bloque)
-          const siguienteHorario = bloque.horarios[horarioIndex + 1];
-          const horaHasta = siguienteHorario || (() => {
-            const [h, m] = horaDesde.split(':').map(Number);
-            let minutos = m + bloque.duracionTurno;
-            let horas = h;
-            if (minutos >= 60) {
-              horas += Math.floor(minutos / 60);
-              minutos = minutos % 60;
-            }
-            return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-          })();
-          
-          excepcionesHorarios.push({
-            diaSemana,
-            horaDesde: `${horaDesde}:00`,
-            horaHasta: `${horaHasta}:00`
-          });
-        }
-      }
-      
-      const payload = {
-        profesionalCentroId: parseInt(profesionalCentroId!),
-        horaDesde: bloque.horaDesde,
-        horaHasta: bloque.horaHasta,
-        duracionTurno: bloque.duracionTurno,
-        fechaDesde: bloque.fechaDesde,
-        fechaHasta: bloque.fechaHasta,
-        diasHabilitados: diasHabilitados,
-        excepcionesHorarios: excepcionesHorarios
-      };
-      
-      console.log('Payload sincronizar bloque:', JSON.stringify(payload, null, 2));
-      
-      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        let errorMessageText = 'Error al guardar la agenda';
-        try {
-          const errorData = await response.json();
-          errorMessageText = errorData.message || errorMessageText;
-        } catch (e) {
-          errorMessageText = response.statusText || errorMessageText;
-        }
-        throw new Error(errorMessageText);
-      }
+    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+    
+    const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
+    if (bloquesSinDias.length > 0) {
+      alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
+      return;
     }
     
-    alert('Agenda guardada correctamente');
-    setTieneCambios(false);
-    await cargarDatos();
-  } catch (err: any) {
-    console.error('Error guardando agenda:', err);
-    alert(`Error: ${err.message}`);
-  } finally {
-    setGuardando(false);
-  }
-};  
+    setGuardando(true);
+    setErrorMessage(null);
+    
+    try {
+      for (const bloque of bloques) {
+        const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
+          if (diaIdx === 6) return 0;
+          return diaIdx + 1;
+        });
+        
+        const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
+        
+        for (const diaIdx of bloque.diasHabilitados) {
+          const diaSemana = diaIdx === 6 ? 0 : diaIdx + 1;
+          const horariosDeshabilitados = bloque.horariosDeshabilitados[diaIdx] || [];
+          
+          for (const horarioIndex of horariosDeshabilitados) {
+            const horaDesde = bloque.horarios[horarioIndex];
+            const siguienteHorario = bloque.horarios[horarioIndex + 1];
+            const horaHasta = siguienteHorario || (() => {
+              const [h, m] = horaDesde.split(':').map(Number);
+              let minutos = m + bloque.duracionTurno;
+              let horas = h;
+              if (minutos >= 60) {
+                horas += Math.floor(minutos / 60);
+                minutos = minutos % 60;
+              }
+              return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+            })();
+            
+            excepcionesHorarios.push({
+              diaSemana,
+              horaDesde: `${horaDesde}:00`,
+              horaHasta: `${horaHasta}:00`
+            });
+          }
+        }
+        
+        const payload = {
+          profesionalCentroId: parseInt(profesionalCentroId!),
+          horaDesde: bloque.horaDesde,
+          horaHasta: bloque.horaHasta,
+          duracionTurno: bloque.duracionTurno,
+          fechaDesde: bloque.fechaDesde,
+          fechaHasta: bloque.fechaHasta,
+          diasHabilitados: diasHabilitados,
+          excepcionesHorarios: excepcionesHorarios
+        };
+        
+        console.log('Payload sincronizar bloque:', JSON.stringify(payload, null, 2));
+        
+        const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          let errorMessageText = 'Error al guardar la agenda';
+          try {
+            const errorData = await response.json();
+            errorMessageText = errorData.message || errorMessageText;
+          } catch (e) {
+            errorMessageText = response.statusText || errorMessageText;
+          }
+          throw new Error(errorMessageText);
+        }
+      }
+      
+      alert('Agenda guardada correctamente');
+      setTieneCambios(false);
+      await cargarDatos();
+    } catch (err: any) {
+      console.error('Error guardando agenda:', err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  };
+  
   const handleClose = () => {
     if (tieneCambios) {
       if (window.confirm('Hay cambios sin guardar. ¿Desea guardarlos antes de salir?')) {
@@ -888,35 +841,35 @@ console.log('==================');
         const estaExpandido = bloquesExpandidos[idx];
         
         const formatVigencia = () => {
-  const fechaDesdeDate = new Date(bloque.fechaDesde);
-  const fechaDesdeFormateada = fechaDesdeDate.toLocaleString('es-AR', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).replace(',', '');
-  
-  if (bloque.fecha_baja) {
-    const fechaBajaDate = new Date(bloque.fecha_baja);
-    const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).replace(',', '');
-    return `Desde ${fechaDesdeFormateada} hs Hasta ${fechaBajaFormateada} hs`;
-  } else {
-    return `Desde ${fechaDesdeFormateada} hs indefinida`;
-  }
-};
+          const fechaDesdeDate = new Date(bloque.fechaDesde);
+          const fechaDesdeFormateada = fechaDesdeDate.toLocaleString('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }).replace(',', '');
+          
+          if (bloque.fecha_baja) {
+            const fechaBajaDate = new Date(bloque.fecha_baja);
+            const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
+              timeZone: 'America/Argentina/Buenos_Aires',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            }).replace(',', '');
+            return `Desde ${fechaDesdeFormateada} hs Hasta ${fechaBajaFormateada} hs`;
+          } else {
+            return `Desde ${fechaDesdeFormateada} hs indefinida`;
+          }
+        };
         
         return (
           <div key={idx} className="agenda-bloque">
