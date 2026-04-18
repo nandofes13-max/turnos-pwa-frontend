@@ -144,6 +144,13 @@ export default function AgendaDisponibilidad() {
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
+  // Función para normalizar hora (eliminar segundos)
+  const normalizarHora = (hora: string): string => {
+    if (!hora) return hora;
+    // Tomar solo HH:MM (primeros 5 caracteres)
+    return hora.substring(0, 5);
+  };
+
   useEffect(() => {
     let duracion = nuevaDuracion;
     if (mostrarOtraDuracion && otraDuracion) {
@@ -428,10 +435,11 @@ export default function AgendaDisponibilidad() {
       fecha_baja: b.fecha_baja
     })));
     
+    // Normalizar horas para la comparación
     const bloqueActivoExistente = bloques.some(bloque => 
       bloque.fecha_baja === null &&
-      bloque.horaDesde === nuevoDesde && 
-      bloque.horaHasta === nuevoHasta && 
+      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) && 
+      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) && 
       bloque.duracionTurno === duracionFinal
     );
     
@@ -445,8 +453,8 @@ export default function AgendaDisponibilidad() {
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const yaExiste = bloques.some(bloque => 
-      bloque.horaDesde === nuevoDesde && 
-      bloque.horaHasta === nuevoHasta && 
+      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) && 
+      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) && 
       bloque.duracionTurno === duracionFinal &&
       bloque.fechaDesde === nuevaFechaDesde &&
       bloque.fechaHasta === (nuevaFechaHasta || null)
