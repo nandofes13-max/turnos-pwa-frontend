@@ -36,15 +36,6 @@ interface SlotBackend {
   disponible: boolean;
 }
 
-interface ExcepcionRecurrente {
-  id: number;
-  agendaDisponibilidadId: number;
-  diaSemana: number;
-  horaDesde: string;
-  horaHasta: string;
-  tipo: string;
-}
-
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -144,10 +135,8 @@ export default function AgendaDisponibilidad() {
   const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
-  // Función para normalizar hora (eliminar segundos)
   const normalizarHora = (hora: string): string => {
     if (!hora) return hora;
-    // Tomar solo HH:MM (primeros 5 caracteres)
     return hora.substring(0, 5);
   };
 
@@ -435,7 +424,6 @@ export default function AgendaDisponibilidad() {
       fecha_baja: b.fecha_baja
     })));
     
-    // Normalizar horas para la comparación
     const bloqueActivoExistente = bloques.some(bloque => 
       bloque.fecha_baja === null &&
       normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) && 
@@ -547,78 +535,26 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  const toggleHorario = async (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
-    const bloque = bloques[bloqueIndex];
-    if (!bloque.id) return;
+  // ============================================================
+  // MODIFICADO: toggleHorario SOLO actualiza estado local
+  // ============================================================
+  const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
+    const nuevosBloques = [...bloques];
+    const bloque = nuevosBloques[bloqueIndex];
     
-    const horario = bloque.horarios[horarioIndex];
-    const siguienteHorario = bloque.horarios[horarioIndex + 1];
-    const horaHasta = siguienteHorario || (() => {
-      const [h, m] = horario.split(':').map(Number);
-      let minutos = m + bloque.duracionTurno;
-      let horas = h;
-      if (minutos >= 60) {
-        horas += Math.floor(minutos / 60);
-        minutos = minutos % 60;
+    const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
+    
+    if (deshabilitadosDia.includes(horarioIndex)) {
+      bloque.horariosDeshabilitados[diaIdx] = deshabilitadosDia.filter(i => i !== horarioIndex);
+      if (bloque.horariosDeshabilitados[diaIdx].length === 0) {
+        delete bloque.horariosDeshabilitados[diaIdx];
       }
-      return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-    })();
-    
-    let diaSemana = diaIdx;
-    if (diaSemana === 6) {
-      diaSemana = 0;
     } else {
-      diaSemana = diaIdx + 1;
+      bloque.horariosDeshabilitados[diaIdx] = [...deshabilitadosDia, horarioIndex];
     }
     
-    const estaDeshabilitado = bloque.horariosDeshabilitados[diaIdx]?.includes(horarioIndex);
-    
-    try {
-      if (!estaDeshabilitado) {
-        const payload = {
-          agendaDisponibilidadId: bloque.id,
-          diaSemana: diaSemana,
-          horaDesde: `${horario}:00`,
-          horaHasta: `${horaHasta}:00`,
-          tipo: "deshabilitado"
-        };
-        
-        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Error al deshabilitar el horario');
-        }
-      } else {
-        const payload = {
-          agendaDisponibilidadId: bloque.id,
-          diaSemana: diaSemana,
-          horaDesde: `${horario}:00`,
-          horaHasta: `${horaHasta}:00`
-        };
-        
-        const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes/habilitar`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Error al habilitar el horario');
-        }
-      }
-      
-      await cargarDatos();
-      setTieneCambios(true);
-    } catch (err: any) {
-      console.error('Error:', err);
-      alert(err.message || 'Error al cambiar estado del horario');
-    }
+    setBloques(nuevosBloques);
+    setTieneCambios(true);
   };
 
   const toggleExpandirBloque = (index: number) => {
