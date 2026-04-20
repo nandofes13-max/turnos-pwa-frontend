@@ -131,8 +131,6 @@ export default function AgendaDisponibilidad() {
   const [duracionValida, setDuracionValida] = useState(false);
   const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
   
-  const [rangoBloqueoInicio, setRangoBloqueoInicio] = useState('');
-  const [rangoBloqueoFin, setRangoBloqueoFin] = useState('');
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
   const normalizarHora = (hora: string): string => {
@@ -192,81 +190,6 @@ export default function AgendaDisponibilidad() {
     }
   };
 
-  const cargarExcepcionesRecurrentes = async (agendaId: number): Promise<ExcepcionRecurrente[]> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/excepciones-recurrentes/por-agenda/${agendaId}`);
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (error) {
-      console.error('Error cargando excepciones recurrentes:', error);
-      return [];
-    }
-  };
-
-  const sincronizarExcepciones = async (
-    agendaId: number,
-    horariosDeshabilitados: number[],
-    fechaDesde: string,
-    fechaHasta: string | null,
-    horaDesde: string,
-    duracionTurno: number
-  ) => {
-    const excepcionesExistentes = await cargarExcepcionesRecurrentes(agendaId);
-    for (const excepcion of excepcionesExistentes) {
-      await fetch(`${API_BASE_URL}/excepciones-recurrentes/${excepcion.id}`, { method: 'DELETE' });
-    }
-    
-    if (horariosDeshabilitados.length === 0) return;
-    
-    const sorted = [...horariosDeshabilitados].sort((a, b) => a - b);
-    const rangos: { inicio: number; fin: number }[] = [];
-    let inicio = sorted[0];
-    let fin = sorted[0];
-    
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] === fin + 1) {
-        fin = sorted[i];
-      } else {
-        rangos.push({ inicio, fin });
-        inicio = sorted[i];
-        fin = sorted[i];
-      }
-    }
-    rangos.push({ inicio, fin });
-    
-    for (const rango of rangos) {
-      const horaDesdeRango = calcularHoraDesdeIndice(rango.inicio, horaDesde, duracionTurno);
-      const siguienteIndice = rango.fin + 1;
-      let horaHastaRango;
-      if (siguienteIndice * duracionTurno + parseInt(horaDesde.split(':')[1]) < 60 * 24) {
-        horaHastaRango = calcularHoraDesdeIndice(siguienteIndice, horaDesde, duracionTurno);
-      } else {
-        horaHastaRango = '23:59';
-      }
-      
-      for (const diaIdx of [0, 1, 2, 3, 4, 5, 6]) {
-        let diaSemana = diaIdx;
-        if (diaSemana === 6) {
-          diaSemana = 0;
-        } else {
-          diaSemana = diaIdx + 1;
-        }
-        
-        await fetch(`${API_BASE_URL}/excepciones-recurrentes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agendaDisponibilidadId: agendaId,
-            diaSemana: diaSemana,
-            horaDesde: horaDesdeRango,
-            horaHasta: horaHastaRango,
-            tipo: 'deshabilitado'
-          })
-        });
-      }
-    }
-  };
-
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -276,12 +199,6 @@ export default function AgendaDisponibilidad() {
       
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
-      
-      const excepcionesRecurrentesPorAgenda: { [key: number]: ExcepcionRecurrente[] } = {};
-      
-      for (const ag of dataAgendas) {
-        excepcionesRecurrentesPorAgenda[ag.id] = await cargarExcepcionesRecurrentes(ag.id);
-      }
       
       const grupos: { [key: string]: any } = {};
       
@@ -308,7 +225,6 @@ export default function AgendaDisponibilidad() {
             horariosDeshabilitados: {},
             diasHabilitados: [],
             fecha_baja: ag.fecha_baja,
-            excepcionesRecurrentes: excepcionesRecurrentesPorAgenda[ag.id] || []
           };
         }
         
@@ -335,31 +251,6 @@ export default function AgendaDisponibilidad() {
           }
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
-        }
-        
-        if (bloque.excepcionesRecurrentes) {
-          for (const excepcion of bloque.excepcionesRecurrentes) {
-            let diaIdx = excepcion.diaSemana;
-            if (diaIdx === 0) {
-              diaIdx = 6;
-            } else {
-              diaIdx = diaIdx - 1;
-            }
-            
-            if (bloque.diasHabilitados.includes(diaIdx)) {
-              for (let i = 0; i < bloque.horarios.length; i++) {
-                const horario = bloque.horarios[i];
-                if (horario >= excepcion.horaDesde.slice(0,5) && horario < excepcion.horaHasta.slice(0,5)) {
-                  if (!bloque.horariosDeshabilitados[diaIdx]) {
-                    bloque.horariosDeshabilitados[diaIdx] = [];
-                  }
-                  if (!bloque.horariosDeshabilitados[diaIdx].includes(i)) {
-                    bloque.horariosDeshabilitados[diaIdx].push(i);
-                  }
-                }
-              }
-            }
-          }
         }
       }
 
@@ -528,6 +419,8 @@ export default function AgendaDisponibilidad() {
     const bloque = nuevosBloques[bloqueIndex];
     if (bloque.diasHabilitados.includes(diaIdx)) {
       bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
+      // Limpiar horarios deshabilitados de ese día
+      delete bloque.horariosDeshabilitados[diaIdx];
     } else {
       bloque.diasHabilitados.push(diaIdx);
     }
@@ -588,6 +481,7 @@ export default function AgendaDisponibilidad() {
           return diaIdx + 1;
         });
         
+        // Construir excepciones a partir de horarios deshabilitados
         const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
         
         for (const diaIdx of bloque.diasHabilitados) {
@@ -617,7 +511,7 @@ export default function AgendaDisponibilidad() {
         }
         
         const payload = {
-          agendaDisponibilidadId: bloque.id,  // 👈 CAMPO AGREGADO
+          agendaDisponibilidadId: bloque.id,
           profesionalCentroId: parseInt(profesionalCentroId!),
           horaDesde: bloque.horaDesde,
           horaHasta: bloque.horaHasta,
