@@ -359,23 +359,23 @@
   }
 }
 
-/* Estilo para horarios como texto (sin interacción) */
+/* Estilo para horarios como texto (sin interacción) - Mismo azul que días habilitados */
 .agenda-horario-texto {
   padding: 6px;
   border-radius: 50px;
   font-size: 12px;
   font-weight: 500;
   text-align: center;
-  background-color: #e9ecef;
-  color: #495057;
-  border: 1px solid #dee2e6;
+  background-color: #0066cc;
+  color: white;
+  border: none;
   transition: all 0.2s;
 }
 
-/* Versión hover sutil para feedback visual (sin cambio de cursor a pointer) */
+/* Versión hover sutil (no cambia cursor porque no es clickeable) */
 .agenda-horario-texto:hover {
-  background-color: #dee2e6;
-  border-color: #ced4da;
+  background-color: #0052a3;
+  transform: scale(1.02);
 }
 
 /* Responsive para móvil - mantener consistencia con los botones */
