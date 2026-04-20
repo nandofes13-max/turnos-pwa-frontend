@@ -366,64 +366,57 @@ export default function AgendaDisponibilidad() {
   };
 
   const agregarBloque = () => {
-    if (!validarHorario()) return;
+  if (!validarHorario()) return;
+  
+  const duracionFinal = obtenerDuracionFinal();
+  const fechaHastaFinal = nuevaFechaHasta || null;
+  
+  // VALIDACIÓN SOLO: Evitar duplicados exactos (mismo desde, mismo hasta, misma duración, mismas fechas)
+  const duplicadoExacto = bloques.some(bloque => {
+    if (bloque.fecha_baja) return false;
     
-    const duracionFinal = obtenerDuracionFinal();
-    const fechaHastaFinal = nuevaFechaHasta || null;
-    
-    // VALIDACIÓN 1: Evitar duplicados exactos
-    const duplicado = validarDuplicadoExacto(
-      nuevoDesde, nuevoHasta, duracionFinal,
-      nuevaFechaDesde, fechaHastaFinal,
-      bloques
+    return (
+      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
+      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
+      bloque.duracionTurno === duracionFinal &&
+      bloque.fechaDesde === nuevaFechaDesde &&
+      bloque.fechaHasta === fechaHastaFinal
     );
-    
-    if (!duplicado.valido) {
-      alert(duplicado.mensaje);
-      return;
-    }
-    
-    // VALIDACIÓN 2: Evitar solapamientos parciales
-    const solapamiento = validarSolapamientoBloque(
-      nuevoDesde, nuevoHasta, duracionFinal,
-      nuevaFechaDesde, fechaHastaFinal,
-      bloques
-    );
-    
-    if (!solapamiento.valido) {
-      alert(solapamiento.mensaje);
-      return;
-    }
-    
-    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-    
-    const nuevoBloque: BloqueHorario = {
-      diasHabilitados: [],
-      horaDesde: nuevoDesde,
-      horaHasta: nuevoHasta,
-      duracionTurno: duracionFinal,
-      fechaDesde: nuevaFechaDesde,
-      fechaHasta: fechaHastaFinal,
-      horarios: horarios,
-      fecha_baja: null
-    };
-    
-    setBloques([...bloques, nuevoBloque]);
-    setTieneCambios(true);
-    
-    // Limpiar formulario
-    setNuevoDesde('');
-    setNuevoHasta('');
-    setNuevaDuracion(0);
-    setMostrarOtraDuracion(false);
-    setOtraDuracion('');
-    setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-    setNuevaFechaHasta('');
-    setErrorMessage(null);
-    
-    alert('✅ Bloque agregado correctamente (aún no guardado)');
+  });
+  
+  if (duplicadoExacto) {
+    alert(`❌ Ya existe un bloque idéntico: ${nuevoDesde} a ${nuevoHasta} (${duracionFinal} min) vigente desde ${nuevaFechaDesde}`);
+    return;
+  }
+  
+  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+  
+  const nuevoBloque: BloqueHorario = {
+    diasHabilitados: [],
+    horaDesde: nuevoDesde,
+    horaHasta: nuevoHasta,
+    duracionTurno: duracionFinal,
+    fechaDesde: nuevaFechaDesde,
+    fechaHasta: fechaHastaFinal,
+    horarios: horarios,
+    fecha_baja: null
   };
   
+  setBloques([...bloques, nuevoBloque]);
+  setTieneCambios(true);
+  
+  // Limpiar formulario
+  setNuevoDesde('');
+  setNuevoHasta('');
+  setNuevaDuracion(0);
+  setMostrarOtraDuracion(false);
+  setOtraDuracion('');
+  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+  setNuevaFechaHasta('');
+  setErrorMessage(null);
+  
+  alert('✅ Bloque agregado correctamente (aún no guardado)');
+};  
   const toggleActivarBloque = async (index: number) => {
     const bloque = bloques[index];
     
