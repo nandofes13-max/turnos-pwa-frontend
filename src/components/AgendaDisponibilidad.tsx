@@ -535,9 +535,6 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
   };
 
-  // ============================================================
-  // MODIFICADO: toggleHorario SOLO actualiza estado local
-  // ============================================================
   const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
     const nuevosBloques = [...bloques];
     const bloque = nuevosBloques[bloqueIndex];
@@ -580,6 +577,12 @@ export default function AgendaDisponibilidad() {
     
     try {
       for (const bloque of bloques) {
+        // Si el bloque no tiene ID, no se puede sincronizar (es nuevo)
+        if (!bloque.id) {
+          console.log(`⚠️ Bloque sin ID (nuevo), se guardará al crear la agenda`);
+          continue;
+        }
+        
         const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
           if (diaIdx === 6) return 0;
           return diaIdx + 1;
@@ -614,6 +617,7 @@ export default function AgendaDisponibilidad() {
         }
         
         const payload = {
+          agendaDisponibilidadId: bloque.id,  // 👈 CAMPO AGREGADO
           profesionalCentroId: parseInt(profesionalCentroId!),
           horaDesde: bloque.horaDesde,
           horaHasta: bloque.horaHasta,
@@ -624,6 +628,7 @@ export default function AgendaDisponibilidad() {
           excepcionesHorarios: excepcionesHorarios
         };
         
+        console.log(`📤 Enviando bloque ${bloque.horaDesde} a ${bloque.horaHasta} (ID: ${bloque.id})`);
         console.log('Payload sincronizar bloque:', JSON.stringify(payload, null, 2));
         
         const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
@@ -631,6 +636,8 @@ export default function AgendaDisponibilidad() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        
+        console.log(`📥 Respuesta para bloque ${bloque.horaDesde}: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
           let errorMessageText = 'Error al guardar la agenda';
