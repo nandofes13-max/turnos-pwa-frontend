@@ -26,7 +26,6 @@ interface BloqueHorario {
   fechaDesde: string;
   fechaHasta: string | null;
   horarios: string[];
-  horariosDeshabilitados: { [diaIdx: number]: number[] };
   fecha_baja?: string | null;
 }
 
@@ -67,17 +66,6 @@ const generarHorariosLocal = (desde: string, hasta: string, duracion: number): s
     actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
   }
   return horarios;
-};
-
-const calcularHoraDesdeIndice = (horarioIdx: number, horaDesde: string, duracionTurno: number): string => {
-  const [h, m] = horaDesde.split(':').map(Number);
-  let minutos = m + (horarioIdx * duracionTurno);
-  let horas = h;
-  if (minutos >= 60) {
-    horas += Math.floor(minutos / 60);
-    minutos = minutos % 60;
-  }
-  return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
 };
 
 const calcularHoraMinima = (desde: string, duracion: number): string => {
@@ -222,7 +210,6 @@ export default function AgendaDisponibilidad() {
             fechaDesde: ag.fechaDesde,
             fechaHasta: ag.fechaHasta,
             horarios: [],
-            horariosDeshabilitados: {},
             diasHabilitados: [],
             fecha_baja: ag.fecha_baja,
           };
@@ -352,7 +339,6 @@ export default function AgendaDisponibilidad() {
       fechaDesde: nuevaFechaDesde,
       fechaHasta: nuevaFechaHasta || null,
       horarios: horarios,
-      horariosDeshabilitados: {},
       fecha_baja: null
     };
     
@@ -419,30 +405,9 @@ export default function AgendaDisponibilidad() {
     const bloque = nuevosBloques[bloqueIndex];
     if (bloque.diasHabilitados.includes(diaIdx)) {
       bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
-      // Limpiar horarios deshabilitados de ese día
-      delete bloque.horariosDeshabilitados[diaIdx];
     } else {
       bloque.diasHabilitados.push(diaIdx);
     }
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
-  };
-
-  const toggleHorario = (bloqueIndex: number, diaIdx: number, horarioIndex: number) => {
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
-    
-    const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-    
-    if (deshabilitadosDia.includes(horarioIndex)) {
-      bloque.horariosDeshabilitados[diaIdx] = deshabilitadosDia.filter(i => i !== horarioIndex);
-      if (bloque.horariosDeshabilitados[diaIdx].length === 0) {
-        delete bloque.horariosDeshabilitados[diaIdx];
-      }
-    } else {
-      bloque.horariosDeshabilitados[diaIdx] = [...deshabilitadosDia, horarioIndex];
-    }
-    
     setBloques(nuevosBloques);
     setTieneCambios(true);
   };
@@ -481,34 +446,8 @@ export default function AgendaDisponibilidad() {
           return diaIdx + 1;
         });
         
-        // Construir excepciones a partir de horarios deshabilitados
+        // Sin excepciones de horarios (candados eliminados)
         const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
-        
-        for (const diaIdx of bloque.diasHabilitados) {
-          const diaSemana = diaIdx === 6 ? 0 : diaIdx + 1;
-          const horariosDeshabilitados = bloque.horariosDeshabilitados[diaIdx] || [];
-          
-          for (const horarioIndex of horariosDeshabilitados) {
-            const horaDesde = bloque.horarios[horarioIndex];
-            const siguienteHorario = bloque.horarios[horarioIndex + 1];
-            const horaHasta = siguienteHorario || (() => {
-              const [h, m] = horaDesde.split(':').map(Number);
-              let minutos = m + bloque.duracionTurno;
-              let horas = h;
-              if (minutos >= 60) {
-                horas += Math.floor(minutos / 60);
-                minutos = minutos % 60;
-              }
-              return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-            })();
-            
-            excepcionesHorarios.push({
-              diaSemana,
-              horaDesde: `${horaDesde}:00`,
-              horaHasta: `${horaHasta}:00`
-            });
-          }
-        }
         
         const payload = {
           agendaDisponibilidadId: bloque.id,
@@ -519,7 +458,7 @@ export default function AgendaDisponibilidad() {
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta,
           diasHabilitados: diasHabilitados,
-          excepcionesHorarios: excepcionesHorarios
+          excepcionesHorarios: excepcionesHorarios  // Siempre vacío
         };
         
         console.log(`📤 Enviando bloque ${bloque.horaDesde} a ${bloque.horaHasta} (ID: ${bloque.id})`);
@@ -767,20 +706,11 @@ export default function AgendaDisponibilidad() {
                       
                       {estaHabilitado && bloque.horarios.length > 0 && (
                         <div className="agenda-horarios">
-                          {bloque.horarios.map((horario, horarioIdx) => {
-                            const deshabilitadosDia = bloque.horariosDeshabilitados[diaIdx] || [];
-                            const isDeshabilitado = deshabilitadosDia.includes(horarioIdx);
-                            return (
-                              <button
-                                key={horarioIdx}
-                                onClick={() => estaActivo && toggleHorario(idx, diaIdx, horarioIdx)}
-                                className={`agenda-horario-boton ${isDeshabilitado ? 'deshabilitado' : 'habilitado'}`}
-                                disabled={!estaActivo}
-                              >
-                                {horario} {isDeshabilitado && '🔒'}
-                              </button>
-                            );
-                          })}
+                          {bloque.horarios.map((horario, horarioIdx) => (
+                            <div key={horarioIdx} className="agenda-horario-texto">
+                              {horario}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
