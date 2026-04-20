@@ -126,6 +126,90 @@ export default function AgendaDisponibilidad() {
     return hora.substring(0, 5);
   };
 
+  // ============================================================
+  // VALIDACIÓN DE SOLAPAMIENTO EN FRONTEND
+  // ============================================================
+  const validarSolapamientoBloque = (
+    nuevoDesde: string,
+    nuevoHasta: string,
+    nuevaDuracion: number,
+    nuevaFechaDesde: string,
+    nuevaFechaHasta: string | null,
+    bloquesExistentes: BloqueHorario[],
+    bloqueIdAActualizar?: number
+  ): { valido: boolean; mensaje: string } => {
+    
+    for (const bloque of bloquesExistentes) {
+      // Si estamos editando un bloque, ignorar el mismo bloque
+      if (bloqueIdAActualizar && bloque.id === bloqueIdAActualizar) continue;
+      
+      // Solo validar contra bloques activos (sin fecha_baja)
+      if (bloque.fecha_baja) continue;
+      
+      // Verificar solapamiento de horarios
+      const haySolapamientoHorario = (
+        nuevoDesde < bloque.horaHasta && nuevoHasta > bloque.horaDesde
+      );
+      
+      if (!haySolapamientoHorario) continue;
+      
+      // Verificar solapamiento de fechas
+      const bloqueFechaHasta = bloque.fechaHasta || '9999-12-31';
+      const nuevaFechaHastaFinal = nuevaFechaHasta || '9999-12-31';
+      
+      const haySolapamientoFechas = (
+        nuevaFechaDesde <= bloqueFechaHasta &&
+        nuevaFechaHastaFinal >= bloque.fechaDesde
+      );
+      
+      if (haySolapamientoFechas) {
+        const vigenciaBloque = bloque.fechaHasta 
+          ? `desde ${bloque.fechaDesde} hasta ${bloque.fechaHasta}`
+          : `desde ${bloque.fechaDesde} (indefinido)`;
+        
+        return {
+          valido: false,
+          mensaje: `❌ Solapa con bloque existente: ${bloque.horaDesde} a ${bloque.horaHasta} (${vigenciaBloque})`
+        };
+      }
+    }
+    
+    return { valido: true, mensaje: '' };
+  };
+
+  // Validar duplicado exacto
+  const validarDuplicadoExacto = (
+    nuevoDesde: string,
+    nuevoHasta: string,
+    nuevaDuracion: number,
+    nuevaFechaDesde: string,
+    nuevaFechaHasta: string | null,
+    bloquesExistentes: BloqueHorario[]
+  ): { valido: boolean; mensaje: string } => {
+    
+    for (const bloque of bloquesExistentes) {
+      if (bloque.fecha_baja) continue;
+      
+      const esMismoHorario = (
+        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
+        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta)
+      );
+      
+      const esMismaDuracion = bloque.duracionTurno === nuevaDuracion;
+      const esMismaFechaDesde = bloque.fechaDesde === nuevaFechaDesde;
+      const esMismaFechaHasta = bloque.fechaHasta === nuevaFechaHasta;
+      
+      if (esMismoHorario && esMismaDuracion && esMismaFechaDesde && esMismaFechaHasta) {
+        return {
+          valido: false,
+          mensaje: `❌ Ya existe un bloque idéntico: ${nuevoDesde} a ${nuevoHasta} (${nuevaDuracion} min) vigente desde ${nuevaFechaDesde}`
+        };
+      }
+    }
+    
+    return { valido: true, mensaje: '' };
+  };
+
   useEffect(() => {
     let duracion = nuevaDuracion;
     if (mostrarOtraDuracion && otraDuracion) {
@@ -240,14 +324,8 @@ export default function AgendaDisponibilidad() {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
         }
       }
-
-      console.log('=== DEBUG BLOQUES ===');
-      console.log('Bloques a mostrar:', bloquesCargados.length);
-      console.log('Primer bloque:', bloquesCargados[0]);
-      console.log('==================');
       
       setBloques(bloquesCargados);
-      console.log('cargarDatos - FINALIZADO, bloques cargados:', bloquesCargados.length);
     } catch (err) {
       console.error('Error cargando datos:', err);
     } finally {
@@ -291,45 +369,33 @@ export default function AgendaDisponibilidad() {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
+    const fechaHastaFinal = nuevaFechaHasta || null;
     
-    console.log('=== AGREGAR BLOQUE ===');
-    console.log('Nuevo bloque:', { nuevoDesde, nuevoHasta, duracionFinal });
-    console.log('Bloques existentes:', bloques.map(b => ({
-      id: b.id,
-      horaDesde: b.horaDesde,
-      horaHasta: b.horaHasta,
-      duracionTurno: b.duracionTurno,
-      fecha_baja: b.fecha_baja
-    })));
-    
-    const bloqueActivoExistente = bloques.some(bloque => 
-      bloque.fecha_baja === null &&
-      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) && 
-      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) && 
-      bloque.duracionTurno === duracionFinal
+    // VALIDACIÓN 1: Evitar duplicados exactos
+    const duplicado = validarDuplicadoExacto(
+      nuevoDesde, nuevoHasta, duracionFinal,
+      nuevaFechaDesde, fechaHastaFinal,
+      bloques
     );
     
-    console.log('¿Existe bloque activo?', bloqueActivoExistente);
+    if (!duplicado.valido) {
+      alert(duplicado.mensaje);
+      return;
+    }
     
-    if (bloqueActivoExistente) {
-      alert('Ya existe un bloque activo con el mismo horario y duración');
+    // VALIDACIÓN 2: Evitar solapamientos parciales
+    const solapamiento = validarSolapamientoBloque(
+      nuevoDesde, nuevoHasta, duracionFinal,
+      nuevaFechaDesde, fechaHastaFinal,
+      bloques
+    );
+    
+    if (!solapamiento.valido) {
+      alert(solapamiento.mensaje);
       return;
     }
     
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-    
-    const yaExiste = bloques.some(bloque => 
-      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) && 
-      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) && 
-      bloque.duracionTurno === duracionFinal &&
-      bloque.fechaDesde === nuevaFechaDesde &&
-      bloque.fechaHasta === (nuevaFechaHasta || null)
-    );
-    
-    if (yaExiste) {
-      alert('Ya existe un bloque con los mismos datos. No se pueden crear bloques duplicados.');
-      return;
-    }
     
     const nuevoBloque: BloqueHorario = {
       diasHabilitados: [],
@@ -337,7 +403,7 @@ export default function AgendaDisponibilidad() {
       horaHasta: nuevoHasta,
       duracionTurno: duracionFinal,
       fechaDesde: nuevaFechaDesde,
-      fechaHasta: nuevaFechaHasta || null,
+      fechaHasta: fechaHastaFinal,
       horarios: horarios,
       fecha_baja: null
     };
@@ -345,6 +411,7 @@ export default function AgendaDisponibilidad() {
     setBloques([...bloques, nuevoBloque]);
     setTieneCambios(true);
     
+    // Limpiar formulario
     setNuevoDesde('');
     setNuevoHasta('');
     setNuevaDuracion(0);
@@ -353,6 +420,8 @@ export default function AgendaDisponibilidad() {
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
     setErrorMessage(null);
+    
+    alert('✅ Bloque agregado correctamente (aún no guardado)');
   };
   
   const toggleActivarBloque = async (index: number) => {
@@ -435,7 +504,6 @@ export default function AgendaDisponibilidad() {
     
     try {
       for (const bloque of bloques) {
-        // Si el bloque no tiene ID, no se puede sincronizar (es nuevo)
         if (!bloque.id) {
           console.log(`⚠️ Bloque sin ID (nuevo), se guardará al crear la agenda`);
           continue;
@@ -446,7 +514,6 @@ export default function AgendaDisponibilidad() {
           return diaIdx + 1;
         });
         
-        // Sin excepciones de horarios (candados eliminados)
         const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
         
         const payload = {
@@ -458,11 +525,10 @@ export default function AgendaDisponibilidad() {
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta,
           diasHabilitados: diasHabilitados,
-          excepcionesHorarios: excepcionesHorarios  // Siempre vacío
+          excepcionesHorarios: excepcionesHorarios
         };
         
         console.log(`📤 Enviando bloque ${bloque.horaDesde} a ${bloque.horaHasta} (ID: ${bloque.id})`);
-        console.log('Payload sincronizar bloque:', JSON.stringify(payload, null, 2));
         
         const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
           method: 'PUT',
@@ -470,26 +536,43 @@ export default function AgendaDisponibilidad() {
           body: JSON.stringify(payload)
         });
         
-        console.log(`📥 Respuesta para bloque ${bloque.horaDesde}: ${response.status} ${response.statusText}`);
-        
         if (!response.ok) {
-          let errorMessageText = 'Error al guardar la agenda';
+          let errorMessageText = '';
+          
           try {
             const errorData = await response.json();
-            errorMessageText = errorData.message || errorMessageText;
+            console.error('Error response del backend:', errorData);
+            
+            if (errorData.message) {
+              if (Array.isArray(errorData.message)) {
+                errorMessageText = errorData.message.join(', ');
+              } else {
+                errorMessageText = errorData.message;
+              }
+            } else if (errorData.error) {
+              errorMessageText = errorData.error;
+            } else {
+              errorMessageText = response.statusText;
+            }
           } catch (e) {
-            errorMessageText = response.statusText || errorMessageText;
+            errorMessageText = response.statusText || `Error ${response.status}`;
           }
+          
+          if (!errorMessageText) {
+            errorMessageText = 'Error al guardar la agenda';
+          }
+          
           throw new Error(errorMessageText);
         }
       }
       
-      alert('Agenda guardada correctamente');
+      alert('✅ Agenda guardada correctamente');
       setTieneCambios(false);
       await cargarDatos();
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      alert(`Error: ${err.message}`);
+      alert(`❌ ${err.message}`);
+      setErrorMessage(err.message);
     } finally {
       setGuardando(false);
     }
