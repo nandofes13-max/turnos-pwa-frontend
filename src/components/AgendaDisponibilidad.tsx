@@ -126,90 +126,6 @@ export default function AgendaDisponibilidad() {
     return hora.substring(0, 5);
   };
 
-  // ============================================================
-  // VALIDACIÓN DE SOLAPAMIENTO EN FRONTEND
-  // ============================================================
-  const validarSolapamientoBloque = (
-    nuevoDesde: string,
-    nuevoHasta: string,
-    nuevaDuracion: number,
-    nuevaFechaDesde: string,
-    nuevaFechaHasta: string | null,
-    bloquesExistentes: BloqueHorario[],
-    bloqueIdAActualizar?: number
-  ): { valido: boolean; mensaje: string } => {
-    
-    for (const bloque of bloquesExistentes) {
-      // Si estamos editando un bloque, ignorar el mismo bloque
-      if (bloqueIdAActualizar && bloque.id === bloqueIdAActualizar) continue;
-      
-      // Solo validar contra bloques activos (sin fecha_baja)
-      if (bloque.fecha_baja) continue;
-      
-      // Verificar solapamiento de horarios
-      const haySolapamientoHorario = (
-        nuevoDesde < bloque.horaHasta && nuevoHasta > bloque.horaDesde
-      );
-      
-      if (!haySolapamientoHorario) continue;
-      
-      // Verificar solapamiento de fechas
-      const bloqueFechaHasta = bloque.fechaHasta || '9999-12-31';
-      const nuevaFechaHastaFinal = nuevaFechaHasta || '9999-12-31';
-      
-      const haySolapamientoFechas = (
-        nuevaFechaDesde <= bloqueFechaHasta &&
-        nuevaFechaHastaFinal >= bloque.fechaDesde
-      );
-      
-      if (haySolapamientoFechas) {
-        const vigenciaBloque = bloque.fechaHasta 
-          ? `desde ${bloque.fechaDesde} hasta ${bloque.fechaHasta}`
-          : `desde ${bloque.fechaDesde} (indefinido)`;
-        
-        return {
-          valido: false,
-          mensaje: `❌ Solapa con bloque existente: ${bloque.horaDesde} a ${bloque.horaHasta} (${vigenciaBloque})`
-        };
-      }
-    }
-    
-    return { valido: true, mensaje: '' };
-  };
-
-  // Validar duplicado exacto
-  const validarDuplicadoExacto = (
-    nuevoDesde: string,
-    nuevoHasta: string,
-    nuevaDuracion: number,
-    nuevaFechaDesde: string,
-    nuevaFechaHasta: string | null,
-    bloquesExistentes: BloqueHorario[]
-  ): { valido: boolean; mensaje: string } => {
-    
-    for (const bloque of bloquesExistentes) {
-      if (bloque.fecha_baja) continue;
-      
-      const esMismoHorario = (
-        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
-        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta)
-      );
-      
-      const esMismaDuracion = bloque.duracionTurno === nuevaDuracion;
-      const esMismaFechaDesde = bloque.fechaDesde === nuevaFechaDesde;
-      const esMismaFechaHasta = bloque.fechaHasta === nuevaFechaHasta;
-      
-      if (esMismoHorario && esMismaDuracion && esMismaFechaDesde && esMismaFechaHasta) {
-        return {
-          valido: false,
-          mensaje: `❌ Ya existe un bloque idéntico: ${nuevoDesde} a ${nuevoHasta} (${nuevaDuracion} min) vigente desde ${nuevaFechaDesde}`
-        };
-      }
-    }
-    
-    return { valido: true, mensaje: '' };
-  };
-
   useEffect(() => {
     let duracion = nuevaDuracion;
     if (mostrarOtraDuracion && otraDuracion) {
@@ -315,10 +231,8 @@ export default function AgendaDisponibilidad() {
        
           if (slots && slots.length > 0) {
             bloque.horarios = slots.map(slot => slot.hora);
-            console.log(`[Bloque ${bloque.id}] Usando ${bloque.horarios.length} horarios del backend`);
           } else {
             bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
-            console.log(`[Bloque ${bloque.id}] Usando horarios locales (${bloque.horarios.length}) porque slots está vacío`);
           }
         } else {
           bloque.horarios = generarHorariosLocal(bloque.horaDesde, bloque.horaHasta, bloque.duracionTurno);
@@ -366,57 +280,105 @@ export default function AgendaDisponibilidad() {
   };
 
   const agregarBloque = () => {
-  if (!validarHorario()) return;
-  
-  const duracionFinal = obtenerDuracionFinal();
-  const fechaHastaFinal = nuevaFechaHasta || null;
-  
-  // VALIDACIÓN SOLO: Evitar duplicados exactos (mismo desde, mismo hasta, misma duración, mismas fechas)
-  const duplicadoExacto = bloques.some(bloque => {
-    if (bloque.fecha_baja) return false;
+    if (!validarHorario()) return;
     
-    return (
-      normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
-      normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
-      bloque.duracionTurno === duracionFinal &&
-      bloque.fechaDesde === nuevaFechaDesde &&
-      bloque.fechaHasta === fechaHastaFinal
-    );
-  });
-  
-  if (duplicadoExacto) {
-    alert(`❌ Ya existe un bloque idéntico: ${nuevoDesde} a ${nuevoHasta} (${duracionFinal} min) vigente desde ${nuevaFechaDesde}`);
-    return;
-  }
-  
-  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-  
-  const nuevoBloque: BloqueHorario = {
-    diasHabilitados: [],
-    horaDesde: nuevoDesde,
-    horaHasta: nuevoHasta,
-    duracionTurno: duracionFinal,
-    fechaDesde: nuevaFechaDesde,
-    fechaHasta: fechaHastaFinal,
-    horarios: horarios,
-    fecha_baja: null
+    const duracionFinal = obtenerDuracionFinal();
+    const fechaHastaFinal = nuevaFechaHasta || null;
+    
+    // Buscar bloque INACTIVO con mismo horario base
+    const bloqueInactivo = bloques.find(bloque => {
+      const estaInactivo = !!bloque.fecha_baja;
+      if (!estaInactivo) return false;
+      
+      return (
+        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
+        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
+        bloque.duracionTurno === duracionFinal
+      );
+    });
+    
+    // Buscar bloque ACTIVO con mismo horario base
+    const bloqueActivo = bloques.find(bloque => {
+      const estaActivo = !bloque.fecha_baja;
+      if (!estaActivo) return false;
+      
+      return (
+        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
+        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
+        bloque.duracionTurno === duracionFinal
+      );
+    });
+    
+    // Caso 1: Ya existe ACTIVO
+    if (bloqueActivo) {
+      alert(`❌ Ya existe un bloque ACTIVO con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
+      return;
+    }
+    
+    // Caso 2: Existe INACTIVO → ofrecer reactivar
+    if (bloqueInactivo) {
+      const confirmar = window.confirm(
+        `⚠️ Ya existe un bloque INACTIVO con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
+        `¿Desea REACTIVARLO con los datos actuales?\n` +
+        `(Se mantendrá el mismo ID y se actualizarán los días habilitados, vigencia, etc.)`
+      );
+      
+      if (confirmar) {
+        bloqueInactivo.fecha_baja = null;
+        bloqueInactivo.horaDesde = nuevoDesde;
+        bloqueInactivo.horaHasta = nuevoHasta;
+        bloqueInactivo.duracionTurno = duracionFinal;
+        bloqueInactivo.fechaDesde = nuevaFechaDesde;
+        bloqueInactivo.fechaHasta = fechaHastaFinal;
+        bloqueInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+        bloqueInactivo.diasHabilitados = [];
+        
+        setBloques([...bloques]);
+        setTieneCambios(true);
+        
+        alert(`✅ Bloque reactivado correctamente. No olvide guardar los cambios.`);
+      }
+      
+      setNuevoDesde('');
+      setNuevoHasta('');
+      setNuevaDuracion(0);
+      setMostrarOtraDuracion(false);
+      setOtraDuracion('');
+      setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+      setNuevaFechaHasta('');
+      
+      return;
+    }
+    
+    // Caso 3: No existe ningún bloque → crear nuevo
+    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+    
+    const nuevoBloque: BloqueHorario = {
+      diasHabilitados: [],
+      horaDesde: nuevoDesde,
+      horaHasta: nuevoHasta,
+      duracionTurno: duracionFinal,
+      fechaDesde: nuevaFechaDesde,
+      fechaHasta: fechaHastaFinal,
+      horarios: horarios,
+      fecha_baja: null
+    };
+    
+    setBloques([...bloques, nuevoBloque]);
+    setTieneCambios(true);
+    
+    setNuevoDesde('');
+    setNuevoHasta('');
+    setNuevaDuracion(0);
+    setMostrarOtraDuracion(false);
+    setOtraDuracion('');
+    setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+    setNuevaFechaHasta('');
+    setErrorMessage(null);
+    
+    alert('✅ Bloque agregado correctamente (aún no guardado)');
   };
   
-  setBloques([...bloques, nuevoBloque]);
-  setTieneCambios(true);
-  
-  // Limpiar formulario
-  setNuevoDesde('');
-  setNuevoHasta('');
-  setNuevaDuracion(0);
-  setMostrarOtraDuracion(false);
-  setOtraDuracion('');
-  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-  setNuevaFechaHasta('');
-  setErrorMessage(null);
-  
-  alert('✅ Bloque agregado correctamente (aún no guardado)');
-};  
   const toggleActivarBloque = async (index: number) => {
     const bloque = bloques[index];
     
