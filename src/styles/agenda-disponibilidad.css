@@ -170,33 +170,48 @@
   font-weight: 600;
 }
 
-/* Grilla de días - Desktop (7 columnas) */
-.agenda-grilla {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 16px;
-  padding: 20px;
-  overflow-x: auto;
-}
+/* ============================================
+   GRILLA DE DÍAS - LISTA VERTICAL (Opción B)
+   ============================================ */
 
-/* Columna de día */
-.agenda-dia-columna {
+/* Grilla de días - Ahora es lista vertical (un bloque por día) */
+.agenda-grilla {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 20px;
+  padding: 20px;
 }
 
-/* Botón del día - COMPACTO */
-.agenda-dia-boton {
+/* Columna de día - Tarjeta independiente */
+.agenda-dia-columna {
   width: 100%;
-  padding: 4px 2px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.agenda-dia-columna:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Botón del día - Estilo título dentro de la tarjeta */
+.agenda-dia-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-width: 100px;
+  padding: 8px 20px;
+  margin-bottom: 16px;
   border-radius: 50px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 14px;
   transition: all 0.2s;
-  margin-bottom: 8px;
 }
 
 .agenda-dia-boton.habilitado {
@@ -205,7 +220,7 @@
 }
 
 .agenda-dia-boton.habilitado:hover {
-  background-color: #6c757d;
+  background-color: #0052a3;
 }
 
 .agenda-dia-boton.deshabilitado {
@@ -214,51 +229,38 @@
 }
 
 .agenda-dia-boton.deshabilitado:hover {
-  background-color: #0066cc;
+  background-color: #5a6268;
 }
 
 .agenda-dia-icono {
-  font-size: 10px;
-  margin-top: 2px;
+  font-size: 12px;
 }
-/* Horarios */
+
+/* Horarios - Grilla horizontal flexible */
 .agenda-horarios {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
   width: 100%;
 }
 
-.agenda-horario-boton {
+/* Estilo para horarios como texto */
+.agenda-horario-texto {
   padding: 6px;
   border-radius: 50px;
-  border: none;
-  cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.agenda-horario-boton.habilitado {
+  text-align: center;
   background-color: #0066cc;
   color: white;
+  border: none;
+  transition: all 0.2s;
 }
 
-.agenda-horario-boton.habilitado:hover {
-  background-color: #6c757d;
-}
-
-.agenda-horario-boton.deshabilitado {
-  background-color: #6c757d;
-  color: white;
-}
-
-.agenda-horario-boton.deshabilitado:hover {
-  background-color: #0066cc;
+.agenda-horario-texto:hover {
+  background-color: #0052a3;
+  transform: scale(1.02);
 }
 
 /* Botones de acción */
@@ -272,11 +274,25 @@
 
 /* ===== RESPONSIVE ===== */
 
-/* Tablet (768px - 1023px): 4 columnas */
+/* Tablet (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
   .agenda-grilla {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .agenda-dia-columna {
+    padding: 14px;
+  }
+  
+  .agenda-dia-boton {
+    min-width: 90px;
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+  
+  .agenda-horarios {
+    gap: 8px;
   }
 }
 
@@ -293,35 +309,29 @@
   }
   
   .agenda-grilla {
-    grid-template-columns: 1fr;
     gap: 16px;
-    padding: 16px;
+    padding: 12px;
   }
   
   .agenda-dia-columna {
-    background: #f8f9fa;
-    border-radius: 12px;
     padding: 12px;
-    border: 1px solid #e0e0e0;
   }
   
   .agenda-dia-boton {
-    padding: 10px 4px;
-    font-size: 14px;
+    min-width: 80px;
+    padding: 8px 16px;
+    font-size: 13px;
   }
   
   .agenda-dia-icono {
-    font-size: 16px;
+    font-size: 12px;
   }
   
   .agenda-horarios {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 8px;
   }
   
-  .agenda-horario-boton {
+  .agenda-horario-texto {
     flex: 0 0 auto;
     min-width: 65px;
     padding: 8px;
@@ -339,51 +349,19 @@
   .agenda-acciones button {
     width: 100%;
   }
-  
-  /* En móvil, los botones de acción de los días se agrandan para mejor touch */
-  .agenda-dia-boton {
-    padding: 10px 4px;
-  }
 }
 
 /* Desktop pequeño */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .agenda-grilla {
-    gap: 12px;
+    gap: 16px;
     padding: 16px;
   }
   
   .agenda-dia-boton {
-    font-size: 12px;
-    padding: 8px 2px;
-  }
-}
-
-/* Estilo para horarios como texto (sin interacción) - Mismo azul que días habilitados */
-.agenda-horario-texto {
-  padding: 6px;
-  border-radius: 50px;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  transition: all 0.2s;
-}
-
-/* Versión hover sutil (no cambia cursor porque no es clickeable) */
-.agenda-horario-texto:hover {
-  background-color: #0052a3;
-  transform: scale(1.02);
-}
-
-/* Responsive para móvil - mantener consistencia con los botones */
-@media (max-width: 767px) {
-  .agenda-horario-texto {
-    flex: 0 0 auto;
-    min-width: 65px;
-    padding: 8px;
+    min-width: 90px;
+    padding: 6px 16px;
+    font-size: 13px;
   }
 }
 
@@ -413,6 +391,11 @@
   cursor: not-allowed;
   position: relative;
   opacity: 0.7;
+}
+
+.agenda-horario-texto.inactivo:hover {
+  background-color: #e9ecef;
+  transform: none;
 }
 
 /* Tooltip personalizado opcional (mejora visual) */
