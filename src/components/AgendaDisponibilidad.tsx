@@ -315,12 +315,11 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // Caso 2: Existe INACTIVO → ofrecer reactivar
+    // Caso 2: Existe INACTIVO → ofrecer reactivar (sin días)
     if (bloqueInactivo) {
       const confirmar = window.confirm(
         `⚠️ Ya existe un bloque INACTIVO con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
-        `¿Desea REACTIVARLO con los datos actuales?\n` +
-        `(Se mantendrá el mismo ID y se actualizarán los días habilitados, vigencia, etc.)`
+        `¿Desea REACTIVARLO? Se mantendrá el horario y duración, pero los días quedarán sin seleccionar.`
       );
       
       if (confirmar) {
@@ -331,12 +330,12 @@ export default function AgendaDisponibilidad() {
         bloqueInactivo.fechaDesde = nuevaFechaDesde;
         bloqueInactivo.fechaHasta = fechaHastaFinal;
         bloqueInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-        bloqueInactivo.diasHabilitados = [];
+        bloqueInactivo.diasHabilitados = []; // Resetear días
         
         setBloques([...bloques]);
         setTieneCambios(true);
         
-        alert(`✅ Bloque reactivado correctamente. No olvide guardar los cambios.`);
+        alert(`✅ Bloque reactivado correctamente. Los días quedaron sin seleccionar. No olvide guardar los cambios.`);
       }
       
       setNuevoDesde('');
@@ -397,6 +396,30 @@ export default function AgendaDisponibilidad() {
     const estaActivo = !bloque.fecha_baja;
     const accion = estaActivo ? 'desactivar' : 'activar';
     
+    // Validación preventiva antes de activar (solo si está inactivo)
+    if (!estaActivo) {
+      // Verificar si ya existe un bloque ACTIVO con mismo día y horario solapado
+      const bloqueConConflicto = bloques.find(b => {
+        if (b.id === bloque.id) return false;
+        if (!b.fecha_baja) return false; // solo activos
+        if (b.diasIds?.some(id => bloque.diasIds?.includes(id))) return false;
+        
+        const diasCompartidos = bloque.diasHabilitados.filter(dia => b.diasHabilitados.includes(dia));
+        if (diasCompartidos.length === 0) return false;
+        
+        const haySolapamientoHorario = (
+          bloque.horaDesde < b.horaHasta && bloque.horaHasta > b.horaDesde
+        );
+        
+        return haySolapamientoHorario;
+      });
+      
+      if (bloqueConConflicto) {
+        alert(`❌ No se puede activar porque ya existe otro bloque ACTIVO con horario ${bloqueConConflicto.horaDesde} a ${bloqueConConflicto.horaHasta} que solapa en los mismos días.`);
+        return;
+      }
+    }
+    
     if (!window.confirm(`¿Está seguro de ${accion} este bloque?`)) return;
     
     try {
@@ -420,17 +443,23 @@ export default function AgendaDisponibilidad() {
       alert(estaActivo ? 'Bloque desactivado' : 'Bloque activado');
     } catch (err: any) {
       console.error('Error:', err);
-      alert(err.message || `Error al ${accion} el bloque`);
+      alert(`❌ ${err.message}`);
     }
   };
   
   const toggleDia = (bloqueIndex: number, diaIdx: number) => {
+    const bloque = bloques[bloqueIndex];
+    const estaActivo = !bloque.fecha_baja;
+    
+    // Si el bloque está INACTIVO, no permitir toggle
+    if (!estaActivo) return;
+    
     const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
-    if (bloque.diasHabilitados.includes(diaIdx)) {
-      bloque.diasHabilitados = bloque.diasHabilitados.filter(d => d !== diaIdx);
+    const bloqueActual = nuevosBloques[bloqueIndex];
+    if (bloqueActual.diasHabilitados.includes(diaIdx)) {
+      bloqueActual.diasHabilitados = bloqueActual.diasHabilitados.filter(d => d !== diaIdx);
     } else {
-      bloque.diasHabilitados.push(diaIdx);
+      bloqueActual.diasHabilitados.push(diaIdx);
     }
     setBloques(nuevosBloques);
     setTieneCambios(true);
@@ -717,10 +746,10 @@ export default function AgendaDisponibilidad() {
                 </button>
                 <button 
                   onClick={() => toggleActivarBloque(idx)} 
-                  className={estaActivo ? 'tm-btn-danger' : 'tm-btn-success'}
-                  style={{ padding: '4px 12px' }}
+                  className={estaActivo ? 'tm-btn-estado-activo' : 'tm-btn-estado-inactivo'}
+                  title={estaActivo ? 'Haga click para desactivar este bloque' : 'Haga click para activar este bloque'}
                 >
-                  {estaActivo ? 'Desactivar' : 'Activar'}
+                  {estaActivo ? 'Activo' : 'Inactivo'}
                 </button>
               </div>
             </div>
@@ -732,21 +761,26 @@ export default function AgendaDisponibilidad() {
                   return (
                     <div key={diaIdx} className="agenda-dia-columna">
                       <button
-                        onClick={() => estaActivo && toggleDia(idx, diaIdx)}
-                        className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'}`}
+                        onClick={() => toggleDia(idx, diaIdx)}
+                        className={`agenda-dia-boton ${estaHabilitado ? 'habilitado' : 'deshabilitado'} ${!estaActivo ? 'inactivo' : ''}`}
                         disabled={!estaActivo}
+                        title={!estaActivo ? 'Bloque inactivo - No se pueden modificar días' : (estaHabilitado ? 'Deshabilitar día' : 'Habilitar día')}
                       >
                         {dia}
                         <div className="agenda-dia-icono">
-                          {estaHabilitado ? '✅' : '🔒'}
+                          {!estaActivo ? '🔒' : (estaHabilitado ? '✅' : '🔒')}
                         </div>
                       </button>
                       
                       {estaHabilitado && bloque.horarios.length > 0 && (
                         <div className="agenda-horarios">
                           {bloque.horarios.map((horario, horarioIdx) => (
-                            <div key={horarioIdx} className="agenda-horario-texto">
-                              {horario}
+                            <div 
+                              key={horarioIdx} 
+                              className={`agenda-horario-texto ${!estaActivo ? 'inactivo' : ''}`}
+                              title={!estaActivo ? 'Bloque inactivo' : 'Horario disponible'}
+                            >
+                              {horario} {!estaActivo && '🔒'}
                             </div>
                           ))}
                         </div>
