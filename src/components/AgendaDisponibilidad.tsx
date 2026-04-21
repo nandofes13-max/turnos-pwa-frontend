@@ -303,19 +303,29 @@ export default function AgendaDisponibilidad() {
     return true;
   };
 
-  const agregarBloque = () => {
+    const agregarBloque = () => {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
     const fechaHastaFinal = nuevaFechaHasta || null;
-    
-    // Validar duplicado exacto (mismo día + mismo horario + misma duración)
+
+    // --- CORRECCIÓN: Convertir el día FRONTEND (0=Lun,1=Mar) a día BACKEND (1=Lun,2=Mar) ANTES de validar ---
+    let diaSemanaBD = nuevoDia;
+    if (nuevoDia === 6) { // Si es Domingo en Frontend (índice 6)
+      diaSemanaBD = 0;    // En BD es 0
+    } else {
+      diaSemanaBD = nuevoDia + 1; // Ej: Martes frontend(1) + 1 = Martes BD(2)
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
+    // 1. Validar duplicado exacto (mismo día BD + mismo horario + misma duración)
     const duplicadoActivo = bloques.find(bloque => {
       const estaActivo = !bloque.fecha_baja;
       if (!estaActivo) return false;
       
+      // Comparar usando el día en formato BD
       return (
-        bloque.diaSemana === nuevoDia &&
+        bloque.diaSemana === diaSemanaBD &&
         bloque.horaDesde === nuevoDesde &&
         bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
@@ -323,17 +333,19 @@ export default function AgendaDisponibilidad() {
     });
     
     if (duplicadoActivo) {
-      alert(`❌ Ya existe un bloque ACTIVO para ${DIAS_COMPLETO[nuevoDia]} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
+      // Mostrar el nombre del día correcto al usuario
+      const nombreDia = DIAS_COMPLETO[nuevoDia];
+      alert(`❌ Ya existe un bloque ACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
       return;
     }
     
-    // Buscar bloque inactivo con mismos datos para ofrecer reactivar
+    // Buscar bloque inactivo con mismos datos para ofrecer reactivar (usando día BD)
     const duplicadoInactivo = bloques.find(bloque => {
       const estaInactivo = !!bloque.fecha_baja;
       if (!estaInactivo) return false;
       
       return (
-        bloque.diaSemana === nuevoDia &&
+        bloque.diaSemana === diaSemanaBD &&
         bloque.horaDesde === nuevoDesde &&
         bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
@@ -341,8 +353,9 @@ export default function AgendaDisponibilidad() {
     });
     
     if (duplicadoInactivo) {
+      const nombreDia = DIAS_COMPLETO[nuevoDia];
       const confirmar = window.confirm(
-        `⚠️ Ya existe un bloque INACTIVO para ${DIAS_COMPLETO[nuevoDia]} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
+        `⚠️ Ya existe un bloque INACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
         `¿Desea REACTIVARLO?`
       );
       
@@ -358,7 +371,7 @@ export default function AgendaDisponibilidad() {
         setBloques(ordenarBloques([...bloques]));
         setTieneCambios(true);
         
-        alert(`✅ Bloque reactivado correctamente para ${DIAS_COMPLETO[nuevoDia]}. No olvide guardar los cambios.`);
+        alert(`✅ Bloque reactivado correctamente para ${nombreDia}. No olvide guardar los cambios.`);
       }
       
       // Limpiar formulario
@@ -374,11 +387,12 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // Crear nuevo bloque
+    // --- Si llegamos aquí, no hay duplicados, procedemos a CREAR el nuevo bloque ---
+    // Crear nuevo bloque (guardamos el día en formato BD: diaSemanaBD)
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const nuevoBloque: BloqueHorario = {
-      diaSemana: nuevoDia,
+      diaSemana: diaSemanaBD, // <--- AHORA SE GUARDA CON EL FORMATO CORRECTO (1=Lun, 2=Mar...)
       horaDesde: nuevoDesde,
       horaHasta: nuevoHasta,
       duracionTurno: duracionFinal,
@@ -393,6 +407,7 @@ export default function AgendaDisponibilidad() {
     setTieneCambios(true);
     
     // Limpiar formulario
+    const nombreDia = DIAS_COMPLETO[nuevoDia];
     setNuevoDia(null);
     setNuevoDesde('');
     setNuevoHasta('');
@@ -403,7 +418,7 @@ export default function AgendaDisponibilidad() {
     setNuevaFechaHasta('');
     setErrorMessage(null);
     
-    alert(`✅ Bloque agregado correctamente para ${DIAS_COMPLETO[nuevoDia]} (aún no guardado)`);
+    alert(`✅ Bloque agregado correctamente para ${nombreDia} (aún no guardado)`);
   };
   
   const toggleActivarBloque = async (index: number) => {
