@@ -200,22 +200,23 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
-  const cargarSlotsDesdeBackend = async (profesionalCentroId: number, fecha: string): Promise<SlotBackend[]> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots/${profesionalCentroId}?fecha=${fecha}`);
-      if (!response.ok) {
-        throw new Error('Error al cargar slots');
-      }
-      const slots = await response.json();
-      return slots.map((slot: any) => ({
-        ...slot,
-        hora: normalizarHora(slot.hora)
-      }));
-    } catch (error) {
-      console.error('Error cargando slots:', error);
-      return [];
+  const cargarSlotsDesdeBackend = async (profesionalCentroId: number, diaSemana: number): Promise<SlotBackend[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots/${profesionalCentroId}?diaSemana=${diaSemana}`);
+    if (!response.ok) {
+      throw new Error('Error al cargar slots');
     }
-  };
+    const slots = await response.json();
+    // Normalizar horas del backend (quitar segundos)
+    return slots.map((slot: any) => ({
+      ...slot,
+      hora: normalizarHora(slot.hora)
+    }));
+  } catch (error) {
+    console.error('Error cargando slots:', error);
+    return [];
+  }
+};
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -233,10 +234,9 @@ export default function AgendaDisponibilidad() {
         // Convertir día BD a UI para mostrar (pero guardamos el día BD en el estado)
         const diaUI = bdToUiDay(ag.diaSemana);
         
-        let horarios: string[] = [];
-        const fechaReferencia = ag.fechaDesde || new Date().toISOString().split('T')[0];
-        const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
-        
+       // Cargar horarios - ahora pasamos el día de la semana (formato BD)
+let horarios: string[] = [];
+const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.diaSemana);        
         if (slots && slots.length > 0) {
           horarios = slots.map(slot => slot.hora);
         } else {
