@@ -37,6 +37,13 @@ interface SlotBackend {
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
+// Función para normalizar hora (eliminar segundos)
+const normalizarHora = (hora: string): string => {
+  if (!hora) return hora;
+  // Si tiene segundos, los quitamos
+  return hora.substring(0, 5);
+};
+
 const generarOpcionesHora = (duracion: number): string[] => {
   const opciones: string[] = [];
   for (let h = 0; h < 24; h++) {
@@ -49,26 +56,36 @@ const generarOpcionesHora = (duracion: number): string[] => {
 
 const generarHorariosLocal = (desde: string, hasta: string, duracion: number): string[] => {
   const horarios: string[] = [];
-  const normalizar = (hora: string) => hora.split(':').slice(0, 2).join(':');
-  let actual = normalizar(desde);
-  const horaFin = normalizar(hasta);
+  const horaInicio = normalizarHora(desde);
+  const horaFin = normalizarHora(hasta);
   
-  while (actual < horaFin) {
-    horarios.push(actual);
-    const [h, m] = actual.split(':').map(Number);
+  console.log(`🔧 generarHorariosLocal - Desde: ${horaInicio}, Hasta: ${horaFin}, Duración: ${duracion} min`);
+  
+  let horaActual = horaInicio;
+  let contador = 0;
+  const maxIteraciones = 100; // Evitar loops infinitos
+  
+  while (horaActual < horaFin && contador < maxIteraciones) {
+    horarios.push(horaActual);
+    contador++;
+    
+    // Sumar duración
+    const [h, m] = horaActual.split(':').map(Number);
     let minutos = m + duracion;
     let horas = h;
     if (minutos >= 60) {
       horas += Math.floor(minutos / 60);
       minutos = minutos % 60;
     }
-    actual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    horaActual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
   }
+  
+  console.log(`✅ generarHorariosLocal - Generados ${horarios.length} horarios:`, horarios.slice(0, 5));
   return horarios;
 };
 
 const calcularHoraMinima = (desde: string, duracion: number): string => {
-  const [h, m] = desde.split(':').map(Number);
+  const [h, m] = normalizarHora(desde).split(':').map(Number);
   let minutos = m + duracion;
   let horas = h;
   if (minutos >= 60) {
@@ -82,7 +99,7 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   if (!desde || duracion <= 0) return [];
   
   const opciones: string[] = [];
-  const [desdeH, desdeM] = desde.split(':').map(Number);
+  const [desdeH, desdeM] = normalizarHora(desde).split(':').map(Number);
   let minutos = desdeH * 60 + desdeM + duracion;
   
   while (minutos <= 23 * 60 + 59) {
@@ -133,11 +150,6 @@ export default function AgendaDisponibilidad() {
   
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
 
-  const normalizarHora = (hora: string): string => {
-    if (!hora) return hora;
-    return hora.substring(0, 5);
-  };
-
   useEffect(() => {
     let duracion = nuevaDuracion;
     if (mostrarOtraDuracion && otraDuracion) {
@@ -183,7 +195,12 @@ export default function AgendaDisponibilidad() {
       if (!response.ok) {
         throw new Error('Error al cargar slots');
       }
-      return await response.json();
+      const slots = await response.json();
+      // Normalizar horas del backend (quitar segundos)
+      return slots.map((slot: any) => ({
+        ...slot,
+        hora: normalizarHora(slot.hora)
+      }));
     } catch (error) {
       console.error('Error cargando slots:', error);
       return [];
@@ -217,17 +234,21 @@ export default function AgendaDisponibilidad() {
         const fechaReferencia = ag.fechaDesde || new Date().toISOString().split('T')[0];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
         
+        console.log(`📊 Bloque ID ${ag.id} - Duración BD: ${ag.duracionTurno} min`);
+        
         if (slots && slots.length > 0) {
           horarios = slots.map(slot => slot.hora);
+          console.log(`   Usando ${horarios.length} horarios del backend`);
         } else {
           horarios = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
+          console.log(`   Usando ${horarios.length} horarios locales (duración ${ag.duracionTurno} min)`);
         }
         
         bloquesCargados.push({
           id: ag.id,
           diaSemana: diaSemana,
-          horaDesde: ag.horaDesde,
-          horaHasta: ag.horaHasta,
+          horaDesde: normalizarHora(ag.horaDesde),
+          horaHasta: normalizarHora(ag.horaHasta),
           duracionTurno: ag.duracionTurno,
           fechaDesde: ag.fechaDesde,
           fechaHasta: ag.fechaHasta,
@@ -295,8 +316,8 @@ export default function AgendaDisponibilidad() {
       
       return (
         bloque.diaSemana === nuevoDia &&
-        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
-        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
+        bloque.horaDesde === nuevoDesde &&
+        bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
       );
     });
@@ -313,8 +334,8 @@ export default function AgendaDisponibilidad() {
       
       return (
         bloque.diaSemana === nuevoDia &&
-        normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
-        normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
+        bloque.horaDesde === nuevoDesde &&
+        bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
       );
     });
@@ -577,10 +598,14 @@ export default function AgendaDisponibilidad() {
       <div className="agenda-header">
         <h1 className="tm-titulo">Configuración de Agenda</h1>
         <div className="agenda-info">
-          <p className="agenda-info-item"><span className="agenda-info-label">Negocio:</span> {relacion?.centro.negocio.nombre} ({relacion?.centro.negocio.url})</p>
-          <p className="agenda-info-item"><span className="agenda-info-label">Centro:</span> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}</p>
-          <p className="agenda-info-item"><span className="agenda-info-label">Especialidad:</span> {relacion?.especialidad.nombre}</p>
-          <p className="agenda-info-item"><span className="agenda-info-label">Profesional:</span> {relacion?.profesional.nombre} (DNI: {relacion?.profesional.documento})</p>
+          <p className="agenda-info-item">
+            <span className="agenda-info-label">Negocio:</span> {relacion?.centro.negocio.nombre} ({relacion?.centro.negocio.url}) | 
+            <span className="agenda-info-label"> Especialidad:</span> {relacion?.especialidad.nombre} | 
+            <span className="agenda-info-label"> Profesional:</span> {relacion?.profesional.nombre} (DNI: {relacion?.profesional.documento})
+          </p>
+          <p className="agenda-info-item">
+            <span className="agenda-info-label">Centro:</span> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}
+          </p>
         </div>
       </div>
 
@@ -629,9 +654,11 @@ export default function AgendaDisponibilidad() {
               className="agenda-form-input"
             >
               <option value={0} disabled>Seleccionar duración...</option>
+              <option value={10}>10 minutos</option>
               <option value={15}>15 minutos</option>
               <option value={30}>30 minutos</option>
               <option value={45}>45 minutos</option>
+              <option value={60}>60 minutos</option>
               <option value={0}>Otro</option>
             </select>
             {mostrarOtraDuracion && (
