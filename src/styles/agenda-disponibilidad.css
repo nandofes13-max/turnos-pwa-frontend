@@ -386,3 +386,88 @@
     padding: 8px;
   }
 }
+
+/* ============================================
+   ESTADOS PARA BLOQUES INACTIVOS (solo lectura)
+   ============================================ */
+
+/* Botón de día en bloque INACTIVO - estilo deshabilitado con candado */
+.agenda-dia-boton.inactivo {
+  background-color: #6c757d;
+  color: #e0e0e0;
+  cursor: not-allowed;
+  opacity: 0.7;
+  position: relative;
+}
+
+.agenda-dia-boton.inactivo:hover {
+  background-color: #6c757d;
+  transform: none;
+}
+
+/* Horario en bloque INACTIVO - gris con candado */
+.agenda-horario-texto.inactivo {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  border: 1px solid #dee2e6;
+  cursor: not-allowed;
+  position: relative;
+  opacity: 0.7;
+}
+
+/* Tooltip personalizado opcional (mejora visual) */
+[data-tooltip] {
+  position: relative;
+  cursor: pointer;
+}
+
+[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: #333;
+  color: white;
+  font-size: 11px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: none;
+  z-index: 1000;
+}
+
+[data-tooltip]:hover:before {
+  display: block;
+}
+
+/* Botón de estado (Activo/Inactivo) */
+.tm-btn-estado-activo {
+  background-color: #10b981 !important;
+  color: white !important;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.tm-btn-estado-activo:hover {
+  background-color: #059669 !important;
+}
+
+.tm-btn-estado-inactivo {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.tm-btn-estado-inactivo:hover {
+  background-color: #dc2626 !important;
+}
