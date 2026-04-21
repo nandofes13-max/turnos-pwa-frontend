@@ -473,15 +473,15 @@ const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.d
           console.log(`🆕 Bloque nuevo para día BD ${diaSemanaBD} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
           
           const createPayload = {
-            profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaSemanaBD,
-            horaDesde: bloque.horaDesde,
-            horaHasta: bloque.horaHasta,
-            duracionTurno: bloque.duracionTurno,
-            bufferMinutos: 0,
-            fechaDesde: bloque.fechaDesde,
-            fechaHasta: bloque.fechaHasta
-          };
+  profesionalCentroId: parseInt(profesionalCentroId!),
+  diaSemana: diaSemanaBD,  // ← Esto ya está bien
+  horaDesde: bloque.horaDesde,
+  horaHasta: bloque.horaHasta,
+  duracionTurno: bloque.duracionTurno,
+  bufferMinutos: 0,
+  fechaDesde: bloque.fechaDesde,
+  fechaHasta: bloque.fechaHasta
+};
           
           const createResponse = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
             method: 'POST',
