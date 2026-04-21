@@ -18,8 +18,7 @@ interface ProfesionalCentro {
 
 interface BloqueHorario {
   id?: number;
-  diasHabilitados: number[]; // Ahora tiene 0 o 1 elemento (un solo día por bloque)
-  diasIds?: number[];
+  diaSemana: number;        // 0=Lunes, 1=Martes, ..., 6=Domingo
   horaDesde: string;
   horaHasta: string;
   duracionTurno: number;
@@ -36,7 +35,6 @@ interface SlotBackend {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-const DIAS_CORTO = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const generarOpcionesHora = (duracion: number): string[] => {
@@ -97,6 +95,18 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
+// Función para ordenar bloques por día y hora
+const ordenarBloques = (bloques: BloqueHorario[]): BloqueHorario[] => {
+  return [...bloques].sort((a, b) => {
+    // Primero por día
+    if (a.diaSemana !== b.diaSemana) {
+      return a.diaSemana - b.diaSemana;
+    }
+    // Luego por hora desde
+    return a.horaDesde.localeCompare(b.horaDesde);
+  });
+};
+
 export default function AgendaDisponibilidad() {
   const { profesionalCentroId } = useParams<{ profesionalCentroId: string }>();
   const navigate = useNavigate();
@@ -109,6 +119,7 @@ export default function AgendaDisponibilidad() {
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
+  const [nuevoDia, setNuevoDia] = useState<number | null>(null);
   const [nuevoDesde, setNuevoDesde] = useState('');
   const [nuevoHasta, setNuevoHasta] = useState('');
   const [nuevaDuracion, setNuevaDuracion] = useState(0);
@@ -116,7 +127,6 @@ export default function AgendaDisponibilidad() {
   const [mostrarOtraDuracion, setMostrarOtraDuracion] = useState(false);
   const [nuevaFechaDesde, setNuevaFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [nuevaFechaHasta, setNuevaFechaHasta] = useState('');
-  const [nuevoDia, setNuevoDia] = useState<number | null>(null);
   
   const [duracionValida, setDuracionValida] = useState(false);
   const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
@@ -190,22 +200,19 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // NUEVA LÓGICA: NO agrupar, cada registro es un bloque independiente (un día por bloque)
+      // Convertir datos de BD a bloques
       const bloquesCargados: BloqueHorario[] = [];
       
       for (const ag of dataAgendas) {
         // Convertir dia_semana de BD (0=Domingo,1=Lunes...6=Sábado) a índice UI (0=Lunes...6=Domingo)
-        let diaIdx = ag.diaSemana;
-        if (diaIdx === 0) {
-          diaIdx = 6;  // Domingo al final
+        let diaSemana = ag.diaSemana;
+        if (diaSemana === 0) {
+          diaSemana = 6;  // Domingo al final
         } else {
-          diaIdx = diaIdx - 1;  // Lunes=0, Martes=1, etc.
+          diaSemana = diaSemana - 1;  // Lunes=0, Martes=1, etc.
         }
         
-        // Determinar si el bloque está activo o inactivo
-        const estaActivo = !ag.fecha_baja;
-        
-        // Cargar horarios desde backend o generar localmente
+        // Cargar horarios
         let horarios: string[] = [];
         const fechaReferencia = ag.fechaDesde || new Date().toISOString().split('T')[0];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
@@ -216,11 +223,9 @@ export default function AgendaDisponibilidad() {
           horarios = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
         }
         
-        // Crear un bloque por cada registro (cada día)
-        const bloque: BloqueHorario = {
+        bloquesCargados.push({
           id: ag.id,
-          diasIds: [ag.id],
-          diasHabilitados: estaActivo ? [diaIdx] : [],
+          diaSemana: diaSemana,
           horaDesde: ag.horaDesde,
           horaHasta: ag.horaHasta,
           duracionTurno: ag.duracionTurno,
@@ -228,12 +233,12 @@ export default function AgendaDisponibilidad() {
           fechaHasta: ag.fechaHasta,
           horarios: horarios,
           fecha_baja: ag.fecha_baja
-        };
-        
-        bloquesCargados.push(bloque);
+        });
       }
       
-      setBloques(bloquesCargados);
+      // Ordenar bloques por día y hora
+      const bloquesOrdenados = ordenarBloques(bloquesCargados);
+      setBloques(bloquesOrdenados);
     } catch (err) {
       console.error('Error cargando datos:', err);
     } finally {
@@ -247,6 +252,10 @@ export default function AgendaDisponibilidad() {
   };
 
   const validarHorario = () => {
+    if (nuevoDia === null) {
+      alert('Seleccione un día');
+      return false;
+    }
     if (!nuevoDesde || !nuevoHasta) {
       alert('Complete los horarios');
       return false;
@@ -259,11 +268,6 @@ export default function AgendaDisponibilidad() {
     const duracionFinal = obtenerDuracionFinal();
     if (!duracionFinal || duracionFinal <= 0) {
       alert('La duración del turno debe ser mayor a 0');
-      return false;
-    }
-    
-    if (nuevoDia === null) {
-      alert('Seleccione un día para el bloque');
       return false;
     }
     
@@ -284,63 +288,60 @@ export default function AgendaDisponibilidad() {
     const duracionFinal = obtenerDuracionFinal();
     const fechaHastaFinal = nuevaFechaHasta || null;
     
-    // Verificar si ya existe un bloque ACTIVO con mismo día + horario base
-    const bloqueExistenteActivo = bloques.find(bloque => {
+    // Validar duplicado exacto (mismo día + mismo horario + misma duración)
+    const duplicadoActivo = bloques.find(bloque => {
       const estaActivo = !bloque.fecha_baja;
       if (!estaActivo) return false;
       
-      const diaBloque = bloque.diasHabilitados[0];
-      if (diaBloque !== nuevoDia) return false;
-      
       return (
+        bloque.diaSemana === nuevoDia &&
         normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
         normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
         bloque.duracionTurno === duracionFinal
       );
     });
     
-    if (bloqueExistenteActivo) {
+    if (duplicadoActivo) {
       alert(`❌ Ya existe un bloque ACTIVO para ${DIAS_COMPLETO[nuevoDia]} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
       return;
     }
     
-    // Verificar si existe un bloque INACTIVO para mismo día + horario base
-    const bloqueInactivo = bloques.find(bloque => {
+    // Buscar bloque inactivo con mismos datos para ofrecer reactivar
+    const duplicadoInactivo = bloques.find(bloque => {
       const estaInactivo = !!bloque.fecha_baja;
       if (!estaInactivo) return false;
       
-      const diaBloque = bloque.diasHabilitados[0];
-      if (diaBloque !== nuevoDia) return false;
-      
       return (
+        bloque.diaSemana === nuevoDia &&
         normalizarHora(bloque.horaDesde) === normalizarHora(nuevoDesde) &&
         normalizarHora(bloque.horaHasta) === normalizarHora(nuevoHasta) &&
         bloque.duracionTurno === duracionFinal
       );
     });
     
-    if (bloqueInactivo) {
+    if (duplicadoInactivo) {
       const confirmar = window.confirm(
         `⚠️ Ya existe un bloque INACTIVO para ${DIAS_COMPLETO[nuevoDia]} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
         `¿Desea REACTIVARLO?`
       );
       
       if (confirmar) {
-        bloqueInactivo.fecha_baja = null;
-        bloqueInactivo.horaDesde = nuevoDesde;
-        bloqueInactivo.horaHasta = nuevoHasta;
-        bloqueInactivo.duracionTurno = duracionFinal;
-        bloqueInactivo.fechaDesde = nuevaFechaDesde;
-        bloqueInactivo.fechaHasta = fechaHastaFinal;
-        bloqueInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-        bloqueInactivo.diasHabilitados = [nuevoDia];
+        duplicadoInactivo.fecha_baja = null;
+        duplicadoInactivo.horaDesde = nuevoDesde;
+        duplicadoInactivo.horaHasta = nuevoHasta;
+        duplicadoInactivo.duracionTurno = duracionFinal;
+        duplicadoInactivo.fechaDesde = nuevaFechaDesde;
+        duplicadoInactivo.fechaHasta = fechaHastaFinal;
+        duplicadoInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
         
-        setBloques([...bloques]);
+        setBloques(ordenarBloques([...bloques]));
         setTieneCambios(true);
         
         alert(`✅ Bloque reactivado correctamente para ${DIAS_COMPLETO[nuevoDia]}. No olvide guardar los cambios.`);
       }
       
+      // Limpiar formulario
+      setNuevoDia(null);
       setNuevoDesde('');
       setNuevoHasta('');
       setNuevaDuracion(0);
@@ -348,7 +349,6 @@ export default function AgendaDisponibilidad() {
       setOtraDuracion('');
       setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
       setNuevaFechaHasta('');
-      setNuevoDia(null);
       
       return;
     }
@@ -357,7 +357,7 @@ export default function AgendaDisponibilidad() {
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const nuevoBloque: BloqueHorario = {
-      diasHabilitados: [nuevoDia],
+      diaSemana: nuevoDia,
       horaDesde: nuevoDesde,
       horaHasta: nuevoHasta,
       duracionTurno: duracionFinal,
@@ -367,9 +367,12 @@ export default function AgendaDisponibilidad() {
       fecha_baja: null
     };
     
-    setBloques([...bloques, nuevoBloque]);
+    const nuevosBloques = ordenarBloques([...bloques, nuevoBloque]);
+    setBloques(nuevosBloques);
     setTieneCambios(true);
     
+    // Limpiar formulario
+    setNuevoDia(null);
     setNuevoDesde('');
     setNuevoHasta('');
     setNuevaDuracion(0);
@@ -377,7 +380,7 @@ export default function AgendaDisponibilidad() {
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
-    setNuevoDia(null);
+    setErrorMessage(null);
     
     alert(`✅ Bloque agregado correctamente para ${DIAS_COMPLETO[nuevoDia]} (aún no guardado)`);
   };
@@ -391,8 +394,7 @@ export default function AgendaDisponibilidad() {
     }
     
     const estaActivo = !bloque.fecha_baja;
-    const dia = bloque.diasHabilitados[0];
-    const nombreDia = dia !== undefined ? DIAS_COMPLETO[dia] : 'desconocido';
+    const nombreDia = DIAS_COMPLETO[bloque.diaSemana];
     const accion = estaActivo ? 'desactivar' : 'activar';
     
     if (!window.confirm(`¿Está seguro de ${accion} el bloque para ${nombreDia}?`)) return;
@@ -421,25 +423,6 @@ export default function AgendaDisponibilidad() {
       alert(`❌ ${err.message}`);
     }
   };
-  
-  const toggleDia = (bloqueIndex: number, diaIdx: number) => {
-    // Como cada bloque tiene un solo día, esta función ya no se usa realmente
-    // Pero la mantenemos por compatibilidad
-    const nuevosBloques = [...bloques];
-    const bloque = nuevosBloques[bloqueIndex];
-    const estaActivo = !bloque.fecha_baja;
-    
-    if (!estaActivo) return;
-    
-    if (bloque.diasHabilitados.includes(diaIdx)) {
-      bloque.diasHabilitados = [];
-    } else {
-      bloque.diasHabilitados = [diaIdx];
-    }
-    
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
-  };
 
   const toggleExpandirBloque = (index: number) => {
     setBloquesExpandidos(prev => ({
@@ -453,13 +436,6 @@ export default function AgendaDisponibilidad() {
   const guardarAgenda = async () => {
     if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
-    // Validar que todos los bloques tengan día seleccionado
-    const bloquesSinDia = bloques.filter(b => b.diasHabilitados.length === 0);
-    if (bloquesSinDia.length > 0) {
-      alert('Hay bloques sin día seleccionado. Por favor, seleccione un día para cada bloque o elimine los bloques vacíos.');
-      return;
-    }
-    
     setGuardando(true);
     setErrorMessage(null);
     
@@ -468,18 +444,23 @@ export default function AgendaDisponibilidad() {
     
     try {
       for (const bloque of bloques) {
-        const dia = bloque.diasHabilitados[0];
-        const diaSemana = dia === 6 ? 0 : dia + 1;
+        // Convertir día a formato BD (0=Domingo...6=Sábado)
+        let diaSemanaBD = bloque.diaSemana;
+        if (diaSemanaBD === 6) {
+          diaSemanaBD = 0;
+        } else {
+          diaSemanaBD = diaSemanaBD + 1;
+        }
         
         // ============================================================
         // CASO 1: Bloque NUEVO (sin ID) → CREAR
         // ============================================================
         if (!bloque.id) {
-          console.log(`🆕 Bloque nuevo para ${DIAS_COMPLETO[dia]} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
+          console.log(`🆕 Bloque nuevo para ${DIAS_COMPLETO[bloque.diaSemana]} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
           
           const createPayload = {
             profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaSemana,
+            diaSemana: diaSemanaBD,
             horaDesde: bloque.horaDesde,
             horaHasta: bloque.horaHasta,
             duracionTurno: bloque.duracionTurno,
@@ -513,7 +494,7 @@ export default function AgendaDisponibilidad() {
         }
         
         // ============================================================
-        // CASO 2: Bloque EXISTENTE → Actualizar días y horarios
+        // CASO 2: Bloque EXISTENTE (con ID) → Actualizar días y horarios
         // ============================================================
         const payload = {
           agendaDisponibilidadId: bloque.id,
@@ -523,11 +504,11 @@ export default function AgendaDisponibilidad() {
           duracionTurno: bloque.duracionTurno,
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta,
-          diasHabilitados: [diaSemana],
+          diasHabilitados: [diaSemanaBD],
           excepcionesHorarios: []
         };
         
-        console.log(`📤 Actualizando bloque ${bloque.id} para ${DIAS_COMPLETO[dia]}`);
+        console.log(`📤 Actualizando bloque ${bloque.id} para ${DIAS_COMPLETO[bloque.diaSemana]}`);
         
         const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
           method: 'PUT',
@@ -557,8 +538,7 @@ export default function AgendaDisponibilidad() {
       console.error('Error guardando agenda:', err);
       
       if (bloqueConflictivo && (errorMensaje.includes('solapa') || errorMensaje.includes('solapamiento'))) {
-        const dia = bloqueConflictivo.diasHabilitados[0];
-        const nombreDia = dia !== undefined ? DIAS_COMPLETO[dia] : 'desconocido';
+        const nombreDia = DIAS_COMPLETO[bloqueConflictivo.diaSemana];
         alert(`❌ ${errorMensaje}\n\nNo se pudo guardar el bloque para ${nombreDia}.`);
       } else {
         alert(`❌ ${err.message}`);
@@ -618,7 +598,7 @@ export default function AgendaDisponibilidad() {
         </div>
         
         <div className="agenda-form-row">
-          <div className="agenda-form-field" style={{ minWidth: '100px' }}>
+          <div className="agenda-form-field" style={{ minWidth: '120px' }}>
             <label className="agenda-form-label">Día</label>
             <select 
               value={nuevoDia !== null ? nuevoDia : ''} 
@@ -713,8 +693,7 @@ export default function AgendaDisponibilidad() {
       {bloques.map((bloque, idx) => {
         const estaActivo = !bloque.fecha_baja;
         const estaExpandido = bloquesExpandidos[idx];
-        const dia = bloque.diasHabilitados[0];
-        const nombreDia = dia !== undefined ? DIAS_COMPLETO[dia] : 'Sin día';
+        const nombreDia = DIAS_COMPLETO[bloque.diaSemana];
         
         const formatVigencia = () => {
           const fechaDesdeDate = new Date(bloque.fechaDesde);
@@ -781,26 +760,17 @@ export default function AgendaDisponibilidad() {
             {estaExpandido && (
               <div className="agenda-grilla">
                 <div className="agenda-dia-columna">
-                  <div className={`agenda-dia-boton ${estaActivo ? 'habilitado' : 'deshabilitado'} ${!estaActivo ? 'inactivo' : ''}`}>
-                    {DIAS_CORTO[dia]}
-                    <div className="agenda-dia-icono">
-                      {!estaActivo ? '🔒' : '✅'}
-                    </div>
+                  <div className="agenda-horarios">
+                    {bloque.horarios.map((horario, horarioIdx) => (
+                      <div 
+                        key={horarioIdx} 
+                        className={`agenda-horario-texto ${!estaActivo ? 'inactivo' : ''}`}
+                        title={!estaActivo ? 'Bloque inactivo' : 'Horario disponible'}
+                      >
+                        {horario} {!estaActivo && '🔒'}
+                      </div>
+                    ))}
                   </div>
-                  
-                  {bloque.horarios.length > 0 && (
-                    <div className="agenda-horarios">
-                      {bloque.horarios.map((horario, horarioIdx) => (
-                        <div 
-                          key={horarioIdx} 
-                          className={`agenda-horario-texto ${!estaActivo ? 'inactivo' : ''}`}
-                          title={!estaActivo ? 'Bloque inactivo' : 'Horario disponible'}
-                        >
-                          {horario} {!estaActivo && '🔒'}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
