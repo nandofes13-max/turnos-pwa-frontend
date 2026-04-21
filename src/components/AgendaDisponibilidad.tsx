@@ -475,32 +475,76 @@ export default function AgendaDisponibilidad() {
   const hoy = new Date().toISOString().split('T')[0];
 
   const guardarAgenda = async () => {
-    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-    
-    const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
-    if (bloquesSinDias.length > 0) {
-      alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
-      return;
-    }
-    
-    setGuardando(true);
-    setErrorMessage(null);
-    
-    try {
-      for (const bloque of bloques) {
-        if (!bloque.id) {
-          console.log(`⚠️ Bloque sin ID (nuevo), se guardará al crear la agenda`);
-          continue;
+  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+  
+  const bloquesSinDias = bloques.filter(b => b.diasHabilitados.length === 0);
+  if (bloquesSinDias.length > 0) {
+    alert('Hay bloques sin días habilitados. Por favor, seleccione al menos un día para cada bloque o elimine los bloques vacíos.');
+    return;
+  }
+  
+  setGuardando(true);
+  setErrorMessage(null);
+  
+  try {
+    for (const bloque of bloques) {
+      // ============================================================
+      // CASO 1: Bloque NUEVO (sin ID) → CREAR primero
+      // ============================================================
+      if (!bloque.id) {
+        console.log(`🆕 Bloque nuevo (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando en BD...`);
+        
+        // Obtener el primer día habilitado para el dia_semana (por ahora usamos 1 como default)
+        // El POST necesita un dia_semana, usamos el primero de la lista o 1 por defecto
+        const primerDiaHabilitado = bloque.diasHabilitados.length > 0 ? bloque.diasHabilitados[0] : 1;
+        let diaSemanaParaCrear = primerDiaHabilitado;
+        if (diaSemanaParaCrear === 6) {
+          diaSemanaParaCrear = 0;
+        } else {
+          diaSemanaParaCrear = diaSemanaParaCrear + 1;
         }
         
+        const createPayload = {
+          profesionalCentroId: parseInt(profesionalCentroId!),
+          diaSemana: diaSemanaParaCrear,
+          horaDesde: bloque.horaDesde,
+          horaHasta: bloque.horaHasta,
+          duracionTurno: bloque.duracionTurno,
+          bufferMinutos: 0,
+          fechaDesde: bloque.fechaDesde,
+          fechaHasta: bloque.fechaHasta
+        };
+        
+        console.log('📤 Create payload:', JSON.stringify(createPayload, null, 2));
+        
+        const createResponse = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(createPayload)
+        });
+        
+        if (!createResponse.ok) {
+          let errorMsg = 'Error al crear el bloque';
+          try {
+            const errorData = await createResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {}
+          throw new Error(errorMsg);
+        }
+        
+        const nuevoBloqueCreado = await createResponse.json();
+        console.log(`✅ Bloque creado con ID: ${nuevoBloqueCreado.id}`);
+        
+        // Actualizar el bloque en el estado local con el nuevo ID
+        bloque.id = nuevoBloqueCreado.id;
+        
+        // Ahora sincronizar los días para este bloque
         const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
           if (diaIdx === 6) return 0;
           return diaIdx + 1;
         });
         
-        const excepcionesHorarios: { diaSemana: number; horaDesde: string; horaHasta: string }[] = [];
-        
-        const payload = {
+        const syncPayload = {
           agendaDisponibilidadId: bloque.id,
           profesionalCentroId: parseInt(profesionalCentroId!),
           horaDesde: bloque.horaDesde,
@@ -509,58 +553,81 @@ export default function AgendaDisponibilidad() {
           fechaDesde: bloque.fechaDesde,
           fechaHasta: bloque.fechaHasta,
           diasHabilitados: diasHabilitados,
-          excepcionesHorarios: excepcionesHorarios
+          excepcionesHorarios: []
         };
         
-        console.log(`📤 Enviando bloque ${bloque.horaDesde} a ${bloque.horaHasta} (ID: ${bloque.id})`);
+        console.log(`📤 Sincronizando días para bloque ${bloque.id}:`, JSON.stringify(syncPayload, null, 2));
         
-        const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
+        const syncResponse = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(syncPayload)
         });
         
-        if (!response.ok) {
-          let errorMessageText = '';
-          
+        if (!syncResponse.ok) {
+          let errorMsg = 'Error al sincronizar días';
           try {
-            const errorData = await response.json();
-            console.error('Error response del backend:', errorData);
-            
-            if (errorData.message) {
-              if (Array.isArray(errorData.message)) {
-                errorMessageText = errorData.message.join(', ');
-              } else {
-                errorMessageText = errorData.message;
-              }
-            } else if (errorData.error) {
-              errorMessageText = errorData.error;
-            } else {
-              errorMessageText = response.statusText;
-            }
-          } catch (e) {
-            errorMessageText = response.statusText || `Error ${response.status}`;
-          }
-          
-          if (!errorMessageText) {
-            errorMessageText = 'Error al guardar la agenda';
-          }
-          
-          throw new Error(errorMessageText);
+            const errorData = await syncResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {}
+          throw new Error(errorMsg);
         }
+        
+        console.log(`✅ Bloque ${bloque.id} sincronizado correctamente`);
+        continue;
       }
       
-      alert('✅ Agenda guardada correctamente');
-      setTieneCambios(false);
-      await cargarDatos();
-    } catch (err: any) {
-      console.error('Error guardando agenda:', err);
-      alert(`❌ ${err.message}`);
-      setErrorMessage(err.message);
-    } finally {
-      setGuardando(false);
+      // ============================================================
+      // CASO 2: Bloque EXISTENTE (con ID) → Solo sincronizar
+      // ============================================================
+      const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
+        if (diaIdx === 6) return 0;
+        return diaIdx + 1;
+      });
+      
+      const payload = {
+        agendaDisponibilidadId: bloque.id,
+        profesionalCentroId: parseInt(profesionalCentroId!),
+        horaDesde: bloque.horaDesde,
+        horaHasta: bloque.horaHasta,
+        duracionTurno: bloque.duracionTurno,
+        fechaDesde: bloque.fechaDesde,
+        fechaHasta: bloque.fechaHasta,
+        diasHabilitados: diasHabilitados,
+        excepcionesHorarios: []
+      };
+      
+      console.log(`📤 Actualizando bloque ${bloque.id}:`, JSON.stringify(payload, null, 2));
+      
+      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        let errorMessageText = '';
+        try {
+          const errorData = await response.json();
+          errorMessageText = errorData.message || response.statusText;
+        } catch (e) {
+          errorMessageText = response.statusText || `Error ${response.status}`;
+        }
+        throw new Error(errorMessageText);
+      }
     }
-  };
+    
+    alert('✅ Agenda guardada correctamente');
+    setTieneCambios(false);
+    await cargarDatos();
+  } catch (err: any) {
+    console.error('Error guardando agenda:', err);
+    alert(`❌ ${err.message}`);
+    setErrorMessage(err.message);
+  } finally {
+    setGuardando(false);
+  }
+};
   
   const handleClose = () => {
     if (tieneCambios) {
