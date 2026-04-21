@@ -486,6 +486,9 @@ export default function AgendaDisponibilidad() {
   setGuardando(true);
   setErrorMessage(null);
   
+  let bloqueConflictivo: BloqueHorario | null = null;
+  let errorMensaje = '';
+  
   try {
     for (const bloque of bloques) {
       // ============================================================
@@ -494,8 +497,6 @@ export default function AgendaDisponibilidad() {
       if (!bloque.id) {
         console.log(`🆕 Bloque nuevo (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando en BD...`);
         
-        // Obtener el primer día habilitado para el dia_semana (por ahora usamos 1 como default)
-        // El POST necesita un dia_semana, usamos el primero de la lista o 1 por defecto
         const primerDiaHabilitado = bloque.diasHabilitados.length > 0 ? bloque.diasHabilitados[0] : 1;
         let diaSemanaParaCrear = primerDiaHabilitado;
         if (diaSemanaParaCrear === 6) {
@@ -529,16 +530,15 @@ export default function AgendaDisponibilidad() {
             const errorData = await createResponse.json();
             errorMsg = errorData.message || errorMsg;
           } catch (e) {}
+          bloqueConflictivo = bloque;
+          errorMensaje = errorMsg;
           throw new Error(errorMsg);
         }
         
         const nuevoBloqueCreado = await createResponse.json();
         console.log(`✅ Bloque creado con ID: ${nuevoBloqueCreado.id}`);
-        
-        // Actualizar el bloque en el estado local con el nuevo ID
         bloque.id = nuevoBloqueCreado.id;
         
-        // Ahora sincronizar los días para este bloque
         const diasHabilitados = bloque.diasHabilitados.map(diaIdx => {
           if (diaIdx === 6) return 0;
           return diaIdx + 1;
@@ -556,7 +556,7 @@ export default function AgendaDisponibilidad() {
           excepcionesHorarios: []
         };
         
-        console.log(`📤 Sincronizando días para bloque ${bloque.id}:`, JSON.stringify(syncPayload, null, 2));
+        console.log(`📤 Sincronizando días para bloque ${bloque.id}`);
         
         const syncResponse = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
           method: 'PUT',
@@ -570,6 +570,8 @@ export default function AgendaDisponibilidad() {
             const errorData = await syncResponse.json();
             errorMsg = errorData.message || errorMsg;
           } catch (e) {}
+          bloqueConflictivo = bloque;
+          errorMensaje = errorMsg;
           throw new Error(errorMsg);
         }
         
@@ -597,7 +599,7 @@ export default function AgendaDisponibilidad() {
         excepcionesHorarios: []
       };
       
-      console.log(`📤 Actualizando bloque ${bloque.id}:`, JSON.stringify(payload, null, 2));
+      console.log(`📤 Actualizando bloque ${bloque.id}`);
       
       const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
         method: 'PUT',
@@ -613,6 +615,8 @@ export default function AgendaDisponibilidad() {
         } catch (e) {
           errorMessageText = response.statusText || `Error ${response.status}`;
         }
+        bloqueConflictivo = bloque;
+        errorMensaje = errorMessageText;
         throw new Error(errorMessageText);
       }
     }
@@ -620,9 +624,20 @@ export default function AgendaDisponibilidad() {
     alert('✅ Agenda guardada correctamente');
     setTieneCambios(false);
     await cargarDatos();
+    
   } catch (err: any) {
     console.error('Error guardando agenda:', err);
-    alert(`❌ ${err.message}`);
+    
+    // Si el error es por solapamiento y tenemos el bloque conflictivo
+    if (bloqueConflictivo && (errorMensaje.includes('solapa') || errorMensaje.includes('solapamiento'))) {
+      // Limpiar SOLO los días del bloque conflictivo (mantener la plantilla)
+      bloqueConflictivo.diasHabilitados = [];
+      setBloques([...bloques]);
+      alert(`❌ ${errorMensaje}\n\nSe limpiaron los días del bloque conflictivo. Puede seleccionar otros días y volver a guardar.`);
+    } else {
+      alert(`❌ ${err.message}`);
+    }
+    
     setErrorMessage(err.message);
   } finally {
     setGuardando(false);
