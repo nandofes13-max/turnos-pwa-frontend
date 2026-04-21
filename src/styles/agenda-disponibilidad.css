@@ -454,3 +454,74 @@
 .tm-btn-estado-inactivo:hover {
   background-color: #dc2626 !important;
 }
+
+/* ============================================
+   AJUSTES FINALES - TAMAÑOS Y CONTRASTE
+   ============================================ */
+
+/* Día DESHABILITADO (pero activo) - fondo gris, texto blanco */
+.agenda-dia-boton.deshabilitado {
+  background-color: #6c757d;
+  color: white;
+  opacity: 1;
+}
+
+/* Día INACTIVO (bloque dado de baja) - fondo gris oscuro, texto blanco */
+.agenda-dia-boton.inactivo {
+  background-color: #495057;
+  color: white;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.agenda-dia-boton.inactivo:hover {
+  background-color: #495057;
+  transform: none;
+}
+
+/* Botón del día - tamaño equilibrado */
+.agenda-dia-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-width: 120px;
+  padding: 10px 20px;
+  margin-bottom: 16px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+/* Horarios - tamaño más compacto */
+.agenda-horario-texto {
+  padding: 5px 10px;
+  min-width: 65px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  transition: all 0.2s;
+}
+
+/* Ajuste responsive para móvil */
+@media (max-width: 767px) {
+  .agenda-dia-boton {
+    min-width: 100px;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .agenda-horario-texto {
+    min-width: 55px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
