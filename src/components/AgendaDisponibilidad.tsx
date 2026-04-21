@@ -18,7 +18,7 @@ interface ProfesionalCentro {
 
 interface BloqueHorario {
   id?: number;
-  diaSemana: number;        // 0=Lunes, 1=Martes, ..., 6=Domingo
+  diaSemana: number;        // Formato BD: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
   horaDesde: string;
   horaHasta: string;
   duracionTurno: number;
@@ -35,13 +35,26 @@ interface SlotBackend {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// Índice para mostrar: posición 0 = Lunes, 1 = Martes, ..., 6 = Domingo
 const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 // Función para normalizar hora (eliminar segundos)
 const normalizarHora = (hora: string): string => {
   if (!hora) return hora;
-  // Si tiene segundos, los quitamos
   return hora.substring(0, 5);
+};
+
+// Convertir día UI (0=Lunes...6=Domingo) a día BD (1=Lunes...0=Domingo)
+const uiToBdDay = (uiDay: number): number => {
+  if (uiDay === 6) return 0; // Domingo
+  return uiDay + 1;
+};
+
+// Convertir día BD (1=Lunes...0=Domingo) a día UI (0=Lunes...6=Domingo)
+const bdToUiDay = (bdDay: number): number => {
+  if (bdDay === 0) return 6; // Domingo
+  return bdDay - 1;
 };
 
 const generarOpcionesHora = (duracion: number): string[] => {
@@ -59,17 +72,14 @@ const generarHorariosLocal = (desde: string, hasta: string, duracion: number): s
   const horaInicio = normalizarHora(desde);
   const horaFin = normalizarHora(hasta);
   
-  console.log(`🔧 generarHorariosLocal - Desde: ${horaInicio}, Hasta: ${horaFin}, Duración: ${duracion} min`);
-  
   let horaActual = horaInicio;
   let contador = 0;
-  const maxIteraciones = 100; // Evitar loops infinitos
+  const maxIteraciones = 100;
   
   while (horaActual < horaFin && contador < maxIteraciones) {
     horarios.push(horaActual);
     contador++;
     
-    // Sumar duración
     const [h, m] = horaActual.split(':').map(Number);
     let minutos = m + duracion;
     let horas = h;
@@ -80,7 +90,6 @@ const generarHorariosLocal = (desde: string, hasta: string, duracion: number): s
     horaActual = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
   }
   
-  console.log(`✅ generarHorariosLocal - Generados ${horarios.length} horarios:`, horarios.slice(0, 5));
   return horarios;
 };
 
@@ -112,14 +121,16 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
-// Función para ordenar bloques por día y hora
+// Función para ordenar bloques por día BD y hora
 const ordenarBloques = (bloques: BloqueHorario[]): BloqueHorario[] => {
   return [...bloques].sort((a, b) => {
-    // Primero por día
-    if (a.diaSemana !== b.diaSemana) {
-      return a.diaSemana - b.diaSemana;
+    // Ordenar por día BD (1=Lunes, 2=Martes..., 0=Domingo)
+    // Pero queremos Lunes(1) primero, luego Martes(2)... luego Domingo(0)
+    const aOrder = a.diaSemana === 0 ? 7 : a.diaSemana;
+    const bOrder = b.diaSemana === 0 ? 7 : b.diaSemana;
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
     }
-    // Luego por hora desde
     return a.horaDesde.localeCompare(b.horaDesde);
   });
 };
@@ -136,7 +147,7 @@ export default function AgendaDisponibilidad() {
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const [nuevoDia, setNuevoDia] = useState<number | null>(null);
+  const [nuevoDiaUI, setNuevoDiaUI] = useState<number | null>(null); // 0=Lunes...6=Domingo
   const [nuevoDesde, setNuevoDesde] = useState('');
   const [nuevoHasta, setNuevoHasta] = useState('');
   const [nuevaDuracion, setNuevaDuracion] = useState(0);
@@ -196,7 +207,6 @@ export default function AgendaDisponibilidad() {
         throw new Error('Error al cargar slots');
       }
       const slots = await response.json();
-      // Normalizar horas del backend (quitar segundos)
       return slots.map((slot: any) => ({
         ...slot,
         hora: normalizarHora(slot.hora)
@@ -217,36 +227,25 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // Convertir datos de BD a bloques
       const bloquesCargados: BloqueHorario[] = [];
       
       for (const ag of dataAgendas) {
-        // Convertir dia_semana de BD (0=Domingo,1=Lunes...6=Sábado) a índice UI (0=Lunes...6=Domingo)
-        let diaSemana = ag.diaSemana;
-        if (diaSemana === 0) {
-          diaSemana = 6;  // Domingo al final
-        } else {
-          diaSemana = diaSemana - 1;  // Lunes=0, Martes=1, etc.
-        }
+        // Convertir día BD a UI para mostrar (pero guardamos el día BD en el estado)
+        const diaUI = bdToUiDay(ag.diaSemana);
         
-        // Cargar horarios
         let horarios: string[] = [];
         const fechaReferencia = ag.fechaDesde || new Date().toISOString().split('T')[0];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), fechaReferencia);
         
-        console.log(`📊 Bloque ID ${ag.id} - Duración BD: ${ag.duracionTurno} min`);
-        
         if (slots && slots.length > 0) {
           horarios = slots.map(slot => slot.hora);
-          console.log(`   Usando ${horarios.length} horarios del backend`);
         } else {
           horarios = generarHorariosLocal(ag.horaDesde, ag.horaHasta, ag.duracionTurno);
-          console.log(`   Usando ${horarios.length} horarios locales (duración ${ag.duracionTurno} min)`);
         }
         
         bloquesCargados.push({
           id: ag.id,
-          diaSemana: diaSemana,
+          diaSemana: ag.diaSemana, // Guardamos el día en formato BD
           horaDesde: normalizarHora(ag.horaDesde),
           horaHasta: normalizarHora(ag.horaHasta),
           duracionTurno: ag.duracionTurno,
@@ -257,7 +256,6 @@ export default function AgendaDisponibilidad() {
         });
       }
       
-      // Ordenar bloques por día y hora
       const bloquesOrdenados = ordenarBloques(bloquesCargados);
       setBloques(bloquesOrdenados);
     } catch (err) {
@@ -273,7 +271,7 @@ export default function AgendaDisponibilidad() {
   };
 
   const validarHorario = () => {
-    if (nuevoDia === null) {
+    if (nuevoDiaUI === null) {
       alert('Seleccione un día');
       return false;
     }
@@ -303,29 +301,23 @@ export default function AgendaDisponibilidad() {
     return true;
   };
 
-    const agregarBloque = () => {
+  const agregarBloque = () => {
     if (!validarHorario()) return;
     
     const duracionFinal = obtenerDuracionFinal();
     const fechaHastaFinal = nuevaFechaHasta || null;
-
-    // --- CORRECCIÓN: Convertir el día FRONTEND (0=Lun,1=Mar) a día BACKEND (1=Lun,2=Mar) ANTES de validar ---
-    let diaSemanaBD = nuevoDia;
-    if (nuevoDia === 6) { // Si es Domingo en Frontend (índice 6)
-      diaSemanaBD = 0;    // En BD es 0
-    } else {
-      diaSemanaBD = nuevoDia + 1; // Ej: Martes frontend(1) + 1 = Martes BD(2)
-    }
-    // --- FIN DE LA CORRECCIÓN ---
-
-    // 1. Validar duplicado exacto (mismo día BD + mismo horario + misma duración)
+    
+    // Convertir día UI a BD para validar y guardar
+    const nuevoDiaBD = uiToBdDay(nuevoDiaUI!);
+    const nombreDia = DIAS_COMPLETO[nuevoDiaUI!];
+    
+    // Validar duplicado exacto (mismo día BD + mismo horario + misma duración)
     const duplicadoActivo = bloques.find(bloque => {
       const estaActivo = !bloque.fecha_baja;
       if (!estaActivo) return false;
       
-      // Comparar usando el día en formato BD
       return (
-        bloque.diaSemana === diaSemanaBD &&
+        bloque.diaSemana === nuevoDiaBD &&
         bloque.horaDesde === nuevoDesde &&
         bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
@@ -333,19 +325,17 @@ export default function AgendaDisponibilidad() {
     });
     
     if (duplicadoActivo) {
-      // Mostrar el nombre del día correcto al usuario
-      const nombreDia = DIAS_COMPLETO[nuevoDia];
       alert(`❌ Ya existe un bloque ACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
       return;
     }
     
-    // Buscar bloque inactivo con mismos datos para ofrecer reactivar (usando día BD)
+    // Buscar bloque inactivo con mismos datos
     const duplicadoInactivo = bloques.find(bloque => {
       const estaInactivo = !!bloque.fecha_baja;
       if (!estaInactivo) return false;
       
       return (
-        bloque.diaSemana === diaSemanaBD &&
+        bloque.diaSemana === nuevoDiaBD &&
         bloque.horaDesde === nuevoDesde &&
         bloque.horaHasta === nuevoHasta &&
         bloque.duracionTurno === duracionFinal
@@ -353,7 +343,6 @@ export default function AgendaDisponibilidad() {
     });
     
     if (duplicadoInactivo) {
-      const nombreDia = DIAS_COMPLETO[nuevoDia];
       const confirmar = window.confirm(
         `⚠️ Ya existe un bloque INACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
         `¿Desea REACTIVARLO?`
@@ -374,8 +363,7 @@ export default function AgendaDisponibilidad() {
         alert(`✅ Bloque reactivado correctamente para ${nombreDia}. No olvide guardar los cambios.`);
       }
       
-      // Limpiar formulario
-      setNuevoDia(null);
+      setNuevoDiaUI(null);
       setNuevoDesde('');
       setNuevoHasta('');
       setNuevaDuracion(0);
@@ -387,12 +375,11 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // --- Si llegamos aquí, no hay duplicados, procedemos a CREAR el nuevo bloque ---
-    // Crear nuevo bloque (guardamos el día en formato BD: diaSemanaBD)
+    // Crear nuevo bloque
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const nuevoBloque: BloqueHorario = {
-      diaSemana: diaSemanaBD, // <--- AHORA SE GUARDA CON EL FORMATO CORRECTO (1=Lun, 2=Mar...)
+      diaSemana: nuevoDiaBD,
       horaDesde: nuevoDesde,
       horaHasta: nuevoHasta,
       duracionTurno: duracionFinal,
@@ -406,9 +393,7 @@ export default function AgendaDisponibilidad() {
     setBloques(nuevosBloques);
     setTieneCambios(true);
     
-    // Limpiar formulario
-    const nombreDia = DIAS_COMPLETO[nuevoDia];
-    setNuevoDia(null);
+    setNuevoDiaUI(null);
     setNuevoDesde('');
     setNuevoHasta('');
     setNuevaDuracion(0);
@@ -430,7 +415,8 @@ export default function AgendaDisponibilidad() {
     }
     
     const estaActivo = !bloque.fecha_baja;
-    const nombreDia = DIAS_COMPLETO[bloque.diaSemana];
+    const diaUI = bdToUiDay(bloque.diaSemana);
+    const nombreDia = DIAS_COMPLETO[diaUI];
     const accion = estaActivo ? 'desactivar' : 'activar';
     
     if (!window.confirm(`¿Está seguro de ${accion} el bloque para ${nombreDia}?`)) return;
@@ -480,19 +466,11 @@ export default function AgendaDisponibilidad() {
     
     try {
       for (const bloque of bloques) {
-        // Convertir día a formato BD (0=Domingo...6=Sábado)
-        let diaSemanaBD = bloque.diaSemana;
-        if (diaSemanaBD === 6) {
-          diaSemanaBD = 0;
-        } else {
-          diaSemanaBD = diaSemanaBD + 1;
-        }
+        // El día ya está en formato BD, NO convertir nuevamente
+        const diaSemanaBD = bloque.diaSemana;
         
-        // ============================================================
-        // CASO 1: Bloque NUEVO (sin ID) → CREAR
-        // ============================================================
         if (!bloque.id) {
-          console.log(`🆕 Bloque nuevo para ${DIAS_COMPLETO[bloque.diaSemana]} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
+          console.log(`🆕 Bloque nuevo para día BD ${diaSemanaBD} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
           
           const createPayload = {
             profesionalCentroId: parseInt(profesionalCentroId!),
@@ -529,9 +507,6 @@ export default function AgendaDisponibilidad() {
           continue;
         }
         
-        // ============================================================
-        // CASO 2: Bloque EXISTENTE (con ID) → Actualizar días y horarios
-        // ============================================================
         const payload = {
           agendaDisponibilidadId: bloque.id,
           profesionalCentroId: parseInt(profesionalCentroId!),
@@ -544,7 +519,7 @@ export default function AgendaDisponibilidad() {
           excepcionesHorarios: []
         };
         
-        console.log(`📤 Actualizando bloque ${bloque.id} para ${DIAS_COMPLETO[bloque.diaSemana]}`);
+        console.log(`📤 Actualizando bloque ${bloque.id} para día BD ${diaSemanaBD}`);
         
         const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
           method: 'PUT',
@@ -574,7 +549,8 @@ export default function AgendaDisponibilidad() {
       console.error('Error guardando agenda:', err);
       
       if (bloqueConflictivo && (errorMensaje.includes('solapa') || errorMensaje.includes('solapamiento'))) {
-        const nombreDia = DIAS_COMPLETO[bloqueConflictivo.diaSemana];
+        const diaUI = bdToUiDay(bloqueConflictivo.diaSemana);
+        const nombreDia = DIAS_COMPLETO[diaUI];
         alert(`❌ ${errorMensaje}\n\nNo se pudo guardar el bloque para ${nombreDia}.`);
       } else {
         alert(`❌ ${err.message}`);
@@ -641,8 +617,8 @@ export default function AgendaDisponibilidad() {
           <div className="agenda-form-field" style={{ minWidth: '120px' }}>
             <label className="agenda-form-label">Día</label>
             <select 
-              value={nuevoDia !== null ? nuevoDia : ''} 
-              onChange={(e) => setNuevoDia(parseInt(e.target.value))} 
+              value={nuevoDiaUI !== null ? nuevoDiaUI : ''} 
+              onChange={(e) => setNuevoDiaUI(parseInt(e.target.value))} 
               className="agenda-form-input"
             >
               <option value="" disabled>Seleccionar día...</option>
@@ -735,7 +711,8 @@ export default function AgendaDisponibilidad() {
       {bloques.map((bloque, idx) => {
         const estaActivo = !bloque.fecha_baja;
         const estaExpandido = bloquesExpandidos[idx];
-        const nombreDia = DIAS_COMPLETO[bloque.diaSemana];
+        const diaUI = bdToUiDay(bloque.diaSemana);
+        const nombreDia = DIAS_COMPLETO[diaUI];
         
         const formatVigencia = () => {
           const fechaDesdeDate = new Date(bloque.fechaDesde);
