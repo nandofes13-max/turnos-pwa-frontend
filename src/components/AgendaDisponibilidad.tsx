@@ -200,9 +200,9 @@ export default function AgendaDisponibilidad() {
     }
   }, [profesionalCentroId]);
 
-  const cargarSlotsDesdeBackend = async (profesionalCentroId: number, diaSemana: number): Promise<SlotBackend[]> => {
+  const cargarSlotsDesdeBackend = async (profesionalCentroId: number, agendaId: number): Promise<SlotBackend[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots/${profesionalCentroId}?diaSemana=${diaSemana}`);
+    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/generar-slots-por-id?profesionalCentroId=${profesionalCentroId}&agendaId=${agendaId}`);
     if (!response.ok) {
       throw new Error('Error al cargar slots');
     }
@@ -217,7 +217,6 @@ export default function AgendaDisponibilidad() {
     return [];
   }
 };
-
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -236,7 +235,7 @@ export default function AgendaDisponibilidad() {
         
        // Cargar horarios - ahora pasamos el día de la semana (formato BD)
 let horarios: string[] = [];
-const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.diaSemana);        
+const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.id);        
         if (slots && slots.length > 0) {
           horarios = slots.map(slot => slot.hora);
         } else {
