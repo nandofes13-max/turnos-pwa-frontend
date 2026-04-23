@@ -301,96 +301,97 @@ const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.i
   };
 
   const agregarBloque = () => {
-    if (!validarHorario()) return;
+  if (!validarHorario()) return;
+  
+  const duracionFinal = obtenerDuracionFinal();
+  const fechaHastaFinal = nuevaFechaHasta || null;
+  
+  // Convertir día UI a BD
+  const nuevoDiaBD = uiToBdDay(nuevoDiaUI!);
+  const nombreDia = DIAS_COMPLETO[nuevoDiaUI!];
+  
+  // ============================================================
+  // VALIDACIÓN DE SOLAPAMIENTO (ignorando duración)
+  // ============================================================
+  
+  // Buscar bloque ACTIVO que solape en horario (independientemente de duración)
+  const bloqueSolapadoActivo = bloques.find(bloque => {
+    const estaActivo = !bloque.fecha_baja;
+    if (!estaActivo) return false;
     
-    const duracionFinal = obtenerDuracionFinal();
-    const fechaHastaFinal = nuevaFechaHasta || null;
+    // Mismo día
+    if (bloque.diaSemana !== nuevoDiaBD) return false;
     
-    // Convertir día UI a BD para validar y guardar
-    const nuevoDiaBD = uiToBdDay(nuevoDiaUI!);
-    const nombreDia = DIAS_COMPLETO[nuevoDiaUI!];
+    // Verificar solapamiento de horarios (independiente de duración)
+    const haySolapamientoHorario = (
+      (nuevoDesde < bloque.horaHasta && nuevoHasta > bloque.horaDesde)
+    );
     
-    // Validar duplicado exacto (mismo día BD + mismo horario + misma duración)
-    const duplicadoActivo = bloques.find(bloque => {
-      const estaActivo = !bloque.fecha_baja;
-      if (!estaActivo) return false;
+    return haySolapamientoHorario;
+  });
+  
+  if (bloqueSolapadoActivo) {
+    alert(`❌ SOLAPAMIENTO: Ya existe un bloque ACTIVO para ${nombreDia} con horario ${bloqueSolapadoActivo.horaDesde} a ${bloqueSolapadoActivo.horaHasta} (duración ${bloqueSolapadoActivo.duracionTurno} min).\n\nNo se permiten horarios que se solapen, aunque la duración sea diferente.`);
+    return;
+  }
+  
+  // ============================================================
+  // VALIDACIÓN DE DUPLICADO EXACTO (mismo día + mismo horario + misma duración)
+  // ============================================================
+  
+  const duplicadoActivo = bloques.find(bloque => {
+    const estaActivo = !bloque.fecha_baja;
+    if (!estaActivo) return false;
+    
+    return (
+      bloque.diaSemana === nuevoDiaBD &&
+      bloque.horaDesde === nuevoDesde &&
+      bloque.horaHasta === nuevoHasta &&
+      bloque.duracionTurno === duracionFinal
+    );
+  });
+  
+  if (duplicadoActivo) {
+    alert(`❌ Ya existe un bloque ACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
+    return;
+  }
+  
+  // ============================================================
+  // REACTIVAR BLOQUE INACTIVO (mismo día + mismo horario + misma duración)
+  // ============================================================
+  
+  const duplicadoInactivo = bloques.find(bloque => {
+    const estaInactivo = !!bloque.fecha_baja;
+    if (!estaInactivo) return false;
+    
+    return (
+      bloque.diaSemana === nuevoDiaBD &&
+      bloque.horaDesde === nuevoDesde &&
+      bloque.horaHasta === nuevoHasta &&
+      bloque.duracionTurno === duracionFinal
+    );
+  });
+  
+  if (duplicadoInactivo) {
+    const confirmar = window.confirm(
+      `⚠️ Ya existe un bloque INACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
+      `¿Desea REACTIVARLO?`
+    );
+    
+    if (confirmar) {
+      duplicadoInactivo.fecha_baja = null;
+      duplicadoInactivo.horaDesde = nuevoDesde;
+      duplicadoInactivo.horaHasta = nuevoHasta;
+      duplicadoInactivo.duracionTurno = duracionFinal;
+      duplicadoInactivo.fechaDesde = nuevaFechaDesde;
+      duplicadoInactivo.fechaHasta = fechaHastaFinal;
+      duplicadoInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
       
-      return (
-        bloque.diaSemana === nuevoDiaBD &&
-        bloque.horaDesde === nuevoDesde &&
-        bloque.horaHasta === nuevoHasta &&
-        bloque.duracionTurno === duracionFinal
-      );
-    });
-    
-    if (duplicadoActivo) {
-      alert(`❌ Ya existe un bloque ACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).`);
-      return;
+      setBloques(ordenarBloques([...bloques]));
+      setTieneCambios(true);
+      
+      alert(`✅ Bloque reactivado correctamente para ${nombreDia}. No olvide guardar los cambios.`);
     }
-    
-    // Buscar bloque inactivo con mismos datos
-    const duplicadoInactivo = bloques.find(bloque => {
-      const estaInactivo = !!bloque.fecha_baja;
-      if (!estaInactivo) return false;
-      
-      return (
-        bloque.diaSemana === nuevoDiaBD &&
-        bloque.horaDesde === nuevoDesde &&
-        bloque.horaHasta === nuevoHasta &&
-        bloque.duracionTurno === duracionFinal
-      );
-    });
-    
-    if (duplicadoInactivo) {
-      const confirmar = window.confirm(
-        `⚠️ Ya existe un bloque INACTIVO para ${nombreDia} con el mismo horario (${nuevoDesde} a ${nuevoHasta}) y duración (${duracionFinal} min).\n\n` +
-        `¿Desea REACTIVARLO?`
-      );
-      
-      if (confirmar) {
-        duplicadoInactivo.fecha_baja = null;
-        duplicadoInactivo.horaDesde = nuevoDesde;
-        duplicadoInactivo.horaHasta = nuevoHasta;
-        duplicadoInactivo.duracionTurno = duracionFinal;
-        duplicadoInactivo.fechaDesde = nuevaFechaDesde;
-        duplicadoInactivo.fechaHasta = fechaHastaFinal;
-        duplicadoInactivo.horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-        
-        setBloques(ordenarBloques([...bloques]));
-        setTieneCambios(true);
-        
-        alert(`✅ Bloque reactivado correctamente para ${nombreDia}. No olvide guardar los cambios.`);
-      }
-      
-      setNuevoDiaUI(null);
-      setNuevoDesde('');
-      setNuevoHasta('');
-      setNuevaDuracion(0);
-      setMostrarOtraDuracion(false);
-      setOtraDuracion('');
-      setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
-      setNuevaFechaHasta('');
-      
-      return;
-    }
-    
-    // Crear nuevo bloque
-    const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
-    
-    const nuevoBloque: BloqueHorario = {
-      diaSemana: nuevoDiaBD,
-      horaDesde: nuevoDesde,
-      horaHasta: nuevoHasta,
-      duracionTurno: duracionFinal,
-      fechaDesde: nuevaFechaDesde,
-      fechaHasta: fechaHastaFinal,
-      horarios: horarios,
-      fecha_baja: null
-    };
-    
-    const nuevosBloques = ordenarBloques([...bloques, nuevoBloque]);
-    setBloques(nuevosBloques);
-    setTieneCambios(true);
     
     setNuevoDiaUI(null);
     setNuevoDesde('');
@@ -400,10 +401,43 @@ const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.i
     setOtraDuracion('');
     setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
     setNuevaFechaHasta('');
-    setErrorMessage(null);
     
-    alert(`✅ Bloque agregado correctamente para ${nombreDia} (aún no guardado)`);
+    return;
+  }
+  
+  // ============================================================
+  // CREAR NUEVO BLOQUE
+  // ============================================================
+  
+  const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
+  
+  const nuevoBloque: BloqueHorario = {
+    diaSemana: nuevoDiaBD,
+    horaDesde: nuevoDesde,
+    horaHasta: nuevoHasta,
+    duracionTurno: duracionFinal,
+    fechaDesde: nuevaFechaDesde,
+    fechaHasta: fechaHastaFinal,
+    horarios: horarios,
+    fecha_baja: null
   };
+  
+  const nuevosBloques = ordenarBloques([...bloques, nuevoBloque]);
+  setBloques(nuevosBloques);
+  setTieneCambios(true);
+  
+  setNuevoDiaUI(null);
+  setNuevoDesde('');
+  setNuevoHasta('');
+  setNuevaDuracion(0);
+  setMostrarOtraDuracion(false);
+  setOtraDuracion('');
+  setNuevaFechaDesde(new Date().toISOString().split('T')[0]);
+  setNuevaFechaHasta('');
+  setErrorMessage(null);
+  
+  alert(`✅ Bloque agregado correctamente para ${nombreDia} (aún no guardado)`);
+};
   
   const toggleActivarBloque = async (index: number) => {
     const bloque = bloques[index];
@@ -459,6 +493,39 @@ const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.i
     
     setGuardando(true);
     setErrorMessage(null);
+
+    // ============================================================
+// VALIDACIÓN DE SOLAPAMIENTO EN FRONTEND (antes de enviar)
+// ============================================================
+
+// Verificar solapamientos entre bloques del mismo día
+for (let i = 0; i < bloques.length; i++) {
+  const bloqueA = bloques[i];
+  if (bloqueA.fecha_baja) continue; // Solo bloques activos
+  
+  for (let j = i + 1; j < bloques.length; j++) {
+    const bloqueB = bloques[j];
+    if (bloqueB.fecha_baja) continue;
+    
+    // Mismo día
+    if (bloqueA.diaSemana !== bloqueB.diaSemana) continue;
+    
+    // Verificar solapamiento de horarios (ignorando duración)
+    const haySolapamiento = (
+      (bloqueA.horaDesde < bloqueB.horaHasta && bloqueA.horaHasta > bloqueB.horaDesde)
+    );
+    
+    if (haySolapamiento) {
+      const diaNombre = DIAS_COMPLETO[bloqueA.diaSemana];
+      alert(`❌ SOLAPAMIENTO: Los bloques de ${diaNombre} tienen horarios que se cruzan:\n` +
+            `Bloque 1: ${bloqueA.horaDesde} a ${bloqueA.horaHasta} (${bloqueA.duracionTurno} min)\n` +
+            `Bloque 2: ${bloqueB.horaDesde} a ${bloqueB.horaHasta} (${bloqueB.duracionTurno} min)\n\n` +
+            `Por favor, corrija los horarios antes de guardar.`);
+      setGuardando(false);
+      return;
+    }
+  }
+}
     
     let bloqueConflictivo: BloqueHorario | null = null;
     let errorMensaje = '';
