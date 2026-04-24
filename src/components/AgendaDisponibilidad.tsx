@@ -466,34 +466,89 @@ export default function AgendaDisponibilidad() {
   const hoy = new Date().toISOString().split('T')[0];
 
   const guardarAgenda = async () => {
-    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-    
-    setGuardando(true);
-    setErrorMessage(null);
+  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
+  
+  setGuardando(true);
+  setErrorMessage(null);
 
-    // Validación de solapamiento entre bloques (solo activos)
-    for (let i = 0; i < bloques.length; i++) {
-      const bloqueA = bloques[i];
-      if (bloqueA.fecha_baja) continue;
+  // ============================================================
+  // VALIDACIÓN DE SOLAPAMIENTO EN FRONTEND (antes de enviar)
+  // ============================================================
+  for (let i = 0; i < bloques.length; i++) {
+    const bloqueA = bloques[i];
+    if (bloqueA.fecha_baja) continue; // Solo bloques activos
+    
+    for (let j = i + 1; j < bloques.length; j++) {
+      const bloqueB = bloques[j];
+      if (bloqueB.fecha_baja) continue;
       
-      for (let j = i + 1; j < bloques.length; j++) {
-        const bloqueB = bloques[j];
-        if (bloqueB.fecha_baja) continue;
-        
-        if (bloqueA.diaSemana !== bloqueB.diaSemana) continue;
-        
-        const haySolapamiento = (
-          (bloqueA.horaDesde < bloqueB.horaHasta && bloqueA.horaHasta > bloqueB.horaDesde)
-        );
-        
-        if (haySolapamiento) {
-          const diaNombre = DIAS_COMPLETO[bdToUiDay(bloqueA.diaSemana)];
-          alert(`❌ SOLAPAMIENTO: Los bloques de ${diaNombre} tienen horarios que se cruzan.\n\nPor favor, corrija los horarios antes de guardar.`);
-          setGuardando(false);
-          return;
-        }
+      if (bloqueA.diaSemana !== bloqueB.diaSemana) continue;
+      
+      const haySolapamiento = (
+        (bloqueA.horaDesde < bloqueB.horaHasta && bloqueA.horaHasta > bloqueB.horaDesde)
+      );
+      
+      if (haySolapamiento) {
+        const diaNombre = DIAS_COMPLETO[bdToUiDay(bloqueA.diaSemana)];
+        alert(`❌ SOLAPAMIENTO: Los bloques de ${diaNombre} tienen horarios que se cruzan.\n\nPor favor, corrija los horarios antes de guardar.`);
+        setGuardando(false);
+        return;
       }
     }
+  }
+
+  // ============================================================
+  // Preparar payload para enviar TODOS los bloques
+  // ============================================================
+  const payload = {
+    bloques: bloques.map(bloque => ({
+      id: bloque.id,
+      profesionalCentroId: parseInt(profesionalCentroId!),
+      diaSemana: bloque.diaSemana,
+      horaDesde: bloque.horaDesde,
+      horaHasta: bloque.horaHasta,
+      duracionTurno: bloque.duracionTurno,
+      bufferMinutos: 0,
+      fechaDesde: bloque.fechaDesde,
+      fechaHasta: bloque.fechaHasta,
+      fecha_baja: bloque.fecha_baja,
+      diasHabilitados: bloque.diasHabilitados
+    }))
+  };
+
+  console.log('📦 Enviando lote de bloques:', payload);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/guardar-lote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      let errorMessageText = '';
+      try {
+        const errorData = await response.json();
+        errorMessageText = errorData.message || response.statusText;
+      } catch (e) {
+        errorMessageText = response.statusText || `Error ${response.status}`;
+      }
+      throw new Error(errorMessageText);
+    }
+
+    alert('✅ Agenda guardada correctamente');
+    setTieneCambios(false);
+    await cargarDatos();
+    
+  } catch (err: any) {
+    console.error('Error guardando agenda:', err);
+    alert(`❌ ${err.message}`);
+    setErrorMessage(err.message);
+    await cargarDatos();
+  } finally {
+    setGuardando(false);
+  }
+};
     
     let bloqueConflictivo: BloqueHorario | null = null;
     let errorMensaje = '';
