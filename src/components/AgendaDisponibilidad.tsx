@@ -18,7 +18,7 @@ interface ProfesionalCentro {
 
 interface BloqueHorario {
   id?: number;
-  diaSemana: number;        // Formato BD: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
+  diaSemana: number;
   horaDesde: string;
   horaHasta: string;
   duracionTurno: number;
@@ -35,25 +35,20 @@ interface SlotBackend {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-// Índice para mostrar: posición 0 = Lunes, 1 = Martes, ..., 6 = Domingo
 const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-// Función para normalizar hora (eliminar segundos)
 const normalizarHora = (hora: string): string => {
   if (!hora) return hora;
   return hora.substring(0, 5);
 };
 
-// Convertir día UI (0=Lunes...6=Domingo) a día BD (1=Lunes...0=Domingo)
 const uiToBdDay = (uiDay: number): number => {
-  if (uiDay === 6) return 0; // Domingo
+  if (uiDay === 6) return 0;
   return uiDay + 1;
 };
 
-// Convertir día BD (1=Lunes...0=Domingo) a día UI (0=Lunes...6=Domingo)
 const bdToUiDay = (bdDay: number): number => {
-  if (bdDay === 0) return 6; // Domingo
+  if (bdDay === 0) return 6;
   return bdDay - 1;
 };
 
@@ -121,11 +116,8 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
-// Función para ordenar bloques por día BD y hora
 const ordenarBloques = (bloques: BloqueHorario[]): BloqueHorario[] => {
   return [...bloques].sort((a, b) => {
-    // Ordenar por día BD (1=Lunes, 2=Martes..., 0=Domingo)
-    // Pero queremos Lunes(1) primero, luego Martes(2)... luego Domingo(0)
     const aOrder = a.diaSemana === 0 ? 7 : a.diaSemana;
     const bOrder = b.diaSemana === 0 ? 7 : b.diaSemana;
     if (aOrder !== bOrder) {
@@ -147,7 +139,7 @@ export default function AgendaDisponibilidad() {
   const [bloquesExpandidos, setBloquesExpandidos] = useState<{ [key: number]: boolean }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const [nuevoDiaUI, setNuevoDiaUI] = useState<number | null>(null); // 0=Lunes...6=Domingo
+  const [nuevoDiaUI, setNuevoDiaUI] = useState<number | null>(null);
   const [nuevoDesde, setNuevoDesde] = useState('');
   const [nuevoHasta, setNuevoHasta] = useState('');
   const [nuevaDuracion, setNuevaDuracion] = useState(0);
@@ -230,8 +222,6 @@ export default function AgendaDisponibilidad() {
       const bloquesCargados: BloqueHorario[] = [];
       
       for (const ag of dataAgendas) {
-        const diaUI = bdToUiDay(ag.diaSemana);
-        
         let horarios: string[] = [];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.id);
         
@@ -308,7 +298,6 @@ export default function AgendaDisponibilidad() {
     const nuevoDiaBD = uiToBdDay(nuevoDiaUI!);
     const nombreDia = DIAS_COMPLETO[nuevoDiaUI!];
     
-    // Validación de solapamiento
     const bloqueSolapadoActivo = bloques.find(bloque => {
       const estaActivo = !bloque.fecha_baja;
       if (!estaActivo) return false;
@@ -324,7 +313,6 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // Validación de duplicado exacto ACTIVO
     const duplicadoActivo = bloques.find(bloque => {
       const estaActivo = !bloque.fecha_baja;
       if (!estaActivo) return false;
@@ -341,7 +329,6 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // Buscar inactivo para reactivar
     const duplicadoInactivo = bloques.find(bloque => {
       const estaInactivo = !!bloque.fecha_baja;
       if (!estaInactivo) return false;
@@ -385,7 +372,6 @@ export default function AgendaDisponibilidad() {
       return;
     }
     
-    // Crear nuevo bloque
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
     const nuevoBloque: BloqueHorario = {
@@ -466,189 +452,79 @@ export default function AgendaDisponibilidad() {
   const hoy = new Date().toISOString().split('T')[0];
 
   const guardarAgenda = async () => {
-  if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
-  
-  setGuardando(true);
-  setErrorMessage(null);
-
-  // ============================================================
-  // VALIDACIÓN DE SOLAPAMIENTO EN FRONTEND (antes de enviar)
-  // ============================================================
-  for (let i = 0; i < bloques.length; i++) {
-    const bloqueA = bloques[i];
-    if (bloqueA.fecha_baja) continue; // Solo bloques activos
+    if (!window.confirm('¿Está seguro de guardar los cambios en la agenda?')) return;
     
-    for (let j = i + 1; j < bloques.length; j++) {
-      const bloqueB = bloques[j];
-      if (bloqueB.fecha_baja) continue;
+    setGuardando(true);
+    setErrorMessage(null);
+
+    // Validación de solapamiento en frontend
+    for (let i = 0; i < bloques.length; i++) {
+      const bloqueA = bloques[i];
+      if (bloqueA.fecha_baja) continue;
       
-      if (bloqueA.diaSemana !== bloqueB.diaSemana) continue;
-      
-      const haySolapamiento = (
-        (bloqueA.horaDesde < bloqueB.horaHasta && bloqueA.horaHasta > bloqueB.horaDesde)
-      );
-      
-      if (haySolapamiento) {
-        const diaNombre = DIAS_COMPLETO[bdToUiDay(bloqueA.diaSemana)];
-        alert(`❌ SOLAPAMIENTO: Los bloques de ${diaNombre} tienen horarios que se cruzan.\n\nPor favor, corrija los horarios antes de guardar.`);
-        setGuardando(false);
-        return;
+      for (let j = i + 1; j < bloques.length; j++) {
+        const bloqueB = bloques[j];
+        if (bloqueB.fecha_baja) continue;
+        
+        if (bloqueA.diaSemana !== bloqueB.diaSemana) continue;
+        
+        const haySolapamiento = (
+          (bloqueA.horaDesde < bloqueB.horaHasta && bloqueA.horaHasta > bloqueB.horaDesde)
+        );
+        
+        if (haySolapamiento) {
+          const diaNombre = DIAS_COMPLETO[bdToUiDay(bloqueA.diaSemana)];
+          alert(`❌ SOLAPAMIENTO: Los bloques de ${diaNombre} tienen horarios que se cruzan.\n\nPor favor, corrija los horarios antes de guardar.`);
+          setGuardando(false);
+          return;
+        }
       }
     }
-  }
 
-  // ============================================================
-  // Preparar payload para enviar TODOS los bloques
-  // ============================================================
-  const payload = {
-    bloques: bloques.map(bloque => ({
-      id: bloque.id,
-      profesionalCentroId: parseInt(profesionalCentroId!),
-      diaSemana: bloque.diaSemana,
-      horaDesde: bloque.horaDesde,
-      horaHasta: bloque.horaHasta,
-      duracionTurno: bloque.duracionTurno,
-      bufferMinutos: 0,
-      fechaDesde: bloque.fechaDesde,
-      fechaHasta: bloque.fechaHasta,
-      fecha_baja: bloque.fecha_baja,
-      diasHabilitados: bloque.diasHabilitados
-    }))
-  };
+    // Preparar payload para enviar TODOS los bloques
+    const payload = {
+      bloques: bloques.map(bloque => ({
+        id: bloque.id,
+        profesionalCentroId: parseInt(profesionalCentroId!),
+        diaSemana: bloque.diaSemana,
+        horaDesde: bloque.horaDesde,
+        horaHasta: bloque.horaHasta,
+        duracionTurno: bloque.duracionTurno,
+        bufferMinutos: 0,
+        fechaDesde: bloque.fechaDesde,
+        fechaHasta: bloque.fechaHasta,
+        fecha_baja: bloque.fecha_baja,
+        diasHabilitados: bloque.diasHabilitados
+      }))
+    };
 
-  console.log('📦 Enviando lote de bloques:', payload);
+    console.log('📦 Enviando lote de bloques:', payload);
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/guardar-lote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      let errorMessageText = '';
-      try {
-        const errorData = await response.json();
-        errorMessageText = errorData.message || response.statusText;
-      } catch (e) {
-        errorMessageText = response.statusText || `Error ${response.status}`;
-      }
-      throw new Error(errorMessageText);
-    }
-
-    alert('✅ Agenda guardada correctamente');
-    setTieneCambios(false);
-    await cargarDatos();
-    
-  } catch (err: any) {
-    console.error('Error guardando agenda:', err);
-    alert(`❌ ${err.message}`);
-    setErrorMessage(err.message);
-    await cargarDatos();
-  } finally {
-    setGuardando(false);
-  }
-};
-    
-    let bloqueConflictivo: BloqueHorario | null = null;
-    let errorMensaje = '';
-    
     try {
-      for (const bloque of bloques) {
-        const diaSemanaBD = bloque.diaSemana;
-        
-        if (!bloque.id) {
-          console.log(`🆕 Bloque nuevo para día BD ${diaSemanaBD} (${bloque.horaDesde} a ${bloque.horaHasta}) - Creando...`);
-          
-          const createPayload = {
-            profesionalCentroId: parseInt(profesionalCentroId!),
-            diaSemana: diaSemanaBD,
-            horaDesde: bloque.horaDesde,
-            horaHasta: bloque.horaHasta,
-            duracionTurno: bloque.duracionTurno,
-            bufferMinutos: 0,
-            fechaDesde: bloque.fechaDesde,
-            fechaHasta: bloque.fechaHasta,
-            fecha_baja: null  // ← AGREGADO
-          };
-          
-          const createResponse = await fetch(`${API_BASE_URL}/agenda-disponibilidad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(createPayload)
-          });
-          
-          if (!createResponse.ok) {
-            let errorMsg = 'Error al crear el bloque';
-            try {
-              const errorData = await createResponse.json();
-              errorMsg = errorData.message || errorMsg;
-            } catch (e) {}
-            bloqueConflictivo = bloque;
-            errorMensaje = errorMsg;
-            throw new Error(errorMsg);
-          }
-          
-          const nuevoBloque = await createResponse.json();
-          console.log(`✅ Bloque creado con ID: ${nuevoBloque.id}`);
-          bloque.id = nuevoBloque.id;
-          
-          continue;
+      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/guardar-lote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        let errorMessageText = '';
+        try {
+          const errorData = await response.json();
+          errorMessageText = errorData.message || response.statusText;
+        } catch (e) {
+          errorMessageText = response.statusText || `Error ${response.status}`;
         }
-        
-        // ============================================================
-        // PAYLOAD CORREGIDO: incluye fecha_baja
-        // ============================================================
-        const payload = {
-          agendaDisponibilidadId: bloque.id,
-          profesionalCentroId: parseInt(profesionalCentroId!),
-          horaDesde: bloque.horaDesde,
-          horaHasta: bloque.horaHasta,
-          duracionTurno: bloque.duracionTurno,
-          fechaDesde: bloque.fechaDesde,
-          fechaHasta: bloque.fechaHasta,
-          diasHabilitados: [diaSemanaBD],
-          excepcionesHorarios: [],
-          fecha_baja: bloque.fecha_baja  // ← AGREGADO
-        };
-        
-        console.log(`📤 Actualizando bloque ${bloque.id} para día BD ${diaSemanaBD}, fecha_baja: ${bloque.fecha_baja}`);
-        
-        const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/sincronizar`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-          let errorMessageText = '';
-          try {
-            const errorData = await response.json();
-            errorMessageText = errorData.message || response.statusText;
-          } catch (e) {
-            errorMessageText = response.statusText || `Error ${response.status}`;
-          }
-          bloqueConflictivo = bloque;
-          errorMensaje = errorMessageText;
-          throw new Error(errorMessageText);
-        }
+        throw new Error(errorMessageText);
       }
-      
+
       alert('✅ Agenda guardada correctamente');
       setTieneCambios(false);
       await cargarDatos();
       
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      
-      if (bloqueConflictivo && (errorMensaje.includes('solapa') || errorMensaje.includes('solapamiento'))) {
-        const diaUI = bdToUiDay(bloqueConflictivo.diaSemana);
-        const nombreDia = DIAS_COMPLETO[diaUI];
-        alert(`❌ ${errorMensaje}\n\nNo se pudo guardar el bloque para ${nombreDia}.`);
-      } else {
-        alert(`❌ ${err.message}`);
-      }
-      
+      alert(`❌ ${err.message}`);
       setErrorMessage(err.message);
       await cargarDatos();
     } finally {
