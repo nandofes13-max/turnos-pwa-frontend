@@ -1,0 +1,103 @@
+/* =============================================
+   ESPECIALIDAD - ESTILOS
+   ============================================= */
+
+/* Contenedor del botón volver */
+.volver-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.btn-volver {
+  background: none;
+  border: none;
+  color: #0066cc;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  transition: color 0.2s;
+}
+
+.btn-volver:hover {
+  color: #004499;
+}
+
+/* Contenedor de búsqueda */
+.busqueda-container {
+  margin: 1.5rem 0 1rem 0;
+}
+
+.busqueda-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.busqueda-icono {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.busqueda-input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.busqueda-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Subtítulo */
+.subtitulo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 1rem 0 1rem 0;
+}
+
+/* Grilla de especialidades */
+.especialidad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Centrar el último botón cuando es impar */
+.especialidad-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: auto;
+  max-width: 250px;
+}
+
+/* Sin resultados */
+.sin-resultados {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .especialidad-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .especialidad-grid > :last-child:nth-child(odd) {
+    max-width: 100%;
+    width: 100%;
+  }
+}
