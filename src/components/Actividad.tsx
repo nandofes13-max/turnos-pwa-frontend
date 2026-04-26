@@ -130,12 +130,15 @@ export default function Actividad() {
             
             <div className={styles['actividad-grid']}>
               {actividades.map((actividad) => (
-                <button 
-                  key={actividad.id}
-                  onClick={() => navigate('/especialidad', { state: { actividadId: actividad.id, actividadNombre: actividad.nombre } })}
-                >
-                  {getIconForActividadId(actividad.id)} {actividad.nombre}
-                </button>
+               <button 
+  key={actividad.id}
+  onClick={() => navigate('/especialidad', { 
+    state: { actividadId: actividad.id, actividadNombre: actividad.nombre } 
+  })}
+  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+>
+  {getIconForActividadId(actividad.id)} {actividad.nombre}
+</button>
               ))}
             </div>
 
