@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FaHeartbeat, 
-  FaCut, 
+  FaCrown,        // 👑 Barberías (cambio)
   FaFutbol, 
   FaDog, 
   FaTableTennis, 
-  FaPaintBrush, 
+  FaScissors,     // ✂️ Peluquerías (cambio)
   FaBriefcase 
 } from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
@@ -24,7 +24,7 @@ const getIconForActividadId = (id: number) => {
     case 6:  // SALUD
       return <FaHeartbeat className={inicioStyles['inicio-btn-icon']} />;
     case 9:  // BARBERIAS
-      return <FaCut className={inicioStyles['inicio-btn-icon']} />;
+      return <FaCrown className={inicioStyles['inicio-btn-icon']} />;
     case 11: // FUTBOL
       return <FaFutbol className={inicioStyles['inicio-btn-icon']} />;
     case 7:  // VETERINARIAS
@@ -32,7 +32,7 @@ const getIconForActividadId = (id: number) => {
     case 12: // PADDLE
       return <FaTableTennis className={inicioStyles['inicio-btn-icon']} />;
     case 8:  // PELUQUERIAS
-      return <FaPaintBrush className={inicioStyles['inicio-btn-icon']} />;
+      return <FaScissors className={inicioStyles['inicio-btn-icon']} />;
     default:
       return <FaBriefcase className={inicioStyles['inicio-btn-icon']} />;
   }
