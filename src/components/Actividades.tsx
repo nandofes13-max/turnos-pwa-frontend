@@ -47,7 +47,7 @@ export default function Actividad() {
         const actividadesData = relaciones.map((rel: any) => rel.actividad);
         setActividades(actividadesData);
         setError(null);
-      } catch (err) any {
+    } catch (err: any) {
         console.error('Error:', err);
         setError(err.message || 'Error al cargar actividades');
         // Fallback: mostrar actividades por defecto si falla la API
