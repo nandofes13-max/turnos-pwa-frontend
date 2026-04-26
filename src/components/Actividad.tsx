@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaHeartbeat, 
   FaCrown, 
@@ -9,7 +10,7 @@ import {
   FaCut, 
   FaBriefcase 
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -46,6 +47,7 @@ interface ActividadType {
 }
 
 export default function Actividad() {
+  const navigate = useNavigate();  // 👈 AGREGAR ESTA LÍNEA
   const [actividades, setActividades] = useState<ActividadType[]>([]);
   const [loading, setLoading] = useState(true);
 
