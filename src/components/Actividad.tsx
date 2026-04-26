@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FaHeartbeat, 
-  FaCrown,        // 👑 Barberías (cambio)
+  FaCrown, 
   FaFutbol, 
   FaDog, 
   FaTableTennis, 
-  FaScissors,     // ✂️ Peluquerías (cambio)
+  FaScissors, 
   FaBriefcase 
 } from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
