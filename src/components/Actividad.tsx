@@ -9,8 +9,10 @@ import {
   FaCut, 
   FaBriefcase 
 } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -128,8 +130,7 @@ export default function Actividad() {
               {actividades.map((actividad) => (
                 <button 
                   key={actividad.id}
-                  onClick={() => alert(`Has seleccionado: ${actividad.nombre} - (Demo)`)}
-                  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                  onClick={() => navigate('/especialidad', { state: { actividadId: actividad.id, actividadNombre: actividad.nombre } })}
                 >
                   {getIconForActividadId(actividad.id)} {actividad.nombre}
                 </button>
