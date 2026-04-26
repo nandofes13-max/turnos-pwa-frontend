@@ -1,36 +1,61 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHeartbeat, FaDog, FaCut, FaCrown, FaBriefcase } from 'react-icons/fa';
+import { 
+  FaHeartbeat, 
+  FaCut, 
+  FaFutbol, 
+  FaDog, 
+  FaTableTennis, 
+  FaPaintBrush, 
+  FaBriefcase 
+} from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Mapeo de iconos por nombre de actividad (opcional)
+// ORDEN MANUAL DE ACTIVIDADES (por nombre exacto)
+const ORDEN_ACTIVIDADES = [
+  'Salud',
+  'Barberías',
+  'Fútbol',
+  'Veterinarias',
+  'Paddle',
+  'Peluquerías',
+  'Otros Servicios'
+];
+
+// MAPEO DE ÍCONOS POR NOMBRE EXACTO
 const getIconForActividad = (nombre: string) => {
-  const nombreLower = nombre.toLowerCase();
-  if (nombreLower.includes('salud')) return <FaHeartbeat className={inicioStyles['inicio-btn-icon']} />;
-  if (nombreLower.includes('veterinaria')) return <FaDog className={inicioStyles['inicio-btn-icon']} />;
-  if (nombreLower.includes('peluquer')) return <FaCut className={inicioStyles['inicio-btn-icon']} />;
-  if (nombreLower.includes('barber')) return <FaCrown className={inicioStyles['inicio-btn-icon']} />;
-  return <FaBriefcase className={inicioStyles['inicio-btn-icon']} />;
+  switch (nombre) {
+    case 'Salud':
+      return <FaHeartbeat className={inicioStyles['inicio-btn-icon']} />;
+    case 'Barberías':
+      return <FaCut className={inicioStyles['inicio-btn-icon']} />;
+    case 'Fútbol':
+      return <FaFutbol className={inicioStyles['inicio-btn-icon']} />;
+    case 'Veterinarias':
+      return <FaDog className={inicioStyles['inicio-btn-icon']} />;
+    case 'Paddle':
+      return <FaTableTennis className={inicioStyles['inicio-btn-icon']} />;
+    case 'Peluquerías':
+      return <FaPaintBrush className={inicioStyles['inicio-btn-icon']} />;
+    default:
+      return <FaBriefcase className={inicioStyles['inicio-btn-icon']} />;
+  }
 };
 
 interface ActividadType {
   id: number;
   nombre: string;
   descripcion?: string;
-  virtual?: boolean;
 }
 
 export default function Actividad() {
   const [actividades, setActividades] = useState<ActividadType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // ID del negocio DEMO (debería venir del contexto o props)
-  // Por ahora usamos un ID fijo. Después se puede pasar por parámetro.
-  const NEGOCIO_DEMO_ID = 6; // 🔁 CAMBIAR POR EL ID REAL DEL NEGOCIO DEMO
+  const NEGOCIO_DEMO_ID = 6;
 
   useEffect(() => {
     const cargarActividades = async () => {
@@ -43,14 +68,23 @@ export default function Actividad() {
         }
         
         const relaciones = await response.json();
-        // Extraer las actividades de las relaciones
         const actividadesData = relaciones.map((rel: any) => rel.actividad);
-        setActividades(actividadesData);
-        setError(null);
+        
+        // ORDENAR SEGÚN LA LISTA MANUAL
+        const actividadesOrdenadas = [...actividadesData].sort((a, b) => {
+          const indexA = ORDEN_ACTIVIDADES.indexOf(a.nombre);
+          const indexB = ORDEN_ACTIVIDADES.indexOf(b.nombre);
+          
+          // Si no está en la lista, va al final
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+        
+        setActividades(actividadesOrdenadas);
       } catch (err: any) {
         console.error('Error:', err);
-        setError(err.message || 'Error al cargar actividades');
-        // Fallback: mostrar actividades por defecto si falla la API
+        // Fallback con datos por defecto
         setActividades([
           { id: 1, nombre: 'Salud' },
           { id: 2, nombre: 'Veterinarias' },
@@ -66,21 +100,7 @@ export default function Actividad() {
     cargarActividades();
   }, []);
 
-  const handleAyuda = () => {
-    alert('Funcionalidad demo: Ayuda');
-  };
-
-  const handleTerminos = () => {
-    alert('Funcionalidad demo: Términos y Condiciones');
-  };
-
-  const handlePoliticas = () => {
-    alert('Funcionalidad demo: Políticas de Privacidad');
-  };
-
-  const handleActividadSeleccionada = (actividad: string) => {
-    alert(`Has seleccionado: ${actividad} - (Demo)`);
-  };
+  // ... resto del componente (handleAyuda, etc.)
 
   if (loading) {
     return (
@@ -98,12 +118,10 @@ export default function Actividad() {
 
   return (
     <div className={inicioStyles['inicio-container']}>
-      
-      {/* Columna izquierda - BOTONES */}
+      {/* Columna izquierda */}
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo solo visible en móvil */}
           <div className={inicioStyles['inicio-logo-mobile']}>
             <img 
               src="/1000133565.png" 
@@ -115,12 +133,11 @@ export default function Actividad() {
           <div className={inicioStyles['inicio-card']}>
             <h1 className={inicioStyles['inicio-titulo']}>¿Cuál es tu Actividad?</h1>
             
-            {/* Grilla de actividades dinámica */}
             <div className={styles['actividad-grid']}>
-              {actividades.map((actividad, index) => (
+              {actividades.map((actividad) => (
                 <button 
                   key={actividad.id}
-                  onClick={() => handleActividadSeleccionada(actividad.nombre)}
+                  onClick={() => alert(`Has seleccionado: ${actividad.nombre} - (Demo)`)}
                   className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
                 >
                   {getIconForActividad(actividad.nombre)} {actividad.nombre}
@@ -130,13 +147,13 @@ export default function Actividad() {
 
             {/* Footer */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={handleAyuda} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
               </a>
-              <a onClick={handleTerminos} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={() => alert('Términos')} className={inicioStyles['inicio-footer-link']}>
                 Términos y Condiciones
               </a>
-              <a onClick={handlePoliticas} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={() => alert('Políticas')} className={inicioStyles['inicio-footer-link']}>
                 Políticas de Privacidad
               </a>
               <div className={inicioStyles['inicio-version']}>
@@ -147,7 +164,7 @@ export default function Actividad() {
         </div>
       </div>
 
-      {/* Columna derecha - LOGO (solo desktop) */}
+      {/* Columna derecha */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
           <Link to="/">
@@ -159,7 +176,6 @@ export default function Actividad() {
           </Link>
         </div>
       </div>
-
     </div>
   );
 }
