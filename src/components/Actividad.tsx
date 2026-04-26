@@ -14,31 +14,24 @@ import inicioStyles from '../styles/Inicio.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// ORDEN MANUAL DE ACTIVIDADES (por nombre exacto)
-const ORDEN_ACTIVIDADES = [
-  'Salud',
-  'Barberías',
-  'Fútbol',
-  'Veterinarias',
-  'Paddle',
-  'Peluquerías',
-  'Otros Servicios'
-];
+// ORDEN MANUAL POR ID (según la consulta SQL)
+const ORDEN_ACTIVIDADES_IDS = [6, 9, 11, 7, 12, 8, 10];
+// 6: SALUD, 9: BARBERIAS, 11: FUTBOL, 7: VETERINARIAS, 12: PADDLE, 8: PELUQUERIAS, 10: OTROS
 
-// MAPEO DE ÍCONOS POR NOMBRE EXACTO
-const getIconForActividad = (nombre: string) => {
-  switch (nombre) {
-    case 'Salud':
+// MAPEO DE ÍCONOS POR ID
+const getIconForActividadId = (id: number) => {
+  switch (id) {
+    case 6:  // SALUD
       return <FaHeartbeat className={inicioStyles['inicio-btn-icon']} />;
-    case 'Barberías':
+    case 9:  // BARBERIAS
       return <FaCut className={inicioStyles['inicio-btn-icon']} />;
-    case 'Fútbol':
+    case 11: // FUTBOL
       return <FaFutbol className={inicioStyles['inicio-btn-icon']} />;
-    case 'Veterinarias':
+    case 7:  // VETERINARIAS
       return <FaDog className={inicioStyles['inicio-btn-icon']} />;
-    case 'Paddle':
+    case 12: // PADDLE
       return <FaTableTennis className={inicioStyles['inicio-btn-icon']} />;
-    case 'Peluquerías':
+    case 8:  // PELUQUERIAS
       return <FaPaintBrush className={inicioStyles['inicio-btn-icon']} />;
     default:
       return <FaBriefcase className={inicioStyles['inicio-btn-icon']} />;
@@ -70,10 +63,10 @@ export default function Actividad() {
         const relaciones = await response.json();
         const actividadesData = relaciones.map((rel: any) => rel.actividad);
         
-        // ORDENAR SEGÚN LA LISTA MANUAL
+        // ORDENAR SEGÚN LA LISTA MANUAL DE IDs
         const actividadesOrdenadas = [...actividadesData].sort((a, b) => {
-          const indexA = ORDEN_ACTIVIDADES.indexOf(a.nombre);
-          const indexB = ORDEN_ACTIVIDADES.indexOf(b.nombre);
+          const indexA = ORDEN_ACTIVIDADES_IDS.indexOf(a.id);
+          const indexB = ORDEN_ACTIVIDADES_IDS.indexOf(b.id);
           
           // Si no está en la lista, va al final
           if (indexA === -1) return 1;
@@ -86,11 +79,11 @@ export default function Actividad() {
         console.error('Error:', err);
         // Fallback con datos por defecto
         setActividades([
-          { id: 1, nombre: 'Salud' },
-          { id: 2, nombre: 'Veterinarias' },
-          { id: 3, nombre: 'Peluquerías' },
-          { id: 4, nombre: 'Barberías' },
-          { id: 5, nombre: 'Otros Servicios' },
+          { id: 6, nombre: 'Salud' },
+          { id: 7, nombre: 'Veterinarias' },
+          { id: 8, nombre: 'Peluquerías' },
+          { id: 9, nombre: 'Barberías' },
+          { id: 10, nombre: 'Otros Servicios' },
         ]);
       } finally {
         setLoading(false);
@@ -100,7 +93,17 @@ export default function Actividad() {
     cargarActividades();
   }, []);
 
-  // ... resto del componente (handleAyuda, etc.)
+  const handleAyuda = () => {
+    alert('Funcionalidad demo: Ayuda');
+  };
+
+  const handleTerminos = () => {
+    alert('Funcionalidad demo: Términos y Condiciones');
+  };
+
+  const handlePoliticas = () => {
+    alert('Funcionalidad demo: Políticas de Privacidad');
+  };
 
   if (loading) {
     return (
@@ -140,20 +143,20 @@ export default function Actividad() {
                   onClick={() => alert(`Has seleccionado: ${actividad.nombre} - (Demo)`)}
                   className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
                 >
-                  {getIconForActividad(actividad.nombre)} {actividad.nombre}
+                  {getIconForActividadId(actividad.id)} {actividad.nombre}
                 </button>
               ))}
             </div>
 
             {/* Footer */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={handleAyuda} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
               </a>
-              <a onClick={() => alert('Términos')} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={handleTerminos} className={inicioStyles['inicio-footer-link']}>
                 Términos y Condiciones
               </a>
-              <a onClick={() => alert('Políticas')} className={inicioStyles['inicio-footer-link']}>
+              <a onClick={handlePoliticas} className={inicioStyles['inicio-footer-link']}>
                 Políticas de Privacidad
               </a>
               <div className={inicioStyles['inicio-version']}>
