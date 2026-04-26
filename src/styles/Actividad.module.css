@@ -9,6 +9,14 @@
   margin-bottom: 1rem;
 }
 
+/* Centrar el último botón cuando es el único en la última fila (impar) */
+.actividad-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: auto;
+  max-width: 250px;
+}
+
 .actividad-otros-container {
   display: flex;
   justify-content: center;
@@ -22,6 +30,12 @@
 @media (max-width: 768px) {
   .actividad-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* En móvil, el último botón ocupa todo el ancho */
+  .actividad-grid > :last-child:nth-child(odd) {
+    max-width: 100%;
+    width: 100%;
   }
   
   .actividad-btn-otros {
