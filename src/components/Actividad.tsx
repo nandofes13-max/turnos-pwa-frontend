@@ -1,3 +1,4 @@
+//src/components/Actividad.tsx
 import { Link } from 'react-router-dom';
 import { FaHeartbeat, FaDog, FaCut, FaCrown, FaBriefcase } from 'react-icons/fa';
 import styles from '../styles/Actividad.module.css';
