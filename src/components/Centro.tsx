@@ -147,13 +147,13 @@ export default function Centro() {
               <div className={styles['centro-list']}>
                 {filtrados.map((centro) => (
                   <button 
-                    key={centro.id}
-                    onClick={() => handleCentroSeleccionado(centro)}
-                    className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
-                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
-                  >
-                    {centro.nombre} - {centro.city}
-                  </button>
+  key={centro.id}
+  onClick={() => handleCentroSeleccionado(centro)}
+  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+  title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
+>
+  {centro.nombre} - {centro.city}
+</button>
                 ))}
               </div>
             )}
