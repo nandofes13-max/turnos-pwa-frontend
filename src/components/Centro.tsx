@@ -11,23 +11,11 @@ interface CentroType {
   id: number;
   nombre: string;
   codigo: string;
+  city: string;
   formatted_address: string;
   latitude: string;
   longitude: string;
 }
-
-// Función para extraer la ciudad de la dirección
-const extraerCiudad = (formatted_address: string) => {
-  if (!formatted_address) return '';
-  const partes = formatted_address.split(',');
-  for (const parte of partes) {
-    const trimmed = parte.trim();
-    if (!trimmed.match(/^\d+$/) && trimmed !== 'Argentina' && !trimmed.includes('Provincia')) {
-      return trimmed;
-    }
-  }
-  return partes[1]?.trim() || 'Ciudad no especificada';
-};
 
 export default function Centro() {
   const navigate = useNavigate();
@@ -162,9 +150,9 @@ export default function Centro() {
                     key={centro.id}
                     onClick={() => handleCentroSeleccionado(centro)}
                     className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
-                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nDirección: ${centro.formatted_address}`}
+                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
                   >
-                    <strong>{centro.nombre}</strong> - {extraerCiudad(centro.formatted_address)}
+                    {centro.nombre} - {centro.city}
                   </button>
                 ))}
               </div>
