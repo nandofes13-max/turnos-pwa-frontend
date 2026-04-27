@@ -112,11 +112,8 @@ setFiltradas(dataOrdenada);
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Breadcrumb de navegación */}
-            <Breadcrumb items={[
-              { label: 'Actividad', path: '/actividad' },
-              { label: 'Especialidad' }
-            ]} />
+                      {/* Breadcrumb de navegación automático */}
+<Breadcrumb />
 
             <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
             
