@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Inicio from './components/Inicio';
 import Actividad from './components/Actividad';
-import Especialidad from './components/Especialidad';  // 👈 NUEVO IMPORT (pantalla pública)
+import Especialidad from './components/Especialidad';
+import Centro from './components/Centro';  // 👈 AGREGAR ESTA LÍNEA
 import CPanel from './components/CPanel';
 import Actividades from './components/Actividades';
 import Usuarios from './components/Usuarios';
@@ -25,6 +26,7 @@ function App() {
         <Route path="/" element={<Inicio />} />
         <Route path="/actividad" element={<Actividad />} />
         <Route path="/actividad/:actividadId/especialidad" element={<Especialidad />} />
+        <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
         <Route path="/cpanel" element={<CPanel />} />
         <Route path="/actividades" element={<Actividades />} />
         <Route path="/usuarios" element={<Usuarios />} />
@@ -39,7 +41,6 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
-        <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
       </Routes>
     </BrowserRouter>
   );
