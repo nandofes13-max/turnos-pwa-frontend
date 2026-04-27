@@ -114,8 +114,11 @@ export default function Centro() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Breadcrumb de navegación automático */}
-            <Breadcrumb />
+           <Breadcrumb items={[
+  { label: 'Actividad', path: '/actividad' },
+  { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
+  { label: 'Centro' }
+]} />
 
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona un centro</h1>
             
