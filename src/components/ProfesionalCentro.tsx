@@ -100,18 +100,12 @@ export default function ProfesionalCentro() {
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroProfesional, setFiltroProfesional] = useState('');
   const [filtroCentro, setFiltroCentro] = useState('');
-  const [filtroUrlNegocio, setFiltroUrlNegocio] = useState('');  // NUEVO FILTRO
-  const [filtroEspecialidad, setFiltroEspecialidad] = useState('');  // NUEVO FILTRO
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [filtroUrlNegocio, setFiltroUrlNegocio] = useState('');
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
   const [filtroExpandido, setFiltroExpandido] = useState({ movimiento: false });
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
   const tiposMovimiento = ['Altas', 'Bajas'];
-
-  // Obtener valores únicos para los selectores
-  const urlNegociosUnicos = [...new Set(relaciones.map(r => r.centro?.negocio?.url).filter(Boolean))];
-  const especialidadesUnicas = [...new Map(relaciones.map(r => [r.especialidadId, r.especialidad?.nombre])).entries()].map(([id, nombre]) => ({ id, nombre }));
 
   useEffect(() => {
     fetchRelaciones();
@@ -281,18 +275,10 @@ export default function ProfesionalCentro() {
     return relaciones.filter(r => {
       if (filtroProfesional && !r.profesional?.nombre.toLowerCase().includes(filtroProfesional.toLowerCase())) return false;
       if (filtroCentro && !r.centro?.nombre.toLowerCase().includes(filtroCentro.toLowerCase())) return false;
-      if (filtroUrlNegocio && r.centro?.negocio?.url !== filtroUrlNegocio) return false;
-      if (filtroEspecialidad && r.especialidad?.nombre !== filtroEspecialidad) return false;
+      if (filtroUrlNegocio && !r.centro?.negocio?.url.toLowerCase().includes(filtroUrlNegocio.toLowerCase())) return false;
+      if (filtroEspecialidad && !r.especialidad?.nombre.toLowerCase().includes(filtroEspecialidad.toLowerCase())) return false;
       const tipo = obtenerTipoMovimiento(r);
       if (filtroTipoMovimiento.length > 0 && !filtroTipoMovimiento.includes(tipo)) return false;
-      if (fechaDesde && r.fecha_alta) {
-        const fechaAlta = new Date(r.fecha_alta).toISOString().split('T')[0];
-        if (fechaAlta < fechaDesde) return false;
-      }
-      if (fechaHasta && r.fecha_alta) {
-        const fechaAlta = new Date(r.fecha_alta).toISOString().split('T')[0];
-        if (fechaAlta > fechaHasta) return false;
-      }
       return true;
     });
   };
@@ -430,8 +416,6 @@ export default function ProfesionalCentro() {
     setFiltroCentro('');
     setFiltroUrlNegocio('');
     setFiltroEspecialidad('');
-    setFechaDesde('');
-    setFechaHasta('');
     setPaginaActual(1);
   };
 
@@ -466,29 +450,11 @@ export default function ProfesionalCentro() {
           </div>
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">URL Negocio</label>
-            <select value={filtroUrlNegocio} onChange={(e) => { setFiltroUrlNegocio(e.target.value); setPaginaActual(1); }} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {urlNegociosUnicos.map(url => (
-                <option key={url} value={url}>{url}</option>
-              ))}
-            </select>
+            <input type="text" value={filtroUrlNegocio} onChange={(e) => { setFiltroUrlNegocio(e.target.value); setPaginaActual(1); }} placeholder="Buscar URL negocio..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo">
             <label className="tm-filtro-label">Especialidad</label>
-            <select value={filtroEspecialidad} onChange={(e) => { setFiltroEspecialidad(e.target.value); setPaginaActual(1); }} className="tm-filtro-input">
-              <option value="">Todas</option>
-              {especialidadesUnicas.map(esp => (
-                <option key={esp.id} value={esp.nombre}>{esp.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">Fecha Desde</label>
-            <input type="date" value={fechaDesde} onChange={(e) => { setFechaDesde(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">Fecha Hasta</label>
-            <input type="date" value={fechaHasta} onChange={(e) => { setFechaHasta(e.target.value); setPaginaActual(1); }} className="tm-filtro-input" />
+            <input type="text" value={filtroEspecialidad} onChange={(e) => { setFiltroEspecialidad(e.target.value); setPaginaActual(1); }} placeholder="Buscar especialidad..." className="tm-filtro-input" />
           </div>
           <div className="tm-filtro-campo tm-filtro-movimiento">
             <label className="tm-filtro-label">Movimiento</label>
@@ -603,7 +569,7 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
-      {/* MODAL AGREGAR (sin cambios) */}
+      {/* MODAL AGREGAR */}
       {modalMode === 'add' && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -763,7 +729,7 @@ export default function ProfesionalCentro() {
         </div>
       )}
 
-      {/* MODAL VER DETALLE (sin cambios) */}
+      {/* MODAL VER DETALLE */}
       {modalMode === 'view' && selectedRelacion && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
