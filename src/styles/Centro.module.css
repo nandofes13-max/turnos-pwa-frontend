@@ -1,0 +1,73 @@
+/* =============================================
+   CENTRO - ESTILOS (igual a Especialidad)
+   ============================================= */
+
+.busqueda-container {
+  margin: 1.5rem 0 1rem 0;
+}
+
+.busqueda-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.busqueda-icono {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.busqueda-input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.busqueda-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.subtitulo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 1rem 0 1rem 0;
+}
+
+.centro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.centro-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: auto;
+  max-width: 250px;
+}
+
+.sin-resultados {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .centro-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .centro-grid > :last-child:nth-child(odd) {
+    max-width: 100%;
+    width: 100%;
+  }
+}
