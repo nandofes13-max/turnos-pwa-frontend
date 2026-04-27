@@ -50,6 +50,10 @@ export default function Especialidad() {
         }
         
         const data = await response.json();
+        // Ordenar alfabéticamente por nombre
+const dataOrdenada = [...data].sort((a, b) => 
+  a.nombre.localeCompare(b.nombre)
+);
         setEspecialidades(data);
         setFiltradas(data);
       } catch (err: any) {
