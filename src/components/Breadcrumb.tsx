@@ -1,43 +1,45 @@
-//src/components/Breadcrumb.tsx
-import { useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import styles from '../styles/Breadcrumb.module.css';
 
-export interface BreadcrumbItem {
-  label: string;
-  path?: string;  // Opcional, si se puede navegar a esa pantalla
-}
+// Mapeo de rutas a nombres legibles
+const breadcrumbMap: { [key: string]: string } = {
+  'actividad': 'Actividad',
+  'especialidad': 'Especialidad',
+  'profesional': 'Profesional',
+  'centro': 'Centro',
+  'horario': 'Horario',
+  'turno': 'Turno',
+  'agenda-disponibilidad': 'Agenda',
+  'cpanel': 'Panel de Control',
+};
 
-interface BreadcrumbProps {
-  items: BreadcrumbItem[];
-}
+export default function Breadcrumb() {
+  const location = useLocation();
+  const pathnames = location.pathname.split('/').filter(x => x);
 
-export default function Breadcrumb({ items }: BreadcrumbProps) {
-  const navigate = useNavigate();
-
-  const handleClick = (item: BreadcrumbItem, index: number) => {
-    // Solo navegar si es el último item o si tiene path definido
-    if (item.path && index < items.length - 1) {
-      navigate(item.path);
-    }
-  };
+  // Si estamos en home o solo la raíz, no mostrar breadcrumb
+  if (pathnames.length === 0) return null;
 
   return (
     <div className={styles['breadcrumb-container']}>
-      {items.map((item, index) => (
-        <span key={index}>
-          {index > 0 && <span className={styles['separator']}> &gt; </span>}
-          {index === items.length - 1 ? (
-            <span className={styles['current']}>{item.label}</span>
-          ) : (
-            <button
-              onClick={() => handleClick(item, index)}
-              className={styles['link']}
-            >
-              {item.label}
-            </button>
-          )}
-        </span>
-      ))}
+      {pathnames.map((name, index) => {
+        const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
+        const isLast = index === pathnames.length - 1;
+        const label = breadcrumbMap[name] || name.charAt(0).toUpperCase() + name.slice(1);
+
+        return (
+          <span key={name}>
+            {index > 0 && <span className={styles['separator']}> &gt; </span>}
+            {isLast ? (
+              <span className={styles['current']}>{label}</span>
+            ) : (
+              <Link to={routeTo} className={styles['link']}>
+                {label}
+              </Link>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
