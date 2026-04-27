@@ -41,7 +41,7 @@
   margin: 1rem 0 1rem 0;
 }
 
-/* Lista vertical de centros (un botón por renglón) */
+/* Lista vertical de centros - Mismo estilo que actividad/especialidad */
 .centro-list {
   display: flex;
   flex-direction: column;
@@ -50,35 +50,22 @@
 }
 
 .centro-list button {
-  text-align: left;
-  display: block;
-  width: 100%;
-  padding: 1rem;
-  white-space: normal;
-  word-break: break-word;
-  border: 1px solid #e0e0e0;
-  background-color: #f8f9fa;
-  border-radius: 12px;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
   transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
 }
 
 .centro-list button:hover {
-  background-color: #e9ecef;
-  transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.centro-list button strong {
-  display: block;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-  color: #0066cc;
-}
-
-.centro-list button small {
-  display: block;
-  font-size: 0.8rem;
-  color: #666;
+  background-color: #0052a3;
+  transform: scale(1.02);
 }
 
 .sin-resultados {
@@ -89,10 +76,7 @@
 
 @media (max-width: 768px) {
   .centro-list button {
-    padding: 0.75rem;
-  }
-  
-  .centro-list button strong {
+    padding: 10px 16px;
     font-size: 0.9rem;
   }
 }
