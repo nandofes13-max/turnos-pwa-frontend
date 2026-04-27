@@ -26,8 +26,8 @@ export default function Especialidad() {
   const NEGOCIO_DEMO_ID = 6;
 
   // ... resto del código igual
-  const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
-    alert(`Has seleccionado: ${especialidad.nombre} - (Demo)`);
+const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
+  navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`);
     // Aquí después navegará al siguiente paso (profesional/centro)
   };
 
