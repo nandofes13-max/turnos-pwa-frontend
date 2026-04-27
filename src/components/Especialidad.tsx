@@ -9,6 +9,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 interface EspecialidadType {
   id: number;
   nombre: string;
+  negocioId: number;
+  actividadId: number;
 }
 
 export default function Especialidad() {
@@ -42,8 +44,9 @@ export default function Especialidad() {
 
       try {
         setLoading(true);
+        // NUEVO ENDPOINT con parámetros en la URL
         const response = await fetch(
-          `${API_BASE_URL}/profesional-centro/especialidades-con-disponibilidad?negocioId=${NEGOCIO_DEMO_ID}&actividadId=${actividadId}`
+          `${API_BASE_URL}/actividad-especialidad/especialidades-por-negocio-actividad/${NEGOCIO_DEMO_ID}/${actividadId}`
         );
         
         if (!response.ok) {
@@ -97,23 +100,25 @@ export default function Especialidad() {
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
+          {/* Logo solo visible en móvil - con enlace a home */}
           <div className={inicioStyles['inicio-logo-mobile']}>
-            <img 
-              src="/1000133565.png" 
-              alt="PWA Turnos" 
-              className={inicioStyles['inicio-logo-mobile-img']}
-            />
+            <a href="/">
+              <img 
+                src="/1000133565.png" 
+                alt="PWA Turnos" 
+                className={inicioStyles['inicio-logo-mobile-img']}
+              />
+            </a>
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Botón volver */}
-            <div className={styles['volver-container']}>
-              <button onClick={handleVolver} className={styles['btn-volver']}>
-                <FaArrowLeft /> Volver
+            {/* Título con flecha de volver integrada */}
+            <div className={styles['titulo-container']}>
+              <button onClick={handleVolver} className={styles['btn-volver-icono']}>
+                <FaArrowLeft />
               </button>
+              <h1 className={styles['titulo-con-flecha']}>Busca o selecciona una especialidad</h1>
             </div>
-
-            <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
             
             {/* Caja de búsqueda */}
             <div className={styles['busqueda-container']}>
@@ -168,14 +173,16 @@ export default function Especialidad() {
         </div>
       </div>
 
-      {/* Columna derecha - LOGO (solo desktop) */}
+      {/* Columna derecha - LOGO (solo desktop) con enlace a home */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
-          <img 
-            src="/1000133565.png" 
-            alt="PWA Turnos" 
-            className={inicioStyles['inicio-logo-desktop']}
-          />
+          <a href="/">
+            <img 
+              src="/1000133565.png" 
+              alt="PWA Turnos" 
+              className={inicioStyles['inicio-logo-desktop']}
+            />
+          </a>
         </div>
       </div>
     </div>
