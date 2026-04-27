@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaSearch, FaArrowLeft } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
+import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Especialidad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -25,10 +26,6 @@ export default function Especialidad() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  const handleVolver = () => {
-    navigate(-1); // Vuelve a la pantalla anterior
-  };
-
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
     alert(`Has seleccionado: ${especialidad.nombre} - (Demo)`);
     // Aquí después navegará al siguiente paso (profesional/centro)
@@ -44,7 +41,6 @@ export default function Especialidad() {
 
       try {
         setLoading(true);
-        // NUEVO ENDPOINT con parámetros en la URL
         const response = await fetch(
           `${API_BASE_URL}/actividad-especialidad/especialidades-por-negocio-actividad/${NEGOCIO_DEMO_ID}/${actividadId}`
         );
@@ -112,13 +108,13 @@ export default function Especialidad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Título con flecha de volver integrada */}
-            <div className={styles['titulo-container']}>
-              <button onClick={handleVolver} className={styles['btn-volver-icono']}>
-                <FaArrowLeft />
-              </button>
-              <h1 className={styles['titulo-con-flecha']}>Busca o selecciona una especialidad</h1>
-            </div>
+            {/* Breadcrumb de navegación */}
+            <Breadcrumb items={[
+              { label: 'Actividad', path: '/actividad' },
+              { label: 'Especialidad' }
+            ]} />
+
+            <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
             
             {/* Caja de búsqueda */}
             <div className={styles['busqueda-container']}>
