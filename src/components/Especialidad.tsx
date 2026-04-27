@@ -49,13 +49,13 @@ export default function Especialidad() {
           throw new Error('Error al cargar las especialidades');
         }
         
-        const data = await response.json();
-        // Ordenar alfabéticamente por nombre
+       const data = await response.json();
+// Ordenar alfabéticamente por nombre
 const dataOrdenada = [...data].sort((a, b) => 
   a.nombre.localeCompare(b.nombre)
 );
-        setEspecialidades(data);
-        setFiltradas(data);
+setEspecialidades(dataOrdenada);
+setFiltradas(dataOrdenada);
       } catch (err: any) {
         console.error('Error:', err);
         setEspecialidades([]);
