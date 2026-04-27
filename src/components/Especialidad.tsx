@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Especialidad.module.css';
@@ -16,8 +16,7 @@ interface EspecialidadType {
 
 export default function Especialidad() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { actividadId, actividadNombre } = location.state || { actividadId: null, actividadNombre: 'Actividad' };
+  const { actividadId } = useParams<{ actividadId: string }>();
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
@@ -26,6 +25,7 @@ export default function Especialidad() {
 
   const NEGOCIO_DEMO_ID = 6;
 
+  // ... resto del código igual
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
     alert(`Has seleccionado: ${especialidad.nombre} - (Demo)`);
     // Aquí después navegará al siguiente paso (profesional/centro)
