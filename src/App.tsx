@@ -24,7 +24,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Inicio />} />
         <Route path="/actividad" element={<Actividad />} />
-        <Route path="/especialidad" element={<Especialidad />} />  {/* 👈 NUEVA RUTA */}
+<Route path="/actividad/:actividadId/especialidad" element={<Especialidad />} />
         <Route path="/cpanel" element={<CPanel />} />
         <Route path="/actividades" element={<Actividades />} />
         <Route path="/usuarios" element={<Usuarios />} />
