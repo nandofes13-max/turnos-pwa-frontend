@@ -1,0 +1,43 @@
+.breadcrumb-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #004499;
+  text-decoration: underline;
+}
+
+.current {
+  color: #333;
+  font-weight: 600;
+}
+
+.separator {
+  color: #999;
+}
+
+@media (max-width: 768px) {
+  .breadcrumb-container {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  
+  .link {
+    font-size: 0.8rem;
+  }
+}
