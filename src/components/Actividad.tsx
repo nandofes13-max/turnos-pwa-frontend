@@ -132,9 +132,7 @@ export default function Actividad() {
               {actividades.map((actividad) => (
                <button 
   key={actividad.id}
-  onClick={() => navigate('/especialidad', { 
-    state: { actividadId: actividad.id, actividadNombre: actividad.nombre } 
-  })}
+ onClick={() => navigate(`/actividad/${actividad.id}/especialidad`)}
   className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
 >
   {getIconForActividadId(actividad.id)} {actividad.nombre}
