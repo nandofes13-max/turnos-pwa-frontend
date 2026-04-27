@@ -101,3 +101,46 @@
     width: 100%;
   }
 }
+/* Contenedor del título con flecha */
+.titulo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+/* Botón volver solo ícono */
+.btn-volver-icono {
+  background: none;
+  border: none;
+  color: #0066cc;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.btn-volver-icono:hover {
+  color: #004499;
+}
+
+/* Título con flecha integrada */
+.titulo-con-flecha {
+  font-size: 1.5rem;
+  margin: 0;
+  flex: 1;
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .titulo-con-flecha {
+    font-size: 1.2rem;
+  }
+  
+  .btn-volver-icono {
+    font-size: 1.2rem;
+  }
+}
