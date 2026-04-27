@@ -15,7 +15,9 @@ const breadcrumbMap: { [key: string]: string } = {
 
 export default function Breadcrumb() {
   const location = useLocation();
-  const pathnames = location.pathname.split('/').filter(x => x);
+  
+  // Filtrar segmentos vacíos y parámetros numéricos (como IDs)
+  const pathnames = location.pathname.split('/').filter(x => x && isNaN(Number(x)));
 
   // Si estamos en home o solo la raíz, no mostrar breadcrumb
   if (pathnames.length === 0) return null;
@@ -23,6 +25,7 @@ export default function Breadcrumb() {
   return (
     <div className={styles['breadcrumb-container']}>
       {pathnames.map((name, index) => {
+        // Construir la ruta para el enlace
         const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
         const isLast = index === pathnames.length - 1;
         const label = breadcrumbMap[name] || name.charAt(0).toUpperCase() + name.slice(1);
