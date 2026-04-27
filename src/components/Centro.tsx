@@ -1,4 +1,3 @@
-//src/components/Centro.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
@@ -16,6 +15,19 @@ interface CentroType {
   latitude: string;
   longitude: string;
 }
+
+// Función para extraer la ciudad de la dirección
+const extraerCiudad = (formatted_address: string) => {
+  if (!formatted_address) return '';
+  const partes = formatted_address.split(',');
+  for (const parte of partes) {
+    const trimmed = parte.trim();
+    if (!trimmed.match(/^\d+$/) && trimmed !== 'Argentina' && !trimmed.includes('Provincia')) {
+      return trimmed;
+    }
+  }
+  return partes[1]?.trim() || 'Ciudad no especificada';
+};
 
 export default function Centro() {
   const navigate = useNavigate();
@@ -114,11 +126,12 @@ export default function Centro() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-           <Breadcrumb items={[
-  { label: 'Actividad', path: '/actividad' },
-  { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
-  { label: 'Centro' }
-]} />
+            {/* Breadcrumb de navegación */}
+            <Breadcrumb items={[
+              { label: 'Actividad', path: '/actividad' },
+              { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
+              { label: 'Centro' }
+            ]} />
 
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona un centro</h1>
             
@@ -137,24 +150,21 @@ export default function Centro() {
             </div>
 
             {/* Subtítulo */}
-            <h2 className={styles['subtitulo']}>Centro</h2>
+            <h2 className={styles['subtitulo']}>Centros disponibles</h2>
 
-            {/* Grilla de centros */}
+            {/* Lista vertical de centros */}
             {filtrados.length === 0 ? (
               <p className={styles['sin-resultados']}>No hay centros disponibles</p>
             ) : (
-              <div className={styles['centro-grid']}>
+              <div className={styles['centro-list']}>
                 {filtrados.map((centro) => (
                   <button 
                     key={centro.id}
                     onClick={() => handleCentroSeleccionado(centro)}
                     className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nDirección: ${centro.formatted_address}`}
                   >
-                    <strong>{centro.nombre}</strong>
-                    <br />
-                    <small>{centro.codigo}</small>
-                    <br />
-                    <small>{centro.formatted_address?.substring(0, 80)}...</small>
+                    <strong>{centro.nombre}</strong> - {extraerCiudad(centro.formatted_address)}
                   </button>
                 ))}
               </div>
