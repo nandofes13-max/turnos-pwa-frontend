@@ -8,12 +8,9 @@
 }
 
 .link {
-  background: none;
-  border: none;
   color: #0066cc;
-  cursor: pointer;
+  text-decoration: none;
   font-size: 0.9rem;
-  padding: 0;
   transition: color 0.2s;
 }
 
