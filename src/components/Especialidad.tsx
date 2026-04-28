@@ -118,6 +118,10 @@ export default function Especialidad() {
               { label: 'Especialidad' }
             ]} />
 
+            <div className={styles['seleccion-info']}>
+              Has seleccionado: <strong>{actividadNombre}</strong>
+            </div>
+
             <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
             
             <div className={styles['busqueda-container']}>
