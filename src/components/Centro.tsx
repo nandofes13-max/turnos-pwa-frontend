@@ -25,12 +25,13 @@ export default function Centro() {
   const [filtrados, setFiltrados] = useState<CentroType[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
+  const [modalCentro, setModalCentro] = useState<CentroType | null>(null);
 
   const NEGOCIO_DEMO_ID = 6;
 
   const handleCentroSeleccionado = (centro: CentroType) => {
-    alert(`Has seleccionado: ${centro.nombre} - (Demo)`);
     // Aquí después navegará al siguiente paso (profesional/agenda)
+    console.log('Centro seleccionado:', centro);
   };
 
   useEffect(() => {
@@ -52,7 +53,6 @@ export default function Centro() {
         }
         
         const data = await response.json();
-        // Ordenar alfabéticamente por nombre
         const dataOrdenada = [...data].sort((a, b) => 
           a.nombre.localeCompare(b.nombre)
         );
@@ -147,13 +147,13 @@ export default function Centro() {
               <div className={styles['centro-list']}>
                 {filtrados.map((centro) => (
                   <button 
-  key={centro.id}
-  onClick={() => handleCentroSeleccionado(centro)}
-  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
-  title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
->
-  {centro.nombre} - {centro.city}
-</button>
+                    key={centro.id}
+                    onClick={() => setModalCentro(centro)}
+                    className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
+                  >
+                    {centro.nombre} - {centro.city}
+                  </button>
                 ))}
               </div>
             )}
@@ -189,6 +189,42 @@ export default function Centro() {
           </a>
         </div>
       </div>
+
+      {/* MODAL para mostrar detalles del centro (escritorio + móvil) */}
+      {modalCentro && (
+        <div className={styles['modal-overlay']} onClick={() => setModalCentro(null)}>
+          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles['modal-titulo']}>{modalCentro.nombre}</h3>
+            <div className={styles['modal-campo']}>
+              <strong>Código:</strong> {modalCentro.codigo}
+            </div>
+            <div className={styles['modal-campo']}>
+              <strong>Ciudad:</strong> {modalCentro.city}
+            </div>
+            <div className={styles['modal-campo']}>
+              <strong>Dirección:</strong> {modalCentro.formatted_address}
+            </div>
+            <div className={styles['modal-campo']}>
+              <strong>Coordenadas:</strong> {modalCentro.latitude}, {modalCentro.longitude}
+            </div>
+            <button 
+              onClick={() => {
+                setModalCentro(null);
+                handleCentroSeleccionado(modalCentro);
+              }}
+              className={styles['modal-boton']}
+            >
+              Seleccionar este centro
+            </button>
+            <button 
+              onClick={() => setModalCentro(null)}
+              className={styles['modal-cerrar']}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
