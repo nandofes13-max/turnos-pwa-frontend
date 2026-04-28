@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Centro.module.css';
@@ -21,6 +21,11 @@ interface CentroType {
 export default function Centro() {
   const navigate = useNavigate();
   const { actividadId, especialidadId } = useParams<{ actividadId: string; especialidadId: string }>();
+  const location = useLocation();
+  const { actividadNombre, especialidadNombre } = location.state || { 
+    actividadNombre: 'Actividad', 
+    especialidadNombre: 'Especialidad' 
+  };
   
   const [centros, setCentros] = useState<CentroType[]>([]);
   const [filtrados, setFiltrados] = useState<CentroType[]>([]);
@@ -123,6 +128,10 @@ export default function Centro() {
               { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
               { label: 'Centro' }
             ]} />
+
+            <div className={styles['seleccion-info']}>
+              Has seleccionado: <strong>{actividadNombre}</strong> &gt; <strong>{especialidadNombre}</strong>
+            </div>
 
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona un centro</h1>
             
