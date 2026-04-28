@@ -12,6 +12,7 @@ interface CentroType {
   nombre: string;
   codigo: string;
   city: string;
+  es_virtual: boolean;
   formatted_address: string;
   latitude: string;
   longitude: string;
@@ -30,7 +31,6 @@ export default function Centro() {
   const NEGOCIO_DEMO_ID = 6;
 
   const handleCentroSeleccionado = (centro: CentroType) => {
-    // Aquí después navegará al siguiente paso (profesional/agenda)
     console.log('Centro seleccionado:', centro);
   };
 
@@ -70,7 +70,6 @@ export default function Centro() {
     cargarCentros();
   }, [especialidadId]);
 
-  // Filtrar centros por búsqueda
   useEffect(() => {
     if (busqueda.trim() === '') {
       setFiltrados(centros);
@@ -81,6 +80,13 @@ export default function Centro() {
       setFiltrados(filtrado);
     }
   }, [busqueda, centros]);
+
+  const getTooltip = (centro: CentroType) => {
+    if (centro.es_virtual) {
+      return `${centro.nombre}\nCódigo: ${centro.codigo}\nTipo: Virtual`;
+    }
+    return `${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`;
+  };
 
   if (loading) {
     return (
@@ -98,11 +104,9 @@ export default function Centro() {
 
   return (
     <div className={inicioStyles['inicio-container']}>
-      {/* Columna izquierda */}
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo solo visible en móvil - con enlace a home */}
           <div className={inicioStyles['inicio-logo-mobile']}>
             <a href="/">
               <img 
@@ -114,7 +118,6 @@ export default function Centro() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Breadcrumb de navegación */}
             <Breadcrumb items={[
               { label: 'Actividad', path: '/actividad' },
               { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
@@ -123,7 +126,6 @@ export default function Centro() {
 
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona un centro</h1>
             
-            {/* Caja de búsqueda */}
             <div className={styles['busqueda-container']}>
               <div className={styles['busqueda-input-wrapper']}>
                 <FaSearch className={styles['busqueda-icono']} />
@@ -137,10 +139,8 @@ export default function Centro() {
               </div>
             </div>
 
-            {/* Subtítulo */}
             <h2 className={styles['subtitulo']}>Centros disponibles</h2>
 
-            {/* Lista vertical de centros */}
             {filtrados.length === 0 ? (
               <p className={styles['sin-resultados']}>No hay centros disponibles</p>
             ) : (
@@ -150,15 +150,14 @@ export default function Centro() {
                     key={centro.id}
                     onClick={() => setModalCentro(centro)}
                     className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
-                    title={`${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`}
+                    title={getTooltip(centro)}
                   >
-                    {centro.nombre} - {centro.city}
+                    {centro.es_virtual ? '🖥️' : '🏢'} {centro.nombre} - {centro.city}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Footer */}
             <div className={inicioStyles['inicio-footer']}>
               <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
@@ -177,7 +176,6 @@ export default function Centro() {
         </div>
       </div>
 
-      {/* Columna derecha - LOGO (solo desktop) con enlace a home */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
           <a href="/">
@@ -190,22 +188,25 @@ export default function Centro() {
         </div>
       </div>
 
-      {/* MODAL para mostrar detalles del centro (escritorio + móvil) */}
       {modalCentro && (
         <div className={styles['modal-overlay']} onClick={() => setModalCentro(null)}>
           <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles['modal-titulo']}>{modalCentro.nombre}</h3>
+            <h3 className={styles['modal-titulo']}>
+              {modalCentro.es_virtual ? '🖥️' : '🏢'} {modalCentro.nombre}
+            </h3>
             <div className={styles['modal-campo']}>
               <strong>Código:</strong> {modalCentro.codigo}
             </div>
             <div className={styles['modal-campo']}>
               <strong>Ciudad:</strong> {modalCentro.city}
             </div>
+            {!modalCentro.es_virtual && (
+              <div className={styles['modal-campo']}>
+                <strong>Dirección:</strong> {modalCentro.formatted_address}
+              </div>
+            )}
             <div className={styles['modal-campo']}>
-              <strong>Dirección:</strong> {modalCentro.formatted_address}
-            </div>
-            <div className={styles['modal-campo']}>
-              <strong>Coordenadas:</strong> {modalCentro.latitude}, {modalCentro.longitude}
+              <strong>Tipo:</strong> {modalCentro.es_virtual ? 'Virtual' : 'Presencial'}
             </div>
             <button 
               onClick={() => {
