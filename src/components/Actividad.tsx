@@ -47,7 +47,7 @@ interface ActividadType {
 }
 
 export default function Actividad() {
-  const navigate = useNavigate();  // 👈 AGREGAR ESTA LÍNEA
+  const navigate = useNavigate();
   const [actividades, setActividades] = useState<ActividadType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -130,13 +130,15 @@ export default function Actividad() {
             
             <div className={styles['actividad-grid']}>
               {actividades.map((actividad) => (
-               <button 
-  key={actividad.id}
- onClick={() => navigate(`/actividad/${actividad.id}/especialidad`)}
-  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
->
-  {getIconForActividadId(actividad.id)} {actividad.nombre}
-</button>
+                <button 
+                  key={actividad.id}
+                  onClick={() => navigate(`/actividad/${actividad.id}/especialidad`, {
+                    state: { actividadNombre: actividad.nombre }
+                  })}
+                  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                >
+                  {getIconForActividadId(actividad.id)} {actividad.nombre}
+                </button>
               ))}
             </div>
 
