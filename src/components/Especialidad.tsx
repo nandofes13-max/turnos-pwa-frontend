@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Especialidad.module.css';
@@ -16,7 +16,9 @@ interface EspecialidadType {
 
 export default function Especialidad() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { actividadId } = useParams<{ actividadId: string }>();
+  const { actividadNombre } = location.state || { actividadNombre: 'Actividad' };
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
@@ -25,10 +27,13 @@ export default function Especialidad() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ... resto del código igual
-const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
-  navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`);
-    // Aquí después navegará al siguiente paso (profesional/centro)
+  const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
+    navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`, {
+      state: {
+        actividadNombre: actividadNombre,
+        especialidadNombre: especialidad.nombre
+      }
+    });
   };
 
   useEffect(() => {
@@ -49,13 +54,12 @@ const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
           throw new Error('Error al cargar las especialidades');
         }
         
-       const data = await response.json();
-// Ordenar alfabéticamente por nombre
-const dataOrdenada = [...data].sort((a, b) => 
-  a.nombre.localeCompare(b.nombre)
-);
-setEspecialidades(dataOrdenada);
-setFiltradas(dataOrdenada);
+        const data = await response.json();
+        const dataOrdenada = [...data].sort((a, b) => 
+          a.nombre.localeCompare(b.nombre)
+        );
+        setEspecialidades(dataOrdenada);
+        setFiltradas(dataOrdenada);
       } catch (err: any) {
         console.error('Error:', err);
         setEspecialidades([]);
@@ -68,7 +72,6 @@ setFiltradas(dataOrdenada);
     cargarEspecialidades();
   }, [actividadId]);
 
-  // Filtrar especialidades por búsqueda
   useEffect(() => {
     if (busqueda.trim() === '') {
       setFiltradas(especialidades);
@@ -96,11 +99,9 @@ setFiltradas(dataOrdenada);
 
   return (
     <div className={inicioStyles['inicio-container']}>
-      {/* Columna izquierda */}
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo solo visible en móvil - con enlace a home */}
           <div className={inicioStyles['inicio-logo-mobile']}>
             <a href="/">
               <img 
@@ -112,14 +113,13 @@ setFiltradas(dataOrdenada);
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-                    <Breadcrumb items={[
-  { label: 'Actividad', path: '/actividad' },
-  { label: 'Especialidad' }
-]} />
+            <Breadcrumb items={[
+              { label: 'Actividad', path: '/actividad' },
+              { label: 'Especialidad' }
+            ]} />
 
             <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
             
-            {/* Caja de búsqueda */}
             <div className={styles['busqueda-container']}>
               <div className={styles['busqueda-input-wrapper']}>
                 <FaSearch className={styles['busqueda-icono']} />
@@ -133,10 +133,8 @@ setFiltradas(dataOrdenada);
               </div>
             </div>
 
-            {/* Subtítulo */}
             <h2 className={styles['subtitulo']}>Especialidad</h2>
 
-            {/* Grilla de especialidades */}
             {filtradas.length === 0 ? (
               <p className={styles['sin-resultados']}>No hay especialidades disponibles</p>
             ) : (
@@ -153,7 +151,6 @@ setFiltradas(dataOrdenada);
               </div>
             )}
 
-            {/* Footer */}
             <div className={inicioStyles['inicio-footer']}>
               <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
@@ -172,7 +169,6 @@ setFiltradas(dataOrdenada);
         </div>
       </div>
 
-      {/* Columna derecha - LOGO (solo desktop) con enlace a home */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
           <a href="/">
