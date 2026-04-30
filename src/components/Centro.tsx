@@ -36,7 +36,14 @@ export default function Centro() {
   const NEGOCIO_DEMO_ID = 6;
 
   const handleCentroSeleccionado = (centro: CentroType) => {
-    console.log('Centro seleccionado:', centro);
+    // Navegar a la pantalla de Agenda
+    navigate(`/actividad/${actividadId}/especialidad/${especialidadId}/centro/${centro.id}/agenda`, {
+      state: {
+        actividadNombre: actividadNombre,
+        especialidadNombre: especialidadNombre,
+        centroNombre: centro.nombre
+      }
+    });
   };
 
   useEffect(() => {
