@@ -42,13 +42,25 @@ export default function Agenda() {
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
 
-  // Generar rango de 30 días desde hoy
+  // Generar rango de 30 días desde hoy (sin incluir días pasados)
   const generarRangoFechas = () => {
     const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
     const desde = hoy.toISOString().split('T')[0];
     const hasta = new Date(hoy);
     hasta.setDate(hoy.getDate() + 30);
     return { desde, hasta: hasta.toISOString().split('T')[0] };
+  };
+
+  // Formatear fecha para mostrar en el título
+  const formatearFechaCompleta = (fechaStr: string) => {
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleDateString('es-AR', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   // Cargar días disponibles al montar el componente
@@ -68,8 +80,11 @@ export default function Agenda() {
         const data = await response.json();
         setDias(data);
         
-        // Seleccionar automáticamente el primer día disponible
-        const primerDiaDisponible = data.find((d: DiaDisponible) => d.disponible);
+        // Seleccionar automáticamente el primer día disponible (desde hoy hacia adelante)
+        const hoyStr = new Date().toISOString().split('T')[0];
+        const primerDiaDisponible = data.find((d: DiaDisponible) => 
+          d.disponible && d.fecha >= hoyStr
+        );
         if (primerDiaDisponible) {
           setSelectedFecha(primerDiaDisponible.fecha);
         }
@@ -165,12 +180,19 @@ export default function Agenda() {
 
             <h1 className={inicioStyles['inicio-titulo']}>Elige horario y profesional</h1>
             
-            {/* Carrusel de días */}
+            {/* Carrusel vertical de días */}
             <CarruselDias 
               dias={dias}
               selectedFecha={selectedFecha}
               onDiaSeleccionado={handleDiaSeleccionado}
             />
+
+            {/* Título con la fecha seleccionada */}
+            {selectedFecha && (
+              <h2 className={styles['fecha-seleccionada-titulo']}>
+                Día {formatearFechaCompleta(selectedFecha)} - Horarios Disponibles
+              </h2>
+            )}
 
             {/* Lista de profesionales y slots */}
             {cargandoProfesionales ? (
