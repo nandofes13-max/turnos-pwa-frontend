@@ -1,0 +1,187 @@
+/* =============================================
+   AGENDA - ESTILOS
+   ============================================= */
+
+.seleccion-info {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+}
+
+/* =============================================
+   CARRUSEL DE DÍAS
+   ============================================= */
+
+.carrusel-container {
+  overflow-x: auto;
+  margin: 1rem 0 1.5rem 0;
+  padding-bottom: 8px;
+}
+
+.carrusel {
+  display: flex;
+  gap: 10px;
+  min-width: min-content;
+}
+
+.dia-boton {
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dia-habilitado {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+}
+
+.dia-habilitado:hover {
+  background-color: #0052a3;
+  transform: scale(1.02);
+}
+
+.dia-deshabilitado {
+  background-color: #e0e0e0;
+  color: #999;
+  border: none;
+  cursor: not-allowed;
+}
+
+.dia-seleccionado {
+  background-color: #004499 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* =============================================
+   PROFESIONALES
+   ============================================= */
+
+.profesionales-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.tarjeta-profesional {
+  background-color: #f8f9fa;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+.profesional-info {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profesional-foto {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #e0e0e0;
+}
+
+.profesional-datos {
+  flex: 1;
+}
+
+.profesional-nombre {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0066cc;
+  margin-bottom: 4px;
+}
+
+.profesional-descripcion {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* =============================================
+   SLOTS
+   ============================================= */
+
+.slots-container {
+  margin-top: 8px;
+}
+
+.slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.slot-boton {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.slot-boton:hover {
+  background-color: #0052a3;
+}
+
+.ver-mas-btn {
+  background: none;
+  border: none;
+  color: #0066cc;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 8px 0;
+}
+
+.ver-mas-btn:hover {
+  color: #004499;
+}
+
+/* =============================================
+   ESTADOS VACIOS
+   ============================================= */
+
+.cargando, .sin-resultados {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .profesional-foto {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .profesional-nombre {
+    font-size: 0.9rem;
+  }
+  
+  .slot-boton {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .dia-boton {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+}
