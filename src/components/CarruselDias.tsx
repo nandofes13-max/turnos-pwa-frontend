@@ -14,22 +14,22 @@ interface CarruselDiasProps {
 
 // Nombres de días en español (corto)
 const nombresDias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+const nombresMeses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
-// Formatear fecha para mostrar: "JUE 30 ABR"
-const formatearFecha = (fechaStr: string): string => {
+const formatearDiaVertical = (fechaStr: string) => {
   const fecha = new Date(fechaStr);
   const diaSemana = nombresDias[fecha.getDay()];
   const dia = fecha.getDate();
-  const mes = fecha.toLocaleString('es-AR', { month: 'short' }).toUpperCase();
-  return `${diaSemana} ${dia} ${mes}`;
+  const mes = nombresMeses[fecha.getMonth()];
+  return { diaSemana, dia, mes };
 };
 
 export default function CarruselDias({ dias, selectedFecha, onDiaSeleccionado }: CarruselDiasProps) {
   return (
-    <div className={styles['carrusel-container']}>
-      <div className={styles['carrusel']}>
+    <div className={styles['carrusel-vertical-container']}>
+      <div className={styles['carrusel-vertical']}>
         {dias.map((dia) => {
-          const fechaFormateada = formatearFecha(dia.fecha);
+          const { diaSemana, dia: diaNum, mes } = formatearDiaVertical(dia.fecha);
           const isSelected = selectedFecha === dia.fecha;
           const isDisabled = !dia.disponible;
           
@@ -37,14 +37,16 @@ export default function CarruselDias({ dias, selectedFecha, onDiaSeleccionado }:
             <button
               key={dia.fecha}
               onClick={() => !isDisabled && onDiaSeleccionado(dia.fecha)}
-              className={`${styles['dia-boton']} 
-                ${isDisabled ? styles['dia-deshabilitado'] : styles['dia-habilitado']}
-                ${isSelected ? styles['dia-seleccionado'] : ''}
+              className={`${styles['dia-vertical-boton']} 
+                ${isDisabled ? styles['dia-vertical-deshabilitado'] : styles['dia-vertical-habilitado']}
+                ${isSelected ? styles['dia-vertical-seleccionado'] : ''}
               `}
               disabled={isDisabled}
-              title={isDisabled ? 'No hay turnos disponibles' : `Ver turnos para ${fechaFormateada}`}
+              title={isDisabled ? 'No hay turnos disponibles' : `Ver turnos para ${dia.fecha}`}
             >
-              {fechaFormateada}
+              <span className={styles['dia-vertical-semana']}>{diaSemana}</span>
+              <span className={styles['dia-vertical-numero']}>{diaNum}</span>
+              <span className={styles['dia-vertical-mes']}>{mes}</span>
             </button>
           );
         })}
