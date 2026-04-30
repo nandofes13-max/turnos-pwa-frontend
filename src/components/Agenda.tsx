@@ -42,7 +42,7 @@ export default function Agenda() {
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
 
-  // Generar rango de 30 días desde hoy (sin incluir días pasados)
+  // Generar rango de 30 días desde hoy
   const generarRangoFechas = () => {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -52,15 +52,14 @@ export default function Agenda() {
     return { desde, hasta: hasta.toISOString().split('T')[0] };
   };
 
-  // Formatear fecha para mostrar en el título
-  const formatearFechaCompleta = (fechaStr: string) => {
+  // Formatear fecha como "Lunes 04/05/2026"
+  const formatearFechaCorta = (fechaStr: string) => {
     const fecha = new Date(fechaStr);
-    return fecha.toLocaleDateString('es-AR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'long' });
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)} ${dia}/${mes}/${anio}`;
   };
 
   // Cargar días disponibles al montar el componente
@@ -80,11 +79,8 @@ export default function Agenda() {
         const data = await response.json();
         setDias(data);
         
-        // Seleccionar automáticamente el primer día disponible (desde hoy hacia adelante)
-        const hoyStr = new Date().toISOString().split('T')[0];
-        const primerDiaDisponible = data.find((d: DiaDisponible) => 
-          d.disponible && d.fecha >= hoyStr
-        );
+        // Seleccionar automáticamente el primer día disponible
+        const primerDiaDisponible = data.find((d: DiaDisponible) => d.disponible);
         if (primerDiaDisponible) {
           setSelectedFecha(primerDiaDisponible.fecha);
         }
@@ -187,13 +183,6 @@ export default function Agenda() {
               onDiaSeleccionado={handleDiaSeleccionado}
             />
 
-            {/* Título con la fecha seleccionada */}
-            {selectedFecha && (
-              <h2 className={styles['fecha-seleccionada-titulo']}>
-                Día {formatearFechaCompleta(selectedFecha)} - Horarios Disponibles
-              </h2>
-            )}
-
             {/* Lista de profesionales y slots */}
             {cargandoProfesionales ? (
               <div className={styles['cargando']}>Cargando profesionales...</div>
@@ -202,15 +191,24 @@ export default function Agenda() {
                 No hay profesionales disponibles para esta fecha.
               </div>
             ) : (
-              <div className={styles['profesionales-container']}>
-                {profesionales.map((profesional) => (
-                  <TarjetaProfesional
-                    key={profesional.profesionalId}
-                    profesional={profesional}
-                    onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
-                  />
-                ))}
-              </div>
+              <>
+                {selectedFecha && (
+                  <div className={styles['fecha-seleccionada-container']}>
+                    <div className={styles['fecha-seleccionada-titulo-inline']}>
+                      📅 {formatearFechaCorta(selectedFecha)} - Horarios Disponibles
+                    </div>
+                  </div>
+                )}
+                <div className={styles['profesionales-container']}>
+                  {profesionales.map((profesional) => (
+                    <TarjetaProfesional
+                      key={profesional.profesionalId}
+                      profesional={profesional}
+                      onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Footer */}
