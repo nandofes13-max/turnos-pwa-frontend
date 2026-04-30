@@ -17,6 +17,7 @@ import ProfesionalEspecialidad from './components/ProfesionalEspecialidad';
 import Centros from './components/Centros';
 import ProfesionalCentro from './components/ProfesionalCentro';
 import AgendaDisponibilidad from './components/AgendaDisponibilidad';
+import Agenda from './components/Agenda';
 import './App.css';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
+        <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
       </Routes>
     </BrowserRouter>
   );
