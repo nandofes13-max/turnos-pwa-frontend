@@ -52,7 +52,7 @@ export default function Agenda() {
     return { desde, hasta: hasta.toISOString().split('T')[0] };
   };
 
- // Formatear fecha como "Dom 03/05/26 - Horarios Disponibles"
+ // Formatear fecha como "Dom 03/05/26"
 const formatearFechaCorta = (fechaStr: string) => {
   const fecha = new Date(fechaStr);
   const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short' }).toUpperCase().replace('.', '');
