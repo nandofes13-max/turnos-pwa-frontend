@@ -59,7 +59,7 @@ const formatearFechaCorta = (fechaStr: string) => {
   const dia = fecha.getDate().toString().padStart(2, '0');
   const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
   const anio = fecha.getFullYear().toString().slice(-2);
-  return `${diaSemana} ${dia}/${mes}/${anio} - Horarios Disponibles`;
+  return `${diaSemana} ${dia}/${mes}/${anio}`;
 };
 
   // Cargar días disponibles al montar el componente
