@@ -27,10 +27,9 @@
   width: 100%;
 }
 
-/* Columna derecha - LOGO FIJO */
+/* Columna derecha - LOGO FIJO (sin perder ancho) */
 .inicio-right {
-  width: 300px;                     /* ← ancho fijo */
-  flex: none;                       /* ← que no se expanda */
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,11 +47,11 @@
 }
 
 .inicio-logo-desktop {
-  max-width: 200px;
-  height: auto;
+  max-width: 80%;
+  max-height: 80vh;
   object-fit: contain;
+  padding: 2rem;
 }
-
 /* =============================================
    TARJETA DE LOGIN (hereda de la anterior)
    ============================================= */
