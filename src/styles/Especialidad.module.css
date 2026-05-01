@@ -175,3 +175,24 @@
     font-size: 0.85rem;
   }
 }
+/* Reducir espacio del breadcrumb */
+.breadcrumb-container {
+  margin-bottom: 0.25rem !important;
+}
+
+/* Reducir espacio de "Has seleccionado" */
+.seleccion-info {
+  margin-bottom: 0.25rem;
+}
+
+/* Reducir espacio del título principal */
+.inicio-titulo {
+  margin-bottom: 0.25rem;
+}
+/* =============================================
+   BREADCRUMB - ESPACIO REDUCIDO
+   ============================================= */
+.breadcrumb-container {
+  margin-bottom: 0.25rem;
+}
+
