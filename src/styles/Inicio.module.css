@@ -29,7 +29,7 @@
 
 /* Columna derecha - LOGO FIJO */
 .inicio-right {
-  width: 300px;
+  flex: 0 0 300px;        /* ← ancho fijo, no se encoge */
   display: flex;
   align-items: center;
   justify-content: center;
