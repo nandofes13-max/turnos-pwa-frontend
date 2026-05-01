@@ -1,6 +1,20 @@
 /* =============================================
    CENTRO - ESTILOS (normalizado con Especialidad)
    ============================================= */
+/* Eliminar espacio superior */
+.inicio-left-content {
+  padding-top: 0 !important;
+}
+
+.inicio-card {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Si el logo móvil afecta aunque esté oculto */
+.inicio-logo-mobile {
+  display: none;
+}
 
 /* BREADCRUMB */
 .breadcrumb-container {
