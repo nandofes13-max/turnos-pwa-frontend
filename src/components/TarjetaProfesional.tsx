@@ -34,13 +34,6 @@ export default function TarjetaProfesional({
 
   return (
     <div className={styles['tarjeta-profesional']}>
-      {/* Título de fecha dentro de la tarjeta */}
-      {fechaSeleccionada && formatearFechaCorta && (
-        <div className={styles['fecha-dentro-tarjeta']}>
-          📅 {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
-        </div>
-      )}
-      
       <div className={styles['profesional-info']}>
         <img 
           src={fotoUrl} 
@@ -55,6 +48,13 @@ export default function TarjetaProfesional({
           )}
         </div>
       </div>
+
+      {/* Título de fecha debajo de la foto y descripción */}
+      {fechaSeleccionada && formatearFechaCorta && (
+        <div className={styles['fecha-dentro-tarjeta']}>
+          📅 {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
+        </div>
+      )}
 
       <div className={styles['slots-container']}>
         <div className={styles['slots-grid']}>
@@ -78,5 +78,5 @@ export default function TarjetaProfesional({
         )}
       </div>
     </div>
-  );
+  );  );
 }
