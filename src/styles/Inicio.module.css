@@ -27,15 +27,15 @@
   width: 100%;
 }
 
-/* Columna derecha - LOGO */
+/* Columna derecha - LOGO FIJO */
 .inicio-right {
-  flex: 1;
+  width: 300px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 2rem;                   /* ← Volver a 2rem */
-  background: var(--color-primary-light);  /* ← Volver a color primario claro */
+  justify-content: center;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .inicio-right-content {
@@ -43,14 +43,11 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 100%;
 }
 
 .inicio-logo-desktop {
-  max-width: 80%;                   /* ← Volver a 80% */
-  max-height: 80vh;
-  object-fit: contain;
-  padding: 2rem;                    /* ← Volver a 2rem */
+  max-width: 200px;
+  height: auto;
 }
 /* =============================================
    TARJETA DE LOGIN (hereda de la anterior)
