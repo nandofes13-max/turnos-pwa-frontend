@@ -1,5 +1,13 @@
 @import './tablas-maestras.css';
 
+.inicio-left-content {
+  padding-top: 0;
+}
+
+.inicio-card {
+  padding-top: 0;
+}
+
 /* =============================================
    LAYOUT PRINCIPAL - DOS COLUMNAS
    ============================================= */
