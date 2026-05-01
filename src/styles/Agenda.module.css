@@ -2,6 +2,17 @@
    AGENDA - ESTILOS ESPECÍFICOS (hereda el resto de Inicio.module.css)
    ============================================= */
 
+/* Título de selección (hereda de inicio, solo ajustamos si es necesario) */
+.seleccion-info {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.15rem;
+  padding: 4px 8px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+}
+
 /* CARRUSEL VERTICAL */
 .carrusel-vertical-container {
   overflow-x: auto;
