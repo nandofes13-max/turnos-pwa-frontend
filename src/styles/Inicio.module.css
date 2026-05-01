@@ -240,3 +240,57 @@
   opacity: 0.85;           /* Baja la opacidad */
   cursor: pointer;
 }
+
+/* =============================================
+   AJUSTES PARA AGENDA Y CONSISTENCIA PANTALLAS
+   ============================================= */
+
+/* Contenedor principal - centrado y ancho máximo */
+.inicio-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Columna derecha para agenda (logo fijo) */
+.inicio-right {
+  width: 300px;
+  flex: none;
+}
+
+/* Logo desktop - tamaño consistente */
+.inicio-logo-desktop {
+  max-width: 200px;
+}
+
+/* Logo móvil - visible en agenda */
+.inicio-logo-mobile {
+  display: block;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.inicio-logo-mobile-img {
+  max-width: 120px;
+}
+
+/* Columna izquierda - ancho máximo para agenda */
+.inicio-left {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Móvil - ajustes para agenda */
+@media (max-width: 768px) {
+  .inicio-right {
+    display: none;
+  }
+  
+  .inicio-left {
+    padding: 1rem;
+  }
+  
+  .inicio-logo-mobile {
+    display: block;
+  }
+}
