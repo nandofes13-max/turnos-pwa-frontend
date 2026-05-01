@@ -31,6 +31,7 @@
   overflow-x: auto;
   margin: 0.25rem 0 0.75rem 0;
   padding-bottom: 8px;
+  width: 100%;
 }
 
 .carrusel-vertical {
@@ -216,13 +217,13 @@
 /* Ajustar ancho de la columna izquierda */
 .inicio-left {
   flex: 1;
-  max-width: 100%;        /* ← cambiar de 1000px a 100% */
-  margin: 0;              /* ← cambiar de 0 auto a 0 */
+  max-width: 100%;
+  margin: 0;
   width: 100%;
-  padding: 1rem;          /* ← agregar padding interno para que no quede pegado al borde */
+  padding: 1rem;
 }
 
-/* Ajustar logo derecho para que coincida con otras pantallas */
+/* Ajustar logo derecho */
 .inicio-right {
   width: 300px;
   display: flex;
@@ -233,6 +234,43 @@
 .inicio-logo-desktop {
   max-width: 200px;
   height: auto;
+}
+
+/* =============================================
+   SOBRESCRITURAS PARA AGENDA (solo esta pantalla)
+   ============================================= */
+
+.agenda-container .inicio-left {
+  padding: 1rem;
+}
+
+.agenda-container .inicio-left-content {
+  max-width: 100%;
+  width: 100%;
+  padding: 0 1rem;
+}
+
+/* =============================================
+   DESKTOP (pantallas grandes)
+   ============================================= */
+@media (min-width: 1024px) {
+  .agenda-container .inicio-left-content {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+  
+  .carrusel-vertical {
+    gap: 16px;
+  }
+  
+  .dia-vertical-boton {
+    min-width: 70px;
+    padding: 10px 8px;
+  }
+  
+  .dia-vertical-numero {
+    font-size: 1.2rem;
+  }
 }
 
 /* =============================================
@@ -285,35 +323,8 @@
   .breadcrumb-container {
     margin-bottom: 0.1rem;
   }
-}
-
-/* Sobrescribir estilos solo para la pantalla de Agenda */
-.agenda-container .inicio-left {
-  padding: 1rem;
-}
-
-.agenda-container .inicio-left-content {
-  max-width: 100%;
-  padding: 0 0.5rem;
-}
-
-/* Solo para desktop (ancho mayor a 768px) */
-@media (min-width: 1024px) {
-  .agenda-container .inicio-left-content {
-    max-width: 100%;
-    padding: 0 2rem;
-  }
   
   .agenda-container .inicio-left-content {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-  
-  .carrusel-vertical {
-    gap: 16px;
-  }
-  
-  .dia-vertical-boton {
-    min-width: 70px;
+    padding: 0 0.5rem;
   }
 }
