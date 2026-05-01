@@ -52,15 +52,15 @@ export default function Agenda() {
     return { desde, hasta: hasta.toISOString().split('T')[0] };
   };
 
-  // Formatear fecha como "Lunes 04/05/2026"
-  const formatearFechaCorta = (fechaStr: string) => {
-    const fecha = new Date(fechaStr);
-    const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'long' });
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const anio = fecha.getFullYear();
-    return `${diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)} ${dia}/${mes}/${anio}`;
-  };
+ // Formatear fecha como "Dom 03/05/26 - Horarios Disponibles"
+const formatearFechaCorta = (fechaStr: string) => {
+  const fecha = new Date(fechaStr);
+  const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short' }).toUpperCase().replace('.', '');
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const anio = fecha.getFullYear().toString().slice(-2);
+  return `${diaSemana} ${dia}/${mes}/${anio} - Horarios Disponibles`;
+};
 
   // Cargar días disponibles al montar el componente
   useEffect(() => {
