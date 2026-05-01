@@ -16,9 +16,16 @@ interface ProfesionalSlots {
 interface TarjetaProfesionalProps {
   profesional: ProfesionalSlots;
   onSlotSeleccionado: (hora: string) => void;
+  fechaSeleccionada?: string;
+  formatearFechaCorta?: (fecha: string) => string;
 }
 
-export default function TarjetaProfesional({ profesional, onSlotSeleccionado }: TarjetaProfesionalProps) {
+export default function TarjetaProfesional({ 
+  profesional, 
+  onSlotSeleccionado, 
+  fechaSeleccionada,
+  formatearFechaCorta 
+}: TarjetaProfesionalProps) {
   const [verTodos, setVerTodos] = useState(false);
   const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 6);
   const hayMas = profesional.slots.length > 6;
@@ -27,6 +34,13 @@ export default function TarjetaProfesional({ profesional, onSlotSeleccionado }: 
 
   return (
     <div className={styles['tarjeta-profesional']}>
+      {/* Título de fecha dentro de la tarjeta */}
+      {fechaSeleccionada && formatearFechaCorta && (
+        <div className={styles['fecha-dentro-tarjeta']}>
+          📅 {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
+        </div>
+      )}
+      
       <div className={styles['profesional-info']}>
         <img 
           src={fotoUrl} 
