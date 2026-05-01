@@ -1,15 +1,26 @@
 /* =============================================
-   AGENDA - ESTILOS COMPLETOS
+   AGENDA - ESTILOS NORMALIZADOS
    ============================================= */
 
+/* BREADCRUMB */
+.breadcrumb-container {
+  margin-bottom: 0.15rem;
+}
+
+/* Título de selección */
 .seleccion-info {
   text-align: center;
-  font-size: 0.8rem;  /* ← Reducido de 0.9rem a 0.8rem */
+  font-size: 0.75rem;
   color: #666;
-  margin-bottom: 0.75rem;  /* ← Reducido de 1rem a 0.75rem */
-  padding: 6px 8px;  /* ← Reducido de 8px a 6px */
+  margin-bottom: 0.15rem;
+  padding: 4px 8px;
   background-color: #f0f0f0;
   border-radius: 8px;
+}
+
+/* Título principal */
+.inicio-titulo {
+  margin-bottom: 0.25rem;
 }
 
 /* =============================================
@@ -18,7 +29,7 @@
 
 .carrusel-vertical-container {
   overflow-x: auto;
-  margin: 1rem 0 1.5rem 0;
+  margin: 0.25rem 0 0.75rem 0;
   padding-bottom: 8px;
 }
 
@@ -34,7 +45,7 @@
   align-items: center;
   justify-content: center;
   min-width: 60px;
-  padding: 10px 8px;
+  padding: 8px 6px;
   border-radius: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -72,12 +83,12 @@
 }
 
 .dia-vertical-numero {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
 .dia-vertical-mes {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
 }
 
@@ -88,8 +99,8 @@
 .profesionales-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin: 1.5rem 0;
+  gap: 1rem;
+  margin: 0.75rem 0;
 }
 
 .tarjeta-profesional {
@@ -103,19 +114,19 @@
 .fecha-dentro-tarjeta {
   background-color: #e9ecef;
   color: #333;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 50px;
   display: inline-block;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   width: auto;
 }
 
 .profesional-info {
   display: flex;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .profesional-foto {
@@ -154,8 +165,8 @@
 .slots-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .slot-boton {
@@ -163,8 +174,8 @@
   color: white;
   border: none;
   border-radius: 50px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
+  padding: 6px 14px;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -177,10 +188,10 @@
   background: none;
   border: none;
   color: #0066cc;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
   text-decoration: underline;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .ver-mas-btn:hover {
@@ -193,8 +204,9 @@
 
 .cargando, .sin-resultados {
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem;
   color: #666;
+  font-size: 0.9rem;
 }
 
 /* =============================================
@@ -222,25 +234,27 @@
   height: auto;
 }
 
-/* Móvil */
+/* =============================================
+   MÓVIL
+   ============================================= */
 @media (max-width: 768px) {
   .inicio-right {
     display: none;
   }
   
   .fecha-dentro-tarjeta {
-    font-size: 0.75rem;
-    padding: 6px 10px;
-    margin-bottom: 12px;
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    margin-bottom: 10px;
   }
   
   .dia-vertical-boton {
     min-width: 50px;
-    padding: 8px 6px;
+    padding: 6px 4px;
   }
   
   .dia-vertical-numero {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   
   .profesional-foto {
@@ -249,11 +263,25 @@
   }
   
   .profesional-nombre {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+  }
+  
+  .profesional-descripcion {
+    font-size: 0.7rem;
   }
   
   .slot-boton {
-    padding: 6px 12px;
-    font-size: 0.75rem;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+  
+  .seleccion-info {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    margin-bottom: 0.1rem;
+  }
+  
+  .breadcrumb-container {
+    margin-bottom: 0.1rem;
   }
 }
