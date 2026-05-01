@@ -136,7 +136,7 @@ export default function Agenda() {
 
   if (loading) {
     return (
-      <div className={inicioStyles['inicio-container']}>
+       <div className={`${inicioStyles['inicio-container']} ${styles['agenda-container']}`}>
         <div className={inicioStyles['inicio-left']}>
           <div className={inicioStyles['inicio-left-content']}>
             <div className={inicioStyles['inicio-card']}>
