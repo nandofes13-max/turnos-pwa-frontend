@@ -52,7 +52,7 @@ export default function TarjetaProfesional({
       {/* Título de fecha debajo de la foto y descripción */}
       {fechaSeleccionada && formatearFechaCorta && (
         <div className={styles['fecha-dentro-tarjeta']}>
-          📅 {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
+          {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
         </div>
       )}
 
