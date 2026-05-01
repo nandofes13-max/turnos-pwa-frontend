@@ -1,32 +1,8 @@
 /* =============================================
-   AGENDA - ESTILOS NORMALIZADOS (igual a Especialidad/Centro)
+   AGENDA - ESTILOS ESPECÍFICOS (hereda el resto de Inicio.module.css)
    ============================================= */
 
-/* BREADCRUMB */
-.breadcrumb-container {
-  margin-bottom: 0.15rem;
-}
-
-/* Título de selección */
-.seleccion-info {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #666;
-  margin-bottom: 0.15rem;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-}
-
-/* Título principal */
-.inicio-titulo {
-  margin-bottom: 0.25rem;
-}
-
-/* =============================================
-   CARRUSEL VERTICAL
-   ============================================= */
-
+/* CARRUSEL VERTICAL */
 .carrusel-vertical-container {
   overflow-x: auto;
   margin: 0.25rem 0 0.75rem 0;
@@ -92,10 +68,7 @@
   text-transform: uppercase;
 }
 
-/* =============================================
-   PROFESIONALES
-   ============================================= */
-
+/* PROFESIONALES */
 .profesionales-container {
   display: flex;
   flex-direction: column;
@@ -153,10 +126,7 @@
   line-height: 1.4;
 }
 
-/* =============================================
-   SLOTS
-   ============================================= */
-
+/* SLOTS */
 .slots-container {
   margin-top: 8px;
 }
@@ -197,10 +167,7 @@
   color: #004499;
 }
 
-/* =============================================
-   ESTADOS VACIOS
-   ============================================= */
-
+/* ESTADOS VACIOS */
 .cargando, .sin-resultados {
   text-align: center;
   padding: 1.5rem;
@@ -208,38 +175,8 @@
   font-size: 0.9rem;
 }
 
-/* =============================================
-   AJUSTES DE ANCHO Y LOGO
-   ============================================= */
-
-.inicio-left {
-  flex: 1;
-  max-width: 100%;
-  margin: 0;
-  width: 100%;
-  padding: 1rem;
-}
-
-.inicio-right {
-  width: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.inicio-logo-desktop {
-  max-width: 200px;
-  height: auto;
-}
-
-/* =============================================
-   MÓVIL
-   ============================================= */
+/* MÓVIL */
 @media (max-width: 768px) {
-  .inicio-right {
-    display: none;
-  }
-  
   .fecha-dentro-tarjeta {
     font-size: 0.7rem;
     padding: 5px 10px;
@@ -271,15 +208,5 @@
   .slot-boton {
     padding: 5px 10px;
     font-size: 0.7rem;
-  }
-  
-  .seleccion-info {
-    font-size: 0.7rem;
-    padding: 3px 6px;
-    margin-bottom: 0.1rem;
-  }
-  
-  .breadcrumb-container {
-    margin-bottom: 0.1rem;
   }
 }
