@@ -28,17 +28,15 @@
    ============================================= */
 
 .carrusel-vertical-container {
-  overflow-x: visible;   /* ← cambiar de auto a visible */
+  overflow-x: auto;
   margin: 0.25rem 0 0.75rem 0;
   padding-bottom: 8px;
-  width: 100%;           /* ← agregar */
 }
 
 .carrusel-vertical {
   display: flex;
-  gap: 8px;
-  width: 100%;
-  min-width: auto;
+  gap: 12px;
+  min-width: min-content;
 }
 
 .dia-vertical-boton {
@@ -46,9 +44,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 0;          /* ← cambiar de 60px a 0 */
-  flex: 1;               /* ← agregar esta línea */
-  padding: 8px 4px;      /* ← opcional: reducir padding horizontal */
+  min-width: 60px;
+  padding: 8px 6px;
   border-radius: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
