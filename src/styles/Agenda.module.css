@@ -216,7 +216,7 @@
 /* Ajustar ancho de la columna izquierda */
 .inicio-left {
   flex: 1;
-  max-width: 1000px;
+  max-width: none;
   margin: 0 auto;
   width: 100%;
 }
