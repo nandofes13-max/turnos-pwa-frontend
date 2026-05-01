@@ -296,3 +296,24 @@
   max-width: 100%;
   padding: 0 0.5rem;
 }
+
+/* Solo para desktop (ancho mayor a 768px) */
+@media (min-width: 769px) {
+  .agenda-container .inicio-left {
+    max-width: 100% !important;
+    padding: 1rem 2rem !important;
+  }
+  
+  .agenda-container .inicio-left-content {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .carrusel-vertical {
+    gap: 16px;
+  }
+  
+  .dia-vertical-boton {
+    min-width: 70px;
+  }
+}
