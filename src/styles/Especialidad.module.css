@@ -6,19 +6,19 @@
 .volver-container {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 0.75rem;  /* ← reducido */
+  margin-bottom: 0.5rem;
 }
 
 .btn-volver {
   background: none;
   border: none;
   color: #0066cc;
-  font-size: 0.9rem;  /* ← reducido */
+  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.25rem 0;  /* ← reducido */
+  padding: 0.25rem 0;
   transition: color 0.2s;
 }
 
@@ -28,7 +28,7 @@
 
 /* Contenedor de búsqueda */
 .busqueda-container {
-  margin: 0.75rem 0 0.75rem 0;  /* ← reducido */
+  margin: 0.5rem 0 0.5rem 0;  /* ← reducido */
 }
 
 .busqueda-input-wrapper {
@@ -42,15 +42,15 @@
   top: 50%;
   transform: translateY(-50%);
   color: #999;
-  font-size: 0.85rem;  /* ← añadido */
+  font-size: 0.85rem;
 }
 
 .busqueda-input {
   width: 100%;
-  padding: 8px 8px 8px 34px;  /* ← reducido */
+  padding: 8px 8px 8px 34px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  font-size: 0.9rem;  /* ← reducido */
+  font-size: 0.9rem;
   box-sizing: border-box;
 }
 
@@ -62,18 +62,18 @@
 
 /* Subtítulo "Especialidad" */
 .subtitulo {
-  font-size: 1rem;  /* ← reducido */
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
-  margin: 0.5rem 0 0.75rem 0;  /* ← reducido */
+  margin: 0.25rem 0 0.5rem 0;  /* ← reducido */
 }
 
 /* Grilla de especialidades */
 .especialidad-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;  /* ← reducido */
-  margin-bottom: 0.75rem;  /* ← reducido */
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;  /* ← reducido */
 }
 
 /* Centrar el último botón cuando es impar */
@@ -109,8 +109,8 @@
 .titulo-container {
   display: flex;
   align-items: center;
-  gap: 8px;  /* ← reducido */
-  margin-bottom: 0.5rem;  /* ← reducido */
+  gap: 8px;
+  margin-bottom: 0.25rem;  /* ← reducido */
 }
 
 /* Botón volver solo ícono */
@@ -118,7 +118,7 @@
   background: none;
   border: none;
   color: #0066cc;
-  font-size: 1.2rem;  /* ← reducido */
+  font-size: 1.2rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@
 
 /* Título con flecha integrada */
 .titulo-con-flecha {
-  font-size: 1.2rem;  /* ← reducido */
+  font-size: 1.2rem;
   margin: 0;
   flex: 1;
 }
@@ -143,10 +143,10 @@
    ============================================= */
 .seleccion-info {
   text-align: center;
-  font-size: 0.75rem;  /* ← reducido */
+  font-size: 0.75rem;
   color: #666;
-  margin-bottom: 0.75rem;  /* ← reducido */
-  padding: 4px 8px;  /* ← reducido */
+  margin-bottom: 0.5rem;  /* ← reducido */
+  padding: 4px 8px;
   background-color: #f0f0f0;
   border-radius: 8px;
 }
