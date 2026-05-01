@@ -31,7 +31,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 45px;
+  min-width: 40px;
   padding: 8px 6px;
   border-radius: 12px;
   font-weight: 500;
@@ -195,7 +195,7 @@
   }
   
   .dia-vertical-boton {
-    min-width: 45px;
+    min-width: 40px;
     padding: 6px 4px;
   }
   
