@@ -79,8 +79,11 @@ export default function Agenda() {
         const data = await response.json();
         setDias(data);
         
-        // Seleccionar automáticamente el primer día disponible
-        const primerDiaDisponible = data.find((d: DiaDisponible) => d.disponible);
+        // Seleccionar automáticamente el primer día disponible (desde hoy hacia adelante)
+        const hoyStr = new Date().toISOString().split('T')[0];
+        const primerDiaDisponible = data.find((d: DiaDisponible) => 
+          d.disponible && d.fecha >= hoyStr
+        );
         if (primerDiaDisponible) {
           setSelectedFecha(primerDiaDisponible.fecha);
         }
@@ -191,24 +194,17 @@ export default function Agenda() {
                 No hay profesionales disponibles para esta fecha.
               </div>
             ) : (
-              <>
-                {selectedFecha && (
-                  <div className={styles['fecha-seleccionada-container']}>
-                    <div className={styles['fecha-seleccionada-titulo-inline']}>
-                      📅 {formatearFechaCorta(selectedFecha)} - Horarios Disponibles
-                    </div>
-                  </div>
-                )}
-                <div className={styles['profesionales-container']}>
-                  {profesionales.map((profesional) => (
-                    <TarjetaProfesional
-                      key={profesional.profesionalId}
-                      profesional={profesional}
-                      onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
-                    />
-                  ))}
-                </div>
-              </>
+              <div className={styles['profesionales-container']}>
+                {profesionales.map((profesional) => (
+                  <TarjetaProfesional
+                    key={profesional.profesionalId}
+                    profesional={profesional}
+                    onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
+                    fechaSeleccionada={selectedFecha || undefined}
+                    formatearFechaCorta={formatearFechaCorta}
+                  />
+                ))}
+              </div>
             )}
 
             {/* Footer */}
