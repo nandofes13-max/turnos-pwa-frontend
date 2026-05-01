@@ -81,11 +81,11 @@ export default function Agenda() {
         
         // Seleccionar automáticamente el primer día disponible (desde hoy hacia adelante)
         const hoyStr = new Date().toISOString().split('T')[0];
-        const primerDiaDisponible = data.find((d: DiaDisponible) => 
+        const primerDiaDisponibile = data.find((d: DiaDisponible) => 
           d.disponible && d.fecha >= hoyStr
         );
-        if (primerDiaDisponible) {
-          setSelectedFecha(primerDiaDisponible.fecha);
+        if (primerDiaDisponibile) {
+          setSelectedFecha(primerDiaDisponibile.fecha);
         }
       } catch (error) {
         console.error('Error cargando días:', error);
@@ -136,7 +136,7 @@ export default function Agenda() {
 
   if (loading) {
     return (
-       <div className={`${inicioStyles['inicio-container']} ${styles['agenda-container']}`}>
+      <div className={inicioStyles['inicio-container']}>
         <div className={inicioStyles['inicio-left']}>
           <div className={inicioStyles['inicio-left-content']}>
             <div className={inicioStyles['inicio-card']}>
