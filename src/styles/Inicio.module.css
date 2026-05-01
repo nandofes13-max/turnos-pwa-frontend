@@ -79,7 +79,7 @@
 }
 
 .inicio-titulo {
-  font-size: var(--font-3xl);        /* = 1.875rem - IGUAL que Gestión de Filiales */
+  font-size: 1.3rem;
   font-weight: 500;
   color: var(--color-primary);       /* = #0056b3 - IGUAL que Gestión de Filiales */
   margin-bottom: 0.5rem;              /* Ajuste para que no se separe tanto */
