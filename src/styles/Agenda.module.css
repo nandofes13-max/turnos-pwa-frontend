@@ -216,9 +216,10 @@
 /* Ajustar ancho de la columna izquierda */
 .inicio-left {
   flex: 1;
-  max-width: 1000px;
-  margin: 0 auto;
+  max-width: 100%;        /* ← cambiar de 1000px a 100% */
+  margin: 0;              /* ← cambiar de 0 auto a 0 */
   width: 100%;
+  padding: 1rem;          /* ← agregar padding interno para que no quede pegado al borde */
 }
 
 /* Ajustar logo derecho para que coincida con otras pantallas */
