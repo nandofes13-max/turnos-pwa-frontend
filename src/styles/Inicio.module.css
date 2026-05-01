@@ -1,13 +1,5 @@
 @import './tablas-maestras.css';
 
-.inicio-left-content {
-  padding-top: 0;
-}
-
-.inicio-card {
-  padding-top: 0;
-}
-
 /* =============================================
    LAYOUT PRINCIPAL - DOS COLUMNAS
    ============================================= */
@@ -23,7 +15,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   padding: 2rem;
   background: white;
