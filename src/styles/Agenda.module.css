@@ -1,5 +1,5 @@
 /* =============================================
-   AGENDA - ESTILOS
+   AGENDA - ESTILOS COMPLETOS
    ============================================= */
 
 .seleccion-info {
@@ -13,52 +13,72 @@
 }
 
 /* =============================================
-   CARRUSEL DE DÍAS
+   CARRUSEL VERTICAL
    ============================================= */
 
-.carrusel-container {
+.carrusel-vertical-container {
   overflow-x: auto;
   margin: 1rem 0 1.5rem 0;
   padding-bottom: 8px;
 }
 
-.carrusel {
+.carrusel-vertical {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   min-width: min-content;
 }
 
-.dia-boton {
-  padding: 8px 16px;
-  border-radius: 50px;
-  font-size: 0.85rem;
+.dia-vertical-boton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding: 10px 8px;
+  border-radius: 12px;
   font-weight: 500;
-  white-space: nowrap;
   transition: all 0.2s ease;
   cursor: pointer;
+  gap: 4px;
 }
 
-.dia-habilitado {
+.dia-vertical-habilitado {
   background-color: #0066cc;
   color: white;
   border: none;
 }
 
-.dia-habilitado:hover {
+.dia-vertical-habilitado:hover {
   background-color: #0052a3;
-  transform: scale(1.02);
+  transform: scale(1.05);
 }
 
-.dia-deshabilitado {
+.dia-vertical-deshabilitado {
   background-color: #e0e0e0;
   color: #999;
   border: none;
   cursor: not-allowed;
 }
 
-.dia-seleccionado {
+.dia-vertical-seleccionado {
   background-color: #004499 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dia-vertical-semana {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.dia-vertical-numero {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.dia-vertical-mes {
+  font-size: 0.65rem;
+  text-transform: uppercase;
 }
 
 /* =============================================
@@ -77,6 +97,19 @@
   border-radius: 16px;
   padding: 16px;
   border: 1px solid #e0e0e0;
+}
+
+/* Título de fecha DENTRO de la tarjeta del profesional */
+.fecha-dentro-tarjeta {
+  background-color: #e9ecef;
+  color: #333;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 50px;
+  display: inline-block;
+  margin-bottom: 16px;
+  width: auto;
 }
 
 .profesional-info {
@@ -164,8 +197,52 @@
   color: #666;
 }
 
+/* =============================================
+   AJUSTES DE ANCHO Y LOGO
+   ============================================= */
+
+/* Ajustar ancho de la columna izquierda */
+.inicio-left {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Ajustar logo derecho para que coincida con otras pantallas */
+.inicio-right {
+  width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inicio-logo-desktop {
+  max-width: 200px;
+  height: auto;
+}
+
 /* Móvil */
 @media (max-width: 768px) {
+  .inicio-right {
+    display: none;
+  }
+  
+  .fecha-dentro-tarjeta {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    margin-bottom: 12px;
+  }
+  
+  .dia-vertical-boton {
+    min-width: 50px;
+    padding: 8px 6px;
+  }
+  
+  .dia-vertical-numero {
+    font-size: 1rem;
+  }
+  
   .profesional-foto {
     width: 50px;
     height: 50px;
@@ -178,129 +255,5 @@
   .slot-boton {
     padding: 6px 12px;
     font-size: 0.75rem;
-  }
-  
-  .dia-boton {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-  }
-}
-/* =============================================
-   CARRUSEL VERTICAL
-   ============================================= */
-
-.carrusel-vertical-container {
-  overflow-x: auto;
-  margin: 1rem 0 1.5rem 0;
-  padding-bottom: 8px;
-}
-
-.carrusel-vertical {
-  display: flex;
-  gap: 12px;
-  min-width: min-content;
-}
-
-.dia-vertical-boton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 60px;
-  padding: 10px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  gap: 4px;
-}
-
-.dia-vertical-habilitado {
-  background-color: #0066cc;
-  color: white;
-  border: none;
-}
-
-.dia-vertical-habilitado:hover {
-  background-color: #0052a3;
-  transform: scale(1.05);
-}
-
-.dia-vertical-deshabilitado {
-  background-color: #e0e0e0;
-  color: #999;
-  border: none;
-  cursor: not-allowed;
-}
-
-.dia-vertical-seleccionado {
-  background-color: #004499 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.dia-vertical-semana {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.dia-vertical-numero {
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.dia-vertical-mes {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-}
-
-/* =============================================
-   TÍTULO FECHA SELECCIONADA
-   ============================================= */
-
-.fecha-seleccionada-titulo {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 1rem 0 1rem 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #0066cc;
-  display: inline-block;
-}
-
-/* Móvil */
-@media (max-width: 768px) {
-  .dia-vertical-boton {
-    min-width: 50px;
-    padding: 8px 6px;
-  }
-  
-  .dia-vertical-numero {
-    font-size: 1rem;
-  }
-  
-  .fecha-seleccionada-titulo {
-    font-size: 0.9rem;
-  }
-}
-.fecha-seleccionada-container {
-  margin-bottom: 1rem;
-}
-
-.fecha-seleccionada-titulo-inline {
-  background-color: #f0f0f0;
-  color: #333;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 10px 16px;
-  border-radius: 50px;
-  display: inline-block;
-  margin: 0;
-}
-
-@media (max-width: 768px) {
-  .fecha-seleccionada-titulo-inline {
-    font-size: 0.8rem;
-    padding: 8px 12px;
   }
 }
