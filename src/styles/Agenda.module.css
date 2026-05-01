@@ -201,12 +201,13 @@
    AJUSTES DE ANCHO Y LOGO
    ============================================= */
 
-/* Ajustar ancho de la columna izquierda */
+/* Ajustar ancho de la columna izquierda - SIN MÁRGENES LATERALES */
 .inicio-left {
   flex: 1;
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   width: 100%;
+  padding: 1rem;
 }
 
 /* Ajustar logo derecho para que coincida con otras pantallas */
@@ -222,7 +223,9 @@
   height: auto;
 }
 
-/* Móvil */
+/* =============================================
+   MÓVIL
+   ============================================= */
 @media (max-width: 768px) {
   .inicio-right {
     display: none;
