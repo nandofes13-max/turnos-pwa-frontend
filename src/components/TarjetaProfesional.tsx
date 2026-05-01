@@ -78,5 +78,5 @@ export default function TarjetaProfesional({
         )}
       </div>
     </div>
-  );  );
+  );
 }
