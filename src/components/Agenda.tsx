@@ -52,15 +52,15 @@ export default function Agenda() {
     return { desde, hasta: hasta.toISOString().split('T')[0] };
   };
 
- // Formatear fecha como "Dom 03/05/26"
-const formatearFechaCorta = (fechaStr: string) => {
-  const fecha = new Date(fechaStr);
-  const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short' }).toUpperCase().replace('.', '');
-  const dia = fecha.getDate().toString().padStart(2, '0');
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-  const anio = fecha.getFullYear().toString().slice(-2);
-  return `${diaSemana} ${dia}/${mes}/${anio}`;
-};
+  // Formatear fecha como "Dom 03/05/26"
+  const formatearFechaCorta = (fechaStr: string) => {
+    const fecha = new Date(fechaStr);
+    const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short' }).toUpperCase().replace('.', '');
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fecha.getFullYear().toString().slice(-2);
+    return `${diaSemana} ${dia}/${mes}/${anio}`;
+  };
 
   // Cargar días disponibles al montar el componente
   useEffect(() => {
@@ -79,13 +79,19 @@ const formatearFechaCorta = (fechaStr: string) => {
         const data = await response.json();
         setDias(data);
         
-        // Seleccionar automáticamente el primer día disponible (desde hoy hacia adelante)
-        const hoyStr = new Date().toISOString().split('T')[0];
-        const primerDiaDisponibile = data.find((d: DiaDisponible) => 
-          d.disponible && d.fecha >= hoyStr
-        );
-        if (primerDiaDisponibile) {
-          setSelectedFecha(primerDiaDisponibile.fecha);
+        // Seleccionar el primer día disponible (desde hoy hacia adelante)
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        const primerDiaDisponible = data.find((d: DiaDisponible) => {
+          const fechaDia = new Date(d.fecha);
+          return d.disponible === true && fechaDia >= hoy;
+        });
+        
+        if (primerDiaDisponible) {
+          setSelectedFecha(primerDiaDisponible.fecha);
+        } else {
+          setSelectedFecha(null);
         }
       } catch (error) {
         console.error('Error cargando días:', error);
