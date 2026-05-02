@@ -25,6 +25,12 @@ const formatearDiaVertical = (fechaStr: string) => {
 };
 
 export default function CarruselDias({ dias, selectedFecha, onDiaSeleccionado }: CarruselDiasProps) {
+  // Log para depurar los valores de disponibilidad
+  console.log('=== CarruselDias - días disponibles ===');
+  dias.forEach(dia => {
+    console.log(`Fecha: ${dia.fecha}, disponible: ${dia.disponible}, diaSemana: ${dia.diaSemana}`);
+  });
+  
   return (
     <div className={styles['carrusel-vertical-container']}>
       <div className={styles['carrusel-vertical']}>
