@@ -27,7 +27,7 @@ export default function TarjetaProfesional({
   formatearFechaCorta 
 }: TarjetaProfesionalProps) {
   const [verTodos, setVerTodos] = useState(false);
-  const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 6);
+  const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 7);
   const hayMas = profesional.slots.length > 6;
 
   const fotoUrl = profesional.foto || 'https://via.placeholder.com/80?text=Sin+foto';
