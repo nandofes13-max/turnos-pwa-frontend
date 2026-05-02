@@ -77,22 +77,32 @@ export default function Agenda() {
         }
         
         const data = await response.json();
-        setDias(data);
-        
-        // Seleccionar el primer día disponible (desde hoy hacia adelante)
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
-        const primerDiaDisponible = data.find((d: DiaDisponible) => {
-          const fechaDia = new Date(d.fecha);
-          return d.disponible === true && fechaDia >= hoy;
-        });
-        
-        if (primerDiaDisponible) {
-          setSelectedFecha(primerDiaDisponible.fecha);
-        } else {
-          setSelectedFecha(null);
-        }
+       setDias(data);
+
+console.log('=== Días recibidos del backend ===');
+console.log('Primer día de la lista:', data[0]);
+console.log('Primer día disponible (sin filtrar fecha):', data.find((d: DiaDisponible) => d.disponible === true));
+
+// Seleccionar el primer día disponible (desde hoy hacia adelante)
+const hoy = new Date();
+hoy.setHours(0, 0, 0, 0);
+
+const primerDiaDisponible = data.find((d: DiaDisponible) => {
+  const fechaDia = new Date(d.fecha);
+  const esDisponible = d.disponible === true;
+  const esPosterior = fechaDia >= hoy;
+  return esDisponible && esPosterior;
+});
+
+console.log('Primer día disponible (con filtro):', primerDiaDisponible);
+
+if (primerDiaDisponible) {
+  console.log('✅ Seleccionando fecha:', primerDiaDisponible.fecha);
+  setSelectedFecha(primerDiaDisponible.fecha);
+} else {
+  console.log('❌ No hay días disponibles');
+  setSelectedFecha(null);
+}
       } catch (error) {
         console.error('Error cargando días:', error);
       } finally {
