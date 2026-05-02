@@ -17,10 +17,16 @@ const nombresDias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const nombresMeses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 const formatearDiaVertical = (fechaStr: string) => {
-  const fecha = new Date(fechaStr);
-  const diaSemana = nombresDias[fecha.getDay()];
-  const dia = fecha.getDate();
-  const mes = nombresMeses[fecha.getMonth()];
+  // Extraer año, mes, día directamente del string "YYYY-MM-DD"
+  const [year, month, day] = fechaStr.split('-').map(Number);
+  
+  // Crear fecha en UTC para evitar problemas de zona horaria
+  const fecha = new Date(Date.UTC(year, month - 1, day));
+  
+  const diaSemana = nombresDias[fecha.getUTCDay()];
+  const dia = day;
+  const mes = nombresMeses[month - 1];
+  
   return { diaSemana, dia, mes };
 };
 
