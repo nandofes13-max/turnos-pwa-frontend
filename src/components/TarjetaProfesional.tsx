@@ -47,12 +47,13 @@ export default function TarjetaProfesional({
         />
         <div className={styles['profesional-datos']}>
           <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
-          {especialidadNombre && (
-            <div className={styles['profesional-especialidad']}>Especialidad: {especialidadNombre}</div>
-          )}
-          {centroNombre && (
-            <div className={styles['profesional-centro']}>Centro: {centroNombre}</div>
-          )}
+          {(especialidadNombre || centroNombre) && (
+  <div className={styles['profesional-especialidad-centro']}>
+    {especialidadNombre && <span>Especialidad: {especialidadNombre}</span>}
+    {especialidadNombre && centroNombre && <span className={styles['separador']}> | </span>}
+    {centroNombre && <span>Centro: {centroNombre}</span>}
+  </div>
+)}
           {profesional.descripcion && (
             <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
           )}
