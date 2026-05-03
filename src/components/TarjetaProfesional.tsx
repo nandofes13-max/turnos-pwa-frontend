@@ -18,17 +18,21 @@ interface TarjetaProfesionalProps {
   onSlotSeleccionado: (hora: string) => void;
   fechaSeleccionada?: string;
   formatearFechaCorta?: (fecha: string) => string;
+  especialidadNombre?: string;
+  centroNombre?: string;
 }
 
 export default function TarjetaProfesional({ 
   profesional, 
   onSlotSeleccionado, 
   fechaSeleccionada,
-  formatearFechaCorta 
+  formatearFechaCorta,
+  especialidadNombre,
+  centroNombre
 }: TarjetaProfesionalProps) {
   const [verTodos, setVerTodos] = useState(false);
   const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 7);
-  const hayMas = profesional.slots.length > 6;
+  const hayMas = profesional.slots.length > 7;
 
   const fotoUrl = profesional.foto || 'https://via.placeholder.com/80?text=Sin+foto';
 
@@ -43,6 +47,12 @@ export default function TarjetaProfesional({
         />
         <div className={styles['profesional-datos']}>
           <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
+          {especialidadNombre && (
+            <div className={styles['profesional-especialidad']}>Especialidad: {especialidadNombre}</div>
+          )}
+          {centroNombre && (
+            <div className={styles['profesional-centro']}>Centro: {centroNombre}</div>
+          )}
           {profesional.descripcion && (
             <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
           )}
