@@ -222,14 +222,15 @@
   }
 }
 
-   .profesional-especialidad {
-  font-size: 0.65rem;
-  color: #555;
-  margin-bottom: 2px;
-}
-
-.profesional-centro {
+ .profesional-especialidad-centro {
   font-size: 0.65rem;
   color: #555;
   margin-bottom: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.separador {
+  color: #999;
 }
