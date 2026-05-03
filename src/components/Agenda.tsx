@@ -53,15 +53,15 @@ export default function Agenda() {
   };
 
   // Formatear fecha como "LUN 04/05/26"
-const formatearFechaCorta = (fechaStr: string) => {
-  const [year, month, day] = fechaStr.split('-').map(Number);
-  const fecha = new Date(Date.UTC(year, month - 1, day));
-  const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short', timeZone: 'UTC' }).toUpperCase().replace('.', '');
-  const dia = day.toString().padStart(2, '0');
-  const mes = month.toString().padStart(2, '0');
-  const anio = year.toString().slice(-2);
-  return `${diaSemana} ${dia}/${mes}/${anio}`;
-};
+  const formatearFechaCorta = (fechaStr: string) => {
+    const [year, month, day] = fechaStr.split('-').map(Number);
+    const fecha = new Date(Date.UTC(year, month - 1, day));
+    const diaSemana = fecha.toLocaleDateString('es-AR', { weekday: 'short', timeZone: 'UTC' }).toUpperCase().replace('.', '');
+    const dia = day.toString().padStart(2, '0');
+    const mes = month.toString().padStart(2, '0');
+    const anio = year.toString().slice(-2);
+    return `${diaSemana} ${dia}/${mes}/${anio}`;
+  };
 
   // Cargar días disponibles al montar el componente
   useEffect(() => {
@@ -78,32 +78,32 @@ const formatearFechaCorta = (fechaStr: string) => {
         }
         
         const data = await response.json();
-       setDias(data);
+        setDias(data);
 
-console.log('=== Días recibidos del backend ===');
-console.log('Primer día de la lista:', data[0]);
-console.log('Primer día disponible (sin filtrar fecha):', data.find((d: DiaDisponible) => d.disponible === true));
+        console.log('=== Días recibidos del backend ===');
+        console.log('Primer día de la lista:', data[0]);
+        console.log('Primer día disponible (sin filtrar fecha):', data.find((d: DiaDisponible) => d.disponible === true));
 
-// Seleccionar el primer día disponible (desde hoy hacia adelante)
-const hoy = new Date();
-hoy.setHours(0, 0, 0, 0);
+        // Seleccionar el primer día disponible (desde hoy hacia adelante)
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
 
-const primerDiaDisponible = data.find((d: DiaDisponible) => {
-  const fechaDia = new Date(d.fecha);
-  const esDisponible = d.disponible === true;
-  const esPosterior = fechaDia >= hoy;
-  return esDisponible && esPosterior;
-});
+        const primerDiaDisponible = data.find((d: DiaDisponible) => {
+          const fechaDia = new Date(d.fecha);
+          const esDisponible = d.disponible === true;
+          const esPosterior = fechaDia >= hoy;
+          return esDisponible && esPosterior;
+        });
 
-console.log('Primer día disponible (con filtro):', primerDiaDisponible);
+        console.log('Primer día disponible (con filtro):', primerDiaDisponible);
 
-if (primerDiaDisponible) {
-  console.log('✅ Seleccionando fecha:', primerDiaDisponible.fecha);
-  setSelectedFecha(primerDiaDisponible.fecha);
-} else {
-  console.log('❌ No hay días disponibles');
-  setSelectedFecha(null);
-}
+        if (primerDiaDisponible) {
+          console.log('✅ Seleccionando fecha:', primerDiaDisponible.fecha);
+          setSelectedFecha(primerDiaDisponible.fecha);
+        } else {
+          console.log('❌ No hay días disponibles');
+          setSelectedFecha(null);
+        }
       } catch (error) {
         console.error('Error cargando días:', error);
       } finally {
@@ -219,6 +219,8 @@ if (primerDiaDisponible) {
                     onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
                     fechaSeleccionada={selectedFecha || undefined}
                     formatearFechaCorta={formatearFechaCorta}
+                    especialidadNombre={especialidadNombre}
+                    centroNombre={centroNombre}
                   />
                 ))}
               </div>
