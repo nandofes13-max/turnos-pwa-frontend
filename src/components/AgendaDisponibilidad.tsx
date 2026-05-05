@@ -749,9 +749,8 @@ export default function AgendaDisponibilidad() {
                   <strong> Vigencia:</strong> {formatVigencia()}
                 </span>
                 <span style={{ fontSize: '12px', color: '#666' }}>
-                  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'} 
-                  {bloque.timezone && ` | Zona horaria: ${formatearTimezone(bloque.timezone)}`}
-                </span>
+  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'}
+</span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button 
