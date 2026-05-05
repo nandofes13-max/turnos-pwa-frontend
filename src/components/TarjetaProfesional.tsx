@@ -20,7 +20,20 @@ interface TarjetaProfesionalProps {
   formatearFechaCorta?: (fecha: string) => string;
   especialidadNombre?: string;
   centroNombre?: string;
+  centroTimezone?: string;  // 🔹 NUEVO: zona horaria del centro
 }
+
+// 🔹 Función para formatear timezone de forma amigable
+const formatearTimezone = (tz: string | undefined): string => {
+  if (!tz) return '';
+  const parts = tz.split('/');
+  const city = parts[parts.length - 1].replace(/_/g, ' ');
+  const region = parts.length > 1 ? parts[parts.length - 2] : '';
+  if (region && region !== city) {
+    return `${city} (${region})`;
+  }
+  return `${city}`;
+};
 
 export default function TarjetaProfesional({ 
   profesional, 
@@ -28,13 +41,17 @@ export default function TarjetaProfesional({
   fechaSeleccionada,
   formatearFechaCorta,
   especialidadNombre,
-  centroNombre
+  centroNombre,
+  centroTimezone  // 🔹 NUEVO
 }: TarjetaProfesionalProps) {
   const [verTodos, setVerTodos] = useState(false);
   const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 7);
   const hayMas = profesional.slots.length > 7;
 
   const fotoUrl = profesional.foto || 'https://via.placeholder.com/80?text=Sin+foto';
+
+  // 🔹 Texto de zona horaria para mostrar
+  const timezoneText = centroTimezone ? formatearTimezone(centroTimezone) : '';
 
   return (
     <div className={styles['tarjeta-profesional']}>
@@ -48,12 +65,18 @@ export default function TarjetaProfesional({
         <div className={styles['profesional-datos']}>
           <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
           {(especialidadNombre || centroNombre) && (
-  <div className={styles['profesional-especialidad-centro']}>
-    {especialidadNombre && <span>Especialidad: {especialidadNombre}</span>}
-    {especialidadNombre && centroNombre && <span className={styles['separador']}> | </span>}
-    {centroNombre && <span>Centro: {centroNombre}</span>}
-  </div>
-)}
+            <div className={styles['profesional-especialidad-centro']}>
+              {especialidadNombre && <span>Especialidad: {especialidadNombre}</span>}
+              {especialidadNombre && centroNombre && <span className={styles['separador']}> | </span>}
+              {centroNombre && <span>Centro: {centroNombre}</span>}
+            </div>
+          )}
+          {/* 🔹 NUEVO: Mostrar zona horaria debajo del centro */}
+          {centroNombre && timezoneText && (
+            <div className={styles['profesional-timezone']} style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+              🕒 Zona horaria: {timezoneText} ({centroTimezone})
+            </div>
+          )}
           {profesional.descripcion && (
             <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
           )}
