@@ -25,6 +25,7 @@ interface Negocio {
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
+  timezone?: string;  // ← AGREGADO
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -361,6 +362,7 @@ export default function Negocios() {
           latitude: confirmReactivar.latitude,
           longitude: confirmReactivar.longitude,
           formatted_address: confirmReactivar.formatted_address,
+          timezone: confirmReactivar.timezone,
           fecha_baja: null,
           usuario_baja: null
         }),
@@ -517,7 +519,7 @@ export default function Negocios() {
                   <th className="tm-col-whatsapp">WHATSAPP</th>
                   <th className="tm-col-domicilio">DOMICILIO</th>
                   <th>ACCIONES</th>
-                </tr>  
+                </tr>
                 </thead>
               <tbody>
                 {negociosPaginados.map((n) => (
@@ -720,6 +722,20 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
+            {/* ZONA HORARIA (solo lectura) */}
+            <div className="tm-modal-campo">
+              <label className="tm-modal-label">Zona Horaria</label>
+              <input
+                type="text"
+                value={selectedNegocio.timezone || 'America/Argentina/Buenos_Aires'}
+                disabled
+                className="tm-modal-input bg-gray-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Determinada automáticamente por la dirección del negocio.
+              </p>
+            </div>
+
             {/* DOMICILIO ACTUAL (solo lectura) */}
             {selectedNegocio.street && (
               <div className="tm-modal-campo">
@@ -729,9 +745,9 @@ export default function Negocios() {
                     {formatearDireccion(selectedNegocio)}
                   </p>
                   <p className="tm-coordenadas-texto">
-  Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
-  Lng: {Number(selectedNegocio.longitude).toFixed(6)}
-</p>
+                    Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
+                    Lng: {Number(selectedNegocio.longitude).toFixed(6)}
+                  </p>
                 </div>
               </div>
             )}
@@ -782,6 +798,10 @@ export default function Negocios() {
               <span className="tm-modal-detalle-label">WhatsApp</span>
               <p className="tm-modal-detalle-valor">{selectedNegocio.whatsapp_e164}</p>
             </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">Zona Horaria</span>
+              <p className="tm-modal-detalle-valor">{selectedNegocio.timezone || 'America/Argentina/Buenos_Aires'}</p>
+            </div>
             {selectedNegocio.street && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">Domicilio</span>
@@ -789,9 +809,9 @@ export default function Negocios() {
                   {formatearDireccion(selectedNegocio)}
                 </p>
                 <p className="tm-modal-detalle-valor text-xs text-gray-500">
-  Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
-  Lng: {Number(selectedNegocio.longitude).toFixed(6)}
-</p>
+                  Lat: {Number(selectedNegocio.latitude).toFixed(6)}, 
+                  Lng: {Number(selectedNegocio.longitude).toFixed(6)}
+                </p>
               </div>
             )}
             <div className={`tm-modal-detalle-movimiento ${selectedNegocio.fecha_baja ? 'inactivo' : 'activo'}`}>
