@@ -66,25 +66,25 @@ export default function TarjetaProfesional({
   <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
   
   {centroNombre && (
-    <div className={styles['profesional-centro']} style={{ fontSize: '14px', color: '#555', marginTop: '4px' }}>
+    <div className={styles['profesional-centro']} style={{ fontSize: '10px', color: '#555', marginTop: '4px' }}>
       Centro: {centroNombre}
     </div>
   )}
   
   {centroNombre && timezoneText && (
-    <div className={styles['profesional-timezone']} style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+    <div className={styles['profesional-timezone']} style={{ fontSize: '8px', color: '#666', marginTop: '2px' }}>
       🕒 Zona horaria: {timezoneText}
     </div>
   )}
   
   {especialidadNombre && (
-    <div className={styles['profesional-especialidad']} style={{ fontSize: '13px', color: '#444', marginTop: '8px' }}>
+    <div className={styles['profesional-especialidad']} style={{ fontSize: '10px', color: '#444', marginTop: '8px' }}>
       Especialidad: {especialidadNombre}
     </div>
   )}
   
   {profesional.descripcion && (
-    <div className={styles['profesional-descripcion']} style={{ fontSize: '12px', color: '#666', marginTop: '4px', fontStyle: 'italic' }}>
+    <div className={styles['profesional-descripcion']} style={{ fontSize: '10px', color: '#666', marginTop: '4px'}}>
       {profesional.descripcion}
     </div>
   )}
