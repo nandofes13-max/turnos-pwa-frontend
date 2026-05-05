@@ -63,24 +63,32 @@ export default function TarjetaProfesional({
           onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80?text=Sin+foto'; }}
         />
         <div className={styles['profesional-datos']}>
-          <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
-          {(especialidadNombre || centroNombre) && (
-            <div className={styles['profesional-especialidad-centro']}>
-              {especialidadNombre && <span>Especialidad: {especialidadNombre}</span>}
-              {especialidadNombre && centroNombre && <span className={styles['separador']}> | </span>}
-              {centroNombre && <span>Centro: {centroNombre}</span>}
-            </div>
-          )}
-          {/* 🔹 NUEVO: Mostrar zona horaria debajo del centro */}
-          {centroNombre && timezoneText && (
-            <div className={styles['profesional-timezone']} style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
-              🕒 Zona horaria: {timezoneText}
-            </div>
-          )}
-          {profesional.descripcion && (
-            <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
-          )}
-        </div>
+  <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
+  
+  {centroNombre && (
+    <div className={styles['profesional-centro']} style={{ fontSize: '14px', color: '#555', marginTop: '4px' }}>
+      Centro: {centroNombre}
+    </div>
+  )}
+  
+  {centroNombre && timezoneText && (
+    <div className={styles['profesional-timezone']} style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+      🕒 Zona horaria: {timezoneText}
+    </div>
+  )}
+  
+  {especialidadNombre && (
+    <div className={styles['profesional-especialidad']} style={{ fontSize: '13px', color: '#444', marginTop: '8px' }}>
+      Especialidad: {especialidadNombre}
+    </div>
+  )}
+  
+  {profesional.descripcion && (
+    <div className={styles['profesional-descripcion']} style={{ fontSize: '12px', color: '#666', marginTop: '4px', fontStyle: 'italic' }}>
+      {profesional.descripcion}
+    </div>
+  )}
+</div>
       </div>
 
       {/* Título de fecha debajo de la foto y descripción */}
