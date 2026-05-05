@@ -12,6 +12,7 @@ interface ProfesionalCentro {
     nombre: string;
     codigo: string;
     formatted_address?: string;
+    timezone?: string;
     negocio: { id: number; nombre: string; url: string };
   };
 }
@@ -26,6 +27,7 @@ interface BloqueHorario {
   fechaHasta: string | null;
   horarios: string[];
   fecha_baja?: string | null;
+  timezone?: string;  // 🔹 AGREGADO
 }
 
 interface SlotBackend {
@@ -125,6 +127,18 @@ const ordenarBloques = (bloques: BloqueHorario[]): BloqueHorario[] => {
     }
     return a.horaDesde.localeCompare(b.horaDesde);
   });
+};
+
+// 🔹 Función para formatear timezone de forma amigable
+const formatearTimezone = (tz: string | undefined): string => {
+  if (!tz) return 'No definida';
+  const parts = tz.split('/');
+  const city = parts[parts.length - 1].replace(/_/g, ' ');
+  const region = parts.length > 1 ? parts[parts.length - 2] : '';
+  if (region && region !== city) {
+    return `${city} (${region}) - ${tz}`;
+  }
+  return `${city} - ${tz}`;
 };
 
 export default function AgendaDisponibilidad() {
@@ -240,7 +254,8 @@ export default function AgendaDisponibilidad() {
           fechaDesde: ag.fechaDesde,
           fechaHasta: ag.fechaHasta,
           horarios: horarios,
-          fecha_baja: ag.fecha_baja
+          fecha_baja: ag.fecha_baja,
+          timezone: ag.timezone,  // 🔹 AGREGADO: guardar timezone del backend
         });
       }
       
@@ -374,6 +389,9 @@ export default function AgendaDisponibilidad() {
     
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
+    // 🔹 Usar el timezone del centro para el nuevo bloque
+    const timezoneDelCentro = relacion?.centro.timezone || 'America/Argentina/Buenos_Aires';
+    
     const nuevoBloque: BloqueHorario = {
       diaSemana: nuevoDiaBD,
       horaDesde: nuevoDesde,
@@ -382,7 +400,8 @@ export default function AgendaDisponibilidad() {
       fechaDesde: nuevaFechaDesde,
       fechaHasta: fechaHastaFinal,
       horarios: horarios,
-      fecha_baja: null
+      fecha_baja: null,
+      timezone: timezoneDelCentro,  // 🔹 AGREGADO
     };
     
     const nuevosBloques = ordenarBloques([...bloques, nuevoBloque]);
@@ -494,6 +513,7 @@ export default function AgendaDisponibilidad() {
         fechaDesde: bloque.fechaDesde,
         fechaHasta: bloque.fechaHasta,
         fecha_baja: bloque.fecha_baja,
+        timezone: bloque.timezone,  // 🔹 AGREGADO: enviar timezone al backend
         diasHabilitados: bloque.diasHabilitados
       }))
     };
@@ -565,6 +585,11 @@ export default function AgendaDisponibilidad() {
           </p>
           <p className="agenda-info-item">
             <span className="agenda-info-label">Centro:</span> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}
+            {relacion?.centro.timezone && (
+              <span style={{ marginLeft: '8px', backgroundColor: '#e3f2fd', padding: '2px 8px', borderRadius: '12px', fontSize: '12px' }}>
+                🕒 Zona horaria: {formatearTimezone(relacion.centro.timezone)}
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -724,7 +749,8 @@ export default function AgendaDisponibilidad() {
                   <strong> Vigencia:</strong> {formatVigencia()}
                 </span>
                 <span style={{ fontSize: '12px', color: '#666' }}>
-                  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'}
+                  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'} 
+                  {bloque.timezone && ` | Zona horaria: ${formatearTimezone(bloque.timezone)}`}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
