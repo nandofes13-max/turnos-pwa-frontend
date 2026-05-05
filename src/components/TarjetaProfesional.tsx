@@ -73,7 +73,7 @@ export default function TarjetaProfesional({
           )}
           {/* 🔹 NUEVO: Mostrar zona horaria debajo del centro */}
           {centroNombre && timezoneText && (
-            <div className={styles['profesional-timezone']} style={{ fontSize: '8px', color: '#666', marginTop: '4px' }}>
+            <div className={styles['profesional-timezone']} style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
               🕒 Zona horaria: {timezoneText}
             </div>
           )}
