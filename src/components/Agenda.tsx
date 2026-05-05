@@ -41,6 +41,25 @@ export default function Agenda() {
   const [loading, setLoading] = useState(true);
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
+  const [centroTimezone, setCentroTimezone] = useState<string>('');  // 🔹 NUEVO
+
+  // 🔹 NUEVO: Cargar el centro para obtener su timezone
+  useEffect(() => {
+    const cargarCentro = async () => {
+      if (!centroId) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/centros/${centroId}`);
+        if (response.ok) {
+          const centro = await response.json();
+          setCentroTimezone(centro.timezone || '');
+          console.log('Timezone del centro cargado:', centro.timezone);
+        }
+      } catch (error) {
+        console.error('Error cargando centro:', error);
+      }
+    };
+    cargarCentro();
+  }, [centroId]);
 
   // Generar rango de 30 días desde hoy
   const generarRangoFechas = () => {
@@ -221,6 +240,7 @@ export default function Agenda() {
                     formatearFechaCorta={formatearFechaCorta}
                     especialidadNombre={especialidadNombre}
                     centroNombre={centroNombre}
+                    centroTimezone={centroTimezone}  // 🔹 NUEVO: pasar timezone
                   />
                 ))}
               </div>
