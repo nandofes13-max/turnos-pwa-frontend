@@ -741,35 +741,37 @@ export default function AgendaDisponibilidad() {
         
         return (
           <div key={idx} className="agenda-bloque">
-            <div className="agenda-bloque-header">
-              <div className="agenda-bloque-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                <span>
-                  <strong>{nombreDia}:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
-                  <strong> Duración:</strong> {bloque.duracionTurno} min | 
-                  <strong> Vigencia:</strong> {formatVigencia()}
-                </span>
-                <span style={{ fontSize: '12px', color: '#666' }}>
-                  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'} 
-                  {bloque.timezone && ` | Zona horaria: ${formatearTimezone(bloque.timezone)}`}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={() => toggleExpandirBloque(idx)} 
-                  className="tm-btn-secundario" 
-                  style={{ padding: '4px 12px' }}
-                >
-                  {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
-                </button>
-                <button 
-                  onClick={() => toggleActivarBloque(idx)} 
-                  className={estaActivo ? 'tm-btn-estado-activo' : 'tm-btn-estado-inactivo'}
-                  title={estaActivo ? 'Haga click para desactivar este bloque' : 'Haga click para activar este bloque'}
-                >
-                  {estaActivo ? 'Activo' : 'Inactivo'}
-                </button>
-              </div>
-            </div>
+            <div className="agenda-bloque-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+  <div className="agenda-bloque-info">
+    <span>
+      <strong>{nombreDia}:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
+      <strong> Duración:</strong> {bloque.duracionTurno} min | 
+      <strong> Vigencia:</strong> {formatVigencia()}
+    </span>
+  </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+    <span style={{ fontSize: '12px', color: '#666' }}>
+      ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'} 
+      {bloque.timezone && ` | Zona horaria: ${formatearTimezone(bloque.timezone)}`}
+    </span>
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <button 
+        onClick={() => toggleExpandirBloque(idx)} 
+        className="tm-btn-secundario" 
+        style={{ padding: '4px 12px' }}
+      >
+        {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
+      </button>
+      <button 
+        onClick={() => toggleActivarBloque(idx)} 
+        className={estaActivo ? 'tm-btn-estado-activo' : 'tm-btn-estado-inactivo'}
+        title={estaActivo ? 'Haga click para desactivar este bloque' : 'Haga click para activar este bloque'}
+      >
+        {estaActivo ? 'Activo' : 'Inactivo'}
+      </button>
+    </div>
+  </div>
+</div>
             
             {estaExpandido && (
               <div className="agenda-grilla">
