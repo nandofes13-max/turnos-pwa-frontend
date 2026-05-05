@@ -20,10 +20,10 @@ interface TarjetaProfesionalProps {
   formatearFechaCorta?: (fecha: string) => string;
   especialidadNombre?: string;
   centroNombre?: string;
-  centroTimezone?: string;  // 🔹 NUEVO: zona horaria del centro
+  centroTimezone?: string;
 }
 
-// 🔹 Función para formatear timezone de forma amigable
+// Función para formatear timezone de forma amigable
 const formatearTimezone = (tz: string | undefined): string => {
   if (!tz) return '';
   const parts = tz.split('/');
@@ -42,15 +42,13 @@ export default function TarjetaProfesional({
   formatearFechaCorta,
   especialidadNombre,
   centroNombre,
-  centroTimezone  // 🔹 NUEVO
+  centroTimezone
 }: TarjetaProfesionalProps) {
   const [verTodos, setVerTodos] = useState(false);
   const slotsMostrar = verTodos ? profesional.slots : profesional.slots.slice(0, 7);
   const hayMas = profesional.slots.length > 7;
 
   const fotoUrl = profesional.foto || 'https://via.placeholder.com/80?text=Sin+foto';
-
-  // 🔹 Texto de zona horaria para mostrar
   const timezoneText = centroTimezone ? formatearTimezone(centroTimezone) : '';
 
   return (
@@ -62,33 +60,33 @@ export default function TarjetaProfesional({
           className={styles['profesional-foto']}
           onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80?text=Sin+foto'; }}
         />
-       <div className={styles['profesional-datos']}>
-  <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
-  
-  {centroNombre && (
-    <div className={styles['profesional-especialidad-centro']}>
-      Centro: {centroNombre}
-    </div>
-  )}
-  
-  {centroNombre && timezoneText && (
-    <div className={styles['profesional-especialidad-centro']}>
-      🕒 Zona horaria: {timezoneText}
-    </div>
-  )}
-  
-  {especialidadNombre && (
-    <div className={styles['profesional-especialidad-centro']}>
-      Especialidad: {especialidadNombre}
-    </div>
-  )}
-  
-  {profesional.descripcion && (
-    <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
-  )}
-</div>
-    
-      {/* Título de fecha debajo de la foto y descripción */}
+        <div className={styles['profesional-datos']}>
+          <div className={styles['profesional-nombre']}>{profesional.nombre}</div>
+          
+          {centroNombre && (
+            <div className={styles['profesional-especialidad-centro']}>
+              Centro: {centroNombre}
+            </div>
+          )}
+          
+          {centroNombre && timezoneText && (
+            <div className={styles['profesional-especialidad-centro']}>
+              🕒 Zona horaria: {timezoneText}
+            </div>
+          )}
+          
+          {especialidadNombre && (
+            <div className={styles['profesional-especialidad-centro']}>
+              Especialidad: {especialidadNombre}
+            </div>
+          )}
+          
+          {profesional.descripcion && (
+            <div className={styles['profesional-descripcion']}>{profesional.descripcion}</div>
+          )}
+        </div>
+      </div>
+
       {fechaSeleccionada && formatearFechaCorta && (
         <div className={styles['fecha-dentro-tarjeta']}>
           {formatearFechaCorta(fechaSeleccionada)} - Horarios Disponibles
