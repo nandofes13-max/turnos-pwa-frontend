@@ -583,13 +583,14 @@ export default function AgendaDisponibilidad() {
             <span className="agenda-info-label"> Especialidad:</span> {relacion?.especialidad.nombre} | 
             <span className="agenda-info-label"> Profesional:</span> {relacion?.profesional.nombre} (DNI: {relacion?.profesional.documento})
           </p>
-          <p className="agenda-info-item">
+         <p className="agenda-info-item">
   <span className="agenda-info-label">Centro:</span> {relacion?.centro.codigo} - {relacion?.centro.nombre} - {relacion?.centro.formatted_address || 'Sin domicilio'}
 </p>
 {relacion?.centro.timezone && (
   <p className="agenda-info-item" style={{ marginTop: '4px' }}>
     <span className="agenda-info-label">🕒 Zona horaria:</span> {formatearTimezone(relacion.centro.timezone)}
-  </p> 
+  </p>
+)}
   </div>
       </div>
 
