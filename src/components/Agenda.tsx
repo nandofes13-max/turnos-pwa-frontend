@@ -41,9 +41,9 @@ export default function Agenda() {
   const [loading, setLoading] = useState(true);
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
-  const [centroTimezone, setCentroTimezone] = useState<string>('');  // 🔹 NUEVO
+  const [centroTimezone, setCentroTimezone] = useState<string>('');
 
-  // 🔹 NUEVO: Cargar el centro para obtener su timezone
+  // Cargar el centro para obtener su timezone
   useEffect(() => {
     const cargarCentro = async () => {
       if (!centroId) return;
@@ -61,11 +61,20 @@ export default function Agenda() {
     cargarCentro();
   }, [centroId]);
 
+  // 🔹 FUNCIÓN AUXILIAR: Obtener fecha actual en formato YYYY-MM-DD
+  const obtenerFechaActualStr = (): string => {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Generar rango de 30 días desde hoy
   const generarRangoFechas = () => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const desde = hoy.toISOString().split('T')[0];
+    const hoyStr = obtenerFechaActualStr();
+    const hoy = new Date(hoyStr);
+    const desde = hoyStr;
     const hasta = new Date(hoy);
     hasta.setDate(hoy.getDate() + 30);
     return { desde, hasta: hasta.toISOString().split('T')[0] };
@@ -103,14 +112,14 @@ export default function Agenda() {
         console.log('Primer día de la lista:', data[0]);
         console.log('Primer día disponible (sin filtrar fecha):', data.find((d: DiaDisponible) => d.disponible === true));
 
-        // Seleccionar el primer día disponible (desde hoy hacia adelante)
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+        // 🔹 CORRECCIÓN: Seleccionar el primer día disponible usando string YYYY-MM-DD
+        const hoyStr = obtenerFechaActualStr();
+        console.log('Hoy en string YYYY-MM-DD:', hoyStr);
 
         const primerDiaDisponible = data.find((d: DiaDisponible) => {
-          const fechaDia = new Date(d.fecha);
           const esDisponible = d.disponible === true;
-          const esPosterior = fechaDia >= hoy;
+          // 🔹 Comparación directa de strings (sin Date)
+          const esPosterior = d.fecha >= hoyStr;
           return esDisponible && esPosterior;
         });
 
@@ -240,7 +249,7 @@ export default function Agenda() {
                     formatearFechaCorta={formatearFechaCorta}
                     especialidadNombre={especialidadNombre}
                     centroNombre={centroNombre}
-                    centroTimezone={centroTimezone}  // 🔹 NUEVO: pasar timezone
+                    centroTimezone={centroTimezone}
                   />
                 ))}
               </div>
