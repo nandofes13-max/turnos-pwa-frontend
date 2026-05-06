@@ -16,14 +16,12 @@ interface CarruselDiasProps {
 const nombresDias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const nombresMeses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
-const formatearDiaVertical = (fechaStr: string) => {
-  // Extraer año, mes, día directamente del string "YYYY-MM-DD"
+const formatearDiaVertical = (fechaStr: string, diaSemanaBackend: number) => {
+  // Extraer día y mes directamente del string "YYYY-MM-DD"
   const [year, month, day] = fechaStr.split('-').map(Number);
   
-  // Crear fecha en UTC para evitar problemas de zona horaria
-  const fecha = new Date(Date.UTC(year, month - 1, day));
-  
-  const diaSemana = nombresDias[fecha.getUTCDay()];
+  // 🔹 CORRECCIÓN: Usar el día de la semana que viene del backend (ya calculado correctamente)
+  const diaSemana = nombresDias[diaSemanaBackend];
   const dia = day;
   const mes = nombresMeses[month - 1];
   
@@ -41,7 +39,7 @@ export default function CarruselDias({ dias, selectedFecha, onDiaSeleccionado }:
     <div className={styles['carrusel-vertical-container']}>
       <div className={styles['carrusel-vertical']}>
         {dias.map((dia) => {
-          const { diaSemana, dia: diaNum, mes } = formatearDiaVertical(dia.fecha);
+          const { diaSemana, dia: diaNum, mes } = formatearDiaVertical(dia.fecha, dia.diaSemana);
           const isSelected = selectedFecha === dia.fecha;
           const isDisabled = !dia.disponible;
           
