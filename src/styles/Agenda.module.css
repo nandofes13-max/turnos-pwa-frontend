@@ -210,10 +210,12 @@
   
   .profesional-nombre {
     font-size: 0.85rem;
+     text-align: left;  /* 👈 AGREGAR ESTA LÍNEA */
   }
   
   .profesional-descripcion {
     font-size: 0.7rem;
+     text-align: left;  /* 👈 AGREGAR ESTA LÍNEA */
   }
   
   .slot-boton {
@@ -229,6 +231,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  text-align: left;  /* 👈 AGREGAR ESTA LÍNEA */  
 }
 
 .separador {
