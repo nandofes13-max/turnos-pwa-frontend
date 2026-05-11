@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
+import turnosStyles from '../styles/Turnos.module.css';
 
 interface Turno {
   id: number;
@@ -88,7 +89,7 @@ export default function Turnos() {
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidades, setEspecialidades] = useState<{ id: number; nombre: string }[]>([]);
   const [negocios, setNegocios] = useState<{ id: number; nombre: string }[]>([]);
-  const [centros, setCentros] = useState<{ id: number; nombre: string; codigo: string }[]>([]);
+  const [centros, setCentros] = useState<{ id: number; nombre: string; codigo: string; negocioId: number }[]>([]);
   const [estadosTurno, setEstadosTurno] = useState<{ nombre: string; codigoColor: string }[]>([]);
   const [estadosPago, setEstadosPago] = useState<{ nombre: string; codigoColor: string }[]>([]);
   
@@ -105,20 +106,27 @@ export default function Turnos() {
     estadoPago: '',
   });
   
-  const [filtroExpandido, setFiltroExpandido] = useState({ movimiento: false });
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
   // Cargar datos iniciales
   useEffect(() => {
     fetchTurnos();
+  }, [filtros]);
+
+  useEffect(() => {
     fetchProfesionales();
     fetchEspecialidades();
     fetchNegocios();
     fetchCentros();
-    fetchEstadosTurno();
-    fetchEstadosPago();
-  }, [filtros]);
+  }, []);
+
+  useEffect(() => {
+    if (filtros.negocioId) {
+      fetchEstadosTurno();
+      fetchEstadosPago();
+    }
+  }, [filtros.negocioId]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -250,38 +258,6 @@ export default function Turnos() {
     }
   };
 
-  const handleCambiarEstado = async (turno: Turno, nuevoEstado: string) => {
-    try {
-      const res = await fetch(`${TURNOS_URL}/${turno.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado }),
-      });
-      if (!res.ok) throw new Error('Error al cambiar estado');
-      fetchTurnos();
-      alert(`Estado cambiado a ${nuevoEstado}`);
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo cambiar el estado');
-    }
-  };
-
-  const handleCambiarPago = async (turno: Turno, nuevoPago: string) => {
-    try {
-      const res = await fetch(`${TURNOS_URL}/${turno.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estadoPago: nuevoPago }),
-      });
-      if (!res.ok) throw new Error('Error al cambiar estado de pago');
-      fetchTurnos();
-      alert(`Estado de pago cambiado a ${nuevoPago}`);
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo cambiar el estado de pago');
-    }
-  };
-
   const obtenerColorEstado = (estado: string): string => {
     const found = estadosTurno.find(e => e.nombre === estado);
     return found?.codigoColor || '#000000';
@@ -312,8 +288,6 @@ export default function Turnos() {
     estadoColor: obtenerColorEstado(t.estado),
     pago: t.pagoEstado || 'PENDIENTE',
     pagoColor: obtenerColorPago(t.pagoEstado || 'PENDIENTE'),
-    canalOrigen: t.canalOrigen || '-',
-    asistio: t.asistio ? 'Sí' : (t.asistio === false ? 'No' : '-'),
     fecha_baja: t.fecha_baja
   }));
 
@@ -322,116 +296,108 @@ export default function Turnos() {
       <h1 className="tm-titulo">Gestión de Turnos</h1>
 
       {/* FILTROS - PC */}
-      <div className="tm-filtros desktop-only">
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📅 Desde</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className="tm-filtro-input" />
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📅 Hasta</label>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className="tm-filtro-input" />
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">👨‍⚕️ Profesional</label>
-            <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {profesionales.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📋 Especialidad</label>
-            <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className="tm-filtro-input">
-              <option value="">Todas</option>
-              {especialidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
-          </div>
+      <div className={turnosStyles.filtrosDesktop}>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📅 Desde</label>
+          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
         </div>
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">🏢 Negocio</label>
-            <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className="tm-filtro-input">
-              {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">🏥 Centro</label>
-            <select value={filtros.centroId} onChange={(e) => handleFiltroChange('centroId', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {centros.filter(c => !filtros.negocioId || c.negocioId === parseInt(filtros.negocioId)).map(c => (
-                <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📱 Canal Origen</label>
-            <select value={filtros.canalOrigen} onChange={(e) => handleFiltroChange('canalOrigen', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {TIPOS_CANAL.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">✅ Asistencia</label>
-            <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
+          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
         </div>
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">🔵 Estado Turno</label>
-            <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {estadosTurno.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
-            </select>
-          </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">💰 Estado Pago</label>
-            <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className="tm-filtro-input">
-              <option value="">Todos</option>
-              {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
-            </select>
-          </div>
-          <div className="tm-filtro-accion">
-            <button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button>
-          </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
+          <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            {profesionales.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
+          <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todas</option>
+            {especialidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
+          <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+            {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🏥 Centro</label>
+          <select value={filtros.centroId} onChange={(e) => handleFiltroChange('centroId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            {centros.filter(c => !filtros.negocioId || c.negocioId === parseInt(filtros.negocioId)).map(c => (
+              <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📱 Canal Origen</label>
+          <select value={filtros.canalOrigen} onChange={(e) => handleFiltroChange('canalOrigen', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            {TIPOS_CANAL.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
+          <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
+          <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            {estadosTurno.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
+          <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todos</option>
+            {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.accionRow}>
+          <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
         </div>
       </div>
 
       {/* FILTROS - MÓVIL (simplificados) */}
-      <div className="tm-filtros mobile-only">
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📅 Desde</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className="tm-filtro-input" />
+      <div className={turnosStyles.filtrosMobile}>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
+            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
           </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">📅 Hasta</label>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className="tm-filtro-input" />
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
+            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
           </div>
         </div>
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">🔵 Estado Turno</label>
-            <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className="tm-filtro-input">
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
+            <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className={turnosStyles.filtroInput}>
               <option value="">Todos</option>
               {estadosTurno.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
             </select>
           </div>
-          <div className="tm-filtro-campo">
-            <label className="tm-filtro-label">💰 Estado Pago</label>
-            <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className="tm-filtro-input">
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
+            <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
               <option value="">Todos</option>
               {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
             </select>
           </div>
         </div>
-        <div className="tm-filtros-fila">
-          <div className="tm-filtro-accion">
-            <button onClick={limpiarFiltros} className="tm-btn-limpiar">Limpiar Filtros</button>
-          </div>
+        <div className={turnosStyles.accionRow}>
+          <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
         </div>
       </div>
 
