@@ -60,20 +60,27 @@ const ESTADOS_PAGO_URL = `${API_BASE_URL}/negocios-estados-pago`;
 const TIPOS_CANAL = ['WEB', 'API', 'RECEPCION', 'APP'];
 const OPCIONES_ASISTIO = ['Todos', 'Sí', 'No'];
 
+// 🔹 CORRECCIÓN: Formatear sin usar new Date() (muestra el string como viene del backend)
 const formatearFechaHora = (fechaStr: string): string => {
-  const fecha = new Date(fechaStr);
-  return fecha.toLocaleString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  if (!fechaStr) return '-';
+  // El backend envía formato "2026-05-18 09:00:00"
+  const [fecha, hora] = fechaStr.split(' ');
+  if (!fecha || !hora) return fechaStr;
+  const [year, month, day] = fecha.split('-');
+  return `${day}/${month}/${year} ${hora}`;
 };
 
 const formatearFechaCorta = (fechaStr: string): string => {
-  const fecha = new Date(fechaStr);
-  return fecha.toLocaleDateString('es-AR');
+  if (!fechaStr) return '-';
+  const [fecha] = fechaStr.split(' ');
+  const [year, month, day] = fecha.split('-');
+  return `${day}/${month}/${year}`;
+};
+
+const formatearHora = (fechaStr: string): string => {
+  if (!fechaStr) return '-';
+  const [, hora] = fechaStr.split(' ');
+  return hora || '-';
 };
 
 export default function Turnos() {
@@ -140,7 +147,7 @@ export default function Turnos() {
       if (filtros.centroId) params.append('centroId', filtros.centroId);
       if (filtros.canalOrigen) params.append('canalOrigen', filtros.canalOrigen);
       if (filtros.asistio) params.append('asistio', filtros.asistio);
-      if (filtros.estadoTurno) params.append('estado', filtros.estadoTurno);
+      if (filtros.estadoTurno) params.append('estadoTurnoId', filtros.estadoTurno);
       if (filtros.estadoPago) params.append('estadoPago', filtros.estadoPago);
       
       const url = `${TURNOS_URL}?${params.toString()}`;
@@ -437,7 +444,7 @@ export default function Turnos() {
                 <div className="tm-card-nombre"><strong>🆔 TURNO #{item.id}</strong></div>
                 <div className="tm-card-paciente">👤 {item.paciente}</div>
                 <div className="tm-card-fecha">📅 {formatearFechaCorta(item.inicio)}</div>
-                <div className="tm-card-hora">⏰ {new Date(item.inicio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="tm-card-hora">⏰ {formatearHora(item.inicio)}</div>
                 <div className="tm-card-profesional">👨‍⚕️ {item.profesionalNombre}</div>
                 <div className="tm-card-especialidad">📋 {item.especialidadNombre}</div>
                 <div className="tm-card-centro">🏥 {item.centroNombre}</div>
