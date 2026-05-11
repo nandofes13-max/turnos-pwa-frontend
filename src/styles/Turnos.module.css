@@ -1,0 +1,107 @@
+/* =============================================
+   TURNOS - ESTILOS ESPECÍFICOS
+   ============================================= */
+
+/* Filtros en desktop (grid responsivo) */
+.filtrosDesktop {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.filtroCampo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filtroLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+}
+
+.filtroInput {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background-color: white;
+}
+
+.filtroInput:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Filtros en móvil (apilados) */
+.filtrosMobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.filtrosMobile .filtrosRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Botón limpiar alineado */
+.accionRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.btnLimpiar {
+  background-color: #e0e0e0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnLimpiar:hover {
+  background-color: #ccc;
+}
+
+/* Estado del turno (color en cards) */
+.estadoTurno {
+  font-weight: bold;
+}
+
+.estadoPago {
+  font-weight: bold;
+}
+
+/* Responsive */
+@media (min-width: 769px) {
+  .filtrosDesktop {
+    display: grid;
+  }
+  .filtrosMobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .filtrosDesktop {
+    display: none;
+  }
+  .filtrosMobile {
+    display: flex;
+  }
+}
