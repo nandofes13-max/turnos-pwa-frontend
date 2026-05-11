@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Inicio from './components/Inicio';
 import Actividad from './components/Actividad';
 import Especialidad from './components/Especialidad';
-import Centro from './components/Centro';  // 👈 AGREGAR ESTA LÍNEA
+import Centro from './components/Centro';
 import CPanel from './components/CPanel';
 import Actividades from './components/Actividades';
 import Usuarios from './components/Usuarios';
@@ -18,6 +18,7 @@ import Centros from './components/Centros';
 import ProfesionalCentro from './components/ProfesionalCentro';
 import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
+import Turnos from './components/Turnos';
 import './App.css';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
         <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
+        <Route path="/turnos" element={<Turnos />} />
       </Routes>
     </BrowserRouter>
   );
