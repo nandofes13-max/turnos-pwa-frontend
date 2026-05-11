@@ -58,12 +58,20 @@ const ESTADOS_TURNO_URL = `${API_BASE_URL}/negocios-estados-turno`;
 const ESTADOS_PAGO_URL = `${API_BASE_URL}/negocios-estados-pago`;
 
 const TIPOS_CANAL = ['WEB', 'API', 'RECEPCION', 'APP'];
-const OPCIONES_ASISTIO = ['Todos', 'Sí', 'No'];
 
-// 🔹 CORRECCIÓN: Formatear sin usar new Date() (muestra el string como viene del backend)
+// 🔹 CORRECCIÓN: Manejar tanto ISO string como formato simple
 const formatearFechaHora = (fechaStr: string): string => {
   if (!fechaStr) return '-';
-  // El backend envía formato "2026-05-18 09:00:00"
+  
+  // Si es ISO string (contiene T y Z)
+  if (fechaStr.includes('T')) {
+    const [fecha, horaPart] = fechaStr.split('T');
+    const hora = horaPart.replace('Z', '').substring(0, 5);
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year} ${hora}`;
+  }
+  
+  // Si es formato simple "2026-05-18 09:00:00"
   const [fecha, hora] = fechaStr.split(' ');
   if (!fecha || !hora) return fechaStr;
   const [year, month, day] = fecha.split('-');
@@ -72,13 +80,31 @@ const formatearFechaHora = (fechaStr: string): string => {
 
 const formatearFechaCorta = (fechaStr: string): string => {
   if (!fechaStr) return '-';
+  
+  // Si es ISO string
+  if (fechaStr.includes('T')) {
+    const [fecha] = fechaStr.split('T');
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  
+  // Si es formato simple
   const [fecha] = fechaStr.split(' ');
+  if (!fecha) return fechaStr;
   const [year, month, day] = fecha.split('-');
   return `${day}/${month}/${year}`;
 };
 
 const formatearHora = (fechaStr: string): string => {
   if (!fechaStr) return '-';
+  
+  // Si es ISO string
+  if (fechaStr.includes('T')) {
+    const [, horaPart] = fechaStr.split('T');
+    return horaPart.replace('Z', '').substring(0, 5);
+  }
+  
+  // Si es formato simple
   const [, hora] = fechaStr.split(' ');
   return hora || '-';
 };
