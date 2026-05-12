@@ -126,7 +126,7 @@ export default function Turnos() {
   const [estadosTurno, setEstadosTurno] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
   const [estadosPago, setEstadosPago] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
   const [actividades, setActividades] = useState<Actividad[]>([]);
-  const [actividadesFiltradas, setActividadesFiltradas} = useState<Actividad[]>([]);
+  const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
   
   const [filtros, setFiltros] = useState<Filtros>({
     desde: '',
