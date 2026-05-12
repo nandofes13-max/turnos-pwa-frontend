@@ -116,6 +116,7 @@ export default function Turnos() {
   const [modalMode, setModalMode] = useState<'view' | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
   const [datosInicialesCargados, setDatosInicialesCargados] = useState(false);
+  const [cargandoFiltros, setCargandoFiltros] = useState(false); // 👈 NUEVO
   
   // Datos para filtros en cascada
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
@@ -154,13 +155,18 @@ export default function Turnos() {
   // Cargar datos iniciales (una sola vez)
   useEffect(() => {
     const cargarDatosIniciales = async () => {
-      await Promise.all([
-        fetchProfesionales(),
-        fetchEspecialidades(),
-        fetchNegocios(),
-        fetchCentros(),
-        fetchActividades(),
-      ]);
+      setCargandoFiltros(true);
+      try {
+        await Promise.all([
+          fetchProfesionales(),
+          fetchEspecialidades(),
+          fetchNegocios(),
+          fetchCentros(),
+          fetchActividades(),
+        ]);
+      } finally {
+        setCargandoFiltros(false);
+      }
     };
     cargarDatosIniciales();
   }, []);
@@ -370,6 +376,7 @@ export default function Turnos() {
   };
 
   const cargarActividadesPorNegocio = async (negocioId: number) => {
+    setCargandoFiltros(true);
     try {
       const res = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
       const relaciones = await res.json();
@@ -378,10 +385,13 @@ export default function Turnos() {
       setActividadesFiltradas(actividadesFiltro);
     } catch (err) {
       console.error('Error al cargar actividades del negocio:', err);
+    } finally {
+      setCargandoFiltros(false);
     }
   };
 
   const cargarEspecialidadesPorActividad = async (actividadId: number) => {
+    setCargandoFiltros(true);
     try {
       const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/por-actividad/${actividadId}`);
       const relaciones = await res.json();
@@ -390,37 +400,55 @@ export default function Turnos() {
       setEspecialidadesFiltradas(especialidadesFiltro);
     } catch (err) {
       console.error('Error al cargar especialidades por actividad:', err);
+    } finally {
+      setCargandoFiltros(false);
     }
   };
 
   const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, especialidadId: number) => {
+    setCargandoFiltros(true);
     try {
-      // Dentro de cargarCentrosPorNegocioActividadEspecialidad
-const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
-const relaciones = await res.json();
-
-// *** AQUÍ ESTÁ LA CORRECCIÓN ***
-// Filtrar las relaciones para quedarse solo con las que coinciden con la especialidad que nos interesa
-const relacionesValidas = relaciones.filter((r: any) => r.especialidadId === especialidadId);
-
-// Extraer centros únicos de las relaciones VÁLIDAS
-const centrosIds = [...new Set(relacionesValidas.map((r: any) => r.centroId))];
-const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
+      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
+      const relaciones = await res.json();
+      
+      // Filtrar solo las relaciones que coinciden con la especialidad
+      const relacionesValidas = relaciones.filter((r: any) => r.especialidadId === especialidadId);
+      
+      // Usar Map para eliminar centros duplicados
+      const centrosMap = new Map();
+      for (const r of relacionesValidas) {
+        if (r.centro && !centrosMap.has(r.centroId)) {
+          centrosMap.set(r.centroId, r.centro);
+        }
+      }
+      const centrosFiltro = Array.from(centrosMap.values());
       setCentrosFiltrados(centrosFiltro);
     } catch (err) {
       console.error('Error al cargar centros:', err);
       setCentrosFiltrados([]);
+    } finally {
+      setCargandoFiltros(false);
     }
   };
 
   const cargarProfesionalesPorEspecialidadYCentro = async (especialidadId: number, centroId: number) => {
+    setCargandoFiltros(true);
     try {
-      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?especialidadId=${especialidadId}&centroId=${centroId}`);
-      const data = await res.json();
-      setProfesionalesFiltrados(data.filter((p: any) => !p.fecha_baja));
+      // 🔹 Agregar negocioId a la consulta
+      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${filtros.negocioId}&especialidadId=${especialidadId}&centroId=${centroId}`);
+      const relaciones = await res.json();
+      
+      // Extraer los profesionales de las relaciones
+      const profesionalesFiltro = relaciones
+        .map((r: any) => r.profesional)
+        .filter((p: any) => p && !p.fecha_baja);
+      
+      setProfesionalesFiltrados(profesionalesFiltro);
     } catch (err) {
       console.error('Error al cargar profesionales:', err);
       setProfesionalesFiltrados([]);
+    } finally {
+      setCargandoFiltros(false);
     }
   };
 
@@ -553,6 +581,13 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Turnos</h1>
 
+      {/* Mensaje de carga de filtros */}
+      {cargandoFiltros && (
+        <div className="tm-loading-filtros" style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f0f0f0', borderRadius: '8px', marginBottom: '12px' }}>
+          <span>Cargando opciones...</span>
+        </div>
+      )}
+
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
         {/* Primera línea: Negocio, Actividad, Especialidad, Centro, Profesional */}
@@ -569,7 +604,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
             value={filtros.actividadId} 
             onChange={(e) => handleFiltroChange('actividadId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!filtros.negocioId}
+            disabled={cargandoFiltros || !filtros.negocioId}
           >
             <option value="">Todas</option>
             {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
@@ -581,7 +616,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
             value={filtros.especialidadId} 
             onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!filtros.actividadId}
+            disabled={cargandoFiltros || !filtros.actividadId}
           >
             <option value="">Todas</option>
             {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
@@ -593,7 +628,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
             value={filtros.centroId} 
             onChange={(e) => handleFiltroChange('centroId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!filtros.especialidadId}
+            disabled={cargandoFiltros || !filtros.especialidadId}
           >
             <option value="">Todos</option>
             {centrosFiltrados.map(c => (
@@ -607,7 +642,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
             value={filtros.profesionalId} 
             onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!filtros.centroId}
+            disabled={cargandoFiltros || !filtros.centroId}
           >
             <option value="">Todos</option>
             {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
@@ -708,7 +743,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
               value={filtros.actividadId} 
               onChange={(e) => handleFiltroChange('actividadId', e.target.value)} 
               className={turnosStyles.filtroInput}
-              disabled={!filtros.negocioId}
+              disabled={cargandoFiltros || !filtros.negocioId}
             >
               <option value="">Todas</option>
               {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
@@ -722,7 +757,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
               value={filtros.especialidadId} 
               onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} 
               className={turnosStyles.filtroInput}
-              disabled={!filtros.actividadId}
+              disabled={cargandoFiltros || !filtros.actividadId}
             >
               <option value="">Todas</option>
               {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
@@ -736,7 +771,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
               value={filtros.centroId} 
               onChange={(e) => handleFiltroChange('centroId', e.target.value)} 
               className={turnosStyles.filtroInput}
-              disabled={!filtros.especialidadId}
+              disabled={cargandoFiltros || !filtros.especialidadId}
             >
               <option value="">Todos</option>
               {centrosFiltrados.map(c => (
@@ -752,7 +787,7 @@ const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
               value={filtros.profesionalId} 
               onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} 
               className={turnosStyles.filtroInput}
-              disabled={!filtros.centroId}
+              disabled={cargandoFiltros || !filtros.centroId}
             >
               <option value="">Todos</option>
               {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
