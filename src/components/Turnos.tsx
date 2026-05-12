@@ -67,6 +67,7 @@ const ESTADOS_PAGO_URL = `${API_BASE_URL}/negocios-estados-pago`;
 const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
 const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
+const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 
 const TIPOS_CANAL = ['WEB', 'API', 'RECEPCION', 'APP'];
 
@@ -114,6 +115,7 @@ export default function Turnos() {
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [modalMode, setModalMode] = useState<'view' | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
+  const [datosInicialesCargados, setDatosInicialesCargados] = useState(false);
   
   // Datos para filtros en cascada
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
@@ -134,7 +136,7 @@ export default function Turnos() {
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: '6',
+    negocioId: '',
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -149,44 +151,62 @@ export default function Turnos() {
   // Indica si los filtros de búsqueda (fechas, paciente, estados) están habilitados
   const filtrosBusquedaHabilitados = !!filtros.especialidadId;
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales (una sola vez)
   useEffect(() => {
-    fetchProfesionales();
-    fetchEspecialidades();
-    fetchNegocios();
-    fetchCentros();
-    fetchActividades();
+    const cargarDatosIniciales = async () => {
+      await Promise.all([
+        fetchProfesionales(),
+        fetchEspecialidades(),
+        fetchNegocios(),
+        fetchCentros(),
+        fetchActividades(),
+      ]);
+    };
+    cargarDatosIniciales();
   }, []);
 
-  // Cuando se cargan los negocios, establecer DEMO como seleccionado (si no hay selección)
+  // Cuando todos los datos iniciales estén listos, establecer valores por defecto
   useEffect(() => {
-    if (negocios.length > 0 && !filtros.negocioId) {
+    if (!datosInicialesCargados && negocios.length > 0 && actividades.length > 0 && especialidades.length > 0) {
+      // Buscar negocio DEMO (ID 6) o el primero
       const negocioDemo = negocios.find(n => n.id === 6) || negocios[0];
       if (negocioDemo) {
         setFiltros(prev => ({ ...prev, negocioId: String(negocioDemo.id) }));
+        
+        // Cargar actividades del negocio DEMO
+        cargarActividadesPorNegocio(negocioDemo.id).then(() => {
+          // Después de cargar actividades, buscar "SALUD"
+          setTimeout(() => {
+            const salud = actividadesFiltradas.find(a => a.nombre === 'SALUD');
+            if (salud) {
+              setFiltros(prev => ({ ...prev, actividadId: String(salud.id) }));
+              
+              // Después de seleccionar actividad, cargar especialidades
+              setTimeout(() => {
+                cargarEspecialidadesPorActividad(salud.id).then(() => {
+                  // Después de cargar especialidades, buscar "PSICOLOGIA"
+                  setTimeout(() => {
+                    const psicologia = especialidadesFiltradas.find(e => e.nombre === 'PSICOLOGIA');
+                    if (psicologia) {
+                      setFiltros(prev => ({ ...prev, especialidadId: String(psicologia.id) }));
+                      setDatosInicialesCargados(true);
+                    } else if (especialidadesFiltradas.length > 0) {
+                      setFiltros(prev => ({ ...prev, especialidadId: String(especialidadesFiltradas[0].id) }));
+                      setDatosInicialesCargados(true);
+                    }
+                  }, 100);
+                });
+              }, 100);
+            } else if (actividadesFiltradas.length > 0) {
+              const primeraActividad = actividadesFiltradas[0];
+              setFiltros(prev => ({ ...prev, actividadId: String(primeraActividad.id) }));
+              setDatosInicialesCargados(true);
+            }
+          }, 100);
+        });
       }
     }
-  }, [negocios]);
-
-  // Cuando se cargan las actividades filtradas, seleccionar "SALUD" por defecto
-  useEffect(() => {
-    if (actividadesFiltradas.length > 0 && !filtros.actividadId) {
-      const actividadSalud = actividadesFiltradas.find(a => a.nombre === 'SALUD') || actividadesFiltradas[0];
-      if (actividadSalud) {
-        setFiltros(prev => ({ ...prev, actividadId: String(actividadSalud.id) }));
-      }
-    }
-  }, [actividadesFiltradas]);
-
-  // Cuando se cargan las especialidades filtradas, seleccionar "PSICOLOGIA" por defecto
-  useEffect(() => {
-    if (especialidadesFiltradas.length > 0 && !filtros.especialidadId) {
-      const especialidadPsicologia = especialidadesFiltradas.find(e => e.nombre === 'PSICOLOGIA') || especialidadesFiltradas[0];
-      if (especialidadPsicologia) {
-        setFiltros(prev => ({ ...prev, especialidadId: String(especialidadPsicologia.id) }));
-      }
-    }
-  }, [especialidadesFiltradas]);
+  }, [negocios, actividades, especialidades, actividadesFiltradas, especialidadesFiltradas]);
 
   // Cargar estados y actividades del negocio cuando cambia
   useEffect(() => {
@@ -219,7 +239,6 @@ export default function Turnos() {
     if (filtros.negocioId && filtros.actividadId && filtros.especialidadId) {
       cargarCentrosPorNegocioActividadEspecialidad(
         parseInt(filtros.negocioId),
-        parseInt(filtros.actividadId),
         parseInt(filtros.especialidadId)
       );
       setFiltros(prev => ({ ...prev, centroId: '', profesionalId: '' }));
@@ -244,12 +263,12 @@ export default function Turnos() {
 
   // Cargar turnos SOLO cuando los filtros de búsqueda están habilitados
   useEffect(() => {
-    if (filtrosBusquedaHabilitados) {
+    if (filtrosBusquedaHabilitados && datosInicialesCargados) {
       fetchTurnos();
     } else {
       setTurnos([]);
     }
-  }, [filtros, filtrosBusquedaHabilitados]);
+  }, [filtros, filtrosBusquedaHabilitados, datosInicialesCargados]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -374,10 +393,10 @@ export default function Turnos() {
     }
   };
 
-  const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, actividadId: number, especialidadId: number) => {
+  const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, especialidadId: number) => {
     try {
-      // Usar el endpoint que filtra por negocio y especialidad
-      const res = await fetch(`${API_BASE_URL}/profesional-centro?negocioId=${negocioId}&especialidadId=${especialidadId}`);
+      // Usar el endpoint que filtra por negocio y especialidad para obtener las relaciones
+      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
       const relaciones = await res.json();
       
       // Extraer centros únicos de las relaciones
@@ -392,7 +411,7 @@ export default function Turnos() {
 
   const cargarProfesionalesPorEspecialidadYCentro = async (especialidadId: number, centroId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/profesional-centro?especialidadId=${especialidadId}&centroId=${centroId}`);
+      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?especialidadId=${especialidadId}&centroId=${centroId}`);
       const data = await res.json();
       setProfesionalesFiltrados(data.filter((p: any) => !p.fecha_baja));
     } catch (err) {
@@ -536,6 +555,7 @@ export default function Turnos() {
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Seleccionar...</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
         </div>
@@ -672,6 +692,7 @@ export default function Turnos() {
           <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
             <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+              <option value="">Seleccionar...</option>
               {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
             </select>
           </div>
