@@ -158,7 +158,37 @@ export default function Turnos() {
     fetchActividades();
   }, []);
 
-  // Cargar actividades del negocio cuando cambia
+  // Cuando se cargan los negocios, establecer DEMO como seleccionado (si no hay selección)
+  useEffect(() => {
+    if (negocios.length > 0 && !filtros.negocioId) {
+      const negocioDemo = negocios.find(n => n.id === 6) || negocios[0];
+      if (negocioDemo) {
+        setFiltros(prev => ({ ...prev, negocioId: String(negocioDemo.id) }));
+      }
+    }
+  }, [negocios]);
+
+  // Cuando se cargan las actividades filtradas, seleccionar "SALUD" por defecto
+  useEffect(() => {
+    if (actividadesFiltradas.length > 0 && !filtros.actividadId) {
+      const actividadSalud = actividadesFiltradas.find(a => a.nombre === 'SALUD') || actividadesFiltradas[0];
+      if (actividadSalud) {
+        setFiltros(prev => ({ ...prev, actividadId: String(actividadSalud.id) }));
+      }
+    }
+  }, [actividadesFiltradas]);
+
+  // Cuando se cargan las especialidades filtradas, seleccionar "PSICOLOGIA" por defecto
+  useEffect(() => {
+    if (especialidadesFiltradas.length > 0 && !filtros.especialidadId) {
+      const especialidadPsicologia = especialidadesFiltradas.find(e => e.nombre === 'PSICOLOGIA') || especialidadesFiltradas[0];
+      if (especialidadPsicologia) {
+        setFiltros(prev => ({ ...prev, especialidadId: String(especialidadPsicologia.id) }));
+      }
+    }
+  }, [especialidadesFiltradas]);
+
+  // Cargar estados y actividades del negocio cuando cambia
   useEffect(() => {
     if (filtros.negocioId) {
       fetchEstadosTurno();
@@ -346,11 +376,11 @@ export default function Turnos() {
 
   const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, actividadId: number, especialidadId: number) => {
     try {
-      // Obtener profesionales que tienen esa especialidad en ese negocio
+      // Usar el endpoint que filtra por negocio y especialidad
       const res = await fetch(`${API_BASE_URL}/profesional-centro?negocioId=${negocioId}&especialidadId=${especialidadId}`);
       const relaciones = await res.json();
       
-      // Obtener centros únicos de esas relaciones
+      // Extraer centros únicos de las relaciones
       const centrosIds = [...new Set(relaciones.map((r: any) => r.centroId))];
       const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
       setCentrosFiltrados(centrosFiltro);
