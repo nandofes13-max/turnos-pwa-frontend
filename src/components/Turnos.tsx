@@ -48,7 +48,7 @@ interface Filtros {
   asistio: string;
   estadoTurnoId: string;
   estadoPago: string;
-  pacienteSearch: string;  // 👈 NUEVO
+  pacienteSearch: string;
 }
 
 interface Actividad {
@@ -114,10 +114,10 @@ export default function Turnos() {
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [modalMode, setModalMode] = useState<'view' | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Datos para filtros en cascada
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
+  const [profesionalesFiltrados, setProfesionalesFiltrados] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidades, setEspecialidades] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidadesFiltradas, setEspecialidadesFiltradas] = useState<{ id: number; nombre: string }[]>([]);
   const [negocios, setNegocios] = useState<{ id: number; nombre: string }[]>([]);
@@ -126,8 +126,7 @@ export default function Turnos() {
   const [estadosTurno, setEstadosTurno] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
   const [estadosPago, setEstadosPago] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
   const [actividades, setActividades] = useState<Actividad[]>([]);
-  const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
-  const [profesionalesFiltrados, setProfesionalesFiltrados] = useState<{ id: number; nombre: string }[]>([]);
+  const [actividadesFiltradas, setActividadesFiltradas} = useState<Actividad[]>([]);
   
   const [filtros, setFiltros] = useState<Filtros>({
     desde: '',
@@ -147,11 +146,10 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  // Cargar datos iniciales
-  useEffect(() => {
-    fetchTurnos();
-  }, [filtros]);
+  // Indica si los filtros de búsqueda (fechas, paciente, estados) están habilitados
+  const filtrosBusquedaHabilitados = !!filtros.especialidadId;
 
+  // Cargar datos iniciales
   useEffect(() => {
     fetchProfesionales();
     fetchEspecialidades();
@@ -160,33 +158,68 @@ export default function Turnos() {
     fetchActividades();
   }, []);
 
+  // Cargar actividades del negocio cuando cambia
   useEffect(() => {
     if (filtros.negocioId) {
       fetchEstadosTurno();
       fetchEstadosPago();
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
-      filtrarCentrosPorNegocio(parseInt(filtros.negocioId));
+      // Resetear filtros dependientes
+      setFiltros(prev => ({ ...prev, actividadId: '', especialidadId: '', centroId: '', profesionalId: '' }));
+      setEspecialidadesFiltradas([]);
+      setCentrosFiltrados([]);
+      setProfesionalesFiltrados([]);
     }
   }, [filtros.negocioId]);
 
+  // Cargar especialidades cuando cambia la actividad
   useEffect(() => {
     if (filtros.actividadId) {
       cargarEspecialidadesPorActividad(parseInt(filtros.actividadId));
+      setFiltros(prev => ({ ...prev, especialidadId: '', centroId: '', profesionalId: '' }));
+      setCentrosFiltrados([]);
+      setProfesionalesFiltrados([]);
     } else {
       setEspecialidadesFiltradas([]);
     }
   }, [filtros.actividadId]);
 
+  // Cargar centros cuando se tengan: negocio + actividad + especialidad
+  useEffect(() => {
+    if (filtros.negocioId && filtros.actividadId && filtros.especialidadId) {
+      cargarCentrosPorNegocioActividadEspecialidad(
+        parseInt(filtros.negocioId),
+        parseInt(filtros.actividadId),
+        parseInt(filtros.especialidadId)
+      );
+      setFiltros(prev => ({ ...prev, centroId: '', profesionalId: '' }));
+      setProfesionalesFiltrados([]);
+    } else {
+      setCentrosFiltrados([]);
+    }
+  }, [filtros.negocioId, filtros.actividadId, filtros.especialidadId]);
+
+  // Cargar profesionales cuando se tengan: especialidad + centro
   useEffect(() => {
     if (filtros.especialidadId && filtros.centroId) {
       cargarProfesionalesPorEspecialidadYCentro(
         parseInt(filtros.especialidadId),
         parseInt(filtros.centroId)
       );
+      setFiltros(prev => ({ ...prev, profesionalId: '' }));
     } else {
       setProfesionalesFiltrados([]);
     }
   }, [filtros.especialidadId, filtros.centroId]);
+
+  // Cargar turnos SOLO cuando los filtros de búsqueda están habilitados
+  useEffect(() => {
+    if (filtrosBusquedaHabilitados) {
+      fetchTurnos();
+    } else {
+      setTurnos([]);
+    }
+  }, [filtros, filtrosBusquedaHabilitados]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -311,9 +344,20 @@ export default function Turnos() {
     }
   };
 
-  const filtrarCentrosPorNegocio = (negocioId: number) => {
-    const filtrados = centros.filter(c => c.negocioId === negocioId);
-    setCentrosFiltrados(filtrados);
+  const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, actividadId: number, especialidadId: number) => {
+    try {
+      // Obtener profesionales que tienen esa especialidad en ese negocio
+      const res = await fetch(`${API_BASE_URL}/profesional-centro?negocioId=${negocioId}&especialidadId=${especialidadId}`);
+      const relaciones = await res.json();
+      
+      // Obtener centros únicos de esas relaciones
+      const centrosIds = [...new Set(relaciones.map((r: any) => r.centroId))];
+      const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
+      setCentrosFiltrados(centrosFiltro);
+    } catch (err) {
+      console.error('Error al cargar centros:', err);
+      setCentrosFiltrados([]);
+    }
   };
 
   const cargarProfesionalesPorEspecialidadYCentro = async (especialidadId: number, centroId: number) => {
@@ -348,6 +392,15 @@ export default function Turnos() {
       pacienteSearch: '',
     });
     setPaginaActual(1);
+    // Resetear listas dependientes
+    setEspecialidadesFiltradas([]);
+    setCentrosFiltrados([]);
+    setProfesionalesFiltrados([]);
+    setActividadesFiltradas([]);
+    // Recargar actividades del negocio por defecto
+    if (filtros.negocioId) {
+      cargarActividadesPorNegocio(parseInt(filtros.negocioId));
+    }
   };
 
   const handleVerDetalle = (turno: Turno) => {
@@ -418,16 +471,6 @@ export default function Turnos() {
     return found?.codigoColor || '#000000';
   };
 
-  const obtenerIdEstado = (estadoNombre: string): number | undefined => {
-    const found = estadosTurno.find(e => e.nombre === estadoNombre);
-    return found?.id;
-  };
-
-  const obtenerIdPago = (pagoNombre: string): number | undefined => {
-    const found = estadosPago.find(e => e.nombre === pagoNombre);
-    return found?.id;
-  };
-
   const turnosFiltrados = turnos;
   const totalPaginas = Math.ceil(turnosFiltrados.length / itemsPorPagina);
   const indiceUltimoItem = paginaActual * itemsPorPagina;
@@ -459,24 +502,7 @@ export default function Turnos() {
 
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>🔍 Buscar Paciente</label>
-          <input
-            type="text"
-            value={filtros.pacienteSearch}
-            onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)}
-            placeholder="Nombre, apellido, email o documento..."
-            className={turnosStyles.filtroInput}
-          />
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
-        </div>
+        {/* Primera línea: Negocio, Actividad, Especialidad, Centro, Profesional */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
@@ -484,8 +510,37 @@ export default function Turnos() {
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
+          <select 
+            value={filtros.actividadId} 
+            onChange={(e) => handleFiltroChange('actividadId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtros.negocioId}
+          >
+            <option value="">Todas</option>
+            {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
+          <select 
+            value={filtros.especialidadId} 
+            onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtros.actividadId}
+          >
+            <option value="">Todas</option>
+            {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏥 Centro</label>
-          <select value={filtros.centroId} onChange={(e) => handleFiltroChange('centroId', e.target.value)} className={turnosStyles.filtroInput}>
+          <select 
+            value={filtros.centroId} 
+            onChange={(e) => handleFiltroChange('centroId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtros.especialidadId}
+          >
             <option value="">Todos</option>
             {centrosFiltrados.map(c => (
               <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
@@ -493,46 +548,87 @@ export default function Turnos() {
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
-          <select value={filtros.actividadId} onChange={(e) => handleFiltroChange('actividadId', e.target.value)} className={turnosStyles.filtroInput}>
-            <option value="">Todas</option>
-            {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-          </select>
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
-          <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className={turnosStyles.filtroInput}>
-            <option value="">Todas</option>
-            {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-          </select>
-        </div>
-        <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
-          <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className={turnosStyles.filtroInput}>
+          <select 
+            value={filtros.profesionalId} 
+            onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtros.centroId}
+          >
             <option value="">Todos</option>
             {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
           </select>
         </div>
+
+        {/* Segunda línea: Desde, Hasta, Buscar Paciente */}
         <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
-          <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput}>
-            <option value="">Todos</option>
-            <option value="true">Sí</option>
-            <option value="false">No</option>
-          </select>
+          <label className={turnosStyles.filtroLabel}>📅 Desde</label>
+          <input 
+            type="date" 
+            value={filtros.desde} 
+            onChange={(e) => handleFiltroChange('desde', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          />
         </div>
         <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
+          <input 
+            type="date" 
+            value={filtros.hasta} 
+            onChange={(e) => handleFiltroChange('hasta', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          />
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🔍 Buscar Paciente</label>
+          <input
+            type="text"
+            value={filtros.pacienteSearch}
+            onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)}
+            placeholder="Nombre, apellido, email..."
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          />
+        </div>
+
+        {/* Tercera línea: Estado Turno, Estado Pago, Asistencia, Limpiar */}
+        <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
-          <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput}>
+          <select 
+            value={filtros.estadoTurnoId} 
+            onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          >
             <option value="">Todos</option>
             {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
-          <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
+          <select 
+            value={filtros.estadoPago} 
+            onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          >
             <option value="">Todos</option>
             {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
+          <select 
+            value={filtros.asistio} 
+            onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          >
+            <option value="">Todos</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
           </select>
         </div>
         <div className={turnosStyles.accionRow}>
@@ -544,6 +640,94 @@ export default function Turnos() {
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
+            <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+              {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
+            <select 
+              value={filtros.actividadId} 
+              onChange={(e) => handleFiltroChange('actividadId', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtros.negocioId}
+            >
+              <option value="">Todas</option>
+              {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
+            <select 
+              value={filtros.especialidadId} 
+              onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtros.actividadId}
+            >
+              <option value="">Todas</option>
+              {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>🏥 Centro</label>
+            <select 
+              value={filtros.centroId} 
+              onChange={(e) => handleFiltroChange('centroId', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtros.especialidadId}
+            >
+              <option value="">Todos</option>
+              {centrosFiltrados.map(c => (
+                <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
+            <select 
+              value={filtros.profesionalId} 
+              onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtros.centroId}
+            >
+              <option value="">Todos</option>
+              {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
+            <input 
+              type="date" 
+              value={filtros.desde} 
+              onChange={(e) => handleFiltroChange('desde', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            />
+          </div>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
+            <input 
+              type="date" 
+              value={filtros.hasta} 
+              onChange={(e) => handleFiltroChange('hasta', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            />
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🔍 Paciente</label>
             <input
               type="text"
@@ -551,32 +735,48 @@ export default function Turnos() {
               onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)}
               placeholder="Nombre, email..."
               className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
             />
-          </div>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
-          </div>
-          <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
-            <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput}>
+            <select 
+              value={filtros.estadoTurnoId} 
+              onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            >
               <option value="">Todos</option>
               {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+            </select>
+          </div>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
+            <select 
+              value={filtros.estadoPago} 
+              onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            >
+              <option value="">Todos</option>
+              {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
             </select>
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
-            <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
+            <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
+            <select 
+              value={filtros.asistio} 
+              onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            >
               <option value="">Todos</option>
-              {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+              <option value="true">Sí</option>
+              <option value="false">No</option>
             </select>
           </div>
           <div className={turnosStyles.accionRow}>
