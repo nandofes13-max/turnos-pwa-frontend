@@ -395,13 +395,17 @@ export default function Turnos() {
 
   const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, especialidadId: number) => {
     try {
-      // Usar el endpoint que filtra por negocio y especialidad para obtener las relaciones
-      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
-      const relaciones = await res.json();
-      
-      // Extraer centros únicos de las relaciones
-      const centrosIds = [...new Set(relaciones.map((r: any) => r.centroId))];
-      const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
+      // Dentro de cargarCentrosPorNegocioActividadEspecialidad
+const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
+const relaciones = await res.json();
+
+// *** AQUÍ ESTÁ LA CORRECCIÓN ***
+// Filtrar las relaciones para quedarse solo con las que coinciden con la especialidad que nos interesa
+const relacionesValidas = relaciones.filter((r: any) => r.especialidadId === especialidadId);
+
+// Extraer centros únicos de las relaciones VÁLIDAS
+const centrosIds = [...new Set(relacionesValidas.map((r: any) => r.centroId))];
+const centrosFiltro = centros.filter(c => centrosIds.includes(c.id));
       setCentrosFiltrados(centrosFiltro);
     } catch (err) {
       console.error('Error al cargar centros:', err);
