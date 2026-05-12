@@ -12,6 +12,7 @@ interface Turno {
   duracionMinutos: number;
   estado: string;
   estadoColor?: string;
+  estadoTurnoId?: number;
   pagoEstado: string;
   pagoColor?: string;
   usuario: {
@@ -40,12 +41,19 @@ interface Filtros {
   hasta: string;
   profesionalId: string;
   especialidadId: string;
+  actividadId: string;
   negocioId: string;
   centroId: string;
   canalOrigen: string;
   asistio: string;
-  estadoTurno: string;
+  estadoTurnoId: string;
   estadoPago: string;
+  pacienteSearch: string;  // 👈 NUEVO
+}
+
+interface Actividad {
+  id: number;
+  nombre: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -56,22 +64,20 @@ const NEGOCIOS_URL = `${API_BASE_URL}/negocios`;
 const CENTROS_URL = `${API_BASE_URL}/centros`;
 const ESTADOS_TURNO_URL = `${API_BASE_URL}/negocios-estados-turno`;
 const ESTADOS_PAGO_URL = `${API_BASE_URL}/negocios-estados-pago`;
+const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
+const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
+const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
 
 const TIPOS_CANAL = ['WEB', 'API', 'RECEPCION', 'APP'];
 
-// 🔹 CORRECCIÓN: Manejar tanto ISO string como formato simple
 const formatearFechaHora = (fechaStr: string): string => {
   if (!fechaStr) return '-';
-  
-  // Si es ISO string (contiene T y Z)
   if (fechaStr.includes('T')) {
     const [fecha, horaPart] = fechaStr.split('T');
     const hora = horaPart.replace('Z', '').substring(0, 5);
     const [year, month, day] = fecha.split('-');
     return `${day}/${month}/${year} ${hora}`;
   }
-  
-  // Si es formato simple "2026-05-18 09:00:00"
   const [fecha, hora] = fechaStr.split(' ');
   if (!fecha || !hora) return fechaStr;
   const [year, month, day] = fecha.split('-');
@@ -80,15 +86,11 @@ const formatearFechaHora = (fechaStr: string): string => {
 
 const formatearFechaCorta = (fechaStr: string): string => {
   if (!fechaStr) return '-';
-  
-  // Si es ISO string
   if (fechaStr.includes('T')) {
     const [fecha] = fechaStr.split('T');
     const [year, month, day] = fecha.split('-');
     return `${day}/${month}/${year}`;
   }
-  
-  // Si es formato simple
   const [fecha] = fechaStr.split(' ');
   if (!fecha) return fechaStr;
   const [year, month, day] = fecha.split('-');
@@ -97,14 +99,10 @@ const formatearFechaCorta = (fechaStr: string): string => {
 
 const formatearHora = (fechaStr: string): string => {
   if (!fechaStr) return '-';
-  
-  // Si es ISO string
   if (fechaStr.includes('T')) {
     const [, horaPart] = fechaStr.split('T');
     return horaPart.replace('Z', '').substring(0, 5);
   }
-  
-  // Si es formato simple
   const [, hora] = fechaStr.split(' ');
   return hora || '-';
 };
@@ -118,25 +116,32 @@ export default function Turnos() {
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Datos para filtros
+  // Datos para filtros en cascada
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidades, setEspecialidades] = useState<{ id: number; nombre: string }[]>([]);
+  const [especialidadesFiltradas, setEspecialidadesFiltradas] = useState<{ id: number; nombre: string }[]>([]);
   const [negocios, setNegocios] = useState<{ id: number; nombre: string }[]>([]);
   const [centros, setCentros] = useState<{ id: number; nombre: string; codigo: string; negocioId: number }[]>([]);
-  const [estadosTurno, setEstadosTurno] = useState<{ nombre: string; codigoColor: string }[]>([]);
-  const [estadosPago, setEstadosPago] = useState<{ nombre: string; codigoColor: string }[]>([]);
+  const [centrosFiltrados, setCentrosFiltrados] = useState<{ id: number; nombre: string; codigo: string; negocioId: number }[]>([]);
+  const [estadosTurno, setEstadosTurno] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
+  const [estadosPago, setEstadosPago] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
+  const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
+  const [profesionalesFiltrados, setProfesionalesFiltrados] = useState<{ id: number; nombre: string }[]>([]);
   
   const [filtros, setFiltros] = useState<Filtros>({
     desde: '',
     hasta: '',
     profesionalId: '',
     especialidadId: '',
+    actividadId: '',
     negocioId: '6',
     centroId: '',
     canalOrigen: '',
     asistio: '',
-    estadoTurno: '',
+    estadoTurnoId: '',
     estadoPago: '',
+    pacienteSearch: '',
   });
   
   const [paginaActual, setPaginaActual] = useState(1);
@@ -152,14 +157,36 @@ export default function Turnos() {
     fetchEspecialidades();
     fetchNegocios();
     fetchCentros();
+    fetchActividades();
   }, []);
 
   useEffect(() => {
     if (filtros.negocioId) {
       fetchEstadosTurno();
       fetchEstadosPago();
+      cargarActividadesPorNegocio(parseInt(filtros.negocioId));
+      filtrarCentrosPorNegocio(parseInt(filtros.negocioId));
     }
   }, [filtros.negocioId]);
+
+  useEffect(() => {
+    if (filtros.actividadId) {
+      cargarEspecialidadesPorActividad(parseInt(filtros.actividadId));
+    } else {
+      setEspecialidadesFiltradas([]);
+    }
+  }, [filtros.actividadId]);
+
+  useEffect(() => {
+    if (filtros.especialidadId && filtros.centroId) {
+      cargarProfesionalesPorEspecialidadYCentro(
+        parseInt(filtros.especialidadId),
+        parseInt(filtros.centroId)
+      );
+    } else {
+      setProfesionalesFiltrados([]);
+    }
+  }, [filtros.especialidadId, filtros.centroId]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -169,12 +196,14 @@ export default function Turnos() {
       if (filtros.hasta) params.append('hasta', filtros.hasta);
       if (filtros.profesionalId) params.append('profesionalId', filtros.profesionalId);
       if (filtros.especialidadId) params.append('especialidadId', filtros.especialidadId);
+      if (filtros.actividadId) params.append('actividadId', filtros.actividadId);
       if (filtros.negocioId) params.append('negocioId', filtros.negocioId);
       if (filtros.centroId) params.append('centroId', filtros.centroId);
       if (filtros.canalOrigen) params.append('canalOrigen', filtros.canalOrigen);
       if (filtros.asistio) params.append('asistio', filtros.asistio);
-      if (filtros.estadoTurno) params.append('estadoTurnoId', filtros.estadoTurno);
+      if (filtros.estadoTurnoId) params.append('estadoTurnoId', filtros.estadoTurnoId);
       if (filtros.estadoPago) params.append('estadoPago', filtros.estadoPago);
+      if (filtros.pacienteSearch) params.append('pacienteSearch', filtros.pacienteSearch);
       
       const url = `${TURNOS_URL}?${params.toString()}`;
       const res = await fetch(url);
@@ -228,6 +257,16 @@ export default function Turnos() {
     }
   };
 
+  const fetchActividades = async () => {
+    try {
+      const res = await fetch(ACTIVIDADES_URL);
+      const data = await res.json();
+      setActividades(data.filter((a: any) => !a.fecha_baja));
+    } catch (err) {
+      console.error('Error al cargar actividades:', err);
+    }
+  };
+
   const fetchEstadosTurno = async () => {
     try {
       const res = await fetch(`${ESTADOS_TURNO_URL}/negocio/${filtros.negocioId}`);
@@ -248,6 +287,46 @@ export default function Turnos() {
     }
   };
 
+  const cargarActividadesPorNegocio = async (negocioId: number) => {
+    try {
+      const res = await fetch(`${NEGOCIO_ACTIVIDADES_URL}/negocio/${negocioId}`);
+      const relaciones = await res.json();
+      const actividadIds = relaciones.map((r: any) => r.actividadId);
+      const actividadesFiltro = actividades.filter(a => actividadIds.includes(a.id));
+      setActividadesFiltradas(actividadesFiltro);
+    } catch (err) {
+      console.error('Error al cargar actividades del negocio:', err);
+    }
+  };
+
+  const cargarEspecialidadesPorActividad = async (actividadId: number) => {
+    try {
+      const res = await fetch(`${ACTIVIDAD_ESPECIALIDAD_URL}/por-actividad/${actividadId}`);
+      const relaciones = await res.json();
+      const especialidadIds = relaciones.map((r: any) => r.especialidadId);
+      const especialidadesFiltro = especialidades.filter(e => especialidadIds.includes(e.id));
+      setEspecialidadesFiltradas(especialidadesFiltro);
+    } catch (err) {
+      console.error('Error al cargar especialidades por actividad:', err);
+    }
+  };
+
+  const filtrarCentrosPorNegocio = (negocioId: number) => {
+    const filtrados = centros.filter(c => c.negocioId === negocioId);
+    setCentrosFiltrados(filtrados);
+  };
+
+  const cargarProfesionalesPorEspecialidadYCentro = async (especialidadId: number, centroId: number) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/profesional-centro?especialidadId=${especialidadId}&centroId=${centroId}`);
+      const data = await res.json();
+      setProfesionalesFiltrados(data.filter((p: any) => !p.fecha_baja));
+    } catch (err) {
+      console.error('Error al cargar profesionales:', err);
+      setProfesionalesFiltrados([]);
+    }
+  };
+
   const handleFiltroChange = (campo: keyof Filtros, valor: string) => {
     setFiltros({ ...filtros, [campo]: valor });
     setPaginaActual(1);
@@ -259,12 +338,14 @@ export default function Turnos() {
       hasta: '',
       profesionalId: '',
       especialidadId: '',
+      actividadId: '',
       negocioId: '6',
       centroId: '',
       canalOrigen: '',
       asistio: '',
-      estadoTurno: '',
+      estadoTurnoId: '',
       estadoPago: '',
+      pacienteSearch: '',
     });
     setPaginaActual(1);
   };
@@ -274,20 +355,56 @@ export default function Turnos() {
     setModalMode('view');
   };
 
-  const handleCancelar = async (turno: Turno) => {
-    if (!window.confirm(`¿Cancelar turno #${turno.id} de ${turno.usuario.nombre} ${turno.usuario.apellido}?`)) return;
+  const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
+    if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) return;
     
     try {
-      const res = await fetch(`${TURNOS_URL}/${turno.id}/cancelar?motivo=Cancelado por administrador&usuario=admin`, {
+      const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
       });
-      if (!res.ok) throw new Error('Error al cancelar turno');
-      setConfirmCancelar(null);
+      if (!res.ok) throw new Error('Error al cambiar estado');
       fetchTurnos();
-      alert('Turno cancelado correctamente');
+      alert(`Estado cambiado a ${nuevoEstadoNombre}`);
     } catch (err) {
       console.error(err);
-      alert('No se pudo cancelar el turno');
+      alert('No se pudo cambiar el estado');
+    }
+  };
+
+  const handleCambiarAsistencia = async (turno: Turno) => {
+    const nuevoAsistio = !turno.asistio;
+    try {
+      const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ asistio: nuevoAsistio }),
+      });
+      if (!res.ok) throw new Error('Error al cambiar asistencia');
+      fetchTurnos();
+      alert(`Asistencia cambiada a ${nuevoAsistio ? 'Sí' : 'No'}`);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo cambiar la asistencia');
+    }
+  };
+
+  const handleCambiarPago = async (turno: Turno, nuevoPagoId: number, nuevoPagoNombre: string) => {
+    if (!window.confirm(`¿Cambiar estado de pago del turno #${turno.id} a "${nuevoPagoNombre}"?`)) return;
+    
+    try {
+      const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estadoPagoId: nuevoPagoId }),
+      });
+      if (!res.ok) throw new Error('Error al cambiar estado de pago');
+      fetchTurnos();
+      alert(`Estado de pago cambiado a ${nuevoPagoNombre}`);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo cambiar el estado de pago');
     }
   };
 
@@ -299,6 +416,16 @@ export default function Turnos() {
   const obtenerColorPago = (pago: string): string => {
     const found = estadosPago.find(e => e.nombre === pago);
     return found?.codigoColor || '#000000';
+  };
+
+  const obtenerIdEstado = (estadoNombre: string): number | undefined => {
+    const found = estadosTurno.find(e => e.nombre === estadoNombre);
+    return found?.id;
+  };
+
+  const obtenerIdPago = (pagoNombre: string): number | undefined => {
+    const found = estadosPago.find(e => e.nombre === pagoNombre);
+    return found?.id;
   };
 
   const turnosFiltrados = turnos;
@@ -319,8 +446,10 @@ export default function Turnos() {
     centroNombre: t.profesionalCentro?.centro?.nombre || t.centro?.nombre || '-',
     estado: t.estado,
     estadoColor: obtenerColorEstado(t.estado),
+    estadoTurnoId: t.estadoTurnoId,
     pago: t.pagoEstado || 'PENDIENTE',
     pagoColor: obtenerColorPago(t.pagoEstado || 'PENDIENTE'),
+    asistio: t.asistio,
     fecha_baja: t.fecha_baja
   }));
 
@@ -331,26 +460,22 @@ export default function Turnos() {
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
         <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>🔍 Buscar Paciente</label>
+          <input
+            type="text"
+            value={filtros.pacienteSearch}
+            onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)}
+            placeholder="Nombre, apellido, email o documento..."
+            className={turnosStyles.filtroInput}
+          />
+        </div>
+        <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
           <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
           <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
-          <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className={turnosStyles.filtroInput}>
-            <option value="">Todos</option>
-            {profesionales.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-          </select>
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
-          <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className={turnosStyles.filtroInput}>
-            <option value="">Todas</option>
-            {especialidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-          </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
@@ -362,16 +487,30 @@ export default function Turnos() {
           <label className={turnosStyles.filtroLabel}>🏥 Centro</label>
           <select value={filtros.centroId} onChange={(e) => handleFiltroChange('centroId', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
-            {centros.filter(c => !filtros.negocioId || c.negocioId === parseInt(filtros.negocioId)).map(c => (
+            {centrosFiltrados.map(c => (
               <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
             ))}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>📱 Canal Origen</label>
-          <select value={filtros.canalOrigen} onChange={(e) => handleFiltroChange('canalOrigen', e.target.value)} className={turnosStyles.filtroInput}>
+          <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
+          <select value={filtros.actividadId} onChange={(e) => handleFiltroChange('actividadId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todas</option>
+            {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
+          <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Todas</option>
+            {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          </select>
+        </div>
+        <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
+          <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
-            {TIPOS_CANAL.map(c => <option key={c} value={c}>{c}</option>)}
+            {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
@@ -384,9 +523,9 @@ export default function Turnos() {
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
-          <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className={turnosStyles.filtroInput}>
+          <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
-            {estadosTurno.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+            {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
@@ -405,22 +544,34 @@ export default function Turnos() {
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
+            <label className={turnosStyles.filtroLabel}>🔍 Paciente</label>
+            <input
+              type="text"
+              value={filtros.pacienteSearch}
+              onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)}
+              placeholder="Nombre, email..."
+              className={turnosStyles.filtroInput}
+            />
           </div>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
+            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
+            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
+            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} />
+          </div>
+          <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
-            <select value={filtros.estadoTurno} onChange={(e) => handleFiltroChange('estadoTurno', e.target.value)} className={turnosStyles.filtroInput}>
+            <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput}>
               <option value="">Todos</option>
-              {estadosTurno.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+              {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
             <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
@@ -428,9 +579,9 @@ export default function Turnos() {
               {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
             </select>
           </div>
-        </div>
-        <div className={turnosStyles.accionRow}>
-          <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
+          <div className={turnosStyles.accionRow}>
+            <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
+          </div>
         </div>
       </div>
 
@@ -455,10 +606,60 @@ export default function Turnos() {
               { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
               { key: 'centroNombre', label: 'CENTRO' },
               { key: 'estado', label: 'ESTADO', render: (valor, item) => (
-                <span style={{ color: item.estadoColor, fontWeight: 'bold' }}>{valor}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: item.estadoColor, fontWeight: 'bold' }}>{valor}</span>
+                  {item.estado === 'OCUPADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                      className="tm-btn-estado-activo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                  {item.estado === 'CANCELADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                      className="tm-btn-estado-inactivo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                    >
+                      Reactivar
+                    </button>
+                  )}
+                </div>
               )},
               { key: 'pago', label: 'PAGO', render: (valor, item) => (
-                <span style={{ color: item.pagoColor, fontWeight: 'bold' }}>{valor}</span>
+                <select
+                  value={item.pago}
+                  onChange={(e) => {
+                    const nuevoPago = e.target.value;
+                    const pagoId = estadosPago.find(ep => ep.nombre === nuevoPago)?.id;
+                    if (pagoId) handleCambiarPago(item, pagoId, nuevoPago);
+                  }}
+                  style={{ color: item.pagoColor, fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                >
+                  {estadosPago.map(ep => (
+                    <option key={ep.nombre} value={ep.nombre} style={{ color: ep.codigoColor }}>
+                      {ep.nombre}
+                    </option>
+                  ))}
+                </select>
+              )},
+              { key: 'asistio', label: 'ASISTIÓ', render: (valor, item) => (
+                <button
+                  onClick={() => handleCambiarAsistencia(item)}
+                  style={{
+                    backgroundColor: item.asistio ? '#00AA00' : '#888888',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '4px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  {item.asistio ? 'Sí' : 'No'}
+                </button>
               )},
             ]}
             datos={datosTabla}
@@ -474,8 +675,46 @@ export default function Turnos() {
                 <div className="tm-card-profesional">👨‍⚕️ {item.profesionalNombre}</div>
                 <div className="tm-card-especialidad">📋 {item.especialidadNombre}</div>
                 <div className="tm-card-centro">🏥 {item.centroNombre}</div>
-                <div className="tm-card-estado" style={{ color: item.estadoColor }}>🔵 Estado: {item.estado}</div>
-                <div className="tm-card-pago" style={{ color: item.pagoColor }}>💰 Pago: {item.pago}</div>
+                <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
+                  <button
+                    onClick={() => handleCambiarAsistencia(item)}
+                    style={{
+                      backgroundColor: item.asistio ? '#00AA00' : '#888888',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem'
+                    }}
+                  >
+                    Asistió: {item.asistio ? 'Sí' : 'No'}
+                  </button>
+                </div>
+                <div className="tm-card-estado" style={{ color: item.estadoColor, marginTop: '4px' }}>
+                  🔵 Estado: {item.estado}
+                  {item.estado === 'OCUPADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                      className="tm-btn-estado-activo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                  {item.estado === 'CANCELADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                      className="tm-btn-estado-inactivo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
+                    >
+                      Reactivar
+                    </button>
+                  )}
+                </div>
+                <div className="tm-card-pago" style={{ color: item.pagoColor, marginTop: '4px' }}>
+                  💰 Pago: {item.pago}
+                </div>
                 <div className="tm-card-acciones mt-2">
                   <ActionIcons
                     onView={() => handleVerDetalle(item)}
@@ -523,6 +762,7 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorEstado(selectedTurno.estado) }}>{selectedTurno.estado}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorPago(selectedTurno.pagoEstado || 'PENDIENTE') }}>{selectedTurno.pagoEstado || 'PENDIENTE'}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Asistencia</span><p className="tm-modal-detalle-valor">{selectedTurno.asistio ? 'Sí' : 'No'}</p></div>
             {selectedTurno.canalOrigen && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Canal Origen</span><p className="tm-modal-detalle-valor">{selectedTurno.canalOrigen}</p></div>}
             {selectedTurno.ultimoMovimiento && (
               <div className={`tm-modal-detalle-movimiento ${selectedTurno.fecha_baja ? 'inactivo' : 'activo'}`}>
@@ -545,7 +785,7 @@ export default function Turnos() {
             <p className="tm-modal-input-hint mb-4">El turno pasará a estado CANCELADO.</p>
             <div className="tm-modal-acciones">
               <button onClick={() => setConfirmCancelar(null)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={() => handleCancelar(confirmCancelar)} className="tm-btn-danger">Confirmar CANCELACIÓN</button>
+              <button onClick={() => handleCambiarEstado(confirmCancelar, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')} className="tm-btn-danger">Confirmar CANCELACIÓN</button>
             </div>
           </div>
         </div>
