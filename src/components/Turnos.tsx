@@ -115,8 +115,7 @@ export default function Turnos() {
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [modalMode, setModalMode] = useState<'view' | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
-  const [datosInicialesCargados, setDatosInicialesCargados] = useState(false);
-  const [cargandoFiltros, setCargandoFiltros] = useState(false); // 👈 NUEVO
+  const [cargandoFiltros, setCargandoFiltros] = useState(false);
   
   // Datos para filtros en cascada
   const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
@@ -137,7 +136,7 @@ export default function Turnos() {
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: '',
+    negocioId: '6',
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -149,10 +148,10 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  // Indica si los filtros de búsqueda (fechas, paciente, estados) están habilitados
+  // Indica si los filtros de búsqueda están habilitados (solo cuando hay especialidad seleccionada)
   const filtrosBusquedaHabilitados = !!filtros.especialidadId;
 
-  // Cargar datos iniciales (una sola vez)
+  // Cargar datos iniciales
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       setCargandoFiltros(true);
@@ -171,56 +170,10 @@ export default function Turnos() {
     cargarDatosIniciales();
   }, []);
 
-  // Cuando todos los datos iniciales estén listos, establecer valores por defecto
-  useEffect(() => {
-    if (!datosInicialesCargados && negocios.length > 0 && actividades.length > 0 && especialidades.length > 0) {
-      // Buscar negocio DEMO (ID 6) o el primero
-      const negocioDemo = negocios.find(n => n.id === 6) || negocios[0];
-      if (negocioDemo) {
-        setFiltros(prev => ({ ...prev, negocioId: String(negocioDemo.id) }));
-        
-        // Cargar actividades del negocio DEMO
-        cargarActividadesPorNegocio(negocioDemo.id).then(() => {
-          // Después de cargar actividades, buscar "SALUD"
-          setTimeout(() => {
-            const salud = actividadesFiltradas.find(a => a.nombre === 'SALUD');
-            if (salud) {
-              setFiltros(prev => ({ ...prev, actividadId: String(salud.id) }));
-              
-              // Después de seleccionar actividad, cargar especialidades
-              setTimeout(() => {
-                cargarEspecialidadesPorActividad(salud.id).then(() => {
-                  // Después de cargar especialidades, buscar "PSICOLOGIA"
-                  setTimeout(() => {
-                    const psicologia = especialidadesFiltradas.find(e => e.nombre === 'PSICOLOGIA');
-                    if (psicologia) {
-                      setFiltros(prev => ({ ...prev, especialidadId: String(psicologia.id) }));
-                      setDatosInicialesCargados(true);
-                    } else if (especialidadesFiltradas.length > 0) {
-                      setFiltros(prev => ({ ...prev, especialidadId: String(especialidadesFiltradas[0].id) }));
-                      setDatosInicialesCargados(true);
-                    }
-                  }, 100);
-                });
-              }, 100);
-            } else if (actividadesFiltradas.length > 0) {
-              const primeraActividad = actividadesFiltradas[0];
-              setFiltros(prev => ({ ...prev, actividadId: String(primeraActividad.id) }));
-              setDatosInicialesCargados(true);
-            }
-          }, 100);
-        });
-      }
-    }
-  }, [negocios, actividades, especialidades, actividadesFiltradas, especialidadesFiltradas]);
-
-  // Cargar estados y actividades del negocio cuando cambia
+  // Cargar actividades cuando cambia el negocio
   useEffect(() => {
     if (filtros.negocioId) {
-      fetchEstadosTurno();
-      fetchEstadosPago();
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
-      // Resetear filtros dependientes
       setFiltros(prev => ({ ...prev, actividadId: '', especialidadId: '', centroId: '', profesionalId: '' }));
       setEspecialidadesFiltradas([]);
       setCentrosFiltrados([]);
@@ -240,41 +193,35 @@ export default function Turnos() {
     }
   }, [filtros.actividadId]);
 
-  // Cargar centros cuando se tengan: negocio + actividad + especialidad
+  // Cargar centros cuando se tiene especialidad seleccionada
   useEffect(() => {
-    if (filtros.negocioId && filtros.actividadId && filtros.especialidadId) {
-      cargarCentrosPorNegocioActividadEspecialidad(
-        parseInt(filtros.negocioId),
-        parseInt(filtros.especialidadId)
-      );
+    if (filtros.negocioId && filtros.especialidadId) {
+      cargarCentrosPorEspecialidad(parseInt(filtros.negocioId), parseInt(filtros.especialidadId));
       setFiltros(prev => ({ ...prev, centroId: '', profesionalId: '' }));
       setProfesionalesFiltrados([]);
     } else {
       setCentrosFiltrados([]);
     }
-  }, [filtros.negocioId, filtros.actividadId, filtros.especialidadId]);
+  }, [filtros.negocioId, filtros.especialidadId]);
 
-  // Cargar profesionales cuando se tengan: especialidad + centro
+  // Cargar profesionales cuando se tiene centro seleccionado
   useEffect(() => {
-    if (filtros.especialidadId && filtros.centroId) {
-      cargarProfesionalesPorEspecialidadYCentro(
-        parseInt(filtros.especialidadId),
-        parseInt(filtros.centroId)
-      );
+    if (filtros.centroId && filtros.especialidadId) {
+      cargarProfesionalesPorCentro(parseInt(filtros.centroId), parseInt(filtros.especialidadId));
       setFiltros(prev => ({ ...prev, profesionalId: '' }));
     } else {
       setProfesionalesFiltrados([]);
     }
-  }, [filtros.especialidadId, filtros.centroId]);
+  }, [filtros.centroId, filtros.especialidadId]);
 
-  // Cargar turnos SOLO cuando los filtros de búsqueda están habilitados
+  // Cargar turnos cuando los filtros de búsqueda están habilitados
   useEffect(() => {
-    if (filtrosBusquedaHabilitados && datosInicialesCargados) {
+    if (filtrosBusquedaHabilitados) {
       fetchTurnos();
     } else {
       setTurnos([]);
     }
-  }, [filtros, filtrosBusquedaHabilitados, datosInicialesCargados]);
+  }, [filtros, filtrosBusquedaHabilitados]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -405,24 +352,12 @@ export default function Turnos() {
     }
   };
 
-  const cargarCentrosPorNegocioActividadEspecialidad = async (negocioId: number, especialidadId: number) => {
+  const cargarCentrosPorEspecialidad = async (negocioId: number, especialidadId: number) => {
     setCargandoFiltros(true);
     try {
-      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${negocioId}&especialidadId=${especialidadId}`);
-      const relaciones = await res.json();
-      
-      // Filtrar solo las relaciones que coinciden con la especialidad
-      const relacionesValidas = relaciones.filter((r: any) => r.especialidadId === especialidadId);
-      
-      // Usar Map para eliminar centros duplicados
-      const centrosMap = new Map();
-      for (const r of relacionesValidas) {
-        if (r.centro && !centrosMap.has(r.centroId)) {
-          centrosMap.set(r.centroId, r.centro);
-        }
-      }
-      const centrosFiltro = Array.from(centrosMap.values());
-      setCentrosFiltrados(centrosFiltro);
+      const res = await fetch(`${PROFESIONAL_CENTRO_URL}/centros-por-especialidad/${negocioId}/${especialidadId}`);
+      const data = await res.json();
+      setCentrosFiltrados(data);
     } catch (err) {
       console.error('Error al cargar centros:', err);
       setCentrosFiltrados([]);
@@ -431,19 +366,12 @@ export default function Turnos() {
     }
   };
 
-  const cargarProfesionalesPorEspecialidadYCentro = async (especialidadId: number, centroId: number) => {
+  const cargarProfesionalesPorCentro = async (centroId: number, especialidadId: number) => {
     setCargandoFiltros(true);
     try {
-      // 🔹 Agregar negocioId a la consulta
-      const res = await fetch(`${PROFESIONAL_CENTRO_URL}?negocioId=${filtros.negocioId}&especialidadId=${especialidadId}&centroId=${centroId}`);
-      const relaciones = await res.json();
-      
-      // Extraer los profesionales de las relaciones
-      const profesionalesFiltro = relaciones
-        .map((r: any) => r.profesional)
-        .filter((p: any) => p && !p.fecha_baja);
-      
-      setProfesionalesFiltrados(profesionalesFiltro);
+      const res = await fetch(`${TURNOS_URL}/profesionales-por-centro-especialidad?centroId=${centroId}&especialidadId=${especialidadId}`);
+      const data = await res.json();
+      setProfesionalesFiltrados(data);
     } catch (err) {
       console.error('Error al cargar profesionales:', err);
       setProfesionalesFiltrados([]);
@@ -473,12 +401,10 @@ export default function Turnos() {
       pacienteSearch: '',
     });
     setPaginaActual(1);
-    // Resetear listas dependientes
     setEspecialidadesFiltradas([]);
     setCentrosFiltrados([]);
     setProfesionalesFiltrados([]);
     setActividadesFiltradas([]);
-    // Recargar actividades del negocio por defecto
     if (filtros.negocioId) {
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
     }
@@ -581,7 +507,6 @@ export default function Turnos() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Turnos</h1>
 
-      {/* Mensaje de carga de filtros */}
       {cargandoFiltros && (
         <div className="tm-loading-filtros" style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f0f0f0', borderRadius: '8px', marginBottom: '12px' }}>
           <span>Cargando opciones...</span>
@@ -590,7 +515,6 @@ export default function Turnos() {
 
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
-        {/* Primera línea: Negocio, Actividad, Especialidad, Centro, Profesional */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
@@ -606,7 +530,7 @@ export default function Turnos() {
             className={turnosStyles.filtroInput}
             disabled={cargandoFiltros || !filtros.negocioId}
           >
-            <option value="">Todas</option>
+            <option value="">Seleccionar actividad...</option>
             {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
           </select>
         </div>
@@ -618,7 +542,7 @@ export default function Turnos() {
             className={turnosStyles.filtroInput}
             disabled={cargandoFiltros || !filtros.actividadId}
           >
-            <option value="">Todas</option>
+            <option value="">Seleccionar especialidad...</option>
             {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
@@ -630,7 +554,7 @@ export default function Turnos() {
             className={turnosStyles.filtroInput}
             disabled={cargandoFiltros || !filtros.especialidadId}
           >
-            <option value="">Todos</option>
+            <option value="">Todos los centros</option>
             {centrosFiltrados.map(c => (
               <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
             ))}
@@ -644,12 +568,10 @@ export default function Turnos() {
             className={turnosStyles.filtroInput}
             disabled={cargandoFiltros || !filtros.centroId}
           >
-            <option value="">Todos</option>
+            <option value="">Todos los profesionales</option>
             {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
           </select>
         </div>
-
-        {/* Segunda línea: Desde, Hasta, Buscar Paciente */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
           <input 
@@ -681,8 +603,6 @@ export default function Turnos() {
             disabled={!filtrosBusquedaHabilitados}
           />
         </div>
-
-        {/* Tercera línea: Estado Turno, Estado Pago, Asistencia, Limpiar */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
           <select 
@@ -725,7 +645,7 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL (simplificados) */}
+      {/* FILTROS - MÓVIL */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
@@ -745,7 +665,7 @@ export default function Turnos() {
               className={turnosStyles.filtroInput}
               disabled={cargandoFiltros || !filtros.negocioId}
             >
-              <option value="">Todas</option>
+              <option value="">Seleccionar actividad...</option>
               {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
             </select>
           </div>
@@ -759,7 +679,7 @@ export default function Turnos() {
               className={turnosStyles.filtroInput}
               disabled={cargandoFiltros || !filtros.actividadId}
             >
-              <option value="">Todas</option>
+              <option value="">Seleccionar especialidad...</option>
               {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </div>
@@ -773,7 +693,7 @@ export default function Turnos() {
               className={turnosStyles.filtroInput}
               disabled={cargandoFiltros || !filtros.especialidadId}
             >
-              <option value="">Todos</option>
+              <option value="">Todos los centros</option>
               {centrosFiltrados.map(c => (
                 <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
               ))}
@@ -789,7 +709,7 @@ export default function Turnos() {
               className={turnosStyles.filtroInput}
               disabled={cargandoFiltros || !filtros.centroId}
             >
-              <option value="">Todos</option>
+              <option value="">Todos los profesionales</option>
               {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
           </div>
