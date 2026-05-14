@@ -143,9 +143,9 @@ export default function Turnos() {
     desde: '',
     hasta: '',
     profesionalId: '',
-    especialidadId: '2',
-    actividadId: '6',
-    negocioId: '6',
+    especialidadId: '', // 🔹 vacío
+    actividadId: '',     // 🔹 vacío
+    negocioId: '6',      // 🔹 DEMO por defecto
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -157,7 +157,8 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  const filtrosBusquedaHabilitados = !!filtros.especialidadId;
+  // 🔹 Modificado: habilitar búsqueda cuando hay negocio (sin necesidad de especialidad)
+  const filtrosBusquedaHabilitados = !!filtros.negocioId;
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -170,10 +171,9 @@ export default function Turnos() {
           fetchActividades(),
         ]);
         await cargarActividadesPorNegocio(6);
-        await cargarEspecialidadesPorActividad(6);
-        await cargarCentrosPorEspecialidad(6, 2);
         await fetchEstadosTurno();
         await fetchEstadosPago();
+        // 🔹 No cargar especialidades ni centros al inicio (están vacíos)
       } finally {
         setCargandoFiltros(false);
       }
@@ -181,7 +181,7 @@ export default function Turnos() {
     cargarDatosIniciales();
   }, []);
 
-  // Cargar turnos cuando hay especialidad seleccionada
+  // Cargar turnos cuando hay negocio seleccionado
   useEffect(() => {
     if (filtrosBusquedaHabilitados) {
       fetchTurnos();
@@ -208,6 +208,8 @@ export default function Turnos() {
       setFiltros(prev => ({ ...prev, especialidadId: '', centroId: '', profesionalId: '' }));
       setCentrosFiltrados([]);
       setProfesionalesFiltrados([]);
+    } else {
+      setEspecialidadesFiltradas([]);
     }
   }, [filtros.actividadId]);
 
@@ -217,6 +219,8 @@ export default function Turnos() {
       cargarCentrosPorEspecialidad(parseInt(filtros.negocioId), parseInt(filtros.especialidadId));
       setFiltros(prev => ({ ...prev, centroId: '', profesionalId: '' }));
       setProfesionalesFiltrados([]);
+    } else {
+      setCentrosFiltrados([]);
     }
   }, [filtros.negocioId, filtros.especialidadId]);
 
@@ -225,6 +229,8 @@ export default function Turnos() {
     if (filtros.centroId && filtros.especialidadId) {
       cargarProfesionalesPorCentro(parseInt(filtros.centroId), parseInt(filtros.especialidadId));
       setFiltros(prev => ({ ...prev, profesionalId: '' }));
+    } else {
+      setProfesionalesFiltrados([]);
     }
   }, [filtros.centroId, filtros.especialidadId]);
 
@@ -382,8 +388,8 @@ export default function Turnos() {
       desde: '',
       hasta: '',
       profesionalId: '',
-      especialidadId: '2',
-      actividadId: '6',
+      especialidadId: '',
+      actividadId: '',
       negocioId: '6',
       centroId: '',
       canalOrigen: '',
@@ -400,44 +406,60 @@ export default function Turnos() {
     setModalMode('view');
   };
 
- const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
-  console.log('🔵 handleCambiarEstado - INICIO');
-  console.log('   Turno ID:', turno.id);
-  console.log('   Nuevo Estado ID:', nuevoEstadoId);
-  console.log('   Nuevo Estado Nombre:', nuevoEstadoNombre);
-  
-  if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) {
-    console.log('❌ Usuario canceló');
-    return;
-  }
-  
-  console.log('✅ Confirmado, enviando PUT...');
-  
-  try {
-    const url = `${TURNOS_URL}/${turno.id}?usuario=admin`;
-    console.log('   URL:', url);
+  const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
+    console.log('🔵 handleCambiarEstado - INICIO');
+    console.log('   Turno ID:', turno.id);
+    console.log('   Nuevo Estado ID:', nuevoEstadoId);
+    console.log('   Nuevo Estado Nombre:', nuevoEstadoNombre);
     
-   const res = await fetch(url, {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
-});
+    if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) {
+      console.log('❌ Usuario canceló');
+      return;
+    }
+    
+    console.log('✅ Confirmado, enviando PUT...');
+    
+    try {
+      const url = `${TURNOS_URL}/${turno.id}?usuario=admin`;
+      console.log('   URL:', url);
+      
+      // 🔹 Construir el body según la acción
+      const body: any = { estadoTurnoId: nuevoEstadoId };
+      
+      if (nuevoEstadoNombre === 'CANCELADO') {
+        // Al cancelar: enviar auditoría
+        body.canceladoAt = new Date().toISOString();
+        body.canceladoPor = 'admin';
+        body.motivoCancelacion = 'Cancelado por usuario';
+      } else if (nuevoEstadoNombre === 'OCUPADO' && turno.estado === 'CANCELADO') {
+        // Al reactivar: limpiar auditoría
+        body.canceladoAt = null;
+        body.canceladoPor = null;
+        body.motivoCancelacion = null;
+      }
+      
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      
+      console.log('   Response status:', res.status);
+      
+      const data = await res.json();
+      console.log('   Respuesta completa del backend:', data);
+      
+      if (!res.ok) throw new Error('Error al cambiar estado');
+      
+      console.log('✅ PUT exitoso, refrescando turnos...');
+      fetchTurnos();
+      alert(`Estado cambiado a ${nuevoEstadoNombre}`);
+    } catch (err) {
+      console.error('❌ Error en handleCambiarEstado:', err);
+      alert('No se pudo cambiar el estado');
+    }
+  };
 
-console.log('   Response status:', res.status);
-
-const data = await res.json();
-console.log('   Respuesta completa del backend:', data);
-    
-    if (!res.ok) throw new Error('Error al cambiar estado');
-    
-    console.log('✅ PUT exitoso, refrescando turnos...');
-    fetchTurnos();
-    alert(`Estado cambiado a ${nuevoEstadoNombre}`);
-  } catch (err) {
-    console.error('❌ Error en handleCambiarEstado:', err);
-    alert('No se pudo cambiar el estado');
-  }
-};
   const handleCambiarAsistencia = async (turno: Turno) => {
     const nuevoAsistio = !turno.asistio;
     try {
@@ -718,7 +740,7 @@ console.log('   Respuesta completa del backend:', data);
                             </button>
                           )}
                         </div>
-                      </td>
+                       </td>
                       <td>
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
@@ -734,7 +756,7 @@ console.log('   Respuesta completa del backend:', data);
                         >
                           {turno.asistio ? 'Sí' : 'No'}
                         </button>
-                      </td>
+                       </td>
                       <td>{importeFormateado}</td>
                       <td>{turno.pagoEstado || 'SIN PAGO'}</td>
                     </tr>
