@@ -15,6 +15,8 @@ interface Turno {
   estadoTurnoId?: number;
   pagoEstado: string;
   pagoColor?: string;
+  precioReserva: number;
+  moneda: string;
   usuario: {
     id: number;
     nombre: string;
@@ -71,18 +73,35 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 
 const TIPOS_CANAL = ['WEB', 'API', 'RECEPCION', 'APP'];
 
-const formatearFechaHora = (fechaStr: string): string => {
+// Días de la semana en español
+const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+
+// Formatear fecha con día de semana: "LUN 18/05/26 09:00"
+const formatearFechaConDia = (fechaStr: string): string => {
   if (!fechaStr) return '-';
-  if (fechaStr.includes('T')) {
-    const [fecha, horaPart] = fechaStr.split('T');
-    const hora = horaPart.replace('Z', '').substring(0, 5);
-    const [year, month, day] = fecha.split('-');
-    return `${day}/${month}/${year} ${hora}`;
+  const fecha = new Date(fechaStr);
+  const diaSemana = DIAS_SEMANA[fecha.getDay()];
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const anio = fecha.getFullYear().toString().slice(-2);
+  const horas = fecha.getHours().toString().padStart(2, '0');
+  const minutos = fecha.getMinutes().toString().padStart(2, '0');
+  return `${diaSemana} ${dia}/${mes}/${anio} ${horas}:${minutos}`;
+};
+
+// Formatear importe: "ARS $ 1.000,00"
+const formatearImporte = (moneda: string, precio: number): string => {
+  const precioFormateado = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(precio);
+  
+  switch (moneda) {
+    case 'ARS': return `$ ${precioFormateado}`;
+    case 'USD': return `US$ ${precioFormateado}`;
+    case 'EUR': return `€ ${precioFormateado}`;
+    default: return `${moneda} ${precioFormateado}`;
   }
-  const [fecha, hora] = fechaStr.split(' ');
-  if (!fecha || !hora) return fechaStr;
-  const [year, month, day] = fecha.split('-');
-  return `${day}/${month}/${year} ${hora}`;
 };
 
 const formatearFechaCorta = (fechaStr: string): string => {
@@ -118,12 +137,10 @@ export default function Turnos() {
   const [cargandoFiltros, setCargandoFiltros] = useState(false);
   
   // Datos para filtros en cascada
-  const [profesionales, setProfesionales] = useState<{ id: number; nombre: string }[]>([]);
   const [profesionalesFiltrados, setProfesionalesFiltrados] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidades, setEspecialidades] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidadesFiltradas, setEspecialidadesFiltradas] = useState<{ id: number; nombre: string }[]>([]);
   const [negocios, setNegocios] = useState<{ id: number; nombre: string }[]>([]);
-  const [centros, setCentros] = useState<{ id: number; nombre: string; codigo: string; negocioId: number }[]>([]);
   const [centrosFiltrados, setCentrosFiltrados] = useState<{ id: number; nombre: string; codigo: string; negocioId: number }[]>([]);
   const [estadosTurno, setEstadosTurno] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
   const [estadosPago, setEstadosPago] = useState<{ id: number; nombre: string; codigoColor: string }[]>([]);
@@ -134,9 +151,9 @@ export default function Turnos() {
     desde: '',
     hasta: '',
     profesionalId: '',
-    especialidadId: '',
-    actividadId: '',
-    negocioId: '6',
+    especialidadId: '2',  // PSICOLOGIA por defecto
+    actividadId: '6',     // SALUD por defecto
+    negocioId: '6',       // DEMO por defecto
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -151,24 +168,39 @@ export default function Turnos() {
   // Indica si los filtros de búsqueda están habilitados (solo cuando hay especialidad seleccionada)
   const filtrosBusquedaHabilitados = !!filtros.especialidadId;
 
-  // Cargar datos iniciales
+  // Cargar datos iniciales y luego cargar turnos automáticamente
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       setCargandoFiltros(true);
       try {
         await Promise.all([
-          fetchProfesionales(),
           fetchEspecialidades(),
           fetchNegocios(),
-          fetchCentros(),
           fetchActividades(),
+          fetchEstadosTurno(),
+          fetchEstadosPago(),
         ]);
+        // Después de cargar datos básicos, cargar actividades del negocio DEMO
+        await cargarActividadesPorNegocio(6);
+        // Después de actividades, cargar especialidades de SALUD (actividadId=6)
+        await cargarEspecialidadesPorActividad(6);
+        // Después de especialidades, cargar centros por especialidad
+        await cargarCentrosPorEspecialidad(6, 2);
       } finally {
         setCargandoFiltros(false);
       }
     };
     cargarDatosIniciales();
   }, []);
+
+  // Cargar turnos cuando los filtros de búsqueda están habilitados y hay datos
+  useEffect(() => {
+    if (filtrosBusquedaHabilitados) {
+      fetchTurnos();
+    } else {
+      setTurnos([]);
+    }
+  }, [filtros, filtrosBusquedaHabilitados]);
 
   // Cargar actividades cuando cambia el negocio
   useEffect(() => {
@@ -214,14 +246,13 @@ export default function Turnos() {
     }
   }, [filtros.centroId, filtros.especialidadId]);
 
-  // Cargar turnos cuando los filtros de búsqueda están habilitados
+  // Cargar estados de turno y pago cuando cambia el negocio
   useEffect(() => {
-    if (filtrosBusquedaHabilitados) {
-      fetchTurnos();
-    } else {
-      setTurnos([]);
+    if (filtros.negocioId) {
+      fetchEstadosTurno();
+      fetchEstadosPago();
     }
-  }, [filtros, filtrosBusquedaHabilitados]);
+  }, [filtros.negocioId]);
 
   const fetchTurnos = async () => {
     setLoading(true);
@@ -252,16 +283,6 @@ export default function Turnos() {
     }
   };
 
-  const fetchProfesionales = async () => {
-    try {
-      const res = await fetch(PROFESIONALES_URL);
-      const data = await res.json();
-      setProfesionales(data.filter((p: any) => !p.fecha_baja));
-    } catch (err) {
-      console.error('Error al cargar profesionales:', err);
-    }
-  };
-
   const fetchEspecialidades = async () => {
     try {
       const res = await fetch(ESPECIALIDADES_URL);
@@ -279,16 +300,6 @@ export default function Turnos() {
       setNegocios(data.filter((n: any) => !n.fecha_baja));
     } catch (err) {
       console.error('Error al cargar negocios:', err);
-    }
-  };
-
-  const fetchCentros = async () => {
-    try {
-      const res = await fetch(CENTROS_URL);
-      const data = await res.json();
-      setCentros(data.filter((c: any) => !c.fecha_baja));
-    } catch (err) {
-      console.error('Error al cargar centros:', err);
     }
   };
 
@@ -390,8 +401,8 @@ export default function Turnos() {
       desde: '',
       hasta: '',
       profesionalId: '',
-      especialidadId: '',
-      actividadId: '',
+      especialidadId: '2',
+      actividadId: '6',
       negocioId: '6',
       centroId: '',
       canalOrigen: '',
@@ -405,9 +416,9 @@ export default function Turnos() {
     setCentrosFiltrados([]);
     setProfesionalesFiltrados([]);
     setActividadesFiltradas([]);
-    if (filtros.negocioId) {
-      cargarActividadesPorNegocio(parseInt(filtros.negocioId));
-    }
+    cargarActividadesPorNegocio(6);
+    cargarEspecialidadesPorActividad(6);
+    cargarCentrosPorEspecialidad(6, 2);
   };
 
   const handleVerDetalle = (turno: Turno) => {
@@ -490,15 +501,16 @@ export default function Turnos() {
     ...t,
     id: t.id,
     paciente: `${t.usuario.apellido}, ${t.usuario.nombre}`,
-    fechaHora: formatearFechaHora(t.inicio),
+    fechaFormateada: formatearFechaConDia(t.inicio),
     profesionalNombre: t.profesionalCentro?.profesional?.nombre || '-',
     especialidadNombre: t.profesionalCentro?.especialidad?.nombre || '-',
     centroNombre: t.profesionalCentro?.centro?.nombre || t.centro?.nombre || '-',
     estado: t.estado,
     estadoColor: obtenerColorEstado(t.estado),
     estadoTurnoId: t.estadoTurnoId,
-    pago: t.pagoEstado || 'PENDIENTE',
-    pagoColor: obtenerColorPago(t.pagoEstado || 'PENDIENTE'),
+    pago: t.pagoEstado || 'SIN PAGO',
+    pagoColor: obtenerColorPago(t.pagoEstado || 'SIN PAGO'),
+    importe: formatearImporte(t.moneda || 'ARS', t.precioReserva || 0),
     asistio: t.asistio,
     fecha_baja: t.fecha_baja
   }));
@@ -515,6 +527,7 @@ export default function Turnos() {
 
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
+        {/* Primera línea */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
@@ -573,6 +586,21 @@ export default function Turnos() {
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
+          <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
+          <select 
+            value={filtros.asistio} 
+            onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!filtrosBusquedaHabilitados}
+          >
+            <option value="">Todos</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+
+        {/* Segunda línea */}
+        <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
           <input 
             type="date" 
@@ -624,20 +652,7 @@ export default function Turnos() {
             disabled={!filtrosBusquedaHabilitados}
           >
             <option value="">Todos</option>
-            {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
-          </select>
-        </div>
-        <div className={turnosStyles.filtroCampo}>
-          <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
-          <select 
-            value={filtros.asistio} 
-            onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
-            className={turnosStyles.filtroInput}
-            disabled={!filtrosBusquedaHabilitados}
-          >
-            <option value="">Todos</option>
-            <option value="true">Sí</option>
-            <option value="false">No</option>
+            {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.accionRow}>
@@ -716,6 +731,21 @@ export default function Turnos() {
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
+            <select 
+              value={filtros.asistio} 
+              onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
+              className={turnosStyles.filtroInput}
+              disabled={!filtrosBusquedaHabilitados}
+            >
+              <option value="">Todos</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>📅 Desde</label>
             <input 
               type="date" 
@@ -771,24 +801,11 @@ export default function Turnos() {
               disabled={!filtrosBusquedaHabilitados}
             >
               <option value="">Todos</option>
-              {estadosPago.map(e => <option key={e.nombre} value={e.nombre}>{e.nombre}</option>)}
+              {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
-            <select 
-              value={filtros.asistio} 
-              onChange={(e) => handleFiltroChange('asistio', e.target.value)} 
-              className={turnosStyles.filtroInput}
-              disabled={!filtrosBusquedaHabilitados}
-            >
-              <option value="">Todos</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
           <div className={turnosStyles.accionRow}>
             <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
           </div>
@@ -811,7 +828,7 @@ export default function Turnos() {
             columnas={[
               { key: 'id', label: 'ID' },
               { key: 'paciente', label: 'PACIENTE' },
-              { key: 'fechaHora', label: 'FECHA/HORA' },
+              { key: 'fechaFormateada', label: 'FECHA/HORA' },
               { key: 'profesionalNombre', label: 'PROFESIONAL' },
               { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
               { key: 'centroNombre', label: 'CENTRO' },
@@ -838,23 +855,6 @@ export default function Turnos() {
                   )}
                 </div>
               )},
-              { key: 'pago', label: 'PAGO', render: (valor, item) => (
-                <select
-                  value={item.pago}
-                  onChange={(e) => {
-                    const nuevoPago = e.target.value;
-                    const pagoId = estadosPago.find(ep => ep.nombre === nuevoPago)?.id;
-                    if (pagoId) handleCambiarPago(item, pagoId, nuevoPago);
-                  }}
-                  style={{ color: item.pagoColor, fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ddd' }}
-                >
-                  {estadosPago.map(ep => (
-                    <option key={ep.nombre} value={ep.nombre} style={{ color: ep.codigoColor }}>
-                      {ep.nombre}
-                    </option>
-                  ))}
-                </select>
-              )},
               { key: 'asistio', label: 'ASISTIÓ', render: (valor, item) => (
                 <button
                   onClick={() => handleCambiarAsistencia(item)}
@@ -871,6 +871,24 @@ export default function Turnos() {
                   {item.asistio ? 'Sí' : 'No'}
                 </button>
               )},
+              { key: 'importe', label: 'IMPORTE' },
+              { key: 'pago', label: 'PAGO', render: (valor, item) => (
+                <select
+                  value={item.pago}
+                  onChange={(e) => {
+                    const nuevoPago = e.target.value;
+                    const pagoId = estadosPago.find(ep => ep.nombre === nuevoPago)?.id;
+                    if (pagoId) handleCambiarPago(item, pagoId, nuevoPago);
+                  }}
+                  style={{ color: item.pagoColor, fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                >
+                  {estadosPago.map(ep => (
+                    <option key={ep.id} value={ep.nombre} style={{ color: ep.codigoColor }}>
+                      {ep.nombre}
+                    </option>
+                  ))}
+                </select>
+              )},
             ]}
             datos={datosTabla}
             onView={(item) => handleVerDetalle(item)}
@@ -885,6 +903,7 @@ export default function Turnos() {
                 <div className="tm-card-profesional">👨‍⚕️ {item.profesionalNombre}</div>
                 <div className="tm-card-especialidad">📋 {item.especialidadNombre}</div>
                 <div className="tm-card-centro">🏥 {item.centroNombre}</div>
+                <div className="tm-card-importe">💰 {item.importe}</div>
                 <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
                   <button
                     onClick={() => handleCambiarAsistencia(item)}
@@ -965,13 +984,14 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Paciente</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.apellido}, {selectedTurno.usuario.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.email}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Teléfono</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.telefono || '-'}</p></div>
-            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Fecha/Hora</span><p className="tm-modal-detalle-valor">{formatearFechaHora(selectedTurno.inicio)}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Fecha/Hora</span><p className="tm-modal-detalle-valor">{formatearFechaConDia(selectedTurno.inicio)}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Duración</span><p className="tm-modal-detalle-valor">{selectedTurno.duracionMinutos} minutos</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Profesional</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.profesional?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Especialidad</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.especialidad?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Importe</span><p className="tm-modal-detalle-valor">{formatearImporte(selectedTurno.monedaselectedTurno.moneda || 'ARS', selectedTurno.precioReserva || 0)}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorEstado(selectedTurno.estado) }}>{selectedTurno.estado}</p></div>
-            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorPago(selectedTurno.pagoEstado || 'PENDIENTE') }}>{selectedTurno.pagoEstado || 'PENDIENTE'}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorPago(selectedTurno.pagoEstado || 'SIN PAGO') }}>{selectedTurno.pagoEstado || 'SIN PAGO'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Asistencia</span><p className="tm-modal-detalle-valor">{selectedTurno.asistio ? 'Sí' : 'No'}</p></div>
             {selectedTurno.canalOrigen && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Canal Origen</span><p className="tm-modal-detalle-valor">{selectedTurno.canalOrigen}</p></div>}
             {selectedTurno.ultimoMovimiento && (
