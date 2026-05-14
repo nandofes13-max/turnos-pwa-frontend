@@ -400,24 +400,41 @@ export default function Turnos() {
     setModalMode('view');
   };
 
-  const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
-    if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) return;
+ const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
+  console.log('🔵 handleCambiarEstado - INICIO');
+  console.log('   Turno ID:', turno.id);
+  console.log('   Nuevo Estado ID:', nuevoEstadoId);
+  console.log('   Nuevo Estado Nombre:', nuevoEstadoNombre);
+  
+  if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) {
+    console.log('❌ Usuario canceló');
+    return;
+  }
+  
+  console.log('✅ Confirmado, enviando PUT...');
+  
+  try {
+    const url = `${TURNOS_URL}/${turno.id}?usuario=admin`;
+    console.log('   URL:', url);
     
-    try {
-      const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
-      });
-      if (!res.ok) throw new Error('Error al cambiar estado');
-      fetchTurnos();
-      alert(`Estado cambiado a ${nuevoEstadoNombre}`);
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo cambiar el estado');
-    }
-  };
-
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
+    });
+    
+    console.log('   Response status:', res.status);
+    
+    if (!res.ok) throw new Error('Error al cambiar estado');
+    
+    console.log('✅ PUT exitoso, refrescando turnos...');
+    fetchTurnos();
+    alert(`Estado cambiado a ${nuevoEstadoNombre}`);
+  } catch (err) {
+    console.error('❌ Error en handleCambiarEstado:', err);
+    alert('No se pudo cambiar el estado');
+  }
+};
   const handleCambiarAsistencia = async (turno: Turno) => {
     const nuevoAsistio = !turno.asistio;
     try {
