@@ -460,13 +460,24 @@ export default function Turnos() {
     }
   };
 
+  // 🔹 MODIFICADO: Enviar llegada_at cuando se marca asistencia
   const handleCambiarAsistencia = async (turno: Turno) => {
     const nuevoAsistio = !turno.asistio;
+    const body: any = { asistio: nuevoAsistio };
+    
+    // Si se marca como "Sí", enviar la fecha/hora actual
+    if (nuevoAsistio === true) {
+      body.llegadaAt = new Date().toISOString();
+    } else {
+      // Si se marca como "No", limpiar la fecha de llegada
+      body.llegadaAt = null;
+    }
+    
     try {
       const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ asistio: nuevoAsistio }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('Error al cambiar asistencia');
       fetchTurnos();
@@ -505,6 +516,7 @@ export default function Turnos() {
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+            <option value="">Seleccionar...</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
         </div>
@@ -581,6 +593,7 @@ export default function Turnos() {
           <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
             <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+              <option value="">Seleccionar...</option>
               {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
             </select>
           </div>
@@ -740,7 +753,7 @@ export default function Turnos() {
                             </button>
                           )}
                         </div>
-                       </td>
+                      </td>
                       <td>
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
@@ -756,7 +769,7 @@ export default function Turnos() {
                         >
                           {turno.asistio ? 'Sí' : 'No'}
                         </button>
-                       </td>
+                      </td>
                       <td>{importeFormateado}</td>
                       <td>{turno.pagoEstado || 'SIN PAGO'}</td>
                     </tr>
