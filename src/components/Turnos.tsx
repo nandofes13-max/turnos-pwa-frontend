@@ -438,31 +438,8 @@ export default function Turnos() {
     }
   };
 
-  const handleCambiarPago = async (turno: Turno, nuevoPagoId: number, nuevoPagoNombre: string) => {
-    if (!window.confirm(`¿Cambiar estado de pago del turno #${turno.id} a "${nuevoPagoNombre}"?`)) return;
-    
-    try {
-      const res = await fetch(`${TURNOS_URL}/${turno.id}?usuario=admin`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estadoPagoId: nuevoPagoId }),
-      });
-      if (!res.ok) throw new Error('Error al cambiar estado de pago');
-      fetchTurnos();
-      alert(`Estado de pago cambiado a ${nuevoPagoNombre}`);
-    } catch (err) {
-      console.error(err);
-      alert('No se pudo cambiar el estado de pago');
-    }
-  };
-
   const obtenerColorEstado = (estado: string): string => {
     const found = estadosTurno.find(e => e.nombre === estado);
-    return found?.codigoColor || '#000000';
-  };
-
-  const obtenerColorPago = (pago: string): string => {
-    const found = estadosPago.find(e => e.nombre === pago);
     return found?.codigoColor || '#000000';
   };
 
@@ -486,7 +463,6 @@ export default function Turnos() {
     estadoColor: obtenerColorEstado(t.estado),
     estadoTurnoId: t.estadoTurnoId,
     pago: t.pagoEstado || 'SIN PAGO',
-    pagoColor: obtenerColorPago(t.pagoEstado || 'SIN PAGO'),
     importe: formatearImporte(t.moneda, t.precioReserva),
     asistio: t.asistio,
     fecha_baja: t.fecha_baja
@@ -745,17 +721,9 @@ export default function Turnos() {
                 )
               },
               { key: 'importe', label: 'IMPORTE' },
-              { 
-                key: 'pago', 
-                label: 'PAGO', 
-                render: (valor, item) => (
-                  <span style={{ color: item.pagoColor, fontWeight: 'bold' }}>{valor}</span>
-                )
-              },
+              { key: 'pago', label: 'PAGO' },
             ]}
             datos={datosTabla}
-            onView={(item) => handleVerDetalle(item)}
-            onDelete={(item) => !item.fecha_baja && setConfirmCancelar(item)}
             esInactivo={(item) => !!item.fecha_baja}
             renderCard={(item) => (
               <div className={`tm-card-item ${item.fecha_baja ? 'inactiva' : ''}`}>
@@ -811,9 +779,7 @@ export default function Turnos() {
                     </button>
                   )}
                 </div>
-                <div className="tm-card-pago" style={{ color: item.pagoColor, marginTop: '4px' }}>
-                  💰 Pago: {item.pago}
-                </div>
+                <div className="tm-card-pago">💰 Pago: {item.pago}</div>
               </div>
             )}
           />
@@ -844,7 +810,7 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Importe</span><p className="tm-modal-detalle-valor">{formatearImporte(selectedTurno.moneda, selectedTurno.precioReserva)}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorEstado(selectedTurno.estado) }}>{selectedTurno.estado}</p></div>
-            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorPago(selectedTurno.pagoEstado || 'SIN PAGO') }}>{selectedTurno.pagoEstado || 'SIN PAGO'}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor">{selectedTurno.pagoEstado || 'SIN PAGO'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Asistencia</span><p className="tm-modal-detalle-valor">{selectedTurno.asistio ? 'Sí' : 'No'}</p></div>
             {selectedTurno.canalOrigen && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Canal Origen</span><p className="tm-modal-detalle-valor">{selectedTurno.canalOrigen}</p></div>}
             {selectedTurno.ultimoMovimiento && <div className={`tm-modal-detalle-movimiento ${selectedTurno.fecha_baja ? 'inactivo' : 'activo'}`}><span className="tm-modal-detalle-label">Último Movimiento</span><p className="tm-modal-detalle-valor">{selectedTurno.ultimoMovimiento}</p></div>}
