@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ActionIcons from './ActionIcons';
 import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
@@ -578,7 +577,7 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL (simplificado) */}
+      {/* FILTROS - MÓVIL */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
@@ -691,28 +690,68 @@ export default function Turnos() {
               { key: 'profesionalNombre', label: 'PROFESIONAL' },
               { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
               { key: 'centroNombre', label: 'CENTRO' },
-              { key: 'estado', label: 'ESTADO', render: (valor, item) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: item.estadoColor, fontWeight: 'bold' }}>{valor}</span>
-                  {item.estado === 'OCUPADO' && (
-                    <button onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')} className="tm-btn-estado-activo" style={{ padding: '2px 8px', fontSize: '0.7rem' }}>Cancelar</button>
-                  )}
-                  {item.estado === 'CANCELADO' && (
-                    <button onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')} className="tm-btn-estado-inactivo" style={{ padding: '2px 8px', fontSize: '0.7rem' }}>Reactivar</button>
-                  )}
-                </div>
-              )},
-              { key: 'asistio', label: 'ASISTIÓ', render: (valor, item) => (
-                <button onClick={() => handleCambiarAsistencia(item)} style={{ backgroundColor: item.asistio ? '#00AA00' : '#888888', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.75rem' }}>
-                  {item.asistio ? 'Sí' : 'No'}
-                </button>
-              )},
+              { 
+                key: 'estado', 
+                label: 'ESTADO', 
+                render: (valor, item) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ color: item.estadoColor, fontWeight: 'bold' }}>{valor}</span>
+                    <button
+                      onClick={() => handleVerDetalle(item)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                      title="Ver detalle"
+                    >
+                      👁️
+                    </button>
+                    {item.estado === 'OCUPADO' && (
+                      <button
+                        onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                        className="tm-btn-estado-activo"
+                        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    {item.estado === 'CANCELADO' && (
+                      <button
+                        onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                        className="tm-btn-estado-inactivo"
+                        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                      >
+                        Reactivar
+                      </button>
+                    )}
+                  </div>
+                )
+              },
+              { 
+                key: 'asistio', 
+                label: 'ASISTIÓ', 
+                render: (valor, item) => (
+                  <button
+                    onClick={() => handleCambiarAsistencia(item)}
+                    style={{
+                      backgroundColor: item.asistio ? '#00AA00' : '#888888',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    {item.asistio ? 'Sí' : 'No'}
+                  </button>
+                )
+              },
               { key: 'importe', label: 'IMPORTE' },
-              { key: 'pago', label: 'PAGO', render: (valor, item) => (
-                <select value={item.pago} onChange={(e) => { const nuevoPago = e.target.value; const pagoId = estadosPago.find(ep => ep.nombre === nuevoPago)?.id; if (pagoId) handleCambiarPago(item, pagoId, nuevoPago); }} style={{ color: item.pagoColor, fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ddd' }}>
-                  {estadosPago.map(ep => <option key={ep.id} value={ep.nombre} style={{ color: ep.codigoColor }}>{ep.nombre}</option>)}
-                </select>
-              )},
+              { 
+                key: 'pago', 
+                label: 'PAGO', 
+                render: (valor, item) => (
+                  <span style={{ color: item.pagoColor, fontWeight: 'bold' }}>{valor}</span>
+                )
+              },
             ]}
             datos={datosTabla}
             onView={(item) => handleVerDetalle(item)}
@@ -729,16 +768,51 @@ export default function Turnos() {
                 <div className="tm-card-centro">🏥 {item.centroNombre}</div>
                 <div className="tm-card-importe">💰 {item.importe}</div>
                 <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
-                  <button onClick={() => handleCambiarAsistencia(item)} style={{ backgroundColor: item.asistio ? '#00AA00' : '#888888', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.7rem' }}>Asistió: {item.asistio ? 'Sí' : 'No'}</button>
+                  <button
+                    onClick={() => handleCambiarAsistencia(item)}
+                    style={{
+                      backgroundColor: item.asistio ? '#00AA00' : '#888888',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem'
+                    }}
+                  >
+                    Asistió: {item.asistio ? 'Sí' : 'No'}
+                  </button>
                 </div>
                 <div className="tm-card-estado" style={{ color: item.estadoColor, marginTop: '4px' }}>
                   🔵 Estado: {item.estado}
-                  {item.estado === 'OCUPADO' && (<button onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')} className="tm-btn-estado-activo" style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}>Cancelar</button>)}
-                  {item.estado === 'CANCELADO' && (<button onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')} className="tm-btn-estado-inactivo" style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}>Reactivar</button>)}
+                  <button
+                    onClick={() => handleVerDetalle(item)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '8px' }}
+                    title="Ver detalle"
+                  >
+                    👁️
+                  </button>
+                  {item.estado === 'OCUPADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                      className="tm-btn-estado-activo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                  {item.estado === 'CANCELADO' && (
+                    <button
+                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                      className="tm-btn-estado-inactivo"
+                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
+                    >
+                      Reactivar
+                    </button>
+                  )}
                 </div>
-                <div className="tm-card-pago" style={{ color: item.pagoColor, marginTop: '4px' }}>💰 Pago: {item.pago}</div>
-                <div className="tm-card-acciones mt-2">
-                  <ActionIcons onView={() => handleVerDetalle(item)} onDelete={() => !item.fecha_baja && setConfirmCancelar(item)} showAdd={false} showEdit={false} showDelete={true} showView={true} showSchedule={false} disabledAdd={false} disabledEdit={false} disabledDelete={!!item.fecha_baja} disabledView={false} disabledSchedule={false} size="lg" />
+                <div className="tm-card-pago" style={{ color: item.pagoColor, marginTop: '4px' }}>
+                  💰 Pago: {item.pago}
                 </div>
               </div>
             )}
