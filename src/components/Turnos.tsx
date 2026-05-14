@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import TablaMaestra from './TablaMaestra';
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
 
@@ -13,7 +11,6 @@ interface Turno {
   estadoColor?: string;
   estadoTurnoId?: number;
   pagoEstado: string;
-  pagoColor?: string;
   precioReserva: number | string;
   moneda: string;
   usuario: {
@@ -71,7 +68,7 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// Formatear fecha usando UTC (respetando lo que viene de la BD)
+// Formatear fecha usando UTC
 const formatearFechaConDia = (fechaStr: string): string => {
   if (!fechaStr) return '-';
   const fecha = new Date(fechaStr);
@@ -451,23 +448,6 @@ export default function Turnos() {
 
   const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
 
-  const datosTabla = turnosPaginados.map(t => ({
-    ...t,
-    id: t.id,
-    paciente: `${t.usuario.apellido}, ${t.usuario.nombre}`,
-    fechaFormateada: formatearFechaConDia(t.inicio),
-    profesionalNombre: t.profesionalCentro?.profesional?.nombre || '-',
-    especialidadNombre: t.profesionalCentro?.especialidad?.nombre || '-',
-    centroNombre: t.profesionalCentro?.centro?.nombre || t.centro?.nombre || '-',
-    estado: t.estado,
-    estadoColor: obtenerColorEstado(t.estado),
-    estadoTurnoId: t.estadoTurnoId,
-    pago: t.pagoEstado || 'SIN PAGO',
-    importe: formatearImporte(t.moneda, t.precioReserva),
-    asistio: t.asistio,
-    fecha_baja: t.fecha_baja
-  }));
-
   return (
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Turnos</h1>
@@ -658,131 +638,172 @@ export default function Turnos() {
             </div>
           </div>
 
-          <TablaMaestra
-            columnas={[
-              { key: 'id', label: 'ID' },
-              { key: 'paciente', label: 'PACIENTE' },
-              { key: 'fechaFormateada', label: 'FECHA/HORA' },
-              { key: 'profesionalNombre', label: 'PROFESIONAL' },
-              { key: 'especialidadNombre', label: 'ESPECIALIDAD' },
-              { key: 'centroNombre', label: 'CENTRO' },
-              { 
-                key: 'estado', 
-                label: 'ESTADO', 
-                render: (valor, item) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ color: item.estadoColor, fontWeight: 'bold' }}>{valor}</span>
+          {/* TABLA DESKTOP */}
+          <div className="tm-tabla-centrado">
+            <table className="tm-tabla">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>PACIENTE</th>
+                  <th>FECHA/HORA</th>
+                  <th>PROFESIONAL</th>
+                  <th>ESPECIALIDAD</th>
+                  <th>CENTRO</th>
+                  <th>ESTADO</th>
+                  <th>ASISTIÓ</th>
+                  <th>IMPORTE</th>
+                  <th>PAGO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {turnosPaginados.map((turno) => {
+                  const estadoColor = obtenerColorEstado(turno.estado);
+                  const inactivo = !!turno.fecha_baja;
+                  const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
+                  
+                  return (
+                    <tr key={turno.id} className={inactivo ? 'tm-fila-inactiva' : ''}>
+                      <td>{turno.id}</td>
+                      <td>{`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</td>
+                      <td>{formatearFechaConDia(turno.inicio)}</td>
+                      <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
+                      <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
+                      <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ color: estadoColor, fontWeight: 'bold' }}>{turno.estado}</span>
+                          <button
+                            onClick={() => handleVerDetalle(turno)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                            title="Ver detalle"
+                          >
+                            👁️
+                          </button>
+                          {turno.estado === 'OCUPADO' && (
+                            <button
+                              onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                              className="tm-btn-estado-activo"
+                              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                          {turno.estado === 'CANCELADO' && (
+                            <button
+                              onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                              className="tm-btn-estado-inactivo"
+                              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                            >
+                              Reactivar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleCambiarAsistencia(turno)}
+                          style={{
+                            backgroundColor: turno.asistio ? '#00AA00' : '#888888',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 12px',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {turno.asistio ? 'Sí' : 'No'}
+                        </button>
+                      </td>
+                      <td>{importeFormateado}</td>
+                      <td>{turno.pagoEstado || 'SIN PAGO'}</td>
+                    </tr>
+                  );
+                })}
+                {turnosPaginados.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="tm-fila-vacia">
+                      No hay turnos que coincidan con los filtros
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* CARDS MÓVIL */}
+          <div className="tm-cards">
+            {turnosPaginados.map((turno) => {
+              const estadoColor = obtenerColorEstado(turno.estado);
+              const inactivo = !!turno.fecha_baja;
+              const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
+              
+              return (
+                <div key={turno.id} className={`tm-card-item ${inactivo ? 'inactiva' : ''}`}>
+                  <div className="tm-card-nombre"><strong>🆔 TURNO #{turno.id}</strong></div>
+                  <div className="tm-card-paciente">👤 {`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</div>
+                  <div className="tm-card-fecha">📅 {formatearFechaCorta(turno.inicio)}</div>
+                  <div className="tm-card-hora">⏰ {formatearHora(turno.inicio)}</div>
+                  <div className="tm-card-profesional">👨‍⚕️ {turno.profesionalCentro?.profesional?.nombre || '-'}</div>
+                  <div className="tm-card-especialidad">📋 {turno.profesionalCentro?.especialidad?.nombre || '-'}</div>
+                  <div className="tm-card-centro">🏥 {turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</div>
+                  <div className="tm-card-importe">💰 {importeFormateado}</div>
+                  <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
                     <button
-                      onClick={() => handleVerDetalle(item)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                      onClick={() => handleCambiarAsistencia(turno)}
+                      style={{
+                        backgroundColor: turno.asistio ? '#00AA00' : '#888888',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px 12px',
+                        cursor: 'pointer',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Asistió: {turno.asistio ? 'Sí' : 'No'}
+                    </button>
+                  </div>
+                  <div className="tm-card-estado" style={{ color: estadoColor, marginTop: '4px' }}>
+                    🔵 Estado: {turno.estado}
+                    <button
+                      onClick={() => handleVerDetalle(turno)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '8px' }}
                       title="Ver detalle"
                     >
                       👁️
                     </button>
-                    {item.estado === 'OCUPADO' && (
+                    {turno.estado === 'OCUPADO' && (
                       <button
-                        onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                        onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
                         className="tm-btn-estado-activo"
-                        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                        style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
                       >
                         Cancelar
                       </button>
                     )}
-                    {item.estado === 'CANCELADO' && (
+                    {turno.estado === 'CANCELADO' && (
                       <button
-                        onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                        onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
                         className="tm-btn-estado-inactivo"
-                        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                        style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
                       >
                         Reactivar
                       </button>
                     )}
                   </div>
-                )
-              },
-              { 
-                key: 'asistio', 
-                label: 'ASISTIÓ', 
-                render: (valor, item) => (
-                  <button
-                    onClick={() => handleCambiarAsistencia(item)}
-                    style={{
-                      backgroundColor: item.asistio ? '#00AA00' : '#888888',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '4px 12px',
-                      cursor: 'pointer',
-                      fontSize: '0.75rem'
-                    }}
-                  >
-                    {item.asistio ? 'Sí' : 'No'}
-                  </button>
-                )
-              },
-              { key: 'importe', label: 'IMPORTE' },
-              { key: 'pago', label: 'PAGO' },
-            ]}
-            datos={datosTabla}
-            esInactivo={(item) => !!item.fecha_baja}
-            renderCard={(item) => (
-              <div className={`tm-card-item ${item.fecha_baja ? 'inactiva' : ''}`}>
-                <div className="tm-card-nombre"><strong>🆔 TURNO #{item.id}</strong></div>
-                <div className="tm-card-paciente">👤 {item.paciente}</div>
-                <div className="tm-card-fecha">📅 {formatearFechaCorta(item.inicio)}</div>
-                <div className="tm-card-hora">⏰ {formatearHora(item.inicio)}</div>
-                <div className="tm-card-profesional">👨‍⚕️ {item.profesionalNombre}</div>
-                <div className="tm-card-especialidad">📋 {item.especialidadNombre}</div>
-                <div className="tm-card-centro">🏥 {item.centroNombre}</div>
-                <div className="tm-card-importe">💰 {item.importe}</div>
-                <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
-                  <button
-                    onClick={() => handleCambiarAsistencia(item)}
-                    style={{
-                      backgroundColor: item.asistio ? '#00AA00' : '#888888',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '4px 12px',
-                      cursor: 'pointer',
-                      fontSize: '0.7rem'
-                    }}
-                  >
-                    Asistió: {item.asistio ? 'Sí' : 'No'}
-                  </button>
+                  <div className="tm-card-pago" style={{ marginTop: '4px' }}>
+                    💰 Pago: {turno.pagoEstado || 'SIN PAGO'}
+                  </div>
                 </div>
-                <div className="tm-card-estado" style={{ color: item.estadoColor, marginTop: '4px' }}>
-                  🔵 Estado: {item.estado}
-                  <button
-                    onClick={() => handleVerDetalle(item)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '8px' }}
-                    title="Ver detalle"
-                  >
-                    👁️
-                  </button>
-                  {item.estado === 'OCUPADO' && (
-                    <button
-                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
-                      className="tm-btn-estado-activo"
-                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                  {item.estado === 'CANCELADO' && (
-                    <button
-                      onClick={() => handleCambiarEstado(item, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
-                      className="tm-btn-estado-inactivo"
-                      style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
-                    >
-                      Reactivar
-                    </button>
-                  )}
-                </div>
-                <div className="tm-card-pago">💰 Pago: {item.pago}</div>
+              );
+            })}
+            {turnosPaginados.length === 0 && (
+              <div className="tm-card-item">
+                <div className="tm-card-nombre">No hay turnos que coincidan</div>
               </div>
             )}
-          />
+          </div>
           
           {turnosFiltrados.length > 0 && (
             <div className="tm-paginacion">
