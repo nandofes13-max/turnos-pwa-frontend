@@ -417,13 +417,16 @@ export default function Turnos() {
     const url = `${TURNOS_URL}/${turno.id}?usuario=admin`;
     console.log('   URL:', url);
     
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
-    });
-    
-    console.log('   Response status:', res.status);
+   const res = await fetch(url, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ estadoTurnoId: nuevoEstadoId }),
+});
+
+console.log('   Response status:', res.status);
+
+const data = await res.json();
+console.log('   Respuesta completa del backend:', data);
     
     if (!res.ok) throw new Error('Error al cambiar estado');
     
