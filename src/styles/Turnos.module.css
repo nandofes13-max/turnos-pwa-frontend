@@ -78,6 +78,150 @@
   background-color: #ccc;
 }
 
+/* =============================================
+   TABLA DE TURNOS - ESTILOS ESPECÍFICOS
+   ============================================= */
+
+/* Contenedor de la tabla con overflow para scroll horizontal */
+.tm-tabla-turnos {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Tabla compacta */
+.tm-tabla-turnos table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+/* Celdas de la tabla */
+.tm-tabla-turnos th,
+.tm-tabla-turnos td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Columnas que pueden wrap (solo CENTRO) */
+.tm-tabla-turnos td:nth-child(6),
+.tm-tabla-turnos th:nth-child(6) {
+  white-space: normal;
+  min-width: 150px;
+  max-width: 200px;
+}
+
+/* Anchos fijos para columnas */
+.tm-tabla-turnos th:nth-child(1), /* ID */
+.tm-tabla-turnos td:nth-child(1) {
+  width: 50px;
+}
+
+.tm-tabla-turnos th:nth-child(3), /* FECHA/HORA */
+.tm-tabla-turnos td:nth-child(3) {
+  width: 130px;
+}
+
+.tm-tabla-turnos th:nth-child(4), /* PROFESIONAL */
+.tm-tabla-turnos td:nth-child(4) {
+  width: 140px;
+}
+
+.tm-tabla-turnos th:nth-child(5), /* ESPECIALIDAD */
+.tm-tabla-turnos td:nth-child(5) {
+  width: 120px;
+}
+
+.tm-tabla-turnos th:nth-child(7), /* ESTADO */
+.tm-tabla-turnos td:nth-child(7) {
+  width: 100px;
+}
+
+.tm-tabla-turnos th:nth-child(8), /* ASISTIÓ */
+.tm-tabla-turnos td:nth-child(8) {
+  width: 100px;
+}
+
+.tm-tabla-turnos th:nth-child(9), /* IMPORTE */
+.tm-tabla-turnos td:nth-child(9) {
+  width: 100px;
+}
+
+.tm-tabla-turnos th:nth-child(10), /* PAGO */
+.tm-tabla-turnos td:nth-child(10) {
+  width: 90px;
+}
+
+/* Botones de estado unificados */
+.btn-estado {
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  width: 100%;
+  min-width: 70px;
+}
+
+/* Estado OCUPADO */
+.btn-ocupado {
+  background-color: #00AA00;
+  color: white;
+}
+
+.btn-ocupado:hover {
+  background-color: #cc0000;
+  content: "CANCELAR";
+}
+
+/* Estado CANCELADO */
+.btn-cancelado {
+  background-color: #cc0000;
+  color: white;
+}
+
+.btn-cancelado:hover {
+  background-color: #00AA00;
+}
+
+/* Asistencia: SÍ */
+.btn-asistio-si {
+  background-color: #00AA00;
+  color: white;
+}
+
+.btn-asistio-si:hover {
+  background-color: #cc0000;
+}
+
+/* Asistencia: NO */
+.btn-asistio-no {
+  background-color: #888888;
+  color: white;
+}
+
+.btn-asistio-no:hover {
+  background-color: #00AA00;
+}
+
+/* Responsive: ajustes para móvil */
+@media (max-width: 768px) {
+  .tm-tabla-turnos th,
+  .tm-tabla-turnos td {
+    padding: 6px 4px;
+    font-size: 0.7rem;
+  }
+  
+  .btn-estado {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    min-width: 60px;
+  }
+}
+
 /* Estado del turno (color en cards) */
 .estadoTurno {
   font-weight: bold;
