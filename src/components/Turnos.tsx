@@ -4,8 +4,9 @@ import turnosStyles from '../styles/Turnos.module.css';
 
 interface Turno {
   id: number;
-  inicio: string;
-  fin: string;
+  fechaTurno: string;      // 🔹 NUEVO: fecha (YYYY-MM-DD)
+  horaInicio: string;      // 🔹 NUEVO: hora inicio (HH:MM:SS)
+  horaFin: string;         // 🔹 NUEVO: hora fin (HH:MM:SS)
   duracionMinutos: number;
   estado: string;
   estadoColor?: string;
@@ -68,17 +69,32 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// Formatear fecha usando UTC
-const formatearFechaConDia = (fechaStr: string): string => {
-  if (!fechaStr) return '-';
-  const fecha = new Date(fechaStr);
-  const diaSemana = DIAS_SEMANA[fecha.getUTCDay()];
-  const dia = fecha.getUTCDate().toString().padStart(2, '0');
-  const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-  const anio = fecha.getUTCFullYear().toString().slice(-2);
-  const horas = fecha.getUTCHours().toString().padStart(2, '0');
-  const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-  return `${diaSemana} ${dia}/${mes}/${anio} ${horas}:${minutos}`;
+// Formatear fecha y hora juntas
+const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
+  if (!fechaTurno || !horaInicio) return '-';
+  const fecha = new Date(fechaTurno);
+  const diaSemana = DIAS_SEMANA[fecha.getDay()];
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const anio = fecha.getFullYear().toString().slice(-2);
+  const hora = horaInicio.substring(0, 5);
+  return `${diaSemana} ${dia}/${mes}/${anio} ${hora}`;
+};
+
+// Formatear solo fecha
+const formatearFecha = (fechaTurno: string): string => {
+  if (!fechaTurno) return '-';
+  const fecha = new Date(fechaTurno);
+  const dia = fecha.getDate().toString().padStart(2, '0');
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  const anio = fecha.getFullYear().toString().slice(-2);
+  return `${dia}/${mes}/${anio}`;
+};
+
+// Formatear solo hora
+const formatearHora = (hora: string): string => {
+  if (!hora) return '-';
+  return hora.substring(0, 5);
 };
 
 // Formatear importe con moneda incluida
@@ -95,29 +111,6 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
     case 'EUR': return `EUR € ${precioFormateado}`;
     default: return `${moneda} ${precioFormateado}`;
   }
-};
-
-const formatearFechaCorta = (fechaStr: string): string => {
-  if (!fechaStr) return '-';
-  if (fechaStr.includes('T')) {
-    const [fecha] = fechaStr.split('T');
-    const [year, month, day] = fecha.split('-');
-    return `${day}/${month}/${year}`;
-  }
-  const [fecha] = fechaStr.split(' ');
-  if (!fecha) return fechaStr;
-  const [year, month, day] = fecha.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-const formatearHora = (fechaStr: string): string => {
-  if (!fechaStr) return '-';
-  if (fechaStr.includes('T')) {
-    const [, horaPart] = fechaStr.split('T');
-    return horaPart.replace('Z', '').substring(0, 5);
-  }
-  const [, hora] = fechaStr.split(' ');
-  return hora || '-';
 };
 
 export default function Turnos() {
@@ -143,9 +136,9 @@ export default function Turnos() {
     desde: '',
     hasta: '',
     profesionalId: '',
-    especialidadId: '', // 🔹 vacío
-    actividadId: '',     // 🔹 vacío
-    negocioId: '6',      // 🔹 DEMO por defecto
+    especialidadId: '',
+    actividadId: '',
+    negocioId: '6',
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -157,7 +150,6 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  // 🔹 Modificado: habilitar búsqueda cuando hay negocio (sin necesidad de especialidad)
   const filtrosBusquedaHabilitados = !!filtros.negocioId;
 
   // Cargar datos iniciales
@@ -173,7 +165,6 @@ export default function Turnos() {
         await cargarActividadesPorNegocio(6);
         await fetchEstadosTurno();
         await fetchEstadosPago();
-        // 🔹 No cargar especialidades ni centros al inicio (están vacíos)
       } finally {
         setCargandoFiltros(false);
       }
@@ -423,16 +414,13 @@ export default function Turnos() {
       const url = `${TURNOS_URL}/${turno.id}?usuario=admin`;
       console.log('   URL:', url);
       
-      // 🔹 Construir el body según la acción
       const body: any = { estadoTurnoId: nuevoEstadoId };
       
       if (nuevoEstadoNombre === 'CANCELADO') {
-        // Al cancelar: enviar auditoría
         body.canceladoAt = new Date().toISOString();
         body.canceladoPor = 'admin';
         body.motivoCancelacion = 'Cancelado por usuario';
       } else if (nuevoEstadoNombre === 'OCUPADO' && turno.estado === 'CANCELADO') {
-        // Al reactivar: limpiar auditoría
         body.canceladoAt = null;
         body.canceladoPor = null;
         body.motivoCancelacion = null;
@@ -460,16 +448,13 @@ export default function Turnos() {
     }
   };
 
-  // 🔹 MODIFICADO: Enviar llegada_at cuando se marca asistencia
   const handleCambiarAsistencia = async (turno: Turno) => {
     const nuevoAsistio = !turno.asistio;
     const body: any = { asistio: nuevoAsistio };
     
-    // Si se marca como "Sí", enviar la fecha/hora actual
     if (nuevoAsistio === true) {
       body.llegadaAt = new Date().toISOString();
     } else {
-      // Si se marca como "No", limpiar la fecha de llegada
       body.llegadaAt = null;
     }
     
@@ -715,12 +700,13 @@ export default function Turnos() {
                   const estadoColor = obtenerColorEstado(turno.estado);
                   const inactivo = !!turno.fecha_baja;
                   const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
+                  const fechaHoraFormateada = formatearFechaHora(turno.fechaTurno, turno.horaInicio);
                   
                   return (
                     <tr key={turno.id} className={inactivo ? 'tm-fila-inactiva' : ''}>
                       <td>{turno.id}</td>
                       <td>{`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</td>
-                      <td>{formatearFechaConDia(turno.inicio)}</td>
+                      <td>{fechaHoraFormateada}</td>
                       <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
@@ -792,13 +778,15 @@ export default function Turnos() {
               const estadoColor = obtenerColorEstado(turno.estado);
               const inactivo = !!turno.fecha_baja;
               const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
+              const fechaFormateada = formatearFecha(turno.fechaTurno);
+              const horaFormateada = formatearHora(turno.horaInicio);
               
               return (
                 <div key={turno.id} className={`tm-card-item ${inactivo ? 'inactiva' : ''}`}>
                   <div className="tm-card-nombre"><strong>🆔 TURNO #{turno.id}</strong></div>
                   <div className="tm-card-paciente">👤 {`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</div>
-                  <div className="tm-card-fecha">📅 {formatearFechaCorta(turno.inicio)}</div>
-                  <div className="tm-card-hora">⏰ {formatearHora(turno.inicio)}</div>
+                  <div className="tm-card-fecha">📅 {fechaFormateada}</div>
+                  <div className="tm-card-hora">⏰ {horaFormateada}</div>
                   <div className="tm-card-profesional">👨‍⚕️ {turno.profesionalCentro?.profesional?.nombre || '-'}</div>
                   <div className="tm-card-especialidad">📋 {turno.profesionalCentro?.especialidad?.nombre || '-'}</div>
                   <div className="tm-card-centro">🏥 {turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</div>
@@ -879,7 +867,7 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Paciente</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.apellido}, {selectedTurno.usuario.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.email}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Teléfono</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.telefono || '-'}</p></div>
-            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Fecha/Hora</span><p className="tm-modal-detalle-valor">{formatearFechaConDia(selectedTurno.inicio)}</p></div>
+            <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Fecha/Hora</span><p className="tm-modal-detalle-valor">{formatearFechaHora(selectedTurno.fechaTurno, selectedTurno.horaInicio)}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Duración</span><p className="tm-modal-detalle-valor">{selectedTurno.duracionMinutos} minutos</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Profesional</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.profesional?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Especialidad</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.especialidad?.nombre || '-'}</p></div>
