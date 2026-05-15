@@ -4,9 +4,9 @@ import turnosStyles from '../styles/Turnos.module.css';
 
 interface Turno {
   id: number;
-  fechaTurno: string;      // 🔹 NUEVO: fecha (YYYY-MM-DD)
-  horaInicio: string;      // 🔹 NUEVO: hora inicio (HH:MM:SS)
-  horaFin: string;         // 🔹 NUEVO: hora fin (HH:MM:SS)
+  fechaTurno: string;
+  horaInicio: string;
+  horaFin: string;
   duracionMinutos: number;
   estado: string;
   estadoColor?: string;
@@ -397,6 +397,7 @@ export default function Turnos() {
     setModalMode('view');
   };
 
+  // 🔹 SIMPLIFICADO: Solo envía estadoTurnoId (y fecha_baja para reactivar)
   const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
     console.log('🔵 handleCambiarEstado - INICIO');
     console.log('   Turno ID:', turno.id);
@@ -416,14 +417,9 @@ export default function Turnos() {
       
       const body: any = { estadoTurnoId: nuevoEstadoId };
       
-      if (nuevoEstadoNombre === 'CANCELADO') {
-        body.canceladoAt = new Date().toISOString();
-        body.canceladoPor = 'admin';
-        body.motivoCancelacion = 'Cancelado por usuario';
-      } else if (nuevoEstadoNombre === 'OCUPADO' && turno.estado === 'CANCELADO') {
-        body.canceladoAt = null;
-        body.canceladoPor = null;
-        body.motivoCancelacion = null;
+      // Solo necesitamos enviar fecha_baja cuando reactivamos para limpiar el soft delete
+      if (nuevoEstadoNombre === 'OCUPADO' && turno.estado === 'CANCELADO') {
+        body.fecha_baja = null;
       }
       
       const res = await fetch(url, {
