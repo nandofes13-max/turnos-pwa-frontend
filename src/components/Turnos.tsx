@@ -675,7 +675,7 @@ export default function Turnos() {
           </div>
 
           {/* TABLA DESKTOP */}
-          <div className="tm-tabla-centrado">
+          <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
                 <tr>
@@ -693,7 +693,6 @@ export default function Turnos() {
               </thead>
               <tbody>
                 {turnosPaginados.map((turno) => {
-                  const estadoColor = obtenerColorEstado(turno.estado);
                   const inactivo = !!turno.fecha_baja;
                   const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
                   const fechaHoraFormateada = formatearFechaHora(turno.fechaTurno, turno.horaInicio);
@@ -707,11 +706,10 @@ export default function Turnos() {
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ color: estadoColor, fontWeight: 'bold' }}>{turno.estado}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
                           <button
                             onClick={() => handleVerDetalle(turno)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
                             title="Ver detalle"
                           >
                             👁️
@@ -719,19 +717,23 @@ export default function Turnos() {
                           {turno.estado === 'OCUPADO' && (
                             <button
                               onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
-                              className="tm-btn-estado-activo"
-                              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                              className={turnosStyles.btnEstado}
+                              style={{ backgroundColor: '#00AA00' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cc0000'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00AA00'}
                             >
-                              Cancelar
+                              OCUPADO
                             </button>
                           )}
                           {turno.estado === 'CANCELADO' && (
                             <button
                               onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
-                              className="tm-btn-estado-inactivo"
-                              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                              className={turnosStyles.btnEstado}
+                              style={{ backgroundColor: '#cc0000' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#00AA00'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#cc0000'}
                             >
-                              Reactivar
+                              CANCELADO
                             </button>
                           )}
                         </div>
@@ -739,17 +741,12 @@ export default function Turnos() {
                       <td>
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
-                          style={{
-                            backgroundColor: turno.asistio ? '#00AA00' : '#888888',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                            fontSize: '0.75rem'
-                          }}
+                          className={turnosStyles.btnEstado}
+                          style={{ backgroundColor: turno.asistio ? '#00AA00' : '#888888' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = turno.asistio ? '#cc0000' : '#00AA00'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = turno.asistio ? '#00AA00' : '#888888'}
                         >
-                          {turno.asistio ? 'Sí' : 'No'}
+                          {turno.asistio ? 'SÍ' : 'NO'}
                         </button>
                       </td>
                       <td>{importeFormateado}</td>
