@@ -725,7 +725,7 @@ export default function Turnos() {
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-                          {turno.estadoTurnoId === 1 && (
+                          {turno.estadoTurnoId === 1 && turno.asistio === false && (
                             <button
                               onClick={() => handleCambiarEstado(turno, 2)}
                               className={turnosStyles['btn-ocupado']}
@@ -819,7 +819,7 @@ export default function Turnos() {
                     >
                       🔍
                     </button>
-                    {turno.estadoTurnoId === 1 && (
+                    {turno.estadoTurnoId === 1 && turno.asistio === false && (
                       <button
                         onClick={() => handleCambiarEstado(turno, 2)}
                         className="tm-btn-estado-activo"
