@@ -398,7 +398,8 @@ export default function Turnos() {
   };
 
   // 🔹 SIMPLIFICADO: Solo envía estadoTurnoId (y fecha_baja para reactivar)
-  const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number, nuevoEstadoNombre: string) => {
+  const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number) => {
+    const nuevoEstadoNombre = nuevoEstadoId === 1 ? 'RESERVADO' : 'CANCELADO';
     console.log('🔵 handleCambiarEstado - INICIO');
     console.log('   Turno ID:', turno.id);
     console.log('   Nuevo Estado ID:', nuevoEstadoId);
@@ -418,7 +419,7 @@ export default function Turnos() {
       const body: any = { estadoTurnoId: nuevoEstadoId };
       
       // Solo necesitamos enviar fecha_baja cuando reactivamos para limpiar el soft delete
-      if (nuevoEstadoNombre === 'OCUPADO' && turno.estado === 'CANCELADO') {
+      if (nuevoEstadoId === 1 && turno.estadoTurnoId === 2) {
         body.fecha_baja = null;
       }
       
@@ -445,6 +446,12 @@ export default function Turnos() {
   };
 
   const handleCambiarAsistencia = async (turno: Turno) => {
+    // Si está cancelado, no se puede cambiar
+    if (turno.estadoTurnoId === 2) {
+      alert('No se puede cambiar la asistencia de un turno cancelado');
+      return;
+    }
+    
     const nuevoAsistio = !turno.asistio;
     const body: any = { asistio: nuevoAsistio };
     
@@ -718,17 +725,17 @@ export default function Turnos() {
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-                          {turno.estado === 'OCUPADO' && (
+                          {turno.estadoTurnoId === 1 && (
                             <button
-                              onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                              onClick={() => handleCambiarEstado(turno, 2)}
                               className={turnosStyles['btn-ocupado']}
                             >
-                              OCUPADO
+                              RESERVADO
                             </button>
                           )}
-                          {turno.estado === 'CANCELADO' && (
+                          {turno.estadoTurnoId === 2 && (
                             <button
-                              onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                              onClick={() => handleCambiarEstado(turno, 1)}
                               className={turnosStyles['btn-cancelado']}
                             >
                               CANCELADO
@@ -740,6 +747,11 @@ export default function Turnos() {
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
                           className={turno.asistio ? turnosStyles['btn-asistio-si'] : turnosStyles['btn-asistio-no']}
+                          disabled={turno.estadoTurnoId === 2}
+                          style={{ 
+                            opacity: turno.estadoTurnoId === 2 ? 0.5 : 1,
+                            cursor: turno.estadoTurnoId === 2 ? 'not-allowed' : 'pointer'
+                          }}
                         >
                           {turno.asistio ? 'SÍ' : 'NO'}
                         </button>
@@ -789,8 +801,11 @@ export default function Turnos() {
                         borderRadius: '4px',
                         padding: '4px 12px',
                         cursor: 'pointer',
-                        fontSize: '0.7rem'
+                        fontSize: '0.7rem',
+                        opacity: turno.estadoTurnoId === 2 ? 0.5 : 1,
+                        cursor: turno.estadoTurnoId === 2 ? 'not-allowed' : 'pointer'
                       }}
+                      disabled={turno.estadoTurnoId === 2}
                     >
                       Asistió: {turno.asistio ? 'Sí' : 'No'}
                     </button>
@@ -804,18 +819,18 @@ export default function Turnos() {
                     >
                       🔍
                     </button>
-                    {turno.estado === 'OCUPADO' && (
+                    {turno.estadoTurnoId === 1 && (
                       <button
-                        onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
+                        onClick={() => handleCambiarEstado(turno, 2)}
                         className="tm-btn-estado-activo"
                         style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
                       >
                         Cancelar
                       </button>
                     )}
-                    {turno.estado === 'CANCELADO' && (
+                    {turno.estadoTurnoId === 2 && (
                       <button
-                        onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'OCUPADO')?.id || 0, 'OCUPADO')}
+                        onClick={() => handleCambiarEstado(turno, 1)}
                         className="tm-btn-estado-inactivo"
                         style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
                       >
@@ -879,7 +894,7 @@ export default function Turnos() {
             <p className="tm-modal-input-hint mb-4">El turno pasará a estado CANCELADO.</p>
             <div className="tm-modal-acciones">
               <button onClick={() => setConfirmCancelar(null)} className="tm-btn-secundario">Cancelar</button>
-              <button onClick={() => handleCambiarEstado(confirmCancelar, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')} className="tm-btn-danger">Confirmar CANCELACIÓN</button>
+              <button onClick={() => handleCambiarEstado(confirmCancelar, 2)} className="tm-btn-danger">Confirmar CANCELACIÓN</button>
             </div>
           </div>
         </div>
