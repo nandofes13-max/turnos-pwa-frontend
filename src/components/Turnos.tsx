@@ -700,20 +700,24 @@ export default function Turnos() {
                   return (
                     <tr key={turno.id} className={inactivo ? 'tm-fila-inactiva' : ''}>
                       <td>{turno.id}</td>
-                      <td>{`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+                          <span>{`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</span>
+                          <button
+                            onClick={() => handleVerDetalle(turno)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', marginLeft: '4px' }}
+                            title="Ver detalle"
+                          >
+                            🔍
+                          </button>
+                        </div>
+                      </td>
                       <td>{fechaHoraFormateada}</td>
                       <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-                          <button
-                            onClick={() => handleVerDetalle(turno)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
-                            title="Ver detalle"
-                          >
-                            🔍
-                          </button>
                           {turno.estado === 'OCUPADO' && (
                             <button
                               onClick={() => handleCambiarEstado(turno, estadosTurno.find(e => e.nombre === 'CANCELADO')?.id || 0, 'CANCELADO')}
