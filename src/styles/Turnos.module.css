@@ -156,31 +156,43 @@
 /* Botones de estado unificados */
 .btn-estado {
   border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 20px;
+  padding: 4px 12px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
   transition: all 0.2s;
-  width: 100%;
-  min-width: 70px;
+  min-width: 80px;
 }
 
 /* Estado OCUPADO */
 .btn-ocupado {
   background-color: #00AA00;
   color: white;
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 80px;
 }
 
 .btn-ocupado:hover {
   background-color: #cc0000;
-  content: "CANCELAR";
 }
 
 /* Estado CANCELADO */
 .btn-cancelado {
   background-color: #cc0000;
   color: white;
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 80px;
 }
 
 .btn-cancelado:hover {
@@ -191,6 +203,13 @@
 .btn-asistio-si {
   background-color: #00AA00;
   color: white;
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 60px;
 }
 
 .btn-asistio-si:hover {
@@ -201,12 +220,18 @@
 .btn-asistio-no {
   background-color: #888888;
   color: white;
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 60px;
 }
 
 .btn-asistio-no:hover {
   background-color: #00AA00;
 }
-
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
