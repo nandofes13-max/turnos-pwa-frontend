@@ -104,18 +104,19 @@
   white-space: nowrap;
 }
 
-/* Columnas que pueden wrap (solo CENTRO) */
-.tm-tabla-turnos td:nth-child(6),
-.tm-tabla-turnos th:nth-child(6) {
-  white-space: normal;
-  min-width: 150px;
-  max-width: 200px;
-}
-
 /* Anchos fijos para columnas */
 .tm-tabla-turnos th:nth-child(1), /* ID */
 .tm-tabla-turnos td:nth-child(1) {
   width: 50px;
+}
+
+.tm-tabla-turnos th:nth-child(2), /* PACIENTE */
+.tm-tabla-turnos td:nth-child(2) {
+  width: 180px;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tm-tabla-turnos th:nth-child(3), /* FECHA/HORA */
@@ -125,12 +126,27 @@
 
 .tm-tabla-turnos th:nth-child(4), /* PROFESIONAL */
 .tm-tabla-turnos td:nth-child(4) {
-  width: 140px;
+  width: 150px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tm-tabla-turnos th:nth-child(5), /* ESPECIALIDAD */
 .tm-tabla-turnos td:nth-child(5) {
   width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tm-tabla-turnos th:nth-child(6), /* CENTRO */
+.tm-tabla-turnos td:nth-child(6) {
+  width: 150px;
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .tm-tabla-turnos th:nth-child(7), /* ESTADO */
@@ -140,7 +156,7 @@
 
 .tm-tabla-turnos th:nth-child(8), /* ASISTIÓ */
 .tm-tabla-turnos td:nth-child(8) {
-  width: 100px;
+  width: 80px;
 }
 
 .tm-tabla-turnos th:nth-child(9), /* IMPORTE */
@@ -157,25 +173,25 @@
 .btn-estado {
   border: none;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
   transition: all 0.2s;
-  min-width: 80px;
+  min-width: 85px;
 }
 
-/* Estado OCUPADO */
+/* Estado RESERVADO */
 .btn-ocupado {
   background-color: #00AA00;
   color: white;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
   transition: all 0.2s;
-  min-width: 80px;
+  min-width: 85px;
 }
 
 .btn-ocupado:hover {
@@ -187,12 +203,12 @@
   background-color: #cc0000;
   color: white;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
   transition: all 0.2s;
-  min-width: 80px;
+  min-width: 85px;
 }
 
 .btn-cancelado:hover {
@@ -204,7 +220,7 @@
   background-color: #00AA00;
   color: white;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
@@ -221,7 +237,7 @@
   background-color: #888888;
   color: white;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: bold;
@@ -232,6 +248,7 @@
 .btn-asistio-no:hover {
   background-color: #00AA00;
 }
+
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
@@ -240,10 +257,14 @@
     font-size: 0.7rem;
   }
   
-  .btn-estado {
+  .btn-estado,
+  .btn-ocupado,
+  .btn-cancelado,
+  .btn-asistio-si,
+  .btn-asistio-no {
     padding: 2px 6px;
     font-size: 0.65rem;
-    min-width: 60px;
+    min-width: 70px;
   }
 }
 
