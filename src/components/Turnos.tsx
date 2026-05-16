@@ -725,10 +725,15 @@ export default function Turnos() {
                       <td>{turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-                          {turno.estadoTurnoId === 1 && turno.asistio === false && (
+                          {turno.estadoTurnoId === 1 && (
                             <button
-                              onClick={() => handleCambiarEstado(turno, 2)}
+                              onClick={() => turno.asistio === false && handleCambiarEstado(turno, 2)}
                               className={turnosStyles['btn-ocupado']}
+                              disabled={turno.asistio === true}
+                              style={{
+                                opacity: turno.asistio === true ? 0.5 : 1,
+                                cursor: turno.asistio === true ? 'not-allowed' : 'pointer'
+                              }}
                             >
                               RESERVADO
                             </button>
@@ -819,11 +824,18 @@ export default function Turnos() {
                     >
                       🔍
                     </button>
-                    {turno.estadoTurnoId === 1 && turno.asistio === false && (
+                    {turno.estadoTurnoId === 1 && (
                       <button
-                        onClick={() => handleCambiarEstado(turno, 2)}
+                        onClick={() => turno.asistio === false && handleCambiarEstado(turno, 2)}
                         className="tm-btn-estado-activo"
-                        style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '0.7rem',
+                          marginLeft: '8px',
+                          opacity: turno.asistio === true ? 0.5 : 1,
+                          cursor: turno.asistio === true ? 'not-allowed' : 'pointer'
+                        }}
+                        disabled={turno.asistio === true}
                       >
                         Cancelar
                       </button>
