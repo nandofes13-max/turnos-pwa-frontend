@@ -720,7 +720,7 @@ export default function Turnos() {
                             🔍
                           </button>
                         </div>
-                      </tr>
+                      </td>
                       <td>{fechaHoraFormateada}</td>
                       <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
