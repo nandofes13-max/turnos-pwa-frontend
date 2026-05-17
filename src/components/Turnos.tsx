@@ -404,6 +404,8 @@ export default function Turnos() {
     console.log('   Turno ID:', turno.id);
     console.log('   Nuevo Estado ID:', nuevoEstadoId);
     console.log('   Nuevo Estado Nombre:', nuevoEstadoNombre);
+    console.log('   DEBUG - nuevoEstadoId:', nuevoEstadoId);
+    console.log('   DEBUG - turno.estadoTurnoId:', turno.estadoTurnoId);
     
     if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) {
       console.log('❌ Usuario canceló');
