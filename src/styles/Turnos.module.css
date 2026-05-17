@@ -255,7 +255,7 @@
    ============================================= */
 
 .tm-modal-turnos {
-  background-color: lightblue !important;
+  background-color: lightblue !important; /* lo puedes quitar después de probar */
 }
 
 .tm-modal-turnos .tm-modal-detalle-campo {
