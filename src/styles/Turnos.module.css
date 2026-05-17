@@ -254,6 +254,10 @@
    MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
    ============================================= */
 
+.tm-modal-turnos {
+  background-color: lightblue !important;
+}
+
 .tm-modal-turnos .tm-modal-detalle-campo {
   margin-bottom: 2px !important;
   gap: 6px !important;
