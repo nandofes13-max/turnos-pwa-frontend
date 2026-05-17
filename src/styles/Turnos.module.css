@@ -254,25 +254,25 @@
    MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
    ============================================= */
 
-._tm-modal-turnos_qetlr_257 .tm-modal-detalle-campo {
+.tm-modal-turnos .tm-modal-detalle-campo {
   margin-bottom: 2px !important;
   gap: 6px !important;
 }
 
-._tm-modal-turnos_qetlr_257 .tm-modal-detalle-label {
+.tm-modal-turnos .tm-modal-detalle-label {
   font-size: 0.7rem !important;
   min-width: 90px !important;
   line-height: 1.2 !important;
   margin-bottom: 0 !important;
 }
 
-._tm-modal-turnos_qetlr_257 .tm-modal-detalle-valor {
+.tm-modal-turnos .tm-modal-detalle-valor {
   font-size: 0.75rem !important;
   margin: 0 !important;
   line-height: 1.2 !important;
 }
 
-._tm-modal-turnos_qetlr_257 .tm-modal-detalle-movimiento {
+.tm-modal-turnos .tm-modal-detalle-movimiento {
   margin-top: 4px !important;
   padding-top: 4px !important;
 }
