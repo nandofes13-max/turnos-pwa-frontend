@@ -879,7 +879,7 @@ export default function Turnos() {
       {/* Modal Ver Detalle */}
       {modalMode === 'view' && selectedTurno && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-          <div className={`tm-modal ${turnosStyles.tmModalTurnos}`} onClick={(e) => e.stopPropagation()}>
+         <div className={`tm-modal ${turnosStyles['tm-modal-turnos']}`} onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Turno #{selectedTurno.id}</h3>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Paciente</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.apellido}, {selectedTurno.usuario.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.email}</p></div>
