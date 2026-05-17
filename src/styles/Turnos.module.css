@@ -255,29 +255,30 @@
    ============================================= */
 
 div.tm-modal-turnos div.tm-modal-detalle-campo {
-  margin-bottom: 2px;
+  margin-bottom: 2px !important;
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 
 div.tm-modal-turnos div.tm-modal-detalle-campo:last-child {
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
 }
 
 div.tm-modal-turnos .tm-modal-detalle-label {
-  line-height: 1;
+  line-height: 1.1 !important;
   font-size: 0.7rem;
   font-weight: 600;
   color: #555;
   min-width: 100px;
+  margin-bottom: 0 !important;
 }
 
 div.tm-modal-turnos .tm-modal-detalle-valor {
   font-size: 0.8rem;
-  margin: 0;
+  margin: 0 !important;
   color: #333;
-  line-height: 1;
+  line-height: 1.1 !important;
 }
 
 div.tm-modal-turnos .tm-modal-detalle-movimiento {
@@ -286,6 +287,8 @@ div.tm-modal-turnos .tm-modal-detalle-movimiento {
   border-top: 1px solid #e0e0e0;
   font-size: 0.7rem;
 }
+
+
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
