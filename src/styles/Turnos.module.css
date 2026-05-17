@@ -254,38 +254,38 @@
    MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
    ============================================= */
 
-.tm-modal-turnos .tm-modal-detalle-campo {
+div.tm-modal-turnos div.tm-modal-detalle-campo {
   margin-bottom: 2px;
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 
-.tm-modal-turnos .tm-modal-detalle-campo:last-child {
+div.tm-modal-turnos div.tm-modal-detalle-campo:last-child {
   margin-bottom: 0;
 }
 
-.tm-modal-turnos .tm-modal-detalle-label {
-   line-height: 1;
-   font-size: 0.7rem;
+div.tm-modal-turnos .tm-modal-detalle-label {
+  line-height: 1;
+  font-size: 0.7rem;
   font-weight: 600;
   color: #555;
   min-width: 100px;
 }
 
-.tm-modal-turnos .tm-modal-detalle-valor {
+div.tm-modal-turnos .tm-modal-detalle-valor {
   font-size: 0.8rem;
   margin: 0;
   color: #333;
+  line-height: 1;
 }
 
-.tm-modal-turnos .tm-modal-detalle-movimiento {
-  margin-top: 8px;
-  padding-top: 6px;
+div.tm-modal-turnos .tm-modal-detalle-movimiento {
+  margin-top: 4px;
+  padding-top: 4px;
   border-top: 1px solid #e0e0e0;
   font-size: 0.7rem;
 }
-
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
