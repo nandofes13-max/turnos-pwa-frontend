@@ -254,40 +254,28 @@
    MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
    ============================================= */
 
-div.tm-modal-turnos div.tm-modal-detalle-campo {
+._tm-modal-turnos_qetlr_257 .tm-modal-detalle-campo {
   margin-bottom: 2px !important;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  gap: 6px !important;
 }
 
-div.tm-modal-turnos div.tm-modal-detalle-campo:last-child {
+._tm-modal-turnos_qetlr_257 .tm-modal-detalle-label {
+  font-size: 0.7rem !important;
+  min-width: 90px !important;
+  line-height: 1.2 !important;
   margin-bottom: 0 !important;
 }
 
-div.tm-modal-turnos .tm-modal-detalle-label {
-  line-height: 1.1 !important;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #555;
-  min-width: 100px;
-  margin-bottom: 0 !important;
-}
-
-div.tm-modal-turnos .tm-modal-detalle-valor {
-  font-size: 0.8rem;
+._tm-modal-turnos_qetlr_257 .tm-modal-detalle-valor {
+  font-size: 0.75rem !important;
   margin: 0 !important;
-  color: #333;
-  line-height: 1.1 !important;
+  line-height: 1.2 !important;
 }
 
-div.tm-modal-turnos .tm-modal-detalle-movimiento {
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid #e0e0e0;
-  font-size: 0.7rem;
+._tm-modal-turnos_qetlr_257 .tm-modal-detalle-movimiento {
+  margin-top: 4px !important;
+  padding-top: 4px !important;
 }
-
 
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
