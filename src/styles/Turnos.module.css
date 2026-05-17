@@ -255,14 +255,19 @@
    ============================================= */
 
 .tm-modal-turnos .tm-modal-detalle-campo {
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 
+.tm-modal-turnos .tm-modal-detalle-campo:last-child {
+  margin-bottom: 0;
+}
+
 .tm-modal-turnos .tm-modal-detalle-label {
-  font-size: 0.7rem;
+   line-height: 1;
+   font-size: 0.7rem;
   font-weight: 600;
   color: #555;
   min-width: 100px;
