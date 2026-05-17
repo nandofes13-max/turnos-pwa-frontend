@@ -5,8 +5,8 @@
 /* Filtros en desktop (grid responsivo) */
 .filtrosDesktop {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
   margin-bottom: 20px;
   padding: 16px;
   background-color: #f8f9fa;
@@ -67,11 +67,12 @@
 .btnLimpiar {
   background-color: #e0e0e0;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 10px;
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  height: 100%;
 }
 
 .btnLimpiar:hover {
@@ -249,6 +250,37 @@
   background-color: #00AA00;
 }
 
+/* =============================================
+   MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
+   ============================================= */
+
+.tm-modal-turnos .tm-modal-detalle-campo {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tm-modal-turnos .tm-modal-detalle-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  min-width: 100px;
+}
+
+.tm-modal-turnos .tm-modal-detalle-valor {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #333;
+}
+
+.tm-modal-turnos .tm-modal-detalle-movimiento {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.7rem;
+}
+
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
@@ -265,6 +297,16 @@
     padding: 2px 6px;
     font-size: 0.65rem;
     min-width: 70px;
+  }
+  
+  .tm-modal-turnos .tm-modal-detalle-campo {
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+  
+  .tm-modal-turnos .tm-modal-detalle-label {
+    min-width: auto;
   }
 }
 
