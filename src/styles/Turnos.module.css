@@ -299,20 +299,7 @@
   font-size: 0.7rem !important;
 }
 
-/* Responsive: ajustes para móvil */
-@media (max-width: 768px) {
-  .tm-modal-turnos .tm-modal-detalle-campo {
-    flex-direction: column !important;
-    gap: 2px !important;
-    margin-bottom: 6px !important;
-  }
-  
-  .tm-modal-turnos .tm-modal-detalle-label {
-    min-width: auto !important;
-  }
-}
-
-/* FORZAR ESTILOS COMPACTOS EN EL MODAL */
+/* FORZAR ESTILOS COMPACTOS EN EL MODAL (respaldo) */
 .tm-modal .tm-modal-detalle-campo {
   display: flex !important;
   align-items: baseline !important;
@@ -331,36 +318,6 @@
   font-size: 0.75rem !important;
   line-height: 1.1 !important;
   margin: 0 !important;
-}
-
-/* Responsive: ajustes para móvil */
-@media (max-width: 768px) {
-  .tm-tabla-turnos th,
-  .tm-tabla-turnos td {
-    padding: 6px 4px;
-    font-size: 0.7rem;
-  }
-  
-  .btn-estado,
-  .btn-ocupado,
-  .btn-cancelado,
-  .btn-asistio-si,
-  .btn-asistio-no {
-    padding: 2px 6px;
-    font-size: 0.65rem;
-    min-width: 70px;
-  }
-  
-  /* Modal en móvil: labels arriba, valores abajo */
-  .tm-modal-turnos .tm-modal-detalle-campo {
-    flex-direction: column !important;
-    gap: 2px !important;
-    margin-bottom: 8px !important;
-  }
-  
-  .tm-modal-turnos .tm-modal-detalle-label {
-    min-width: auto !important;
-  }
 }
 
 /* Estado del turno (color en cards) */
@@ -389,26 +346,66 @@
   flex: 1 !important;
 }
 
-/* Responsive de filtros */
-@media (min-width: 769px) {
-  .filtrosDesktop {
-    display: grid;
-  }
-  .filtrosMobile {
-    display: none;
-  }
-}
+/* =============================================
+   RESPONSIVE - MÓVIL
+   ============================================= */
 
 @media (max-width: 768px) {
+  /* Ocultar filtros desktop */
   .filtrosDesktop {
     display: none;
   }
+  
+  /* Mostrar filtros móvil */
   .filtrosMobile {
     display: flex;
   }
   
-  /* Ocultar la tabla en móvil */
-  .tm-tabla-wrapper .tm-tabla {
+  /* 🔥 OCULTAR TABLA EN MÓVIL 🔥 */
+  .tm-tabla-turnos,
+  .tm-tabla-turnos table,
+  .tm-tabla-wrapper .tm-tabla,
+  .tm-tabla-centrado {
     display: none !important;
+  }
+  
+  /* Ajustes de botones en móvil */
+  .btn-estado,
+  .btn-ocupado,
+  .btn-cancelado,
+  .btn-asistio-si,
+  .btn-asistio-no {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    min-width: 70px;
+  }
+  
+  /* Modal en móvil: labels arriba, valores abajo */
+  .tm-modal-turnos .tm-modal-detalle-campo {
+    flex-direction: column !important;
+    gap: 2px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .tm-modal-turnos .tm-modal-detalle-label {
+    min-width: auto !important;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Mostrar filtros desktop */
+  .filtrosDesktop {
+    display: grid;
+  }
+  
+  /* Ocultar filtros móvil */
+  .filtrosMobile {
+    display: none;
+  }
+  
+  /* Mostrar tabla en desktop */
+  .tm-tabla-turnos,
+  .tm-tabla-turnos table {
+    display: table !important;
   }
 }
