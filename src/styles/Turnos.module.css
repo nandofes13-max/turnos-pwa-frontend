@@ -6,7 +6,7 @@
 .filtrosDesktop {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+  gap: 9px;
   margin-bottom: 20px;
   padding: 16px;
   background-color: #f8f9fa;
