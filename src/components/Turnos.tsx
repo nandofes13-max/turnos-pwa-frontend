@@ -671,7 +671,7 @@ export default function Turnos() {
             </div>
           </div>
 
-          {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
+                    {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
           <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
@@ -761,12 +761,12 @@ export default function Turnos() {
                     <td colSpan={10} className="tm-fila-vacia">
                       No hay turnos que coincidan con los filtros
                     </td>
-                  <tr>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
-
+          
           {/* CARDS MÓVIL - CON BOTÓN ASISTIÓ */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
