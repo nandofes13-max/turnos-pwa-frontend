@@ -372,6 +372,22 @@
   font-weight: bold;
 }
 
+/* =============================================
+   AJUSTES DE FILTROS - ANCHOS ESPECÍFICOS
+   ============================================= */
+
+/* Ancho para filtros de fecha */
+.filtroFecha {
+  width: 120px !important;
+  min-width: 120px !important;
+}
+
+/* Ancho para filtro de paciente */
+.filtroPaciente {
+  min-width: 250px !important;
+  flex: 2 !important;
+}
+
 /* Responsive de filtros */
 @media (min-width: 769px) {
   .filtrosDesktop {
