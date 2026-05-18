@@ -406,4 +406,8 @@
   .filtrosMobile {
     display: flex;
   }
+   /* Ocultar la tabla desktop en móvil */
+.tm-tabla-turnos {
+  display: none !important;
+}
 }
