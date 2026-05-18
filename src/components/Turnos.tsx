@@ -671,7 +671,7 @@ export default function Turnos() {
             </div>
           </div>
 
-          {/* TABLA DESKTOP */}
+          {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
           <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
@@ -761,13 +761,13 @@ export default function Turnos() {
                     <td colSpan={10} className="tm-fila-vacia">
                       No hay turnos que coincidan con los filtros
                     </td>
-                  </tr>
+                  <tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* CARDS MÓVIL - SIMPLIFICADAS */}
+          {/* CARDS MÓVIL - CON BOTÓN ASISTIÓ */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
               const estadoColor = obtenerColorEstado(turno.estado);
@@ -795,7 +795,25 @@ export default function Turnos() {
                   <div className="tm-card-especialidad">📋 {turno.profesionalCentro?.especialidad?.nombre || '-'}</div>
                   <div className="tm-card-centro">🏥 {turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</div>
                   <div className="tm-card-asistencia" style={{ marginTop: '8px' }}>
-                    Asistió: {turno.asistio ? 'Sí' : 'No'}
+                    <button
+                      onClick={() => handleCambiarAsistencia(turno)}
+                      style={{
+                        backgroundColor: turno.asistio ? '#00AA00' : '#888888',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        cursor: 'pointer',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        minWidth: '70px',
+                        opacity: turno.estadoTurnoId === 2 ? 0.5 : 1,
+                        cursor: turno.estadoTurnoId === 2 ? 'not-allowed' : 'pointer'
+                      }}
+                      disabled={turno.estadoTurnoId === 2}
+                    >
+                      {turno.asistio ? 'ASISTIÓ' : 'NO ASISTIÓ'}
+                    </button>
                   </div>
                 </div>
               );
