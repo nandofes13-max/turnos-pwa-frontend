@@ -406,8 +406,19 @@
   .filtrosMobile {
     display: flex;
   }
-   /* Ocultar la tabla desktop en móvil */
-.tm-tabla-turnos {
-  display: none !important;
-}
+  
+  /* Ocultar la tabla desktop en móvil */
+  .tm-tabla-wrapper table {
+    display: none !important;
+  }
+  
+  /* Ocultar también el contenedor de la tabla */
+  .tm-tabla-centrado {
+    display: none !important;
+  }
+  
+  /* Si aún así aparece, ocultar por clase con hash */
+  div[class*="tm-tabla-turnos"] {
+    display: none !important;
+  }
 }
