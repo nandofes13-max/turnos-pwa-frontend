@@ -152,6 +152,41 @@ export default function Turnos() {
 
   const filtrosBusquedaHabilitados = !!filtros.negocioId;
 
+  // 🔥 Inyectar estilos compactos para el modal
+useEffect(() => {
+  // Crear un elemento <style> con los estilos compactos
+  const style = document.createElement('style');
+  style.id = 'modal-compact-styles';
+  style.textContent = `
+    .tm-modal .tm-modal-detalle-campo {
+      display: flex !important;
+      align-items: baseline !important;
+      gap: 8px !important;
+      padding: 1px 0 !important;
+      margin-bottom: 4px !important;
+    }
+    .tm-modal .tm-modal-detalle-label {
+      font-size: 0.7rem !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+    }
+    .tm-modal .tm-modal-detalle-valor {
+      font-size: 0.75rem !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+    }
+    .tm-modal .tm-modal-detalle-movimiento {
+      margin-top: 4px !important;
+      padding-top: 4px !important;
+    }
+  `;
+  
+  // Si ya existe, no lo vuelvas a agregar
+  if (!document.getElementById('modal-compact-styles')) {
+    document.head.appendChild(style);
+  }
+}, []);
+
   // Cargar datos iniciales
   useEffect(() => {
     const cargarDatosIniciales = async () => {
