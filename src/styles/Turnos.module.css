@@ -8,7 +8,7 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 20px;
-  padding: 14px;
+  padding: 12px;
   background-color: #f8f9fa;
   border-radius: 12px;
 }
