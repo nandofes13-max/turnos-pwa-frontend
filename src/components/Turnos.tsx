@@ -153,39 +153,36 @@ export default function Turnos() {
   const filtrosBusquedaHabilitados = !!filtros.negocioId;
 
   // 🔥 Inyectar estilos compactos para el modal
-useEffect(() => {
-  // Crear un elemento <style> con los estilos compactos
-  const style = document.createElement('style');
-  style.id = 'modal-compact-styles';
-  style.textContent = `
-    .tm-modal .tm-modal-detalle-campo {
-      display: flex !important;
-      align-items: baseline !important;
-      gap: 8px !important;
-      padding: 1px 0 !important;
-      margin-bottom: 4px !important;
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'modal-compact-styles';
+    style.textContent = `
+      .tm-modal .tm-modal-detalle-campo {
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 8px !important;
+        padding: 1px 0 !important;
+        margin-bottom: 4px !important;
+      }
+      .tm-modal .tm-modal-detalle-label {
+        font-size: 0.7rem !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+      }
+      .tm-modal .tm-modal-detalle-valor {
+        font-size: 0.75rem !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+      }
+      .tm-modal .tm-modal-detalle-movimiento {
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+      }
+    `;
+    if (!document.getElementById('modal-compact-styles')) {
+      document.head.appendChild(style);
     }
-    .tm-modal .tm-modal-detalle-label {
-      font-size: 0.7rem !important;
-      line-height: 1.1 !important;
-      margin: 0 !important;
-    }
-    .tm-modal .tm-modal-detalle-valor {
-      font-size: 0.75rem !important;
-      line-height: 1.1 !important;
-      margin: 0 !important;
-    }
-    .tm-modal .tm-modal-detalle-movimiento {
-      margin-top: 4px !important;
-      padding-top: 4px !important;
-    }
-  `;
-  
-  // Si ya existe, no lo vuelvas a agregar
-  if (!document.getElementById('modal-compact-styles')) {
-    document.head.appendChild(style);
-  }
-}, []);
+  }, []);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -538,6 +535,7 @@ useEffect(() => {
 
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
+        {/* Primera línea: Negocio, Actividad, Especialidad, Centro, Profesional, Asistencia, Botón Limpiar */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
@@ -581,17 +579,22 @@ useEffect(() => {
             <option value="false">No</option>
           </select>
         </div>
+        <div className={turnosStyles.accionRow}>
+          <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
+        </div>
+
+        {/* Segunda línea: Desde, Hasta, Paciente, Estado Turno, Estado Pago */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} disabled={!filtrosBusquedaHabilitados} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} disabled={!filtrosBusquedaHabilitados} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔍 Paciente</label>
-          <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, email..." className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+          <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={`${turnosStyles.filtroInput} ${turnosStyles.filtroPaciente}`} disabled={!filtrosBusquedaHabilitados} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
@@ -607,12 +610,9 @@ useEffect(() => {
             {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
-        <div className={turnosStyles.accionRow}>
-          <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
-        </div>
       </div>
 
-      {/* FILTROS - MÓVIL */}
+      {/* FILTROS - MÓVIL (simplificado, se mantiene igual) */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
@@ -914,7 +914,7 @@ useEffect(() => {
       {/* Modal Ver Detalle */}
       {modalMode === 'view' && selectedTurno && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
-         <div className={`tm-modal ${turnosStyles['tm-modal-turnos']}`} onClick={(e) => e.stopPropagation()}>
+          <div className={`tm-modal ${turnosStyles['tm-modal-turnos']}`} onClick={(e) => e.stopPropagation()}>
             <h3 className="tm-modal-titulo">Detalle de Turno #{selectedTurno.id}</h3>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Paciente</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.apellido}, {selectedTurno.usuario.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Email</span><p className="tm-modal-detalle-valor">{selectedTurno.usuario.email}</p></div>
