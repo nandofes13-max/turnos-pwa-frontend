@@ -351,21 +351,17 @@
    ============================================= */
 
 @media (max-width: 768px) {
-  /* Ocultar filtros desktop */
   .filtrosDesktop {
     display: none;
   }
-  
-  /* Mostrar filtros móvil */
   .filtrosMobile {
     display: flex;
   }
   
-  /* 🔥 OCULTAR TABLA EN MÓVIL 🔥 */
-  .tm-tabla-turnos,
-  .tm-tabla-turnos table,
+  /* 🔥 OCULTAR TABLA EN MÓVIL - VERSIÓN MEJORADA 🔥 */
+  .tm-tabla-wrapper table,
   .tm-tabla-wrapper .tm-tabla,
-  .tm-tabla-centrado {
+  div[class*="tabla"] table {
     display: none !important;
   }
   
@@ -380,7 +376,7 @@
     min-width: 70px;
   }
   
-  /* Modal en móvil: labels arriba, valores abajo */
+  /* Modal en móvil */
   .tm-modal-turnos .tm-modal-detalle-campo {
     flex-direction: column !important;
     gap: 2px !important;
@@ -389,23 +385,5 @@
   
   .tm-modal-turnos .tm-modal-detalle-label {
     min-width: auto !important;
-  }
-}
-
-@media (min-width: 769px) {
-  /* Mostrar filtros desktop */
-  .filtrosDesktop {
-    display: grid;
-  }
-  
-  /* Ocultar filtros móvil */
-  .filtrosMobile {
-    display: none;
-  }
-  
-  /* Mostrar tabla en desktop */
-  .tm-tabla-turnos,
-  .tm-tabla-turnos table {
-    display: table !important;
   }
 }
