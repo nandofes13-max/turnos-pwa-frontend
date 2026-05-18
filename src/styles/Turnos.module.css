@@ -378,8 +378,8 @@
 
 /* Ancho para filtros de fecha */
 .filtroFecha {
-  width: 120px !important;
-  min-width: 120px !important;
+  width: 140px !important;
+  min-width: 140px !important;
 }
 
 /* Ancho para filtro de paciente */
