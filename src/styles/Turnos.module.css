@@ -311,6 +311,28 @@
     min-width: auto !important;
   }
 }
+
+/* FORZAR ESTILOS COMPACTOS EN EL MODAL */
+.tm-modal .tm-modal-detalle-campo {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  padding: 1px 0 !important;
+  margin-bottom: 4px !important;
+}
+
+.tm-modal .tm-modal-detalle-label {
+  font-size: 0.7rem !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+}
+
+.tm-modal .tm-modal-detalle-valor {
+  font-size: 0.75rem !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+}
+
 /* Responsive: ajustes para móvil */
 @media (max-width: 768px) {
   .tm-tabla-turnos th,
