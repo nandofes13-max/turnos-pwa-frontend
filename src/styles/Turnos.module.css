@@ -337,3 +337,22 @@
     display: flex;
   }
 }
+
+/* Forzar estilos en el modal */
+.tm-modal .tm-modal-detalle-campo {
+  margin-bottom: 2px !important;
+  gap: 6px !important;
+}
+
+.tm-modal .tm-modal-detalle-label {
+  font-size: 0.7rem !important;
+  min-width: 90px !important;
+  line-height: 1.2 !important;
+  margin-bottom: 0 !important;
+}
+
+.tm-modal .tm-modal-detalle-valor {
+  font-size: 0.75rem !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
