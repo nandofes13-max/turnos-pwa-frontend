@@ -384,8 +384,8 @@
 
 /* Ancho para filtro de paciente */
 .filtroPaciente {
-  min-width: 180px !important;
-  max-width: 280px !important;
+  min-width: 160px !important;
+  max-width: 260px !important;
   flex: 1 !important;
 }
 
