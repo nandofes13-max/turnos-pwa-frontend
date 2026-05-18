@@ -612,51 +612,18 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL (reordenados, sin labels, con placeholders) */}
+      {/* FILTROS - MÓVIL (simplificado: solo Fecha Desde y Paciente) */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} placeholder="📅 Fecha Desde" disabled={!filtrosBusquedaHabilitados} />
+            <label className={turnosStyles.filtroLabel}>📅 Fecha Desde</label>
+            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} placeholder="📅 Fecha Hasta" disabled={!filtrosBusquedaHabilitados} />
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">✅ Asistencia</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="🔍 Buscar paciente" className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">🔵 Estado Turno</option>
-              {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">💰 Estado Pago</option>
-              {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.accionRow}>
-            <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
+            <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
+            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
       </div>
@@ -667,11 +634,11 @@ export default function Turnos() {
         <div className="tm-tabla-wrapper">
           <div className="tm-tabla-header-contenedor">
             <div className="tm-tabla-header-inner">
-              <button className="tm-btn-agregar" disabled style={{ opacity: 0.5 }}>Turnos</button>
+              {/* Botón "Turnos" eliminado en móvil (se oculta con CSS) */}
             </div>
           </div>
 
-                    {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
+          {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
           <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
@@ -766,7 +733,7 @@ export default function Turnos() {
               </tbody>
             </table>
           </div>
-          
+
           {/* CARDS MÓVIL - CON BOTÓN ASISTIÓ */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
