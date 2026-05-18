@@ -612,58 +612,22 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL (simplificado, se mantiene igual) */}
+      {/* FILTROS - MÓVIL (reordenados, sin labels, con placeholders) */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
-            <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
-              <option value="">Seleccionar...</option>
-              {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
-            </select>
+            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} placeholder="📅 Fecha Desde" disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
-            <select value={filtros.actividadId} onChange={(e) => handleFiltroChange('actividadId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.negocioId}>
-              <option value="">Seleccionar...</option>
-              {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-            </select>
+            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} placeholder="📅 Fecha Hasta" disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📋 Especialidad</label>
-            <select value={filtros.especialidadId} onChange={(e) => handleFiltroChange('especialidadId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.actividadId}>
-              <option value="">Seleccionar...</option>
-              {especialidadesFiltradas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🏥 Centro</label>
-            <select value={filtros.centroId} onChange={(e) => handleFiltroChange('centroId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.especialidadId}>
-              <option value="">Todos</option>
-              {centrosFiltrados.map(c => <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>👨‍⚕️ Profesional</label>
-            <select value={filtros.profesionalId} onChange={(e) => handleFiltroChange('profesionalId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.centroId}>
-              <option value="">Todos</option>
-              {profesionalesFiltrados.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
             <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">Todos</option>
+              <option value="">✅ Asistencia</option>
               <option value="true">Sí</option>
               <option value="false">No</option>
             </select>
@@ -671,32 +635,21 @@ export default function Turnos() {
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
-          </div>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-            <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="🔍 Buscar paciente" className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🔍 Paciente</label>
-            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, email..." className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
             <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">Todos</option>
+              <option value="">🔵 Estado Turno</option>
               {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
             <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
-              <option value="">Todos</option>
+              <option value="">💰 Estado Pago</option>
               {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </div>
@@ -814,7 +767,7 @@ export default function Turnos() {
             </table>
           </div>
 
-          {/* CARDS MÓVIL */}
+          {/* CARDS MÓVIL - SIMPLIFICADAS */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
               const estadoColor = obtenerColorEstado(turno.estado);
@@ -825,70 +778,24 @@ export default function Turnos() {
               
               return (
                 <div key={turno.id} className={`tm-card-item ${inactivo ? 'inactiva' : ''}`}>
-                  <div className="tm-card-nombre"><strong>🆔 TURNO #{turno.id}</strong></div>
-                  <div className="tm-card-paciente">👤 {`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</div>
-                  <div className="tm-card-fecha">📅 {fechaFormateada}</div>
-                  <div className="tm-card-hora">⏰ {horaFormateada}</div>
-                  <div className="tm-card-profesional">👨‍⚕️ {turno.profesionalCentro?.profesional?.nombre || '-'}</div>
-                  <div className="tm-card-especialidad">📋 {turno.profesionalCentro?.especialidad?.nombre || '-'}</div>
-                  <div className="tm-card-centro">🏥 {turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</div>
-                  <div className="tm-card-importe">💰 {importeFormateado}</div>
-                  <div className="tm-card-asistencia" style={{ marginTop: '4px' }}>
-                    <button
-                      onClick={() => handleCambiarAsistencia(turno)}
-                      style={{
-                        backgroundColor: turno.asistio ? '#00AA00' : '#888888',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px 12px',
-                        cursor: 'pointer',
-                        fontSize: '0.7rem',
-                        opacity: turno.estadoTurnoId === 2 ? 0.5 : 1,
-                        cursor: turno.estadoTurnoId === 2 ? 'not-allowed' : 'pointer'
-                      }}
-                      disabled={turno.estadoTurnoId === 2}
-                    >
-                      Asistió: {turno.asistio ? 'Sí' : 'No'}
-                    </button>
-                  </div>
-                  <div className="tm-card-estado" style={{ color: estadoColor, marginTop: '4px' }}>
-                    🔵 Estado: {turno.estado}
+                  <div className="tm-card-nombre">
+                    <strong>👤 {`${turno.usuario.apellido}, ${turno.usuario.nombre}`}</strong>
                     <button
                       onClick={() => handleVerDetalle(turno)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '8px' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '8px', fontSize: '0.9rem' }}
                       title="Ver detalle"
                     >
                       🔍
                     </button>
-                    {turno.estadoTurnoId === 1 && (
-                      <button
-                        onClick={() => turno.asistio === false && handleCambiarEstado(turno, 2)}
-                        className="tm-btn-estado-activo"
-                        style={{
-                          padding: '2px 8px',
-                          fontSize: '0.7rem',
-                          marginLeft: '8px',
-                          opacity: turno.asistio === true ? 0.5 : 1,
-                          cursor: turno.asistio === true ? 'not-allowed' : 'pointer'
-                        }}
-                        disabled={turno.asistio === true}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                    {turno.estadoTurnoId === 2 && (
-                      <button
-                        onClick={() => handleCambiarEstado(turno, 1)}
-                        className="tm-btn-estado-inactivo"
-                        style={{ padding: '2px 8px', fontSize: '0.7rem', marginLeft: '8px' }}
-                      >
-                        Reactivar
-                      </button>
-                    )}
                   </div>
-                  <div className="tm-card-pago" style={{ marginTop: '4px' }}>
-                    💰 Pago: {turno.pagoEstado || 'SIN PAGO'}
+                  <div className="tm-card-fecha-hora">
+                    {fechaFormateada} {horaFormateada}
+                  </div>
+                  <div className="tm-card-profesional">👨‍⚕️ {turno.profesionalCentro?.profesional?.nombre || '-'}</div>
+                  <div className="tm-card-especialidad">📋 {turno.profesionalCentro?.especialidad?.nombre || '-'}</div>
+                  <div className="tm-card-centro">🏥 {turno.profesionalCentro?.centro?.nombre || turno.centro?.nombre || '-'}</div>
+                  <div className="tm-card-asistencia" style={{ marginTop: '8px' }}>
+                    Asistió: {turno.asistio ? 'Sí' : 'No'}
                   </div>
                 </div>
               );
