@@ -251,34 +251,52 @@
 }
 
 /* =============================================
-   MODAL DE TURNOS - ESTILOS ESPECÍFICOS (MÁS COMPACTO)
+   MODAL DE TURNOS - ESTILOS ESPECÍFICOS (COMPACTO)
    ============================================= */
 
+/* Contenedor principal del modal */
 .tm-modal-turnos {
-  background-color: lightblue !important; /* lo puedes quitar después de probar */
+  padding: 8px 12px !important;
 }
 
+/* Cada campo del modal */
 .tm-modal-turnos .tm-modal-detalle-campo {
-  margin-bottom: 2px !important;
-  gap: 6px !important;
+  padding: 2px 0 !important;
+  margin-bottom: 6px !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
 }
 
-.tm-modal-turnos .tm-modal-detalle-label {
-  font-size: 0.7rem !important;
-  min-width: 90px !important;
-  line-height: 1.2 !important;
+/* Último campo sin margen inferior */
+.tm-modal-turnos .tm-modal-detalle-campo:last-child {
   margin-bottom: 0 !important;
 }
 
+/* Etiquetas del modal */
+.tm-modal-turnos .tm-modal-detalle-label {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  color: #555 !important;
+  min-width: 90px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+/* Valores del modal */
 .tm-modal-turnos .tm-modal-detalle-valor {
   font-size: 0.75rem !important;
   margin: 0 !important;
   line-height: 1.2 !important;
+  color: #333 !important;
 }
 
+/* Sección de último movimiento */
 .tm-modal-turnos .tm-modal-detalle-movimiento {
-  margin-top: 4px !important;
+  margin-top: 6px !important;
   padding-top: 4px !important;
+  border-top: 1px solid #e0e0e0 !important;
+  font-size: 0.7rem !important;
 }
 
 /* Responsive: ajustes para móvil */
@@ -299,14 +317,15 @@
     min-width: 70px;
   }
   
+  /* Modal en móvil: labels arriba, valores abajo */
   .tm-modal-turnos .tm-modal-detalle-campo {
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 8px;
+    flex-direction: column !important;
+    gap: 2px !important;
+    margin-bottom: 8px !important;
   }
   
   .tm-modal-turnos .tm-modal-detalle-label {
-    min-width: auto;
+    min-width: auto !important;
   }
 }
 
@@ -319,26 +338,7 @@
   font-weight: bold;
 }
 
-/* Forzar estilos compactos en el modal */
-.tm-modal .tm-modal-detalle-campo {
-  margin-bottom: 2px !important;
-  gap: 6px !important;
-}
-
-.tm-modal .tm-modal-detalle-label {
-  font-size: 0.7rem !important;
-  min-width: 90px !important;
-  line-height: 1.2 !important;
-  margin-bottom: 0 !important;
-}
-
-.tm-modal .tm-modal-detalle-valor {
-  font-size: 0.75rem !important;
-  margin: 0 !important;
-  line-height: 1.2 !important;
-}
-
-/* Responsive */
+/* Responsive de filtros */
 @media (min-width: 769px) {
   .filtrosDesktop {
     display: grid;
@@ -356,4 +356,3 @@
     display: flex;
   }
 }
-
