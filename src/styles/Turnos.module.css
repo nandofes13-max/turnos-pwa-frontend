@@ -8,7 +8,7 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 20px;
-  padding: 12px;
+  padding: 16px;
   background-color: #f8f9fa;
   border-radius: 12px;
 }
@@ -384,8 +384,8 @@
 
 /* Ancho para filtro de paciente */
 .filtroPaciente {
-  min-width: 250px !important;
-  max-width: 350px !important;
+  min-width: 200px !important;
+  max-width: 300px !important;
   flex: 1 !important;
 }
 
