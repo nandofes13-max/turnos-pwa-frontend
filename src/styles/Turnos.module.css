@@ -387,3 +387,13 @@
     min-width: auto !important;
   }
 }
+
+/* =============================================
+   RESPONSIVE - DESKTOP (ocultar filtros móviles)
+   ============================================= */
+
+@media (min-width: 769px) {
+  .filtrosMobile {
+    display: none !important;
+  }
+}
