@@ -64,14 +64,16 @@
 .detalle-turno {
   background-color: #f5f5f5;
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px;
   margin-bottom: 20px;
 }
 
+/* 🔹 NUEVO: Estilo vertical (label arriba, valor abajo) */
 .detalle-linea {
   display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -82,14 +84,14 @@
 .detalle-label {
   font-weight: 500;
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.3px;
 }
 
 .detalle-valor {
   font-weight: 600;
   color: #1a1a1a;
-  text-align: right;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .formulario-datos {
@@ -97,23 +99,23 @@
 }
 
 .campo-formulario {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .campo-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #333;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .campo-input {
   width: 100%;
-  padding: 12px;
+  padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   box-sizing: border-box;
   transition: border-color 0.2s;
 }
@@ -138,9 +140,9 @@
 .btn-volver {
   background-color: #f0f0f0;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   flex: 1;
@@ -155,9 +157,9 @@
   background-color: #4caf50;
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   flex: 1;
@@ -177,9 +179,9 @@
   background-color: #4caf50;
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   width: 100%;
@@ -193,9 +195,9 @@
 .mensaje-error {
   background-color: #ffebee;
   color: #c62828;
-  padding: 10px;
+  padding: 8px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   margin-bottom: 16px;
   text-align: center;
 }
@@ -203,14 +205,14 @@
 .mensaje-exito {
   background-color: #e8f5e9;
   color: #2e7d32;
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
   margin-bottom: 20px;
 }
 
-/* Responsive para móvil */
+/* 🔹 MEDIA QUERY MÓVIL (se mantiene para futuros ajustes) */
 @media (max-width: 480px) {
   .modal {
     width: 95%;
@@ -220,16 +222,53 @@
     padding: 20px 16px 16px;
   }
   
+  .modal-titulo {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+  }
+  
+  .modal-titulo-exito {
+    font-size: 1.3rem;
+  }
+  
+  .detalle-turno {
+    padding: 10px;
+    margin-bottom: 16px;
+  }
+  
   .detalle-linea {
-    flex-direction: column;
-    gap: 4px;
+    padding: 3px 0;
+    gap: 2px;
+  }
+  
+  .detalle-label {
+    font-size: 0.65rem;
   }
   
   .detalle-valor {
-    text-align: left;
+    font-size: 0.8rem;
+  }
+  
+  .campo-formulario {
+    margin-bottom: 12px;
+  }
+  
+  .campo-label {
+    font-size: 0.7rem;
+  }
+  
+  .campo-input {
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
   
   .btn-volver, .btn-confirmar {
-    padding: 10px 16px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .mensaje-exito {
+    font-size: 0.8rem;
+    padding: 8px;
   }
 }
