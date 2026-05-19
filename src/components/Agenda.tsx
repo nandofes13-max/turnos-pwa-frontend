@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Breadcrumb from './Breadcrumb';
 import CarruselDias from './CarruselDias';
 import TarjetaProfesional from './TarjetaProfesional';
+import ConfirmarTurnoModal from './ConfirmarTurnoModal';
 import styles from '../styles/Agenda.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -42,6 +43,13 @@ export default function Agenda() {
   const [selectedFecha, setSelectedFecha] = useState<string | null>(null);
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
   const [centroTimezone, setCentroTimezone] = useState<string>('');
+  
+  // Estado para el modal de confirmación
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [slotSeleccionado, setSlotSeleccionado] = useState<{
+    profesional: ProfesionalSlots;
+    hora: string;
+  } | null>(null);
 
   // Cargar el centro para obtener su timezone
   useEffect(() => {
@@ -175,8 +183,13 @@ export default function Agenda() {
   };
 
   const handleSlotSeleccionado = (profesional: ProfesionalSlots, hora: string) => {
-    alert(`Turno seleccionado: ${profesional.nombre} - ${selectedFecha} a las ${hora}`);
-    // Aquí después navegará a la pantalla de confirmación
+    setSlotSeleccionado({ profesional, hora });
+    setModalAbierto(true);
+  };
+
+  const handleCerrarModal = () => {
+    setModalAbierto(false);
+    setSlotSeleccionado(null);
   };
 
   if (loading) {
@@ -253,6 +266,24 @@ export default function Agenda() {
                   />
                 ))}
               </div>
+            )}
+
+            {/* Modal de confirmación de turno */}
+            {slotSeleccionado && selectedFecha && (
+              <ConfirmarTurnoModal
+                isOpen={modalAbierto}
+                onClose={handleCerrarModal}
+                datosSlot={{
+                  profesionalNombre: slotSeleccionado.profesional.nombre,
+                  fecha: selectedFecha,
+                  hora: slotSeleccionado.hora,
+                  centroNombre: centroNombre,
+                  especialidadNombre: especialidadNombre,
+                  centroId: Number(centroId),
+                  profesionalCentroId: slotSeleccionado.profesional.profesionalCentroId,
+                  especialidadId: slotSeleccionado.profesional.especialidadId,
+                }}
+              />
             )}
 
             {/* Footer */}
