@@ -27,6 +27,18 @@ interface ProfesionalSlots {
   slots: string[];
 }
 
+// Función para formatear timezone de forma amigable
+const formatearTimezone = (tz: string | undefined): string => {
+  if (!tz) return '';
+  const parts = tz.split('/');
+  const city = parts[parts.length - 1].replace(/_/g, ' ');
+  const region = parts.length > 1 ? parts[parts.length - 2] : '';
+  if (region && region !== city) {
+    return `${city} (${region})`;
+  }
+  return `${city}`;
+};
+
 export default function Agenda() {
   const navigate = useNavigate();
   const { actividadId, especialidadId, centroId } = useParams();
@@ -275,10 +287,11 @@ export default function Agenda() {
                 onClose={handleCerrarModal}
                 datosSlot={{
                   profesionalNombre: slotSeleccionado.profesional.nombre,
+                  especialidadNombre: especialidadNombre,
+                  centroNombre: centroNombre,
+                  zonaHoraria: centroTimezone ? formatearTimezone(centroTimezone) : 'Buenos Aires (Argentina)',
                   fecha: selectedFecha,
                   hora: slotSeleccionado.hora,
-                  centroNombre: centroNombre,
-                  especialidadNombre: especialidadNombre,
                   centroId: Number(centroId),
                   profesionalCentroId: slotSeleccionado.profesional.profesionalCentroId,
                   especialidadId: slotSeleccionado.profesional.especialidadId,
