@@ -15,11 +15,13 @@
     "react-phone-number-input": "^3.4.0",
     "leaflet": "^1.9.4",
     "react-leaflet": "^4.2.1",
-    "leaflet-control-geocoder": "^2.4.0"
+    "leaflet-control-geocoder": "^2.4.0",
+    "react-modal": "^3.16.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/react-modal": "^3.16.3",
     "@vitejs/plugin-react": "^4.0.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
