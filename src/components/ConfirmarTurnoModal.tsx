@@ -9,10 +9,11 @@ import styles from '../styles/ConfirmarTurnoModal.module.css';
 
 interface DatosSlot {
   profesionalNombre: string;
+  especialidadNombre: string;
+  centroNombre: string;
+  zonaHoraria?: string;
   fecha: string;           // YYYY-MM-DD
   hora: string;            // HH:MM
-  centroNombre: string;
-  especialidadNombre: string;
   centroId: number;
   profesionalCentroId: number;
   especialidadId: number;
@@ -216,7 +217,7 @@ export default function ConfirmarTurnoModal({
   // RENDERIZADO DE VISTAS
   // ============================================================
 
-  // VISTA 1: Confirmación inicial
+  // VISTA 1: Confirmación inicial (con especialidad, centro y zona horaria)
   const renderVistaConfirmacion = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -227,6 +228,18 @@ export default function ConfirmarTurnoModal({
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Profesional:</span>
           <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Especialidad:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Centro:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Zona horaria:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
         </div>
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Fecha y hora:</span>
@@ -247,7 +260,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 2: Datos del usuario
+  // VISTA 2: Datos del usuario (con especialidad, centro y zona horaria)
   const renderVistaDatos = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -258,6 +271,18 @@ export default function ConfirmarTurnoModal({
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Profesional</span>
           <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Especialidad</span>
+          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Centro</span>
+          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Zona horaria</span>
+          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
         </div>
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Fecha</span>
@@ -344,7 +369,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 3: Éxito
+  // VISTA 3: Éxito (con especialidad, centro y zona horaria)
   const renderVistaExito = () => (
     <div className={styles['modal-content']}>
       <h2 className={styles['modal-titulo-exito']}>✅ ¡Turno reservado!</h2>
@@ -353,6 +378,18 @@ export default function ConfirmarTurnoModal({
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Profesional</span>
           <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Especialidad</span>
+          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Centro</span>
+          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Zona horaria</span>
+          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
         </div>
         <div className={styles['detalle-linea']}>
           <span className={styles['detalle-label']}>Fecha</span>
