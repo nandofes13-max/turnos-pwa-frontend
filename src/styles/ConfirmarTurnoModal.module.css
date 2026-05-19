@@ -1,0 +1,235 @@
+/* src/styles/ConfirmarTurnoModal.module.css */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  outline: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content {
+  position: relative;
+  padding: 24px 20px 20px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  padding: 4px;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+.modal-titulo {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.modal-titulo-exito {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  text-align: center;
+  color: #2e7d32;
+}
+
+.detalle-turno {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.detalle-linea {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detalle-linea:last-child {
+  border-bottom: none;
+}
+
+.detalle-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.detalle-valor {
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.formulario-datos {
+  margin-bottom: 20px;
+}
+
+.campo-formulario {
+  margin-bottom: 16px;
+}
+
+.campo-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.campo-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.campo-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.campo-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+}
+
+.modal-botones {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-volver {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.btn-volver:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-confirmar {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.btn-confirmar:hover {
+  background-color: #45a049;
+}
+
+.btn-confirmar:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-inicio {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.btn-inicio:hover {
+  background-color: #45a049;
+}
+
+.mensaje-error {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.mensaje-exito {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Responsive para móvil */
+@media (max-width: 480px) {
+  .modal {
+    width: 95%;
+  }
+  
+  .modal-content {
+    padding: 20px 16px 16px;
+  }
+  
+  .detalle-linea {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .detalle-valor {
+    text-align: left;
+  }
+  
+  .btn-volver, .btn-confirmar {
+    padding: 10px 16px;
+  }
+}
