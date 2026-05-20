@@ -1,7 +1,7 @@
 // src/components/ConfirmarTurnoModal.tsx
 import { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import PhoneInput from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import styles from '../styles/ConfirmarTurnoModal.module.css';
 
@@ -48,11 +48,10 @@ const validarEmail = (email: string): boolean => {
   return regex.test(email);
 };
 
+// ✅ CORREGIDO: Usa isValidPhoneNumber de la librería
 const validarWhatsApp = (whatsapp: string | undefined): boolean => {
   if (!whatsapp) return false;
-  // react-phone-number-input ya valida el formato E.164
-  // Solo verificamos que tenga valor
-  return whatsapp.length > 0;
+  return isValidPhoneNumber(whatsapp);
 };
 
 // ============================================================
@@ -374,6 +373,9 @@ export default function ConfirmarTurnoModal({
             disabled={cargando}
           />
           <small className={styles['campo-ayuda']}>Ej: +54 9 11 5833 2657</small>
+          {datosUsuario.whatsapp && !validarWhatsApp(datosUsuario.whatsapp) && (
+            <small className={styles['campo-error-texto']}>Número de WhatsApp inválido</small>
+          )}
         </div>
       </div>
 
