@@ -69,25 +69,27 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// Formatear fecha y hora juntas
+// ✅ CORREGIDO: Formatear fecha y hora (sin zona horaria, muestra exactamente lo que guarda la BD)
 const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   if (!fechaTurno || !horaInicio) return '-';
-  const fecha = new Date(fechaTurno);
+  // Parsear directamente el string YYYY-MM-DD
+  const [year, month, day] = fechaTurno.split('-').map(Number);
+  const fecha = new Date(year, month - 1, day);
   const diaSemana = DIAS_SEMANA[fecha.getDay()];
-  const dia = fecha.getDate().toString().padStart(2, '0');
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-  const anio = fecha.getFullYear().toString().slice(-2);
+  const dia = day.toString().padStart(2, '0');
+  const mes = month.toString().padStart(2, '0');
+  const anio = year.toString().slice(-2);
   const hora = horaInicio.substring(0, 5);
   return `${diaSemana} ${dia}/${mes}/${anio} ${hora}`;
 };
 
-// Formatear solo fecha
+// ✅ CORREGIDO: Formatear solo fecha (sin zona horaria)
 const formatearFecha = (fechaTurno: string): string => {
   if (!fechaTurno) return '-';
-  const fecha = new Date(fechaTurno);
-  const dia = fecha.getDate().toString().padStart(2, '0');
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-  const anio = fecha.getFullYear().toString().slice(-2);
+  const [year, month, day] = fechaTurno.split('-').map(Number);
+  const dia = day.toString().padStart(2, '0');
+  const mes = month.toString().padStart(2, '0');
+  const anio = year.toString().slice(-2);
   return `${dia}/${mes}/${anio}`;
 };
 
@@ -152,7 +154,7 @@ export default function Turnos() {
 
   const filtrosBusquedaHabilitados = !!filtros.negocioId;
 
-  // 🔥 Inyectar estilos compactos para el modal
+  // Inyectar estilos compactos para el modal
   useEffect(() => {
     const style = document.createElement('style');
     style.id = 'modal-compact-styles';
@@ -429,7 +431,6 @@ export default function Turnos() {
     setModalMode('view');
   };
 
-  // 🔹 SIMPLIFICADO: Solo envía estadoTurnoId (y fecha_baja para reactivar)
   const handleCambiarEstado = async (turno: Turno, nuevoEstadoId: number) => {
     const nuevoEstadoNombre = nuevoEstadoId === 1 ? 'RESERVADO' : 'CANCELADO';
     console.log('🔵 handleCambiarEstado - INICIO');
@@ -452,7 +453,6 @@ export default function Turnos() {
       
       const body: any = { estadoTurnoId: nuevoEstadoId };
       
-      // Solo necesitamos enviar fecha_baja cuando reactivamos para limpiar el soft delete
       if (nuevoEstadoId === 1 && turno.estadoTurnoId === 2) {
         body.fecha_baja = null;
       }
@@ -480,7 +480,6 @@ export default function Turnos() {
   };
 
   const handleCambiarAsistencia = async (turno: Turno) => {
-    // Si está cancelado, no se puede cambiar
     if (turno.estadoTurnoId === 2) {
       alert('No se puede cambiar la asistencia de un turno cancelado');
       return;
@@ -535,7 +534,6 @@ export default function Turnos() {
 
       {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
-        {/* Primera línea: Negocio, Actividad, Especialidad, Centro, Profesional, Asistencia, Botón Limpiar */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
           <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
@@ -583,7 +581,6 @@ export default function Turnos() {
           <button onClick={limpiarFiltros} className={turnosStyles.btnLimpiar}>Limpiar Filtros</button>
         </div>
 
-        {/* Segunda línea: Desde, Hasta, Paciente, Estado Turno, Estado Pago */}
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
           <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} disabled={!filtrosBusquedaHabilitados} />
@@ -612,7 +609,7 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL (simplificado: solo Fecha Desde y Paciente) */}
+      {/* FILTROS - MÓVIL */}
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
@@ -634,11 +631,10 @@ export default function Turnos() {
         <div className="tm-tabla-wrapper">
           <div className="tm-tabla-header-contenedor">
             <div className="tm-tabla-header-inner">
-              {/* Botón "Turnos" eliminado en móvil (se oculta con CSS) */}
             </div>
           </div>
 
-          {/* TABLA DESKTOP - Se oculta en móvil con CSS */}
+          {/* TABLA DESKTOP */}
           <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
@@ -675,7 +671,7 @@ export default function Turnos() {
                             🔍
                           </button>
                         </div>
-                      </td>
+                       </td>
                       <td>{fechaHoraFormateada}</td>
                       <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
@@ -704,7 +700,7 @@ export default function Turnos() {
                             </button>
                           )}
                         </div>
-                      </td>
+                       </td>
                       <td>
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
@@ -717,7 +713,7 @@ export default function Turnos() {
                         >
                           {turno.asistio ? 'SÍ' : 'NO'}
                         </button>
-                      </td>
+                       </td>
                       <td>{importeFormateado}</td>
                       <td>{turno.pagoEstado || 'SIN PAGO'}</td>
                     </tr>
@@ -734,7 +730,7 @@ export default function Turnos() {
             </table>
           </div>
 
-          {/* CARDS MÓVIL - CON BOTÓN ASISTIÓ */}
+          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
               const estadoColor = obtenerColorEstado(turno.estado);
