@@ -272,3 +272,38 @@
     padding: 8px;
   }
 }
+
+/* Estilos para validación de campos */
+.campo-input-error {
+  border-color: #c62828 !important;
+  background-color: #ffebee !important;
+}
+
+.campo-error-texto {
+  color: #c62828;
+  font-size: 0.7rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.campo-phone-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.campo-phone-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.campo-ayuda {
+  display: block;
+  color: #666;
+  font-size: 0.7rem;
+  margin-top: 4px;
+}
