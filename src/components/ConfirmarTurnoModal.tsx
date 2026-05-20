@@ -1,6 +1,8 @@
 // src/components/ConfirmarTurnoModal.tsx
 import { useState, useEffect } from 'react';
 import Modal from 'react-modal';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import styles from '../styles/ConfirmarTurnoModal.module.css';
 
 // ============================================================
@@ -31,11 +33,27 @@ interface ConfirmarTurnoModalProps {
   isOpen: boolean;
   onClose: () => void;
   datosSlot: DatosSlot;
-  onReservaExitosa?: () => void;  // Callback opcional después de reservar
+  onReservaExitosa?: () => void;
 }
 
 // URL base de la API
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// ============================================================
+// FUNCIONES DE VALIDACIÓN
+// ============================================================
+
+const validarEmail = (email: string): boolean => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+const validarWhatsApp = (whatsapp: string | undefined): boolean => {
+  if (!whatsapp) return false;
+  // react-phone-number-input ya valida el formato E.164
+  // Solo verificamos que tenga valor
+  return whatsapp.length > 0;
+};
 
 // ============================================================
 // COMPONENTE PRINCIPAL
@@ -65,6 +83,19 @@ export default function ConfirmarTurnoModal({
   
   // Estado para negocioId (obtenido del centro)
   const [negocioId, setNegocioId] = useState<number | null>(null);
+
+  // Estado para controlar si el botón está habilitado
+  const [formularioValido, setFormularioValido] = useState(false);
+
+  // Validar formulario en tiempo real
+  useEffect(() => {
+    const emailValido = validarEmail(datosUsuario.email);
+    const whatsappValido = validarWhatsApp(datosUsuario.whatsapp);
+    const nombreValido = datosUsuario.nombre.trim().length > 0;
+    const apellidoValido = datosUsuario.apellido.trim().length > 0;
+    
+    setFormularioValido(emailValido && whatsappValido && nombreValido && apellidoValido);
+  }, [datosUsuario]);
 
   // Formatear fecha para mostrar (ej: "Lun 19/05/2026")
   const formatearFechaMostrar = (fechaStr: string): string => {
@@ -98,13 +129,13 @@ export default function ConfirmarTurnoModal({
   // Resetear estado cuando se cierra el modal
   useEffect(() => {
     if (!isOpen) {
-      // Pequeño timeout para evitar que se vea el reset
       setTimeout(() => {
         setVista('confirmacion');
         setDatosUsuario({ email: '', nombre: '', apellido: '', whatsapp: '' });
         setError(null);
         setTurnoCreado(null);
         setCargando(false);
+        setFormularioValido(false);
       }, 300);
     }
   }, [isOpen]);
@@ -120,8 +151,8 @@ export default function ConfirmarTurnoModal({
   // VISTA 2: Enviar datos al backend
   // ============================================================
   const handleConfirmarVista2 = async () => {
-    // Validar campos
-    if (!datosUsuario.email || !datosUsuario.email.includes('@')) {
+    // Validaciones adicionales antes de enviar
+    if (!validarEmail(datosUsuario.email)) {
       setError('Ingresá un email válido');
       return;
     }
@@ -133,8 +164,8 @@ export default function ConfirmarTurnoModal({
       setError('Ingresá tu apellido');
       return;
     }
-    if (!datosUsuario.whatsapp.trim()) {
-      setError('Ingresá tu número de WhatsApp');
+    if (!validarWhatsApp(datosUsuario.whatsapp)) {
+      setError('Ingresá un número de WhatsApp válido con código de país (ej: +54911...)');
       return;
     }
 
@@ -142,8 +173,7 @@ export default function ConfirmarTurnoModal({
     setError(null);
 
     try {
-      // Calcular horaFin (horaInicio + duración del turno)
-      // Por ahora usamos duración fija de 30 minutos
+      // Duración fija de 30 minutos
       const duracionMinutos = 30;
       const [hora, minuto] = datosSlot.hora.split(':').map(Number);
       let minutosTotales = hora * 60 + minuto + duracionMinutos;
@@ -160,11 +190,10 @@ export default function ConfirmarTurnoModal({
         horaInicio: datosSlot.hora,
         horaFin: horaFin,
         duracionMinutos: duracionMinutos,
-        email: datosUsuario.email,
-        nombre: datosUsuario.nombre,
-        apellido: datosUsuario.apellido,
+        email: datosUsuario.email.toLowerCase(),
+        nombre: datosUsuario.nombre.toUpperCase(),
+        apellido: datosUsuario.apellido.toUpperCase(),
         telefono: datosUsuario.whatsapp,
-        // Precio opcional (no se usa por ahora)
         precioReserva: null,
         moneda: null
       };
@@ -185,7 +214,6 @@ export default function ConfirmarTurnoModal({
         throw new Error(data.message || 'Error al reservar el turno');
       }
 
-      // Reserva exitosa
       setTurnoCreado({
         id: data.turno.id,
         fecha: datosSlot.fecha,
@@ -217,7 +245,7 @@ export default function ConfirmarTurnoModal({
   // RENDERIZADO DE VISTAS
   // ============================================================
 
-  // VISTA 1: Confirmación inicial (con especialidad, centro y zona horaria)
+  // VISTA 1: Confirmación inicial
   const renderVistaConfirmacion = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -260,7 +288,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 2: Datos del usuario (con especialidad, centro y zona horaria)
+  // VISTA 2: Datos del usuario (con validaciones)
   const renderVistaDatos = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -299,12 +327,15 @@ export default function ConfirmarTurnoModal({
           <label className={styles['campo-label']}>Email *</label>
           <input
             type="email"
-            className={styles['campo-input']}
+            className={`${styles['campo-input']} ${datosUsuario.email && !validarEmail(datosUsuario.email) ? styles['campo-input-error'] : ''}`}
             value={datosUsuario.email}
             onChange={(e) => setDatosUsuario({ ...datosUsuario, email: e.target.value })}
             placeholder="tuemail@ejemplo.com"
             disabled={cargando}
           />
+          {datosUsuario.email && !validarEmail(datosUsuario.email) && (
+            <small className={styles['campo-error-texto']}>Email inválido</small>
+          )}
         </div>
         
         <div className={styles['campo-formulario']}>
@@ -313,7 +344,7 @@ export default function ConfirmarTurnoModal({
             type="text"
             className={styles['campo-input']}
             value={datosUsuario.nombre}
-            onChange={(e) => setDatosUsuario({ ...datosUsuario, nombre: e.target.value })}
+            onChange={(e) => setDatosUsuario({ ...datosUsuario, nombre: e.target.value.toUpperCase() })}
             placeholder="Tu nombre"
             disabled={cargando}
           />
@@ -325,7 +356,7 @@ export default function ConfirmarTurnoModal({
             type="text"
             className={styles['campo-input']}
             value={datosUsuario.apellido}
-            onChange={(e) => setDatosUsuario({ ...datosUsuario, apellido: e.target.value })}
+            onChange={(e) => setDatosUsuario({ ...datosUsuario, apellido: e.target.value.toUpperCase() })}
             placeholder="Tu apellido"
             disabled={cargando}
           />
@@ -333,14 +364,16 @@ export default function ConfirmarTurnoModal({
         
         <div className={styles['campo-formulario']}>
           <label className={styles['campo-label']}>WhatsApp *</label>
-          <input
-            type="tel"
-            className={styles['campo-input']}
+          <PhoneInput
+            international
+            defaultCountry="AR"
             value={datosUsuario.whatsapp}
-            onChange={(e) => setDatosUsuario({ ...datosUsuario, whatsapp: e.target.value })}
-            placeholder="+5491112345678"
+            onChange={(value) => setDatosUsuario({ ...datosUsuario, whatsapp: value || '' })}
+            className={styles['campo-phone-input']}
+            limitMaxLength={true}
             disabled={cargando}
           />
+          <small className={styles['campo-ayuda']}>Ej: +54 9 11 5833 2657</small>
         </div>
       </div>
 
@@ -361,15 +394,15 @@ export default function ConfirmarTurnoModal({
         <button 
           className={styles['btn-confirmar']} 
           onClick={handleConfirmarVista2}
-          disabled={cargando}
+          disabled={cargando || !formularioValido}
         >
-          {cargando ? 'Reservando...' : 'Agendar turno'}
+          {cargando ? 'Reservando...' : 'Reservar turno'}
         </button>
       </div>
     </div>
   );
 
-  // VISTA 3: Éxito (con especialidad, centro y zona horaria)
+  // VISTA 3: Éxito
   const renderVistaExito = () => (
     <div className={styles['modal-content']}>
       <h2 className={styles['modal-titulo-exito']}>✅ ¡Turno reservado!</h2>
@@ -402,7 +435,7 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['mensaje-exito']}>
-        📧 Te enviamos la confirmación a tu email
+        📧 Te enviamos la confirmación a {datosUsuario.email}
       </div>
 
       <div className={styles['modal-botones']}>
@@ -413,7 +446,6 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // Seleccionar vista según estado
   const renderVista = () => {
     switch (vista) {
       case 'confirmacion':
