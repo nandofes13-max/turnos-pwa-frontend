@@ -69,7 +69,7 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// Formatear fecha y hora (sin zona horaria, muestra exactamente lo que guarda la BD)
+// Formatear fecha y hora
 const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   if (!fechaTurno || !horaInicio) return '-';
   const [year, month, day] = fechaTurno.split('-').map(Number);
@@ -133,7 +133,7 @@ export default function Turnos() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
   
-  // ✅ AJUSTE #2 y #4: Obtener fecha actual en formato YYYY-MM-DD
+  // Obtener fecha actual en formato YYYY-MM-DD
   const obtenerFechaActual = (): string => {
     const hoy = new Date();
     const year = hoy.getFullYear();
@@ -142,13 +142,14 @@ export default function Turnos() {
     return `${year}-${month}-${day}`;
   };
   
+  // ✅ AJUSTES: negocioId vacío, desde y hasta = fecha actual
   const [filtros, setFiltros] = useState<Filtros>({
-    desde: obtenerFechaActual(), // ✅ AJUSTE #2: Fecha actual por defecto
-    hasta: '',
+    desde: obtenerFechaActual(),
+    hasta: obtenerFechaActual(),  // ← Ahora hasta también es fecha actual
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: '6',
+    negocioId: '',  // ← Ahora vacío (muestra "Seleccionar...")
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -160,7 +161,8 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  const filtrosBusquedaHabilitados = !!filtros.negocioId;
+  // ✅ AJUSTE: Habilitar búsqueda aunque no haya negocio seleccionado
+  const filtrosBusquedaHabilitados = true;
 
   // Inyectar estilos compactos para el modal
   useEffect(() => {
@@ -204,7 +206,7 @@ export default function Turnos() {
           fetchNegocios(),
           fetchActividades(),
         ]);
-        await cargarActividadesPorNegocio(6);
+        // No cargar actividades por defecto (necesita negocio seleccionado)
         await fetchEstadosTurno();
         await fetchEstadosPago();
       } finally {
@@ -214,13 +216,9 @@ export default function Turnos() {
     cargarDatosIniciales();
   }, []);
 
-  // Cargar turnos cuando hay negocio seleccionado
+  // ✅ AJUSTE: Cargar turnos al iniciar (sin necesidad de negocio)
   useEffect(() => {
-    if (filtrosBusquedaHabilitados) {
-      fetchTurnos();
-    } else {
-      setTurnos([]);
-    }
+    fetchTurnos();
   }, [filtros]);
 
   // Cargar actividades cuando cambia el negocio
@@ -228,6 +226,11 @@ export default function Turnos() {
     if (filtros.negocioId) {
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
       setFiltros(prev => ({ ...prev, actividadId: '', especialidadId: '', centroId: '', profesionalId: '' }));
+      setEspecialidadesFiltradas([]);
+      setCentrosFiltrados([]);
+      setProfesionalesFiltrados([]);
+    } else {
+      setActividadesFiltradas([]);
       setEspecialidadesFiltradas([]);
       setCentrosFiltrados([]);
       setProfesionalesFiltrados([]);
@@ -283,11 +286,12 @@ export default function Turnos() {
       if (filtros.hasta) params.append('hasta', filtros.hasta);
       if (filtros.profesionalId) params.append('profesionalId', filtros.profesionalId);
       if (filtros.especialidadId) params.append('especialidadId', filtros.especialidadId);
-      // ✅ AJUSTE #3: Asegurar que actividadId se envía correctamente
       if (filtros.actividadId && filtros.actividadId !== '') {
         params.append('actividadId', filtros.actividadId);
       }
-      if (filtros.negocioId) params.append('negocioId', filtros.negocioId);
+      if (filtros.negocioId && filtros.negocioId !== '') {
+        params.append('negocioId', filtros.negocioId);
+      }
       if (filtros.centroId) params.append('centroId', filtros.centroId);
       if (filtros.asistio) params.append('asistio', filtros.asistio);
       if (filtros.estadoTurnoId) params.append('estadoTurnoId', filtros.estadoTurnoId);
@@ -339,7 +343,7 @@ export default function Turnos() {
 
   const fetchEstadosTurno = async () => {
     try {
-      const res = await fetch(`${ESTADOS_TURNO_URL}/negocio/${filtros.negocioId}`);
+      const res = await fetch(`${ESTADOS_TURNO_URL}/negocio/${filtros.negocioId || 6}`);
       const data = await res.json();
       setEstadosTurno(data.filter((e: any) => !e.fecha_baja));
     } catch (err) {
@@ -349,7 +353,7 @@ export default function Turnos() {
 
   const fetchEstadosPago = async () => {
     try {
-      const res = await fetch(`${ESTADOS_PAGO_URL}/negocio/${filtros.negocioId}`);
+      const res = await fetch(`${ESTADOS_PAGO_URL}/negocio/${filtros.negocioId || 6}`);
       const data = await res.json();
       setEstadosPago(data.filter((e: any) => !e.fecha_baja));
     } catch (err) {
@@ -422,12 +426,12 @@ export default function Turnos() {
 
   const limpiarFiltros = () => {
     setFiltros({
-      desde: obtenerFechaActual(), // ✅ AJUSTE #2: Mantener fecha actual al limpiar
-      hasta: '',
+      desde: obtenerFechaActual(),
+      hasta: obtenerFechaActual(),
       profesionalId: '',
       especialidadId: '',
       actividadId: '',
-      negocioId: '6',
+      negocioId: '',
       centroId: '',
       canalOrigen: '',
       asistio: '',
@@ -449,8 +453,6 @@ export default function Turnos() {
     console.log('   Turno ID:', turno.id);
     console.log('   Nuevo Estado ID:', nuevoEstadoId);
     console.log('   Nuevo Estado Nombre:', nuevoEstadoNombre);
-    console.log('   DEBUG - nuevoEstadoId:', nuevoEstadoId);
-    console.log('   DEBUG - turno.estadoTurnoId:', turno.estadoTurnoId);
     
     if (!window.confirm(`¿Cambiar estado del turno #${turno.id} a "${nuevoEstadoNombre}"?`)) {
       console.log('❌ Usuario canceló');
@@ -583,7 +585,7 @@ export default function Turnos() {
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>✅ Asistencia</label>
-          <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
+          <select value={filtros.asistio} onChange={(e) => handleFiltroChange('asistio', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
             <option value="true">Sí</option>
             <option value="false">No</option>
@@ -595,26 +597,26 @@ export default function Turnos() {
 
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Desde</label>
-          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} disabled={!filtrosBusquedaHabilitados} />
+          <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>📅 Hasta</label>
-          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} disabled={!filtrosBusquedaHabilitados} />
+          <input type="date" value={filtros.hasta} onChange={(e) => handleFiltroChange('hasta', e.target.value)} className={`${turnosStyles.filtroInput} ${turnosStyles.filtroFecha}`} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔍 Paciente</label>
-          <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={`${turnosStyles.filtroInput} ${turnosStyles.filtroPaciente}`} disabled={!filtrosBusquedaHabilitados} />
+          <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={`${turnosStyles.filtroInput} ${turnosStyles.filtroPaciente}`} />
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🔵 Estado Turno</label>
-          <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
+          <select value={filtros.estadoTurnoId} onChange={(e) => handleFiltroChange('estadoTurnoId', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
             {estadosTurno.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>💰 Estado Pago</label>
-          <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados}>
+          <select value={filtros.estadoPago} onChange={(e) => handleFiltroChange('estadoPago', e.target.value)} className={turnosStyles.filtroInput}>
             <option value="">Todos</option>
             {estadosPago.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
@@ -625,15 +627,14 @@ export default function Turnos() {
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            {/* ✅ AJUSTE #4: Cambiar etiqueta de "Fecha Desde" a "Fecha" */}
             <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
-            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
+            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={turnosStyles.filtroInput} />
           </div>
         </div>
       </div>
@@ -713,7 +714,7 @@ export default function Turnos() {
                             </button>
                           )}
                         </div>
-                       </td>
+                      </td>
                       <td>
                         <button
                           onClick={() => handleCambiarAsistencia(turno)}
@@ -726,7 +727,7 @@ export default function Turnos() {
                         >
                           {turno.asistio ? 'SÍ' : 'NO'}
                         </button>
-                       </td>
+                      </td>
                       <td>{importeFormateado}</td>
                       <td>{turno.pagoEstado || 'SIN PAGO'}</td>
                     </tr>
@@ -746,7 +747,6 @@ export default function Turnos() {
           {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
-              const estadoColor = obtenerColorEstado(turno.estado);
               const inactivo = !!turno.fecha_baja;
               const importeFormateado = formatearImporte(turno.moneda, turno.precioReserva);
               const fechaFormateada = formatearFecha(turno.fechaTurno);
