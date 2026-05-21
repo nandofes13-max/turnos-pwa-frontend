@@ -200,11 +200,6 @@ export default function ConfirmarTurnoModal({
     setVista('datos');
   };
 
-  // ✅ Función para redirigir a /actividad
-  const handleVolverAActividad = () => {
-    window.location.href = '/actividad';
-  };
-
   // ============================================================
   // VISTA 2: Enviar datos al backend
   // ============================================================
@@ -228,7 +223,6 @@ export default function ConfirmarTurnoModal({
     }
 
     // ✅ AJUSTE 1: Validar que el turno no sea en horario pasado
-    // Crear fecha/hora del turno en la zona horaria local (la que eligió el usuario en el centro)
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
     const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
@@ -250,7 +244,6 @@ export default function ConfirmarTurnoModal({
     const mensajeConfirmacion = `¿Confirmar reserva del turno para el día ${fechaFormateada} a las ${datosSlot.hora}?`;
     
     if (!window.confirm(mensajeConfirmacion)) {
-      // Usuario canceló la confirmación
       return;
     }
 
@@ -258,7 +251,6 @@ export default function ConfirmarTurnoModal({
     setError(null);
 
     try {
-      // Duración fija de 30 minutos
       const duracionMinutos = 30;
       const [hora, minuto] = datosSlot.hora.split(':').map(Number);
       let minutosTotales = hora * 60 + minuto + duracionMinutos;
@@ -363,8 +355,8 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['modal-botones']}>
-        {/* ✅ AJUSTE 3: Botón Volver redirige a /actividad */}
-        <button className={styles['btn-volver']} onClick={handleVolverAActividad}>
+        {/* ✅ CORREGIDO: Volver cierra el modal */}
+        <button className={styles['btn-volver']} onClick={onClose}>
           Volver
         </button>
         <button className={styles['btn-confirmar']} onClick={handleConfirmarVista1}>
@@ -476,10 +468,10 @@ export default function ConfirmarTurnoModal({
       )}
 
       <div className={styles['modal-botones']}>
-        {/* ✅ AJUSTE 3: Botón Volver redirige a /actividad */}
+        {/* ✅ CORREGIDO: Volver vuelve a la vista 1 */}
         <button 
           className={styles['btn-volver']} 
-          onClick={handleVolverAActividad}
+          onClick={() => setVista('confirmacion')}
           disabled={cargando}
         >
           Volver
@@ -532,9 +524,9 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['modal-botones']}>
-       <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
-  Volver al inicio
-</button>
+        <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
+          Volver al inicio
+        </button>
       </div>
     </div>
   );
