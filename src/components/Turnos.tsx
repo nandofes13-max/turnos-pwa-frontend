@@ -14,6 +14,7 @@ interface Turno {
   pagoEstado: string;
   precioReserva: number | string;
   moneda: string;
+  timezone?: string;  // ✅ NUEVO
   usuario: {
     id: number;
     nombre: string;
@@ -68,6 +69,18 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+
+// Función para formatear zona horaria de forma amigable
+const formatearTimezone = (tz: string | undefined): string => {
+  if (!tz) return '';
+  const parts = tz.split('/');
+  const city = parts[parts.length - 1].replace(/_/g, ' ');
+  const region = parts.length > 1 ? parts[parts.length - 2] : '';
+  if (region && region !== city) {
+    return `${city} (${region})`;
+  }
+  return `${city}`;
+};
 
 // Formatear fecha y hora
 const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
@@ -142,14 +155,13 @@ export default function Turnos() {
     return `${year}-${month}-${day}`;
   };
   
-  // ✅ AJUSTES: negocioId vacío, desde y hasta = fecha actual
   const [filtros, setFiltros] = useState<Filtros>({
     desde: obtenerFechaActual(),
-    hasta: obtenerFechaActual(),  // ← Ahora hasta también es fecha actual
+    hasta: obtenerFechaActual(),
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: '',  // ← Ahora vacío (muestra "Seleccionar...")
+    negocioId: '',
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -161,7 +173,6 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  // ✅ AJUSTE: Habilitar búsqueda aunque no haya negocio seleccionado
   const filtrosBusquedaHabilitados = true;
 
   // Inyectar estilos compactos para el modal
@@ -206,7 +217,6 @@ export default function Turnos() {
           fetchNegocios(),
           fetchActividades(),
         ]);
-        // No cargar actividades por defecto (necesita negocio seleccionado)
         await fetchEstadosTurno();
         await fetchEstadosPago();
       } finally {
@@ -216,7 +226,7 @@ export default function Turnos() {
     cargarDatosIniciales();
   }, []);
 
-  // ✅ AJUSTE: Cargar turnos al iniciar (sin necesidad de negocio)
+  // Cargar turnos al iniciar
   useEffect(() => {
     fetchTurnos();
   }, [filtros]);
@@ -825,6 +835,13 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Profesional</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.profesional?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Especialidad</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.especialidad?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
+            {/* ✅ NUEVO: Mostrar zona horaria */}
+            {selectedTurno.timezone && (
+              <div className="tm-modal-detalle-campo">
+                <span className="tm-modal-detalle-label">🕒 Zona Horaria</span>
+                <p className="tm-modal-detalle-valor">{formatearTimezone(selectedTurno.timezone)}</p>
+              </div>
+            )}
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Importe</span><p className="tm-modal-detalle-valor">{formatearImporte(selectedTurno.moneda, selectedTurno.precioReserva)}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado</span><p className="tm-modal-detalle-valor" style={{ color: obtenerColorEstado(selectedTurno.estado) }}>{selectedTurno.estado}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor">{selectedTurno.pagoEstado || 'SIN PAGO'}</p></div>
