@@ -532,9 +532,9 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['modal-botones']}>
-        <button className={styles['btn-inicio']} onClick={handleVolverInicio}>
-          Volver al inicio
-        </button>
+       <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
+  Volver al inicio
+</button>
       </div>
     </div>
   );
