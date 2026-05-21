@@ -140,7 +140,7 @@ export default function ConfirmarTurnoModal({
     if (datosUsuario.email && validarEmail(datosUsuario.email)) {
       timeoutRef.current = setTimeout(() => {
         buscarUsuarioPorEmail(datosUsuario.email);
-      }, 500); // Espera 500ms después de que el usuario deja de escribir
+      }, 500);
     }
     
     return () => {
@@ -200,6 +200,11 @@ export default function ConfirmarTurnoModal({
     setVista('datos');
   };
 
+  // ✅ Función para redirigir a /actividad
+  const handleVolverAActividad = () => {
+    window.location.href = '/actividad';
+  };
+
   // ============================================================
   // VISTA 2: Enviar datos al backend
   // ============================================================
@@ -219,6 +224,33 @@ export default function ConfirmarTurnoModal({
     }
     if (!validarWhatsApp(datosUsuario.whatsapp)) {
       setError('Ingresá un número de WhatsApp válido con código de país (ej: +54911...)');
+      return;
+    }
+
+    // ✅ AJUSTE 1: Validar que el turno no sea en horario pasado
+    // Crear fecha/hora del turno en la zona horaria local (la que eligió el usuario en el centro)
+    const [year, month, day] = datosSlot.fecha.split('-').map(Number);
+    const [hour, minute] = datosSlot.hora.split(':').map(Number);
+    const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
+    const ahora = new Date();
+    
+    console.log('Validando horario:', {
+      turno: fechaHoraTurno,
+      ahora: ahora,
+      turnoStr: datosSlot.fecha + ' ' + datosSlot.hora
+    });
+    
+    if (fechaHoraTurno <= ahora) {
+      setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
+      return;
+    }
+
+    // ✅ AJUSTE 2: Doble confirmación
+    const fechaFormateada = formatearFechaMostrar(datosSlot.fecha);
+    const mensajeConfirmacion = `¿Confirmar reserva del turno para el día ${fechaFormateada} a las ${datosSlot.hora}?`;
+    
+    if (!window.confirm(mensajeConfirmacion)) {
+      // Usuario canceló la confirmación
       return;
     }
 
@@ -331,7 +363,8 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['modal-botones']}>
-        <button className={styles['btn-volver']} onClick={onClose}>
+        {/* ✅ AJUSTE 3: Botón Volver redirige a /actividad */}
+        <button className={styles['btn-volver']} onClick={handleVolverAActividad}>
           Volver
         </button>
         <button className={styles['btn-confirmar']} onClick={handleConfirmarVista1}>
@@ -443,9 +476,10 @@ export default function ConfirmarTurnoModal({
       )}
 
       <div className={styles['modal-botones']}>
+        {/* ✅ AJUSTE 3: Botón Volver redirige a /actividad */}
         <button 
           className={styles['btn-volver']} 
-          onClick={() => setVista('confirmacion')}
+          onClick={handleVolverAActividad}
           disabled={cargando}
         >
           Volver
