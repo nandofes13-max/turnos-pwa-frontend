@@ -1,5 +1,5 @@
 // src/components/ConfirmarTurnoModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Modal from 'react-modal';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -48,7 +48,6 @@ const validarEmail = (email: string): boolean => {
   return regex.test(email);
 };
 
-// ✅ CORREGIDO: Usa isValidPhoneNumber de la librería
 const validarWhatsApp = (whatsapp: string | undefined): boolean => {
   if (!whatsapp) return false;
   return isValidPhoneNumber(whatsapp);
@@ -85,6 +84,10 @@ export default function ConfirmarTurnoModal({
 
   // Estado para controlar si el botón está habilitado
   const [formularioValido, setFormularioValido] = useState(false);
+  
+  // Estado para auto-completado
+  const [buscandoUsuario, setBuscandoUsuario] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Validar formulario en tiempo real
   useEffect(() => {
@@ -95,6 +98,57 @@ export default function ConfirmarTurnoModal({
     
     setFormularioValido(emailValido && whatsappValido && nombreValido && apellidoValido);
   }, [datosUsuario]);
+
+  // ============================================================
+  // AUTO-COMPLETADO: Buscar usuario por email (con debounce)
+  // ============================================================
+  const buscarUsuarioPorEmail = async (email: string) => {
+    if (!validarEmail(email)) {
+      return;
+    }
+    
+    setBuscandoUsuario(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
+      const data = await response.json();
+      
+      // Si el usuario existe (tiene id)
+      if (data.id) {
+        setDatosUsuario(prev => ({
+          ...prev,
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          whatsapp: data.telefono || ''
+        }));
+      } else {
+        // Usuario no existe, no precargamos nada
+        // Los campos quedan como están (el usuario los completa)
+      }
+    } catch (err) {
+      console.error('Error al buscar usuario:', err);
+    } finally {
+      setBuscandoUsuario(false);
+    }
+  };
+
+  // Debounce para la búsqueda de usuario
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    if (datosUsuario.email && validarEmail(datosUsuario.email)) {
+      timeoutRef.current = setTimeout(() => {
+        buscarUsuarioPorEmail(datosUsuario.email);
+      }, 500); // Espera 500ms después de que el usuario deja de escribir
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [datosUsuario.email]);
 
   // Formatear fecha para mostrar (ej: "Lun 19/05/2026")
   const formatearFechaMostrar = (fechaStr: string): string => {
@@ -287,7 +341,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 2: Datos del usuario (con validaciones)
+  // VISTA 2: Datos del usuario (con validaciones y auto-completado)
   const renderVistaDatos = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -334,6 +388,9 @@ export default function ConfirmarTurnoModal({
           />
           {datosUsuario.email && !validarEmail(datosUsuario.email) && (
             <small className={styles['campo-error-texto']}>Email inválido</small>
+          )}
+          {buscandoUsuario && (
+            <small className={styles['campo-ayuda']}>Buscando usuario...</small>
           )}
         </div>
         
