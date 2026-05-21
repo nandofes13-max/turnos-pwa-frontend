@@ -638,7 +638,16 @@ export default function Turnos() {
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
             <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
-            <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} />
+           <input 
+  type="date" 
+  value={filtros.desde} 
+  onChange={(e) => {
+    const nuevaFecha = e.target.value;
+    handleFiltroChange('desde', nuevaFecha);
+    handleFiltroChange('hasta', nuevaFecha);
+  }} 
+  className={turnosStyles.filtroInput} 
+/>
           </div>
         </div>
         <div className={turnosStyles.filtrosRow}>
