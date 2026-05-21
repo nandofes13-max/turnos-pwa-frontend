@@ -69,10 +69,9 @@ const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 // Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// ✅ CORREGIDO: Formatear fecha y hora (sin zona horaria, muestra exactamente lo que guarda la BD)
+// Formatear fecha y hora (sin zona horaria, muestra exactamente lo que guarda la BD)
 const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   if (!fechaTurno || !horaInicio) return '-';
-  // Parsear directamente el string YYYY-MM-DD
   const [year, month, day] = fechaTurno.split('-').map(Number);
   const fecha = new Date(year, month - 1, day);
   const diaSemana = DIAS_SEMANA[fecha.getDay()];
@@ -83,7 +82,7 @@ const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   return `${diaSemana} ${dia}/${mes}/${anio} ${hora}`;
 };
 
-// ✅ CORREGIDO: Formatear solo fecha (sin zona horaria)
+// Formatear solo fecha
 const formatearFecha = (fechaTurno: string): string => {
   if (!fechaTurno) return '-';
   const [year, month, day] = fechaTurno.split('-').map(Number);
@@ -134,8 +133,17 @@ export default function Turnos() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
   
+  // ✅ AJUSTE #2 y #4: Obtener fecha actual en formato YYYY-MM-DD
+  const obtenerFechaActual = (): string => {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   const [filtros, setFiltros] = useState<Filtros>({
-    desde: '',
+    desde: obtenerFechaActual(), // ✅ AJUSTE #2: Fecha actual por defecto
     hasta: '',
     profesionalId: '',
     especialidadId: '',
@@ -275,7 +283,10 @@ export default function Turnos() {
       if (filtros.hasta) params.append('hasta', filtros.hasta);
       if (filtros.profesionalId) params.append('profesionalId', filtros.profesionalId);
       if (filtros.especialidadId) params.append('especialidadId', filtros.especialidadId);
-      if (filtros.actividadId) params.append('actividadId', filtros.actividadId);
+      // ✅ AJUSTE #3: Asegurar que actividadId se envía correctamente
+      if (filtros.actividadId && filtros.actividadId !== '') {
+        params.append('actividadId', filtros.actividadId);
+      }
       if (filtros.negocioId) params.append('negocioId', filtros.negocioId);
       if (filtros.centroId) params.append('centroId', filtros.centroId);
       if (filtros.asistio) params.append('asistio', filtros.asistio);
@@ -284,6 +295,7 @@ export default function Turnos() {
       if (filtros.pacienteSearch) params.append('pacienteSearch', filtros.pacienteSearch);
       
       const url = `${TURNOS_URL}?${params.toString()}`;
+      console.log('Fetching turnos URL:', url);
       const res = await fetch(url);
       const data = await res.json();
       setTurnos(data);
@@ -410,7 +422,7 @@ export default function Turnos() {
 
   const limpiarFiltros = () => {
     setFiltros({
-      desde: '',
+      desde: obtenerFechaActual(), // ✅ AJUSTE #2: Mantener fecha actual al limpiar
       hasta: '',
       profesionalId: '',
       especialidadId: '',
@@ -613,7 +625,8 @@ export default function Turnos() {
       <div className={turnosStyles.filtrosMobile}>
         <div className={turnosStyles.filtrosRow}>
           <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Fecha Desde</label>
+            {/* ✅ AJUSTE #4: Cambiar etiqueta de "Fecha Desde" a "Fecha" */}
+            <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
             <input type="date" value={filtros.desde} onChange={(e) => handleFiltroChange('desde', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtrosBusquedaHabilitados} />
           </div>
         </div>
@@ -671,7 +684,7 @@ export default function Turnos() {
                             🔍
                           </button>
                         </div>
-                       </td>
+                      </td>
                       <td>{fechaHoraFormateada}</td>
                       <td>{turno.profesionalCentro?.profesional?.nombre || '-'}</td>
                       <td>{turno.profesionalCentro?.especialidad?.nombre || '-'}</td>
