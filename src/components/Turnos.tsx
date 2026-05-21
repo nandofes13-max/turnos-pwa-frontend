@@ -633,31 +633,45 @@ export default function Turnos() {
         </div>
       </div>
 
-      {/* FILTROS - MÓVIL */}
-      <div className={turnosStyles.filtrosMobile}>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
-           <input 
-  type="date" 
-  value={filtros.desde} 
-  onChange={(e) => {
-    const nuevaFecha = e.target.value;
-    handleFiltroChange('desde', nuevaFecha);
-    handleFiltroChange('hasta', nuevaFecha);
-  }} 
-  className={turnosStyles.filtroInput} 
-/>
-          </div>
-        </div>
-        <div className={turnosStyles.filtrosRow}>
-          <div className={turnosStyles.filtroCampo}>
-            <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
-            <input type="text" value={filtros.pacienteSearch} onChange={(e) => handleFiltroChange('pacienteSearch', e.target.value)} placeholder="Nombre, apellido, email..." className={turnosStyles.filtroInput} />
-          </div>
-        </div>
-      </div>
-
+     {/* FILTROS - MÓVIL */}
+<div className={turnosStyles.filtrosMobile}>
+  <div className={turnosStyles.filtrosRow}>
+    <div className={turnosStyles.filtroCampo}>
+      <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
+      <input 
+        id="fechaMovil"
+        type="date" 
+        value={filtros.desde} 
+        onChange={(e) => {
+          const nuevaFecha = e.target.value;
+          console.log('📅 Fecha seleccionada en móvil:', nuevaFecha);
+          setFiltros(prev => ({
+            ...prev,
+            desde: nuevaFecha,
+            hasta: nuevaFecha
+          }));
+          setPaginaActual(1);
+        }} 
+        className={turnosStyles.filtroInput} 
+      />
+    </div>
+  </div>
+  <div className={turnosStyles.filtrosRow}>
+    <div className={turnosStyles.filtroCampo}>
+      <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
+      <input 
+        type="text" 
+        value={filtros.pacienteSearch} 
+        onChange={(e) => {
+          setFiltros(prev => ({ ...prev, pacienteSearch: e.target.value }));
+          setPaginaActual(1);
+        }} 
+        placeholder="Nombre, apellido, email..." 
+        className={turnosStyles.filtroInput} 
+      />
+    </div>
+  </div>
+</div>
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando turnos...</p></div>
       ) : (
