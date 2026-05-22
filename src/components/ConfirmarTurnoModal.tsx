@@ -89,7 +89,7 @@ export default function ConfirmarTurnoModal({
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ NUEVO: Estado para modal de confirmación personalizado
+  // Estado para modal de confirmación personalizado
   const [mostrarConfirmacionReserva, setMostrarConfirmacionReserva] = useState(false);
   const [confirmacionPendiente, setConfirmacionPendiente] = useState<{ fecha: string; hora: string } | null>(null);
 
@@ -200,7 +200,7 @@ export default function ConfirmarTurnoModal({
     setVista('datos');
   };
 
-  // ✅ Función que se ejecuta después de confirmar la reserva
+  // Función que se ejecuta después de confirmar la reserva
   const ejecutarReserva = async () => {
     setMostrarConfirmacionReserva(false);
     setConfirmacionPendiente(null);
@@ -268,9 +268,7 @@ export default function ConfirmarTurnoModal({
     }
   };
 
-  // ============================================================
   // VISTA 2: Validar y mostrar confirmación
-  // ============================================================
   const handleConfirmarVista2 = async () => {
     // Validaciones adicionales antes de enviar
     if (!validarEmail(datosUsuario.email)) {
@@ -301,7 +299,7 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // ✅ Mostrar modal de confirmación personalizado
+    // Mostrar modal de confirmación personalizado
     setConfirmacionPendiente({
       fecha: datosSlot.fecha,
       hora: datosSlot.hora
@@ -309,9 +307,7 @@ export default function ConfirmarTurnoModal({
     setMostrarConfirmacionReserva(true);
   };
 
-  // ============================================================
   // VISTA 3: Éxito - Volver al inicio
-  // ============================================================
   const handleVolverInicio = () => {
     window.location.href = '/';
   };
@@ -527,7 +523,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // ✅ MODAL DE CONFIRMACIÓN PERSONALIZADO
+  // MODAL DE CONFIRMACIÓN PERSONALIZADO
   const renderModalConfirmacion = () => (
     <div className={styles['modal-overlay']} onClick={() => setMostrarConfirmacionReserva(false)}>
       <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
@@ -572,6 +568,13 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
+  // ✅ Función que selecciona la vista según el estado
+  const renderVistaActual = () => {
+    if (vista === 'confirmacion') return renderVistaConfirmacion();
+    if (vista === 'datos') return renderVistaDatos();
+    return renderVistaExito();
+  };
+
   return (
     <>
       <Modal
@@ -581,7 +584,7 @@ export default function ConfirmarTurnoModal({
         overlayClassName={styles['modal-overlay']}
         ariaHideApp={false}
       >
-        {renderVista()}
+        {renderVistaActual()}
       </Modal>
       
       {/* Modal de confirmación personalizado */}
