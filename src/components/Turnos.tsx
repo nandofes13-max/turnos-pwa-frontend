@@ -14,7 +14,9 @@ interface Turno {
   pagoEstado: string;
   precioReserva: number | string;
   moneda: string;
-  timezone?: string;  // ✅ NUEVO
+  timezone?: string;
+  emailEnviado?: boolean;  // ✅ NUEVO
+  videollamadaUrl?: string; // ✅ NUEVO
   usuario: {
     id: number;
     nombre: string;
@@ -67,10 +69,8 @@ const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
 const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
 
-// Días de la semana en español
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
-// Función para formatear zona horaria de forma amigable
 const formatearTimezone = (tz: string | undefined): string => {
   if (!tz) return '';
   const parts = tz.split('/');
@@ -82,7 +82,6 @@ const formatearTimezone = (tz: string | undefined): string => {
   return `${city}`;
 };
 
-// Formatear fecha y hora
 const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   if (!fechaTurno || !horaInicio) return '-';
   const [year, month, day] = fechaTurno.split('-').map(Number);
@@ -95,7 +94,6 @@ const formatearFechaHora = (fechaTurno: string, horaInicio: string): string => {
   return `${diaSemana} ${dia}/${mes}/${anio} ${hora}`;
 };
 
-// Formatear solo fecha
 const formatearFecha = (fechaTurno: string): string => {
   if (!fechaTurno) return '-';
   const [year, month, day] = fechaTurno.split('-').map(Number);
@@ -105,13 +103,11 @@ const formatearFecha = (fechaTurno: string): string => {
   return `${dia}/${mes}/${anio}`;
 };
 
-// Formatear solo hora
 const formatearHora = (hora: string): string => {
   if (!hora) return '-';
   return hora.substring(0, 5);
 };
 
-// Formatear importe con moneda incluida
 const formatearImporte = (moneda: string, precio: number | string): string => {
   const precioNum = typeof precio === 'string' ? parseFloat(precio) : precio;
   const precioFormateado = new Intl.NumberFormat('es-AR', {
@@ -135,7 +131,6 @@ export default function Turnos() {
   const [confirmCancelar, setConfirmCancelar] = useState<Turno | null>(null);
   const [cargandoFiltros, setCargandoFiltros] = useState(false);
   
-  // Datos para filtros en cascada
   const [profesionalesFiltrados, setProfesionalesFiltrados] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidades, setEspecialidades] = useState<{ id: number; nombre: string }[]>([]);
   const [especialidadesFiltradas, setEspecialidadesFiltradas] = useState<{ id: number; nombre: string }[]>([]);
@@ -146,7 +141,6 @@ export default function Turnos() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [actividadesFiltradas, setActividadesFiltradas] = useState<Actividad[]>([]);
   
-  // Obtener fecha actual en formato YYYY-MM-DD
   const obtenerFechaActual = (): string => {
     const hoy = new Date();
     const year = hoy.getFullYear();
@@ -172,10 +166,8 @@ export default function Turnos() {
   
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
-
   const filtrosBusquedaHabilitados = true;
 
-  // Inyectar estilos compactos para el modal
   useEffect(() => {
     const style = document.createElement('style');
     style.id = 'modal-compact-styles';
@@ -207,7 +199,6 @@ export default function Turnos() {
     }
   }, []);
 
-  // Cargar datos iniciales
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       setCargandoFiltros(true);
@@ -226,12 +217,10 @@ export default function Turnos() {
     cargarDatosIniciales();
   }, []);
 
-  // Cargar turnos al iniciar
   useEffect(() => {
     fetchTurnos();
   }, [filtros]);
 
-  // Cargar actividades cuando cambia el negocio
   useEffect(() => {
     if (filtros.negocioId) {
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
@@ -247,7 +236,6 @@ export default function Turnos() {
     }
   }, [filtros.negocioId]);
 
-  // Cargar especialidades cuando cambia la actividad
   useEffect(() => {
     if (filtros.actividadId) {
       cargarEspecialidadesPorActividad(parseInt(filtros.actividadId));
@@ -259,7 +247,6 @@ export default function Turnos() {
     }
   }, [filtros.actividadId]);
 
-  // Cargar centros cuando se tiene especialidad
   useEffect(() => {
     if (filtros.negocioId && filtros.especialidadId) {
       cargarCentrosPorEspecialidad(parseInt(filtros.negocioId), parseInt(filtros.especialidadId));
@@ -270,7 +257,6 @@ export default function Turnos() {
     }
   }, [filtros.negocioId, filtros.especialidadId]);
 
-  // Cargar profesionales cuando se tiene centro
   useEffect(() => {
     if (filtros.centroId && filtros.especialidadId) {
       cargarProfesionalesPorCentro(parseInt(filtros.centroId), parseInt(filtros.especialidadId));
@@ -280,7 +266,6 @@ export default function Turnos() {
     }
   }, [filtros.centroId, filtros.especialidadId]);
 
-  // Cargar estados cuando cambia el negocio
   useEffect(() => {
     if (filtros.negocioId) {
       fetchEstadosTurno();
@@ -556,7 +541,6 @@ export default function Turnos() {
         </div>
       )}
 
-      {/* FILTROS - PC */}
       <div className={turnosStyles.filtrosDesktop}>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
@@ -633,55 +617,53 @@ export default function Turnos() {
         </div>
       </div>
 
-     {/* FILTROS - MÓVIL */}
-<div className={turnosStyles.filtrosMobile}>
-  <div className={turnosStyles.filtrosRow}>
-    <div className={turnosStyles.filtroCampo}>
-      <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
-      <input 
-        id="fechaMovil"
-        type="date" 
-        value={filtros.desde} 
-        onChange={(e) => {
-          const nuevaFecha = e.target.value;
-          console.log('📅 Fecha seleccionada en móvil:', nuevaFecha);
-          setFiltros(prev => ({
-            ...prev,
-            desde: nuevaFecha,
-            hasta: nuevaFecha
-          }));
-          setPaginaActual(1);
-        }} 
-        className={turnosStyles.filtroInput} 
-      />
-    </div>
-  </div>
-  <div className={turnosStyles.filtrosRow}>
-    <div className={turnosStyles.filtroCampo}>
-      <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
-      <input 
-        type="text" 
-        value={filtros.pacienteSearch} 
-        onChange={(e) => {
-          setFiltros(prev => ({ ...prev, pacienteSearch: e.target.value }));
-          setPaginaActual(1);
-        }} 
-        placeholder="Nombre, apellido, email..." 
-        className={turnosStyles.filtroInput} 
-      />
-    </div>
-  </div>
-</div>
+      <div className={turnosStyles.filtrosMobile}>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>📅 Fecha</label>
+            <input 
+              id="fechaMovil"
+              type="date" 
+              value={filtros.desde} 
+              onChange={(e) => {
+                const nuevaFecha = e.target.value;
+                console.log('📅 Fecha seleccionada en móvil:', nuevaFecha);
+                setFiltros(prev => ({
+                  ...prev,
+                  desde: nuevaFecha,
+                  hasta: nuevaFecha
+                }));
+                setPaginaActual(1);
+              }} 
+              className={turnosStyles.filtroInput} 
+            />
+          </div>
+        </div>
+        <div className={turnosStyles.filtrosRow}>
+          <div className={turnosStyles.filtroCampo}>
+            <label className={turnosStyles.filtroLabel}>🔍 Buscar paciente</label>
+            <input 
+              type="text" 
+              value={filtros.pacienteSearch} 
+              onChange={(e) => {
+                setFiltros(prev => ({ ...prev, pacienteSearch: e.target.value }));
+                setPaginaActual(1);
+              }} 
+              placeholder="Nombre, apellido, email..." 
+              className={turnosStyles.filtroInput} 
+            />
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="tm-loading"><div className="tm-loading-spinner"></div><p className="tm-loading-texto">Cargando turnos...</p></div>
       ) : (
         <div className="tm-tabla-wrapper">
           <div className="tm-tabla-header-contenedor">
-            <div className="tm-tabla-header-inner">
-            </div>
+            <div className="tm-tabla-header-inner"></div>
           </div>
 
-          {/* TABLA DESKTOP */}
           <div className={turnosStyles.tmTablaTurnos}>
             <table className="tm-tabla">
               <thead>
@@ -777,7 +759,6 @@ export default function Turnos() {
             </table>
           </div>
 
-          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {turnosPaginados.map((turno) => {
               const inactivo = !!turno.fecha_baja;
@@ -858,7 +839,19 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Profesional</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.profesional?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Especialidad</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.especialidad?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
-            {/* ✅ NUEVO: Mostrar zona horaria */}
+            
+            {/* ✅ NUEVO: Videollamada (solo si existe) */}
+            {selectedTurno.videollamadaUrl && (
+              <div className="tm-modal-detalle-campo">
+                <span className="tm-modal-detalle-label">🔗 Videollamada</span>
+                <p className="tm-modal-detalle-valor">
+                  <a href={selectedTurno.videollamadaUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#4CAF50', wordBreak: 'break-all' }}>
+                    {selectedTurno.videollamadaUrl}
+                  </a>
+                </p>
+              </div>
+            )}
+
             {selectedTurno.timezone && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">🕒 Zona Horaria</span>
@@ -870,13 +863,25 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Estado Pago</span><p className="tm-modal-detalle-valor">{selectedTurno.pagoEstado || 'SIN PAGO'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Asistencia</span><p className="tm-modal-detalle-valor">{selectedTurno.asistio ? 'Sí' : 'No'}</p></div>
             {selectedTurno.canalOrigen && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Canal Origen</span><p className="tm-modal-detalle-valor">{selectedTurno.canalOrigen}</p></div>}
+            
+            {/* ✅ NUEVO: Email enviado */}
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">📧 Email enviado</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedTurno.emailEnviado ? (
+                  <span style={{ color: '#4CAF50' }}>✅ Sí</span>
+                ) : (
+                  <span style={{ color: '#f44336' }}>❌ No</span>
+                )}
+              </p>
+            </div>
+            
             {selectedTurno.ultimoMovimiento && <div className={`tm-modal-detalle-movimiento ${selectedTurno.fecha_baja ? 'inactivo' : 'activo'}`}><span className="tm-modal-detalle-label">Último Movimiento</span><p className="tm-modal-detalle-valor">{selectedTurno.ultimoMovimiento}</p></div>}
             <div className="tm-modal-acciones"><button onClick={() => setModalMode(null)} className="tm-btn-secundario">Cerrar</button></div>
           </div>
         </div>
       )}
 
-      {/* Modal Confirmar Cancelar */}
       {confirmCancelar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmCancelar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
