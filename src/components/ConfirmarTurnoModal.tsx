@@ -77,7 +77,7 @@ export default function ConfirmarTurnoModal({
   // Estados para carga y errores
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [turnoCreado, setTurnoCreado] = useState<{ id: number; fecha: string; hora: string } | null>(null);
+  const [turnoCreado, setTurnoCreado] = useState<{ id: number; fecha: string; hora: string; videollamadaUrl?: string } | null>(null);
   
   // Estado para negocioId (obtenido del centro)
   const [negocioId, setNegocioId] = useState<number | null>(null);
@@ -248,10 +248,12 @@ export default function ConfirmarTurnoModal({
         throw new Error(data.message || 'Error al reservar el turno');
       }
 
+      // ✅ Guardar también la URL de videollamada
       setTurnoCreado({
         id: data.turno.id,
         fecha: datosSlot.fecha,
-        hora: datosSlot.hora
+        hora: datosSlot.hora,
+        videollamadaUrl: data.videollamadaUrl
       });
       
       setVista('exito');
@@ -479,49 +481,67 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 3: Éxito
-  const renderVistaExito = () => (
-    <div className={styles['modal-content']}>
-      <h2 className={styles['modal-titulo-exito']}>✅ ¡Turno reservado!</h2>
-      
-      <div className={styles['detalle-turno']}>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Profesional</span>
-          <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+  // VISTA 3: Éxito (modificado para mostrar URL de videollamada)
+  const renderVistaExito = () => {
+    const esCentroVirtual = datosSlot.centroNombre?.toUpperCase().includes('VIRTUAL') || 
+                            datosSlot.centroId === 9;
+    
+    return (
+      <div className={styles['modal-content']}>
+        <h2 className={styles['modal-titulo-exito']}>✅ ¡Turno reservado!</h2>
+        
+        <div className={styles['detalle-turno']}>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Profesional</span>
+            <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+          </div>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Especialidad</span>
+            <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+          </div>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Centro</span>
+            <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+          </div>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Zona horaria</span>
+            <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
+          </div>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Fecha</span>
+            <span className={styles['detalle-valor']}>{formatearFechaMostrar(datosSlot.fecha)}</span>
+          </div>
+          <div className={styles['detalle-linea']}>
+            <span className={styles['detalle-label']}>Hora</span>
+            <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
+          </div>
         </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Especialidad</span>
-          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Centro</span>
-          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Zona horaria</span>
-          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Fecha</span>
-          <span className={styles['detalle-valor']}>{formatearFechaMostrar(datosSlot.fecha)}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Hora</span>
-          <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
-        </div>
-      </div>
 
-      <div className={styles['mensaje-exito']}>
-        📧 Te enviamos la confirmación a {datosUsuario.email}
-      </div>
+        <div className={styles['mensaje-exito']}>
+          <p>📧 Te enviamos la confirmación a <strong>{datosUsuario.email}</strong></p>
+          {esCentroVirtual && turnoCreado?.videollamadaUrl && (
+            <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>
+              🔗 <strong>Enlace para la videollamada:</strong><br />
+              <a href={turnoCreado.videollamadaUrl} target="_blank" rel="noopener noreferrer" style={{ wordBreak: 'break-all' }}>
+                {turnoCreado.videollamadaUrl}
+              </a>
+            </p>
+          )}
+          {esCentroVirtual && !turnoCreado?.videollamadaUrl && (
+            <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>
+              🔗 El enlace para la videollamada ha sido enviado a tu correo electrónico.
+            </p>
+          )}
+        </div>
 
-      <div className={styles['modal-botones']}>
-        <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
-          Volver al inicio
-        </button>
+        <div className={styles['modal-botones']}>
+          <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
+            Volver al inicio
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // MODAL DE CONFIRMACIÓN PERSONALIZADO
   const renderModalConfirmacion = () => (
@@ -575,17 +595,17 @@ export default function ConfirmarTurnoModal({
     return renderVistaExito();
   };
 
-return (
-  <>
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={onClose}
-      className={styles['modal']}
-      overlayClassName={styles['modal-overlay']}
-      ariaHideApp={false}
-    >
-      {mostrarConfirmacionReserva ? renderModalConfirmacion() : renderVistaActual()}
-    </Modal>
-  </>
-);
-}  // ← Esta llave cierra el componente
+  return (
+    <>
+      <Modal
+        isOpen={isOpen}
+        onRequestClose={onClose}
+        className={styles['modal']}
+        overlayClassName={styles['modal-overlay']}
+        ariaHideApp={false}
+      >
+        {mostrarConfirmacionReserva ? renderModalConfirmacion() : renderVistaActual()}
+      </Modal>
+    </>
+  );
+}
