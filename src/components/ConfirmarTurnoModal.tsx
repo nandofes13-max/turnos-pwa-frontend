@@ -325,31 +325,45 @@ export default function ConfirmarTurnoModal({
       
       <h2 className={styles['modal-titulo']}>Turno seleccionado</h2>
       
-      <div className={styles['detalle-turno']}>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Profesional:</span>
-          <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Especialidad:</span>
-          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Centro:</span>
-          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Zona horaria:</span>
-          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
-        </div>
-        <div className={styles['detalle-linea']}>
-          <span className={styles['detalle-label']}>Fecha y hora:</span>
-          <span className={styles['detalle-valor']}>
-            {formatearFechaMostrar(datosSlot.fecha)} {datosSlot.hora}
-          </span>
-        </div>
-      </div>
+     <div className={styles['detalle-turno']}>
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Profesional</span>
+    <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+  </div>
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Especialidad</span>
+    <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+  </div>
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Centro</span>
+    <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+  </div>
 
+  {/* ✅ Enlace debajo de Centro */}
+  {esCentroVirtual && turnoCreado?.videollamadaUrl && (
+    <div className={styles['detalle-linea-enlace']}>
+      <span className={styles['detalle-label']}>🔗 Videollamada</span>
+      <span className={styles['detalle-valor-enlace']}>
+        <a href={turnoCreado.videollamadaUrl} target="_blank" rel="noopener noreferrer" className={styles['enlace-videollamada']}>
+          {turnoCreado.videollamadaUrl}
+        </a>
+      </span>
+    </div>
+  )}
+
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Zona horaria</span>
+    <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
+  </div>
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Fecha</span>
+    <span className={styles['detalle-valor']}>{formatearFechaMostrar(datosSlot.fecha)}</span>
+  </div>
+  <div className={styles['detalle-linea']}>
+    <span className={styles['detalle-label']}>Hora</span>
+    <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
+  </div>
+</div>
       <div className={styles['modal-botones']}>
         <button className={styles['btn-volver']} onClick={onClose}>
           Volver
