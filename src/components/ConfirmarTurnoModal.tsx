@@ -588,3 +588,4 @@ return (
     </Modal>
   </>
 );
+}  // ← Esta llave cierra el componente
