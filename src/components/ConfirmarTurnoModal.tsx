@@ -89,6 +89,10 @@ export default function ConfirmarTurnoModal({
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ✅ NUEVO: Estado para modal de confirmación personalizado
+  const [mostrarConfirmacionReserva, setMostrarConfirmacionReserva] = useState(false);
+  const [confirmacionPendiente, setConfirmacionPendiente] = useState<{ fecha: string; hora: string } | null>(null);
+
   // Validar formulario en tiempo real
   useEffect(() => {
     const emailValido = validarEmail(datosUsuario.email);
@@ -112,7 +116,6 @@ export default function ConfirmarTurnoModal({
       const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
       const data = await response.json();
       
-      // Si el usuario existe (tiene id)
       if (data.id) {
         setDatosUsuario(prev => ({
           ...prev,
@@ -120,9 +123,6 @@ export default function ConfirmarTurnoModal({
           apellido: data.apellido || '',
           whatsapp: data.telefono || ''
         }));
-      } else {
-        // Usuario no existe, no precargamos nada
-        // Los campos quedan como están (el usuario los completa)
       }
     } catch (err) {
       console.error('Error al buscar usuario:', err);
@@ -150,7 +150,7 @@ export default function ConfirmarTurnoModal({
     };
   }, [datosUsuario.email]);
 
-  // Formatear fecha para mostrar (ej: "Lun 19/05/2026")
+  // Formatear fecha para mostrar
   const formatearFechaMostrar = (fechaStr: string): string => {
     const [year, month, day] = fechaStr.split('-').map(Number);
     const fecha = new Date(year, month - 1, day);
@@ -168,8 +168,6 @@ export default function ConfirmarTurnoModal({
           if (response.ok) {
             const centro = await response.json();
             setNegocioId(centro.negocioId);
-          } else {
-            console.error('Error al obtener el centro');
           }
         } catch (error) {
           console.error('Error fetching centro:', error);
@@ -189,6 +187,8 @@ export default function ConfirmarTurnoModal({
         setTurnoCreado(null);
         setCargando(false);
         setFormularioValido(false);
+        setMostrarConfirmacionReserva(false);
+        setConfirmacionPendiente(null);
       }, 300);
     }
   }, [isOpen]);
@@ -200,53 +200,10 @@ export default function ConfirmarTurnoModal({
     setVista('datos');
   };
 
-  // ============================================================
-  // VISTA 2: Enviar datos al backend
-  // ============================================================
-  const handleConfirmarVista2 = async () => {
-    // Validaciones adicionales antes de enviar
-    if (!validarEmail(datosUsuario.email)) {
-      setError('Ingresá un email válido');
-      return;
-    }
-    if (!datosUsuario.nombre.trim()) {
-      setError('Ingresá tu nombre');
-      return;
-    }
-    if (!datosUsuario.apellido.trim()) {
-      setError('Ingresá tu apellido');
-      return;
-    }
-    if (!validarWhatsApp(datosUsuario.whatsapp)) {
-      setError('Ingresá un número de WhatsApp válido con código de país (ej: +54911...)');
-      return;
-    }
-
-    // ✅ AJUSTE 1: Validar que el turno no sea en horario pasado
-    const [year, month, day] = datosSlot.fecha.split('-').map(Number);
-    const [hour, minute] = datosSlot.hora.split(':').map(Number);
-    const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
-    const ahora = new Date();
-    
-    console.log('Validando horario:', {
-      turno: fechaHoraTurno,
-      ahora: ahora,
-      turnoStr: datosSlot.fecha + ' ' + datosSlot.hora
-    });
-    
-    if (fechaHoraTurno <= ahora) {
-      setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
-      return;
-    }
-
-    // ✅ AJUSTE 2: Doble confirmación
-    const fechaFormateada = formatearFechaMostrar(datosSlot.fecha);
-    const mensajeConfirmacion = `¿Confirmar reserva del turno para el día ${fechaFormateada} a las ${datosSlot.hora}?`;
-    
-    if (!window.confirm(mensajeConfirmacion)) {
-      return;
-    }
-
+  // ✅ Función que se ejecuta después de confirmar la reserva
+  const ejecutarReserva = async () => {
+    setMostrarConfirmacionReserva(false);
+    setConfirmacionPendiente(null);
     setCargando(true);
     setError(null);
 
@@ -312,6 +269,47 @@ export default function ConfirmarTurnoModal({
   };
 
   // ============================================================
+  // VISTA 2: Validar y mostrar confirmación
+  // ============================================================
+  const handleConfirmarVista2 = async () => {
+    // Validaciones adicionales antes de enviar
+    if (!validarEmail(datosUsuario.email)) {
+      setError('Ingresá un email válido');
+      return;
+    }
+    if (!datosUsuario.nombre.trim()) {
+      setError('Ingresá tu nombre');
+      return;
+    }
+    if (!datosUsuario.apellido.trim()) {
+      setError('Ingresá tu apellido');
+      return;
+    }
+    if (!validarWhatsApp(datosUsuario.whatsapp)) {
+      setError('Ingresá un número de WhatsApp válido con código de país (ej: +54911...)');
+      return;
+    }
+
+    // Validar que el turno no sea en horario pasado
+    const [year, month, day] = datosSlot.fecha.split('-').map(Number);
+    const [hour, minute] = datosSlot.hora.split(':').map(Number);
+    const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
+    const ahora = new Date();
+    
+    if (fechaHoraTurno <= ahora) {
+      setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
+      return;
+    }
+
+    // ✅ Mostrar modal de confirmación personalizado
+    setConfirmacionPendiente({
+      fecha: datosSlot.fecha,
+      hora: datosSlot.hora
+    });
+    setMostrarConfirmacionReserva(true);
+  };
+
+  // ============================================================
   // VISTA 3: Éxito - Volver al inicio
   // ============================================================
   const handleVolverInicio = () => {
@@ -355,7 +353,6 @@ export default function ConfirmarTurnoModal({
       </div>
 
       <div className={styles['modal-botones']}>
-        {/* ✅ CORREGIDO: Volver cierra el modal */}
         <button className={styles['btn-volver']} onClick={onClose}>
           Volver
         </button>
@@ -366,7 +363,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 2: Datos del usuario (con validaciones y auto-completado)
+  // VISTA 2: Datos del usuario
   const renderVistaDatos = () => (
     <div className={styles['modal-content']}>
       <button className={styles['modal-close']} onClick={onClose}>✕</button>
@@ -468,7 +465,6 @@ export default function ConfirmarTurnoModal({
       )}
 
       <div className={styles['modal-botones']}>
-        {/* ✅ CORREGIDO: Volver vuelve a la vista 1 */}
         <button 
           className={styles['btn-volver']} 
           onClick={() => setVista('confirmacion')}
@@ -531,28 +527,65 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  const renderVista = () => {
-    switch (vista) {
-      case 'confirmacion':
-        return renderVistaConfirmacion();
-      case 'datos':
-        return renderVistaDatos();
-      case 'exito':
-        return renderVistaExito();
-      default:
-        return renderVistaConfirmacion();
-    }
-  };
+  // ✅ MODAL DE CONFIRMACIÓN PERSONALIZADO
+  const renderModalConfirmacion = () => (
+    <div className={styles['modal-overlay']} onClick={() => setMostrarConfirmacionReserva(false)}>
+      <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-content']}>
+          <h2 className={styles['modal-titulo']}>Confirmar reserva</h2>
+          
+          <div className={styles['detalle-turno']}>
+            <div className={styles['detalle-linea']}>
+              <span className={styles['detalle-label']}>Profesional:</span>
+              <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+            </div>
+            <div className={styles['detalle-linea']}>
+              <span className={styles['detalle-label']}>Especialidad:</span>
+              <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+            </div>
+            <div className={styles['detalle-linea']}>
+              <span className={styles['detalle-label']}>Centro:</span>
+              <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+            </div>
+            <div className={styles['detalle-linea']}>
+              <span className={styles['detalle-label']}>Zona horaria:</span>
+              <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
+            </div>
+            <div className={styles['detalle-linea']}>
+              <span className={styles['detalle-label']}>Fecha y hora:</span>
+              <span className={styles['detalle-valor']}>
+                {formatearFechaMostrar(datosSlot.fecha)} {datosSlot.hora}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles['modal-botones']}>
+            <button className={styles['btn-volver']} onClick={() => setMostrarConfirmacionReserva(false)}>
+              Cancelar
+            </button>
+            <button className={styles['btn-confirmar']} onClick={ejecutarReserva}>
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={onClose}
-      className={styles['modal']}
-      overlayClassName={styles['modal-overlay']}
-      ariaHideApp={false}
-    >
-      {renderVista()}
-    </Modal>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onRequestClose={onClose}
+        className={styles['modal']}
+        overlayClassName={styles['modal-overlay']}
+        ariaHideApp={false}
+      >
+        {renderVista()}
+      </Modal>
+      
+      {/* Modal de confirmación personalizado */}
+      {mostrarConfirmacionReserva && renderModalConfirmacion()}
+    </>
   );
 }
