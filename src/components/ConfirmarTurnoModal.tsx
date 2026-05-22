@@ -248,7 +248,6 @@ export default function ConfirmarTurnoModal({
         throw new Error(data.message || 'Error al reservar el turno');
       }
 
-      // ✅ Guardar también la URL de videollamada
       setTurnoCreado({
         id: data.turno.id,
         fecha: datosSlot.fecha,
@@ -272,7 +271,6 @@ export default function ConfirmarTurnoModal({
 
   // VISTA 2: Validar y mostrar confirmación
   const handleConfirmarVista2 = async () => {
-    // Validaciones adicionales antes de enviar
     if (!validarEmail(datosUsuario.email)) {
       setError('Ingresá un email válido');
       return;
@@ -290,7 +288,6 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // Validar que el turno no sea en horario pasado
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
     const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
@@ -301,17 +298,11 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // Mostrar modal de confirmación personalizado
     setConfirmacionPendiente({
       fecha: datosSlot.fecha,
       hora: datosSlot.hora
     });
     setMostrarConfirmacionReserva(true);
-  };
-
-  // VISTA 3: Éxito - Volver al inicio
-  const handleVolverInicio = () => {
-    window.location.href = '/';
   };
 
   // ============================================================
@@ -325,52 +316,34 @@ export default function ConfirmarTurnoModal({
       
       <h2 className={styles['modal-titulo']}>Turno seleccionado</h2>
       
-     <div className={styles['detalle-turno']}>
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Profesional</span>
-    <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
-  </div>
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Especialidad</span>
-    <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
-  </div>
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Centro</span>
-    <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
-  </div>
+      <div className={styles['detalle-turno']}>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Profesional:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.profesionalNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Especialidad:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.especialidadNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Centro:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Zona horaria:</span>
+          <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
+        </div>
+        <div className={styles['detalle-linea']}>
+          <span className={styles['detalle-label']}>Fecha y hora:</span>
+          <span className={styles['detalle-valor']}>
+            {formatearFechaMostrar(datosSlot.fecha)} {datosSlot.hora}
+          </span>
+        </div>
+      </div>
 
-  {/* ✅ Enlace debajo de Centro */}
-  {esCentroVirtual && turnoCreado?.videollamadaUrl && (
-    <div className={styles['detalle-linea-enlace']}>
-      <span className={styles['detalle-label']}>🔗 Videollamada</span>
-      <span className={styles['detalle-valor-enlace']}>
-        <a href={turnoCreado.videollamadaUrl} target="_blank" rel="noopener noreferrer" className={styles['enlace-videollamada']}>
-          {turnoCreado.videollamadaUrl}
-        </a>
-      </span>
-    </div>
-  )}
-
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Zona horaria</span>
-    <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
-  </div>
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Fecha</span>
-    <span className={styles['detalle-valor']}>{formatearFechaMostrar(datosSlot.fecha)}</span>
-  </div>
-  <div className={styles['detalle-linea']}>
-    <span className={styles['detalle-label']}>Hora</span>
-    <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
-  </div>
-</div>
       <div className={styles['modal-botones']}>
-        <button className={styles['btn-volver']} onClick={onClose}>
-          Volver
-        </button>
-        <button className={styles['btn-confirmar']} onClick={handleConfirmarVista1}>
-          Confirmar
-        </button>
+        <button className={styles['btn-volver']} onClick={onClose}>Volver</button>
+        <button className={styles['btn-confirmar']} onClick={handleConfirmarVista1}>Confirmar</button>
       </div>
     </div>
   );
@@ -420,12 +393,8 @@ export default function ConfirmarTurnoModal({
             placeholder="tuemail@ejemplo.com"
             disabled={cargando}
           />
-          {datosUsuario.email && !validarEmail(datosUsuario.email) && (
-            <small className={styles['campo-error-texto']}>Email inválido</small>
-          )}
-          {buscandoUsuario && (
-            <small className={styles['campo-ayuda']}>Buscando usuario...</small>
-          )}
+          {datosUsuario.email && !validarEmail(datosUsuario.email) && <small className={styles['campo-error-texto']}>Email inválido</small>}
+          {buscandoUsuario && <small className={styles['campo-ayuda']}>Buscando usuario...</small>}
         </div>
         
         <div className={styles['campo-formulario']}>
@@ -470,35 +439,20 @@ export default function ConfirmarTurnoModal({
         </div>
       </div>
 
-      {error && (
-        <div className={styles['mensaje-error']}>
-          {error}
-        </div>
-      )}
+      {error && <div className={styles['mensaje-error']}>{error}</div>}
 
       <div className={styles['modal-botones']}>
-        <button 
-          className={styles['btn-volver']} 
-          onClick={() => setVista('confirmacion')}
-          disabled={cargando}
-        >
-          Volver
-        </button>
-        <button 
-          className={styles['btn-confirmar']} 
-          onClick={handleConfirmarVista2}
-          disabled={cargando || !formularioValido}
-        >
+        <button className={styles['btn-volver']} onClick={() => setVista('confirmacion')} disabled={cargando}>Volver</button>
+        <button className={styles['btn-confirmar']} onClick={handleConfirmarVista2} disabled={cargando || !formularioValido}>
           {cargando ? 'Reservando...' : 'Reservar turno'}
         </button>
       </div>
     </div>
   );
 
-   // VISTA 3: Éxito (modificado - videollamada dentro del recuadro gris)
+  // ✅ VISTA 3: Éxito (con videollamada debajo de Centro)
   const renderVistaExito = () => {
-    const esCentroVirtual = datosSlot.centroNombre?.toUpperCase().includes('VIRTUAL') || 
-                            datosSlot.centroId === 9;
+    const esCentroVirtual = datosSlot.centroNombre?.toUpperCase().includes('VIRTUAL') || datosSlot.centroId === 9;
     
     return (
       <div className={styles['modal-content']}>
@@ -517,6 +471,19 @@ export default function ConfirmarTurnoModal({
             <span className={styles['detalle-label']}>Centro</span>
             <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
           </div>
+
+          {/* ✅ Enlace debajo de Centro */}
+          {esCentroVirtual && turnoCreado?.videollamadaUrl && (
+            <div className={styles['detalle-linea-enlace']}>
+              <span className={styles['detalle-label']}>🔗 Videollamada</span>
+              <span className={styles['detalle-valor-enlace']}>
+                <a href={turnoCreado.videollamadaUrl} target="_blank" rel="noopener noreferrer" className={styles['enlace-videollamada']}>
+                  {turnoCreado.videollamadaUrl}
+                </a>
+              </span>
+            </div>
+          )}
+
           <div className={styles['detalle-linea']}>
             <span className={styles['detalle-label']}>Zona horaria</span>
             <span className={styles['detalle-valor']}>{datosSlot.zonaHoraria || 'Buenos Aires (Argentina)'}</span>
@@ -529,23 +496,6 @@ export default function ConfirmarTurnoModal({
             <span className={styles['detalle-label']}>Hora</span>
             <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
           </div>
-
-          {/* ✅ Enlace de videollamada dentro del recuadro gris */}
-          {esCentroVirtual && turnoCreado?.videollamadaUrl && (
-            <div className={styles['detalle-linea-enlace']}>
-              <span className={styles['detalle-label']}>🔗 Videollamada</span>
-              <span className={styles['detalle-valor-enlace']}>
-                <a 
-                  href={turnoCreado.videollamadaUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={styles['enlace-videollamada']}
-                >
-                  {turnoCreado.videollamadaUrl}
-                </a>
-              </span>
-            </div>
-          )}
         </div>
 
         <div className={styles['mensaje-exito']}>
@@ -594,19 +544,14 @@ export default function ConfirmarTurnoModal({
           </div>
 
           <div className={styles['modal-botones']}>
-            <button className={styles['btn-volver']} onClick={() => setMostrarConfirmacionReserva(false)}>
-              Cancelar
-            </button>
-            <button className={styles['btn-confirmar']} onClick={ejecutarReserva}>
-              Confirmar
-            </button>
+            <button className={styles['btn-volver']} onClick={() => setMostrarConfirmacionReserva(false)}>Cancelar</button>
+            <button className={styles['btn-confirmar']} onClick={ejecutarReserva}>Confirmar</button>
           </div>
         </div>
       </div>
     </div>
   );
 
-  // ✅ Función que selecciona la vista según el estado
   const renderVistaActual = () => {
     if (vista === 'confirmacion') return renderVistaConfirmacion();
     if (vista === 'datos') return renderVistaDatos();
