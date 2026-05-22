@@ -575,17 +575,19 @@ export default function ConfirmarTurnoModal({
     return renderVistaExito();
   };
 
-  return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onRequestClose={onClose}
-        className={styles['modal']}
-        overlayClassName={styles['modal-overlay']}
-        ariaHideApp={false}
-      >
-        {renderVistaActual()}
-      </Modal>
+return (
+  <>
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onClose}
+      className={styles['modal']}
+      overlayClassName={styles['modal-overlay']}
+      ariaHideApp={false}
+    >
+      {mostrarConfirmacionReserva ? renderModalConfirmacion() : renderVistaActual()}
+    </Modal>
+  </>
+);
       
       {/* Modal de confirmación personalizado */}
       {mostrarConfirmacionReserva && renderModalConfirmacion()}
