@@ -481,7 +481,7 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // VISTA 3: Éxito (modificado para mostrar URL de videollamada)
+   // VISTA 3: Éxito (modificado - videollamada dentro del recuadro gris)
   const renderVistaExito = () => {
     const esCentroVirtual = datosSlot.centroNombre?.toUpperCase().includes('VIRTUAL') || 
                             datosSlot.centroId === 9;
@@ -515,23 +515,27 @@ export default function ConfirmarTurnoModal({
             <span className={styles['detalle-label']}>Hora</span>
             <span className={styles['detalle-valor']}>{datosSlot.hora}hs</span>
           </div>
+
+          {/* ✅ Enlace de videollamada dentro del recuadro gris */}
+          {esCentroVirtual && turnoCreado?.videollamadaUrl && (
+            <div className={styles['detalle-linea-enlace']}>
+              <span className={styles['detalle-label']}>🔗 Videollamada</span>
+              <span className={styles['detalle-valor-enlace']}>
+                <a 
+                  href={turnoCreado.videollamadaUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={styles['enlace-videollamada']}
+                >
+                  {turnoCreado.videollamadaUrl}
+                </a>
+              </span>
+            </div>
+          )}
         </div>
 
         <div className={styles['mensaje-exito']}>
-          <p>📧 Te enviamos la confirmación a <strong>{datosUsuario.email}</strong></p>
-          {esCentroVirtual && turnoCreado?.videollamadaUrl && (
-            <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>
-              🔗 <strong>Enlace para la videollamada:</strong><br />
-              <a href={turnoCreado.videollamadaUrl} target="_blank" rel="noopener noreferrer" style={{ wordBreak: 'break-all' }}>
-                {turnoCreado.videollamadaUrl}
-              </a>
-            </p>
-          )}
-          {esCentroVirtual && !turnoCreado?.videollamadaUrl && (
-            <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>
-              🔗 El enlace para la videollamada ha sido enviado a tu correo electrónico.
-            </p>
-          )}
+          📧 Te enviamos la confirmación a <strong>{datosUsuario.email}</strong>
         </div>
 
         <div className={styles['modal-botones']}>
