@@ -307,3 +307,13 @@
   font-size: 0.7rem;
   margin-top: 4px;
 }
+
+/* Asegurar que el modal de confirmación esté por encima */
+.modal-overlay {
+  z-index: 2000 !important;
+}
+
+/* Para el modal de confirmación específicamente */
+.modal-overlay:has(.modal-content) {
+  z-index: 2000 !important;
+}
