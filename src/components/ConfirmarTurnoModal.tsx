@@ -588,9 +588,3 @@ return (
     </Modal>
   </>
 );
-      
-      {/* Modal de confirmación personalizado */}
-      {mostrarConfirmacionReserva && renderModalConfirmacion()}
-    </>
-  );
-}
