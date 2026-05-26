@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fa';
 
 import Breadcrumb from './Breadcrumb';
+import SolicitarServicioModal from './SolicitarServicioModal';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -51,6 +52,7 @@ export default function Actividad() {
   const navigate = useNavigate();
   const [actividades, setActividades] = useState<ActividadType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const NEGOCIO_DEMO_ID = 6;
 
@@ -98,6 +100,11 @@ export default function Actividad() {
   const handleTerminos = () => alert('Funcionalidad demo: Términos y Condiciones');
   const handlePoliticas = () => alert('Funcionalidad demo: Políticas de Privacidad');
 
+  // ✅ Manejar clic en el botón especial
+  const handleSolicitarServicio = () => {
+    setModalAbierto(true);
+  };
+
   if (loading) {
     return (
       <div className={inicioStyles['inicio-container']}>
@@ -111,6 +118,9 @@ export default function Actividad() {
       </div>
     );
   }
+
+  // ✅ Lista de actividades incluyendo el botón especial al final
+  const actividadesConBotonEspecial = [...actividades, { id: 0, nombre: 'SOLICITAR OTRAS ACTIVIDADES / SERVICIOS' }];
 
   return (
     <div className={inicioStyles['inicio-container']}>
@@ -127,7 +137,6 @@ export default function Actividad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* ✅ Breadcrumb agregado */}
             <Breadcrumb items={[
               { label: 'Inicio', path: '/' },
               { label: 'Actividad' }
@@ -136,17 +145,32 @@ export default function Actividad() {
             <h1 className={inicioStyles['inicio-titulo']}>¿Cuál es tu Actividad?</h1>
             
             <div className={styles['actividad-grid']}>
-              {actividades.map((actividad) => (
-                <button 
-                  key={actividad.id}
-                  onClick={() => navigate(`/actividad/${actividad.id}/especialidad`, {
-                    state: { actividadNombre: actividad.nombre }
-                  })}
-                  className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
-                >
-                  {getIconForActividadId(actividad.id)} {actividad.nombre}
-                </button>
-              ))}
+              {actividadesConBotonEspecial.map((actividad) => {
+                // Si es el botón especial (id 0), no navega, abre el modal
+                if (actividad.id === 0) {
+                  return (
+                    <button 
+                      key={actividad.id}
+                      onClick={handleSolicitarServicio}
+                      className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                    >
+                      <FaBriefcase className={inicioStyles['inicio-btn-icon']} /> {actividad.nombre}
+                    </button>
+                  );
+                }
+                // Actividades normales
+                return (
+                  <button 
+                    key={actividad.id}
+                    onClick={() => navigate(`/actividad/${actividad.id}/especialidad`, {
+                      state: { actividadNombre: actividad.nombre }
+                    })}
+                    className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
+                  >
+                    {getIconForActividadId(actividad.id)} {actividad.nombre}
+                  </button>
+                );
+              })}
             </div>
 
             <div className={inicioStyles['inicio-footer']}>
@@ -171,6 +195,9 @@ export default function Actividad() {
           </Link>
         </div>
       </div>
+
+      {/* Modal de solicitud */}
+      <SolicitarServicioModal isOpen={modalAbierto} onClose={() => setModalAbierto(false)} />
     </div>
   );
 }
