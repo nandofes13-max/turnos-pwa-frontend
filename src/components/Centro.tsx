@@ -14,9 +14,6 @@ interface CentroType {
   city: string;
   es_virtual: boolean;
   formatted_address: string;
-  street?: string;
-  street_number?: string;
-  country?: string;
   latitude: string;
   longitude: string;
 }
@@ -38,28 +35,30 @@ export default function Centro() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ✅ Función para formatear dirección (calle + número, igual que email)
+  // ✅ Función para formatear dirección (basada en formatted_address, limpiando campos extra)
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
-    // Construir calle + número
-    let calleNumero = '';
-    if (centro.street) {
-      calleNumero = centro.street;
-      if (centro.street_number) {
-        calleNumero += ` ${centro.street_number}`;
+    if (centro.formatted_address) {
+      let direccion = centro.formatted_address;
+      // Eliminar código postal (ej: ", 1708,")
+      direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
+      // Eliminar provincia (ej: ", Partido de Morón,")
+      direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
+      // Eliminar barrio (ej: ", Viejo Urbano,")
+      direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
+      // Limpiar comas dobles
+      direccion = direccion.replace(/,\s*,/g, ',');
+      // Eliminar espacios al inicio
+      direccion = direccion.trim();
+      // Eliminar coma al inicio si quedó
+      if (direccion.startsWith(',')) {
+        direccion = direccion.substring(1).trim();
       }
-    } else if (centro.street_number) {
-      calleNumero = centro.street_number;
+      return direccion;
     }
     
-    const partes = [
-      calleNumero,
-      centro.city,
-      centro.country,
-    ].filter(Boolean);
-    
-    return partes.join(', ') || 'Dirección no disponible';
+    return 'Dirección no disponible';
   };
 
   const handleCentroSeleccionado = (centro: CentroType) => {
