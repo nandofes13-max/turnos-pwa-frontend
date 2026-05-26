@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Modal from 'react-modal';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -40,6 +40,55 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
+  
+  // ✅ Estado para auto-completado
+  const [buscandoUsuario, setBuscandoUsuario] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ✅ Auto-completado: Buscar usuario por email (con debounce)
+  const buscarUsuarioPorEmail = async (email: string) => {
+    if (!validarEmail(email)) {
+      return;
+    }
+    
+    setBuscandoUsuario(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
+      const data = await response.json();
+      
+      if (data.id) {
+        setFormData(prev => ({
+          ...prev,
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          whatsapp: data.telefono || ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error al buscar usuario:', err);
+    } finally {
+      setBuscandoUsuario(false);
+    }
+  };
+
+  // Debounce para la búsqueda de usuario
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    if (formData.email && validarEmail(formData.email)) {
+      timeoutRef.current = setTimeout(() => {
+        buscarUsuarioPorEmail(formData.email);
+      }, 500);
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [formData.email]);
 
   const formularioValido = () => {
     return (
@@ -80,11 +129,7 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
       }
 
       setExito(true);
-      setTimeout(() => {
-        onClose();
-        setExito(false);
-        setFormData({ email: '', nombre: '', apellido: '', whatsapp: '', mensaje: '' });
-      }, 2000);
+      // ❌ Ya no se cierra automáticamente
     } catch (err: any) {
       console.error('Error al enviar solicitud:', err);
       setError(err.message || 'Ocurrió un error. Por favor, intentá de nuevo.');
@@ -151,6 +196,9 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                 />
                 {formData.email && !validarEmail(formData.email) && (
                   <small className={styles['campo-error-texto']}>Email inválido</small>
+                )}
+                {buscandoUsuario && (
+                  <small className={styles['campo-ayuda']}>Buscando usuario...</small>
                 )}
               </div>
 
@@ -224,6 +272,7 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
           </form>
         ) : (
           <div className={styles['modal-botones']}>
+            {/* ✅ Ahora el usuario decide cuándo cerrar */}
             <button className={styles['btn-inicio']} onClick={handleClose}>
               Cerrar
             </button>
