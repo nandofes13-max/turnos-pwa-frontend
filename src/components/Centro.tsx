@@ -35,17 +35,28 @@ export default function Centro() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ✅ Función para formatear dirección (basada en formatted_address, limpiando campos extra)
+  // ✅ Función para formatear dirección (calle antes que número, como en el email)
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
     if (centro.formatted_address) {
       let direccion = centro.formatted_address;
-      // Eliminar código postal (ej: ", 1708,")
+      
+      // Extraer número y calle si están al inicio (ej: "256, General Juan José Valle")
+      const calleNumeroMatch = direccion.match(/^(\d+),\s*(.+?)(?:,|$)/);
+      if (calleNumeroMatch) {
+        const numero = calleNumeroMatch[1];
+        const calle = calleNumeroMatch[2];
+        // Reemplazar "número, calle" por "calle número"
+        direccion = direccion.replace(/^\d+,\s*/, '');
+        direccion = `${calle} ${numero}${direccion}`;
+      }
+      
+      // Eliminar código postal
       direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
-      // Eliminar provincia (ej: ", Partido de Morón,")
+      // Eliminar provincia
       direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
-      // Eliminar barrio (ej: ", Viejo Urbano,")
+      // Eliminar barrio
       direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
       // Limpiar comas dobles
       direccion = direccion.replace(/,\s*,/g, ',');
@@ -55,6 +66,7 @@ export default function Centro() {
       if (direccion.startsWith(',')) {
         direccion = direccion.substring(1).trim();
       }
+      
       return direccion;
     }
     
