@@ -176,7 +176,7 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                   className={styles['campo-textarea-destacado']}
                   value={formData.mensaje}
                   onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                  placeholder="Ej: Clases de yoga, asesoría legal, reparación de electrodomésticos, etc."
+                  placeholder="Ej: Clases de Pilates, Tatuajes, Centro de Estética, etc."
                   rows={4}
                   disabled={cargando}
                   required
