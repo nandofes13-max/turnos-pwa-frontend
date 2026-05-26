@@ -38,37 +38,28 @@ export default function Centro() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ✅ Función para formatear dirección (mismo formato que el email)
+  // ✅ Función para formatear dirección (calle + número, igual que email)
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
-    // Si tenemos los campos estructurados, usarlos
-    if (centro.street && centro.street_number) {
-      const partes = [
-        centro.street,
-        centro.street_number,
-        centro.city,
-        centro.country,
-      ].filter(Boolean);
-      return partes.join(', ');
+    // Construir calle + número
+    let calleNumero = '';
+    if (centro.street) {
+      calleNumero = centro.street;
+      if (centro.street_number) {
+        calleNumero += ` ${centro.street_number}`;
+      }
+    } else if (centro.street_number) {
+      calleNumero = centro.street_number;
     }
     
-    // Fallback: usar formatted_address pero limpiarlo
-    if (centro.formatted_address) {
-      // Eliminar código postal y provincia del formatted_address
-      let direccion = centro.formatted_address;
-      // Eliminar código postal (ej: ", 1708,")
-      direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
-      // Eliminar provincia (ej: ", Partido de Morón,")
-      direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
-      // Eliminar barrio (ej: ", Viejo Urbano,")
-      direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
-      // Limpiar comas dobles
-      direccion = direccion.replace(/,\s*,/g, ',');
-      return direccion;
-    }
+    const partes = [
+      calleNumero,
+      centro.city,
+      centro.country,
+    ].filter(Boolean);
     
-    return 'Dirección no disponible';
+    return partes.join(', ') || 'Dirección no disponible';
   };
 
   const handleCentroSeleccionado = (centro: CentroType) => {
