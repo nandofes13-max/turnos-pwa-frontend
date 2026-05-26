@@ -122,6 +122,22 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
         {!exito ? (
           <form onSubmit={handleSubmit}>
             <div className={styles['formulario-datos']}>
+              {/* ✅ Campo destacado - PRIMERO */}
+              <div className={`${styles['campo-formulario']} ${styles['campo-destacado']}`}>
+                <label className={styles['campo-label-destacado']}>
+                  📝 ¿Qué actividad/servicio necesitas? *
+                </label>
+                <textarea
+                  className={styles['campo-textarea-destacado']}
+                  value={formData.mensaje}
+                  onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
+                  placeholder="Ej: Clases de yoga, asesoría legal, reparación de electrodomésticos, etc."
+                  rows={4}
+                  disabled={cargando}
+                  required
+                />
+              </div>
+
               <div className={styles['campo-formulario']}>
                 <label className={styles['campo-label']}>Email *</label>
                 <input
@@ -179,22 +195,6 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                 {formData.whatsapp && !validarWhatsApp(formData.whatsapp) && (
                   <small className={styles['campo-error-texto']}>Número de WhatsApp inválido</small>
                 )}
-              </div>
-
-              {/* ✅ Campo destacado */}
-              <div className={`${styles['campo-formulario']} ${styles['campo-destacado']}`}>
-                <label className={styles['campo-label-destacado']}>
-                  📝 ¿Qué actividad/servicio necesitas? *
-                </label>
-                <textarea
-                  className={styles['campo-textarea-destacado']}
-                  value={formData.mensaje}
-                  onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                  placeholder="Ej: Clases de yoga, asesoría legal, reparación de electrodomésticos, etc."
-                  rows={4}
-                  disabled={cargando}
-                  required
-                />
               </div>
             </div>
 
