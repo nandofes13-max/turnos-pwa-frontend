@@ -14,6 +14,9 @@ interface CentroType {
   city: string;
   es_virtual: boolean;
   formatted_address: string;
+  street?: string;
+  street_number?: string;
+  country?: string;
   latitude: string;
   longitude: string;
 }
@@ -35,8 +38,40 @@ export default function Centro() {
 
   const NEGOCIO_DEMO_ID = 6;
 
+  // ✅ Función para formatear dirección (mismo formato que el email)
+  const formatearDireccion = (centro: CentroType): string => {
+    if (centro.es_virtual) return 'Centro virtual';
+    
+    // Si tenemos los campos estructurados, usarlos
+    if (centro.street && centro.street_number) {
+      const partes = [
+        centro.street,
+        centro.street_number,
+        centro.city,
+        centro.country,
+      ].filter(Boolean);
+      return partes.join(', ');
+    }
+    
+    // Fallback: usar formatted_address pero limpiarlo
+    if (centro.formatted_address) {
+      // Eliminar código postal y provincia del formatted_address
+      let direccion = centro.formatted_address;
+      // Eliminar código postal (ej: ", 1708,")
+      direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
+      // Eliminar provincia (ej: ", Partido de Morón,")
+      direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
+      // Eliminar barrio (ej: ", Viejo Urbano,")
+      direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
+      // Limpiar comas dobles
+      direccion = direccion.replace(/,\s*,/g, ',');
+      return direccion;
+    }
+    
+    return 'Dirección no disponible';
+  };
+
   const handleCentroSeleccionado = (centro: CentroType) => {
-    // Navegar a la pantalla de Agenda
     navigate(`/actividad/${actividadId}/especialidad/${especialidadId}/centro/${centro.id}/agenda`, {
       state: {
         actividadNombre: actividadNombre,
@@ -97,7 +132,7 @@ export default function Centro() {
     if (centro.es_virtual) {
       return `${centro.nombre}\nCódigo: ${centro.codigo}\nTipo: Virtual`;
     }
-    return `${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${centro.formatted_address}`;
+    return `${centro.nombre}\nCódigo: ${centro.codigo}\nCiudad: ${centro.city}\nDirección: ${formatearDireccion(centro)}`;
   };
 
   if (loading) {
@@ -204,6 +239,7 @@ export default function Centro() {
         </div>
       </div>
 
+      {/* Modal de detalle del centro */}
       {modalCentro && (
         <div className={styles['modal-overlay']} onClick={() => setModalCentro(null)}>
           <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
@@ -218,7 +254,7 @@ export default function Centro() {
             </div>
             {!modalCentro.es_virtual && (
               <div className={styles['modal-campo']}>
-                <strong>Dirección:</strong> {modalCentro.formatted_address}
+                <strong>Dirección:</strong> {formatearDireccion(modalCentro)}
               </div>
             )}
             <div className={styles['modal-campo']}>
