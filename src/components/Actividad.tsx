@@ -11,6 +11,7 @@ import {
   FaBriefcase 
 } from 'react-icons/fa';
 
+import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -126,6 +127,12 @@ export default function Actividad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
+            {/* ✅ Breadcrumb agregado */}
+            <Breadcrumb items={[
+              { label: 'Inicio', path: '/' },
+              { label: 'Actividad' }
+            ]} />
+            
             <h1 className={inicioStyles['inicio-titulo']}>¿Cuál es tu Actividad?</h1>
             
             <div className={styles['actividad-grid']}>
