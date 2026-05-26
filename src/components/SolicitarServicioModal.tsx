@@ -181,13 +181,16 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                 )}
               </div>
 
-              <div className={styles['campo-formulario']}>
-                <label className={styles['campo-label']}>¿Qué actividad/servicio necesitas? *</label>
+              {/* ✅ Campo destacado */}
+              <div className={`${styles['campo-formulario']} ${styles['campo-destacado']}`}>
+                <label className={styles['campo-label-destacado']}>
+                  📝 ¿Qué actividad/servicio necesitas? *
+                </label>
                 <textarea
-                  className={styles['campo-textarea']}
+                  className={styles['campo-textarea-destacado']}
                   value={formData.mensaje}
                   onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                  placeholder="Ej: Clases de yoga, asesoría legal, etc."
+                  placeholder="Ej: Clases de yoga, asesoría legal, reparación de electrodomésticos, etc."
                   rows={4}
                   disabled={cargando}
                   required
