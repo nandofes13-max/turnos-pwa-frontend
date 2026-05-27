@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { useAutoCompletadoUsuario } from '../hooks/useAutoCompletadoUsuario';
 import styles from '../styles/ConfirmarTurnoModal.module.css';
 
 interface SolicitarServicioModalProps {
@@ -40,55 +41,21 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
-  
-  // ✅ Estado para auto-completado
-  const [buscandoUsuario, setBuscandoUsuario] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ Auto-completado: Buscar usuario por email (con debounce)
-  const buscarUsuarioPorEmail = async (email: string) => {
-    if (!validarEmail(email)) {
-      return;
-    }
-    
-    setBuscandoUsuario(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
-      const data = await response.json();
-      
-      if (data.id) {
-        setFormData(prev => ({
-          ...prev,
-          nombre: data.nombre || '',
-          apellido: data.apellido || '',
-          whatsapp: data.telefono || ''
-        }));
-      }
-    } catch (err) {
-      console.error('Error al buscar usuario:', err);
-    } finally {
-      setBuscandoUsuario(false);
-    }
-  };
+  // ✅ Usar el hook reutilizable
+  const { buscando, usuarioData, buscarPorEmail, upsertUsuario } = useAutoCompletadoUsuario();
 
-  // Debounce para la búsqueda de usuario
+  // ✅ Cuando se encuentran datos del usuario, precargar en el formulario
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (usuarioData) {
+      setFormData(prev => ({
+        ...prev,
+        nombre: usuarioData.nombre || '',
+        apellido: usuarioData.apellido || '',
+        whatsapp: usuarioData.telefono || ''
+      }));
     }
-    
-    if (formData.email && validarEmail(formData.email)) {
-      timeoutRef.current = setTimeout(() => {
-        buscarUsuarioPorEmail(formData.email);
-      }, 500);
-    }
-    
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [formData.email]);
+  }, [usuarioData]);
 
   const formularioValido = () => {
     return (
@@ -108,6 +75,17 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
     setError(null);
 
     try {
+      // ✅ Si el usuario no existe (no se encontró al buscar), crearlo con upsert
+      if (!usuarioData) {
+        await upsertUsuario({
+          email: formData.email.toLowerCase(),
+          nombre: formData.nombre.toUpperCase(),
+          apellido: formData.apellido.toUpperCase(),
+          telefono: formData.whatsapp,
+        });
+      }
+
+      // Enviar la solicitud
       const response = await fetch(`${API_BASE_URL}/solicitudes/servicio`, {
         method: 'POST',
         headers: {
@@ -129,7 +107,6 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
       }
 
       setExito(true);
-      // ❌ Ya no se cierra automáticamente
     } catch (err: any) {
       console.error('Error al enviar solicitud:', err);
       setError(err.message || 'Ocurrió un error. Por favor, intentá de nuevo.');
@@ -189,7 +166,11 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                   type="email"
                   className={`${styles['campo-input']} ${formData.email && !validarEmail(formData.email) ? styles['campo-input-error'] : ''}`}
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    const nuevoEmail = e.target.value;
+                    setFormData({ ...formData, email: nuevoEmail });
+                    buscarPorEmail(nuevoEmail);
+                  }}
                   placeholder="tuemail@ejemplo.com"
                   disabled={cargando}
                   required
@@ -197,7 +178,7 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
                 {formData.email && !validarEmail(formData.email) && (
                   <small className={styles['campo-error-texto']}>Email inválido</small>
                 )}
-                {buscandoUsuario && (
+                {buscando && (
                   <small className={styles['campo-ayuda']}>Buscando usuario...</small>
                 )}
               </div>
@@ -272,7 +253,6 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
           </form>
         ) : (
           <div className={styles['modal-botones']}>
-            {/* ✅ Ahora el usuario decide cuándo cerrar */}
             <button className={styles['btn-inicio']} onClick={handleClose}>
               Cerrar
             </button>
