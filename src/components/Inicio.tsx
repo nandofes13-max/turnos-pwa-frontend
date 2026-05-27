@@ -62,7 +62,7 @@ export default function Inicio() {
                 onClick={handleDemo}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
               >
-                Demostración GRATIS
+                DEMO GRATIS PWA - TURNOS
               </button>
 
               {/* 2. Dirección Correo Electrónico */}
