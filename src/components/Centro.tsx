@@ -7,7 +7,7 @@ import inicioStyles from '../styles/Inicio.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Agregar campos faltantes para que coincida con el backend
+// ✅ Agregar campos para dirección estructurada (vienen del backend en GET /centros/:id)
 interface CentroType {
   id: number;
   nombre: string;
@@ -15,9 +15,9 @@ interface CentroType {
   city: string;
   es_virtual: boolean;
   formatted_address: string;
-  street?: string;        // ✅ NUEVO
-  street_number?: string; // ✅ NUEVO
-  country?: string;       // ✅ NUEVO
+  street?: string;
+  street_number?: string;
+  country?: string;
   latitude: string;
   longitude: string;
 }
@@ -36,14 +36,15 @@ export default function Centro() {
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
   const [modalCentro, setModalCentro] = useState<CentroType | null>(null);
+  const [cargandoDireccion, setCargandoDireccion] = useState(false);
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ✅ Función para formatear dirección (mismo formato que el email)
+  // ✅ Función para formatear dirección (usa campos estructurados si existen)
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
-    // Si tenemos los campos estructurados, usarlos (igual que el email)
+    // Si tenemos los campos estructurados, usarlos (mismo que el email)
     if (centro.street) {
       let direccion = centro.street;
       if (centro.street_number) {
@@ -55,34 +56,43 @@ export default function Centro() {
       }
     }
     
-    // Fallback: usar formatted_address limpiándolo
-    if (centro.formatted_address) {
-      let direccion = centro.formatted_address;
-      
-      // Extraer número y calle si están al inicio (ej: "256, General Juan José Valle")
-      const calleNumeroMatch = direccion.match(/^(\d+),\s*(.+?)(?:,|$)/);
-      if (calleNumeroMatch) {
-        const numero = calleNumeroMatch[1];
-        const calle = calleNumeroMatch[2];
-        direccion = direccion.replace(/^\d+,\s*[^,]+/, `${calle} ${numero}`);
+    // Fallback: usar formatted_address
+    return centro.formatted_address || 'Dirección no disponible';
+  };
+
+  // ✅ Función para obtener datos completos del centro (incluyendo dirección estructurada)
+  const obtenerCentroCompleto = async (centroId: number): Promise<Partial<CentroType>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/centros/${centroId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          street: data.street,
+          street_number: data.street_number,
+          country: data.country,
+        };
       }
-      
-      // Eliminar código postal
-      direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
-      // Eliminar provincia
-      direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
-      // Eliminar barrios comunes
-      direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
-      direccion = direccion.replace(/,\s*[^,]*Centro Oeste[^,]*,/g, ',');
-      direccion = direccion.replace(/,\s*[^,]*Comuna[^,]*,/g, ',');
-      // Limpiar comas dobles
-      direccion = direccion.replace(/,\s*,/g, ',');
-      direccion = direccion.trim();
-      
-      return direccion;
+    } catch (error) {
+      console.error('Error al obtener dirección completa:', error);
     }
+    return {};
+  };
+
+  const handleAbrirModal = async (centro: CentroType) => {
+    // Mostrar modal con datos básicos primero
+    setModalCentro(centro);
+    setCargandoDireccion(true);
     
-    return 'Dirección no disponible';
+    // Traer datos completos del centro (street, street_number, country)
+    const datosCompletos = await obtenerCentroCompleto(centro.id);
+    
+    // Actualizar el modal con los datos de dirección estructurada
+    setModalCentro(prev => prev ? {
+      ...prev,
+      ...datosCompletos,
+    } : null);
+    
+    setCargandoDireccion(false);
   };
 
   const handleCentroSeleccionado = (centro: CentroType) => {
@@ -213,7 +223,7 @@ export default function Centro() {
                 {filtrados.map((centro) => (
                   <button 
                     key={centro.id}
-                    onClick={() => setModalCentro(centro)}
+                    onClick={() => handleAbrirModal(centro)}
                     className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
                     title={getTooltip(centro)}
                   >
@@ -268,7 +278,12 @@ export default function Centro() {
             </div>
             {!modalCentro.es_virtual && (
               <div className={styles['modal-campo']}>
-                <strong>Dirección:</strong> {formatearDireccion(modalCentro)}
+                <strong>Dirección:</strong> 
+                {cargandoDireccion ? (
+                  <span>Cargando...</span>
+                ) : (
+                  formatearDireccion(modalCentro)
+                )}
               </div>
             )}
             <div className={styles['modal-campo']}>
