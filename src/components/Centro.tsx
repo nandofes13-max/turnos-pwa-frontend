@@ -7,6 +7,7 @@ import inicioStyles from '../styles/Inicio.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+// ✅ Agregar campos faltantes para que coincida con el backend
 interface CentroType {
   id: number;
   nombre: string;
@@ -14,6 +15,9 @@ interface CentroType {
   city: string;
   es_virtual: boolean;
   formatted_address: string;
+  street?: string;        // ✅ NUEVO
+  street_number?: string; // ✅ NUEVO
+  country?: string;       // ✅ NUEVO
   latitude: string;
   longitude: string;
 }
@@ -35,10 +39,23 @@ export default function Centro() {
 
   const NEGOCIO_DEMO_ID = 6;
 
-  // ✅ Función para formatear dirección (calle antes que número, sin duplicar)
+  // ✅ Función para formatear dirección (mismo formato que el email)
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
+    // Si tenemos los campos estructurados, usarlos (igual que el email)
+    if (centro.street) {
+      let direccion = centro.street;
+      if (centro.street_number) {
+        direccion += ` ${centro.street_number}`;
+      }
+      const partes = [direccion, centro.city, centro.country].filter(Boolean);
+      if (partes.length > 0) {
+        return partes.join(', ');
+      }
+    }
+    
+    // Fallback: usar formatted_address limpiándolo
     if (centro.formatted_address) {
       let direccion = centro.formatted_address;
       
@@ -47,7 +64,6 @@ export default function Centro() {
       if (calleNumeroMatch) {
         const numero = calleNumeroMatch[1];
         const calle = calleNumeroMatch[2];
-        // Reemplazar la parte inicial "número, calle" por "calle número"
         direccion = direccion.replace(/^\d+,\s*[^,]+/, `${calle} ${numero}`);
       }
       
@@ -55,11 +71,12 @@ export default function Centro() {
       direccion = direccion.replace(/,\s*\d{4,5},/g, ',');
       // Eliminar provincia
       direccion = direccion.replace(/,\s*[^,]*Partido de[^,]*,/g, ',');
-      // Eliminar barrio
+      // Eliminar barrios comunes
       direccion = direccion.replace(/,\s*[^,]*Viejo[^,]*,/g, ',');
+      direccion = direccion.replace(/,\s*[^,]*Centro Oeste[^,]*,/g, ',');
+      direccion = direccion.replace(/,\s*[^,]*Comuna[^,]*,/g, ',');
       // Limpiar comas dobles
       direccion = direccion.replace(/,\s*,/g, ',');
-      // Eliminar espacios al inicio
       direccion = direccion.trim();
       
       return direccion;
