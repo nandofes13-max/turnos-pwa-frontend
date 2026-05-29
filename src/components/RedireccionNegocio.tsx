@@ -31,7 +31,6 @@ export default function RedireccionNegocio() {
         if (response.ok && data.id) {
           console.log('Negocio encontrado:', data);
           
-          // Obtener las actividades del negocio
           const actividadesResponse = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${data.id}`);
           const actividades = await actividadesResponse.json();
           
@@ -44,8 +43,8 @@ export default function RedireccionNegocio() {
             
             console.log('Redirigiendo a actividad:', actividadId);
             
-            // Redirigir a la pantalla de especialidad de esa actividad
-            navigate(`/actividad/${actividadId}/especialidad`, {
+            // ✅ Enviar negocioId en state Y en query params (para máxima compatibilidad)
+            navigate(`/actividad/${actividadId}/especialidad?negocioId=${data.id}&negocioNombre=${encodeURIComponent(data.nombre)}`, {
               state: { 
                 negocioId: data.id,
                 negocioNombre: data.nombre,
