@@ -24,22 +24,32 @@ export default function RedireccionNegocio() {
       }
 
       try {
+        console.log('Buscando negocio con URL:', url);
         const response = await fetch(`${API_BASE_URL}/negocios/url/${url}`);
         const data = await response.json();
 
         if (response.ok && data.id) {
-          // ✅ Obtener la primera actividad del negocio
+          console.log('Negocio encontrado:', data);
+          
+          // Obtener las actividades del negocio
           const actividadesResponse = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${data.id}`);
           const actividades = await actividadesResponse.json();
           
+          console.log('Actividades del negocio:', actividades);
+          
           if (actividades && actividades.length > 0) {
-            const primeraActividadId = actividades[0].actividadId;
+            const primeraActividad = actividades[0];
+            const actividadId = primeraActividad.actividadId;
+            const actividadNombre = primeraActividad.actividad?.nombre || 'Actividad';
+            
+            console.log('Redirigiendo a actividad:', actividadId);
+            
             // Redirigir a la pantalla de especialidad de esa actividad
-            navigate(`/actividad/${primeraActividadId}/especialidad`, {
+            navigate(`/actividad/${actividadId}/especialidad`, {
               state: { 
                 negocioId: data.id,
                 negocioNombre: data.nombre,
-                actividadNombre: actividades[0].actividad?.nombre || 'Actividad'
+                actividadNombre: actividadNombre
               }
             });
           } else {
