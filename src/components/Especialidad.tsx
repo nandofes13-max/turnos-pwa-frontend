@@ -18,20 +18,26 @@ export default function Especialidad() {
   const navigate = useNavigate();
   const location = useLocation();
   const { actividadId } = useParams<{ actividadId: string }>();
-  const { actividadNombre } = location.state || { actividadNombre: 'Actividad' };
+  
+  // ✅ Recibir negocioId del state (viene de RedireccionNegocio)
+  const { actividadNombre, negocioId, negocioNombre } = location.state || { 
+    actividadNombre: 'Actividad',
+    negocioId: 6,  // Por defecto DEMO
+    negocioNombre: 'DEMO'
+  };
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const NEGOCIO_DEMO_ID = 6;
-
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
     navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`, {
       state: {
         actividadNombre: actividadNombre,
-        especialidadNombre: especialidad.nombre
+        especialidadNombre: especialidad.nombre,
+        negocioId: negocioId,        // ✅ Pasar negocioId
+        negocioNombre: negocioNombre  // ✅ Pasar negocioNombre
       }
     });
   };
@@ -46,9 +52,11 @@ export default function Especialidad() {
 
       try {
         setLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/actividad-especialidad/especialidades-por-negocio-actividad/${NEGOCIO_DEMO_ID}/${actividadId}`
-        );
+        // ✅ Usar negocioId dinámico en lugar del fijo
+        const url = `${API_BASE_URL}/actividad-especialidad/especialidades-por-negocio-actividad/${negocioId}/${actividadId}`;
+        console.log('Cargando especialidades desde:', url);
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error('Error al cargar las especialidades');
@@ -70,7 +78,7 @@ export default function Especialidad() {
     };
 
     cargarEspecialidades();
-  }, [actividadId]);
+  }, [actividadId, negocioId]); // ✅ Agregar negocioId como dependencia
 
   useEffect(() => {
     if (busqueda.trim() === '') {
@@ -120,6 +128,9 @@ export default function Especialidad() {
 
             <div className={styles['seleccion-info']}>
               Has seleccionado: <strong>{actividadNombre}</strong>
+              {negocioId !== 6 && (
+                <span className={styles['negocio-info']}> - Negocio: {negocioNombre}</span>
+              )}
             </div>
 
             <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
