@@ -1,26 +1,40 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // 👈 AGREGADO Link
-import { FcGoogle } from 'react-icons/fc';
-import { FaApple } from 'react-icons/fa'; // 👈 SACAMOS FaMicrosoft
-import { MdPhoneIphone, MdEmail } from 'react-icons/md';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import styles from '../styles/Inicio.module.css';
+
+// Componente de acordeón para preguntas frecuentes
+const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string }) => {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <div className={styles['faq-item']}>
+      <button 
+        className={styles['faq-pregunta']} 
+        onClick={() => setAbierto(!abierto)}
+      >
+        <span>{pregunta}</span>
+        {abierto ? <FaChevronUp /> : <FaChevronDown />}
+      </button>
+      {abierto && (
+        <div className={styles['faq-respuesta']}>
+          {respuesta}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Inicio() {
   const navigate = useNavigate();
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-
-  useEffect(() => {
-    // Detectar si es dispositivo táctil
-    setIsTouchDevice(
-      'ontouchstart' in window || 
-      navigator.maxTouchPoints > 0 ||
-      // @ts-ignore
-      navigator.msMaxTouchPoints > 0
-    );
-  }, []);
 
   const handleDemo = () => {
     navigate('/actividad');
+  };
+
+  const handleSolicitarAgenda = () => {
+    // TODO: Abrir modal de solicitud de agenda gratis
+    alert('Próximamente: Formulario para solicitar agenda gratis');
   };
 
   const handleAyuda = () => {
@@ -35,10 +49,33 @@ export default function Inicio() {
     alert('Funcionalidad demo: Políticas de Privacidad');
   };
 
+  const preguntasFrecuentes = [
+    {
+      pregunta: '¿Qué es PWA Turnos?',
+      respuesta: 'Es un sistema de gestión de turnos online que permite a tus clientes reservar turnos 24/7 desde cualquier dispositivo, sin necesidad de descargar una app.'
+    },
+    {
+      pregunta: '¿Cómo empiezo a usarlo?',
+      respuesta: 'Solo necesitas crear tu cuenta, configurar tu negocio, servicios y horarios. En menos de 20 minutos ya podés recibir reservas online.'
+    },
+    {
+      pregunta: '¿Cuánto cuesta?',
+      respuesta: 'Tenemos un plan gratuito sin límite de turnos. Para negocios que necesiten más funcionalidades, hay planes pagos desde $6.900 por mes. Sin comisiones por turno reservado.'
+    },
+    {
+      pregunta: '¿Necesito saber programación?',
+      respuesta: 'No, todo es configurable desde un panel administrativo simple e intuitivo. No necesitas conocimientos técnicos.'
+    },
+    {
+      pregunta: '¿Puedo tener varios profesionales?',
+      respuesta: 'Sí, cada profesional puede tener su propia agenda con accesos independientes. Vos tenés el control total.'
+    }
+  ];
+
   return (
     <div className={styles['inicio-container']}>
       
-      {/* Columna izquierda - LOGIN */}
+      {/* Columna izquierda */}
       <div className={styles['inicio-left']}>
         <div className={styles['inicio-left-content']}>
           
@@ -53,7 +90,7 @@ export default function Inicio() {
 
           <div className={styles['inicio-card']}>
             <h1 className={styles['inicio-titulo']}>Te damos la bienvenida</h1>
-            <p className={styles['inicio-subtitulo']}>Inicia sesión o suscríbete</p>
+            <p className={styles['inicio-subtitulo']}>Gestioná tus turnos de manera simple y eficiente</p>
 
             {/* Botones */}
             <div className={styles['inicio-botones']}>
@@ -65,33 +102,23 @@ export default function Inicio() {
                 DEMO GRATIS
               </button>
 
-              {/* 2. Dirección Correo Electrónico */}
-              <button className={styles['inicio-btn']}>
-                <MdEmail className={styles['inicio-btn-icon']} />
-                Dirección Correo Electrónico
+              {/* 2. Solicitar Agenda Gratis */}
+              <button 
+                onClick={handleSolicitarAgenda}
+                className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
+              >
+                Solicitar Agenda Gratis
               </button>
+            </div>
 
-              {/* 3. Continuar con Google */}
-              <button className={styles['inicio-btn']}>
-                <FcGoogle className={styles['inicio-btn-icon']} />
-                Continuar con Google
-              </button>
-
-              {/* 4. Continuar con Apple - Solo en dispositivos táctiles/móviles */}
-              {isTouchDevice && (
-                <button className={styles['inicio-btn']}>
-                  <FaApple className={styles['inicio-btn-icon']} />
-                  Continuar con Apple
-                </button>
-              )}
-
-              {/* 5. Continuar con el teléfono - Solo en dispositivos táctiles/móviles */}
-              {isTouchDevice && (
-                <button className={`${styles['inicio-btn']} ${styles['inicio-btn-phone']}`}>
-                  <MdPhoneIphone className={styles['inicio-btn-icon']} />
-                  Continuar con el teléfono
-                </button>
-              )}
+            {/* Preguntas Frecuentes */}
+            <div className={styles['faq-section']}>
+              <h2 className={styles['faq-titulo']}>Preguntas Frecuentes</h2>
+              <div className={styles['faq-lista']}>
+                {preguntasFrecuentes.map((item, index) => (
+                  <FaqItem key={index} pregunta={item.pregunta} respuesta={item.respuesta} />
+                ))}
+              </div>
             </div>
 
             {/* Footer */}
@@ -116,7 +143,6 @@ export default function Inicio() {
       {/* Columna derecha - LOGO (solo desktop) */}
       <div className={styles['inicio-right']}>
         <div className={styles['inicio-right-content']}>
-          {/* 👇 AGREGAMOS Link alrededor de la imagen */}
           <Link to="/">
             <img 
               src="/1000133565.png" 
