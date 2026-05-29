@@ -19,12 +19,21 @@ export default function Especialidad() {
   const location = useLocation();
   const { actividadId } = useParams<{ actividadId: string }>();
   
-  // ✅ Recibir negocioId del state (viene de RedireccionNegocio)
-  const { actividadNombre, negocioId, negocioNombre } = location.state || { 
+  // ✅ Leer negocioId de query params (por si el state falla)
+  const queryParams = new URLSearchParams(location.search);
+  const negocioIdFromQuery = queryParams.get('negocioId');
+  const negocioNombreFromQuery = queryParams.get('negocioNombre');
+  
+  // ✅ Prioridad: state > query params > valores por defecto
+  const { actividadNombre, negocioId: negocioIdFromState, negocioNombre: negocioNombreFromState } = location.state || { 
     actividadNombre: 'Actividad',
-    negocioId: 6,  // Por defecto DEMO
-    negocioNombre: 'DEMO'
+    negocioId: null,
+    negocioNombre: null
   };
+  
+  const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
+  const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
+  const actividadNombreFinal = actividadNombre || 'Actividad';
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
@@ -34,10 +43,10 @@ export default function Especialidad() {
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
     navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`, {
       state: {
-        actividadNombre: actividadNombre,
+        actividadNombre: actividadNombreFinal,
         especialidadNombre: especialidad.nombre,
-        negocioId: negocioId,        // ✅ Pasar negocioId
-        negocioNombre: negocioNombre  // ✅ Pasar negocioNombre
+        negocioId: negocioId,
+        negocioNombre: negocioNombre
       }
     });
   };
@@ -52,7 +61,6 @@ export default function Especialidad() {
 
       try {
         setLoading(true);
-        // ✅ Usar negocioId dinámico en lugar del fijo
         const url = `${API_BASE_URL}/actividad-especialidad/especialidades-por-negocio-actividad/${negocioId}/${actividadId}`;
         console.log('Cargando especialidades desde:', url);
         
@@ -63,6 +71,8 @@ export default function Especialidad() {
         }
         
         const data = await response.json();
+        console.log('Especialidades recibidas:', data.length);
+        
         const dataOrdenada = [...data].sort((a, b) => 
           a.nombre.localeCompare(b.nombre)
         );
@@ -78,7 +88,7 @@ export default function Especialidad() {
     };
 
     cargarEspecialidades();
-  }, [actividadId, negocioId]); // ✅ Agregar negocioId como dependencia
+  }, [actividadId, negocioId]);
 
   useEffect(() => {
     if (busqueda.trim() === '') {
@@ -127,7 +137,7 @@ export default function Especialidad() {
             ]} />
 
             <div className={styles['seleccion-info']}>
-              Has seleccionado: <strong>{actividadNombre}</strong>
+              Has seleccionado: <strong>{actividadNombreFinal}</strong>
               {negocioId !== 6 && (
                 <span className={styles['negocio-info']}> - Negocio: {negocioNombre}</span>
               )}
