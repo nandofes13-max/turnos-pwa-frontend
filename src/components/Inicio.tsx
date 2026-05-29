@@ -107,7 +107,7 @@ export default function Inicio() {
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
               >
-                Solicitar Agenda Gratis
+                SOLICITAR AGENDA GRATIS
               </button>
             </div>
 
