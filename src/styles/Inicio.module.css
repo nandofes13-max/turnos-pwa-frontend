@@ -79,7 +79,7 @@
 }
 
 .inicio-titulo {
-  font-size: 1.3rem;
+  font-size: 1.8rem;
   font-weight: 500;
   color: var(--color-primary);       /* = #0056b3 - IGUAL que Gestión de Filiales */
   margin-bottom: 0.5rem;              /* Ajuste para que no se separe tanto */
@@ -300,13 +300,13 @@
 
 /* Botón Solicitar Agenda Gratis */
 .inicio-btn-solicitar {
-  background-color: #2196f3;
+  background-color: #4CAF50;
   color: white;
   border: none;
 }
 
 .inicio-btn-solicitar:hover {
-  background-color: #1976d2;
+  background-color: #45a049;
 }
 
 /* Ajustes responsive para móvil */
