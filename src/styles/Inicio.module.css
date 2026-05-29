@@ -240,3 +240,88 @@
   opacity: 0.85;           /* Baja la opacidad */
   cursor: pointer;
 }
+
+/* Estilos para el acordeón de preguntas frecuentes */
+.faq-section {
+  margin-top: 32px;
+  margin-bottom: 24px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 24px;
+}
+
+.faq-titulo {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.faq-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.faq-pregunta {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background-color: #f9f9f9;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.faq-pregunta:hover {
+  background-color: #f0f0f0;
+}
+
+.faq-respuesta {
+  padding: 16px;
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.5;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fff;
+}
+
+/* Botón Solicitar Agenda Gratis */
+.inicio-btn-solicitar {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+}
+
+.inicio-btn-solicitar:hover {
+  background-color: #1976d2;
+}
+
+/* Ajustes responsive para móvil */
+@media (max-width: 768px) {
+  .faq-pregunta {
+    font-size: 0.85rem;
+    padding: 12px;
+  }
+  
+  .faq-respuesta {
+    font-size: 0.8rem;
+    padding: 12px;
+  }
+  
+  .faq-titulo {
+    font-size: 1rem;
+  }
+}
