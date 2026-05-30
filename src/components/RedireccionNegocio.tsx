@@ -9,6 +9,11 @@ interface NegocioData {
   url: string;
 }
 
+interface Actividad {
+  id: number;
+  nombre: string;
+}
+
 export default function RedireccionNegocio() {
   const { url } = useParams<{ url: string }>();
   const navigate = useNavigate();
@@ -31,29 +36,110 @@ export default function RedireccionNegocio() {
         if (response.ok && data.id) {
           console.log('Negocio encontrado:', data);
           
+          // PASO 1: Obtener actividades del negocio
           const actividadesResponse = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${data.id}`);
           const actividades = await actividadesResponse.json();
           
           console.log('Actividades del negocio:', actividades);
           
-          if (actividades && actividades.length > 0) {
-            const primeraActividad = actividades[0];
-            const actividadId = primeraActividad.actividadId;
-            const actividadNombre = primeraActividad.actividad?.nombre || 'Actividad';
-            
-            console.log('Redirigiendo a actividad:', actividadId);
-            
-            // ✅ Enviar negocioId en state Y en query params (para máxima compatibilidad)
-            navigate(`/actividad/${actividadId}/especialidad?negocioId=${data.id}&negocioNombre=${encodeURIComponent(data.nombre)}`, {
+          if (!actividades || actividades.length === 0) {
+            setError('Este negocio no tiene actividades configuradas');
+            setCargando(false);
+            return;
+          }
+          
+          // Si tiene más de una actividad, redirigir a pantalla de selección
+          if (actividades.length > 1) {
+            console.log('Múltiples actividades, redirigiendo a selección');
+            navigate(`/negocio/${url}/actividad`, {
               state: { 
                 negocioId: data.id,
                 negocioNombre: data.nombre,
-                actividadNombre: actividadNombre
+                actividades: actividades
               }
             });
-          } else {
-            setError('Este negocio no tiene actividades configuradas');
+            return;
           }
+          
+          // PASO 2: Una sola actividad, obtener especialidades (usando el nuevo endpoint)
+          const primeraActividad = actividades[0];
+          const actividadId = primeraActividad.actividadId;
+          const actividadNombre = primeraActividad.actividad?.nombre || 'Actividad';
+          
+          console.log(`Obteniendo especialidades para negocio ${data.id} usando agenda-publica`);
+          const especialidadesResponse = await fetch(`${API_BASE_URL}/agenda-publica/especialidades-por-negocio?negocioId=${data.id}`);
+          const especialidades = await especialidadesResponse.json();
+          
+          console.log('Especialidades encontradas:', especialidades);
+          
+          if (!especialidades || especialidades.length === 0) {
+            setError('Este negocio no tiene especialidades con horarios disponibles');
+            setCargando(false);
+            return;
+          }
+          
+          // Si tiene más de una especialidad, redirigir a pantalla de especialidades
+          if (especialidades.length > 1) {
+            console.log('Múltiples especialidades, redirigiendo a selección');
+            navigate(`/negocio/${url}/actividad/${actividadId}/especialidad`, {
+              state: {
+                negocioId: data.id,
+                negocioNombre: data.nombre,
+                actividadNombre: actividadNombre,
+                especialidades: especialidades
+              }
+            });
+            return;
+          }
+          
+          // PASO 3: Una sola especialidad, obtener centros
+          const unaEspecialidad = especialidades[0];
+          const especialidadId = unaEspecialidad.id;
+          const especialidadNombre = unaEspecialidad.nombre;
+          
+          const centrosResponse = await fetch(`${API_BASE_URL}/profesional-centro/centros-por-especialidad/${data.id}/${especialidadId}`);
+          const centros = await centrosResponse.json();
+          
+          console.log('Centros encontrados:', centros);
+          
+          if (!centros || centros.length === 0) {
+            setError('Este negocio no tiene centros disponibles para esta especialidad');
+            setCargando(false);
+            return;
+          }
+          
+          // Si tiene más de un centro, redirigir a pantalla de centros
+          if (centros.length > 1) {
+            console.log('Múltiples centros, redirigiendo a selección');
+            navigate(`/negocio/${url}/actividad/${actividadId}/especialidad/${especialidadId}/centro`, {
+              state: {
+                negocioId: data.id,
+                negocioNombre: data.nombre,
+                actividadNombre: actividadNombre,
+                especialidadNombre: especialidadNombre,
+                centros: centros
+              }
+            });
+            return;
+          }
+          
+          // PASO 4: Un solo centro, obtener profesionales y agenda
+          const unCentro = centros[0];
+          const centroId = unCentro.id;
+          const centroNombre = unCentro.nombre;
+          
+          // Redirigir directamente a la agenda
+          console.log('Redirigiendo directamente a agenda');
+          navigate(`/actividad/${actividadId}/especialidad/${especialidadId}/centro/${centroId}/agenda`, {
+            state: {
+              actividadNombre: actividadNombre,
+              especialidadNombre: especialidadNombre,
+              centroNombre: centroNombre,
+              negocioId: data.id,
+              negocioNombre: data.nombre
+            }
+          });
+          
         } else {
           setError('Negocio no encontrado');
         }
