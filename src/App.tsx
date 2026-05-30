@@ -20,6 +20,7 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
+import ActividadPorNegocio from './components/ActividadPorNegocio'; // ✅ NUEVO IMPORT
 import './App.css';
 
 function App() {
@@ -27,8 +28,10 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Inicio />} />
-        {/* ✅ Nueva ruta: URL pública del negocio */}
+        {/* ✅ Ruta: URL pública del negocio (redirección inteligente) */}
         <Route path="/negocio/:url" element={<RedireccionNegocio />} />
+        {/* ✅ NUEVA RUTA: Selección de actividades para un negocio */}
+        <Route path="/negocio/:url/actividad" element={<ActividadPorNegocio />} />
         <Route path="/actividad" element={<Actividad />} />
         <Route path="/actividad/:actividadId/especialidad" element={<Especialidad />} />
         <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
