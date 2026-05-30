@@ -53,7 +53,6 @@ export default function ActividadPorNegocio() {
   }, [url]);
 
   const handleActividadClick = (actividad: Actividad) => {
-    // Redirigir a la pantalla de especialidades, pasando el negocioId
     navigate(`/actividad/${actividad.id}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}`, {
       state: {
         negocioId: negocioId,
@@ -93,8 +92,21 @@ export default function ActividadPorNegocio() {
 
   return (
     <div className={inicioStyles['inicio-container']}>
+      {/* Columna izquierda - Actividades */}
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
+          
+          {/* Logo móvil */}
+          <div className={inicioStyles['inicio-logo-mobile']}>
+            <a href="/">
+              <img 
+                src="/1000133565.png" 
+                alt="PWA Turnos" 
+                className={inicioStyles['inicio-logo-mobile-img']}
+              />
+            </a>
+          </div>
+
           <div className={inicioStyles['inicio-card']}>
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona una actividad</h1>
             <div className={styles['actividad-grid']}>
@@ -121,6 +133,19 @@ export default function ActividadPorNegocio() {
               <div className={inicioStyles['inicio-version']}>v.0.10</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Columna derecha - Logo (solo desktop) */}
+      <div className={inicioStyles['inicio-right']}>
+        <div className={inicioStyles['inicio-right-content']}>
+          <a href="/">
+            <img 
+              src="/1000133565.png" 
+              alt="PWA Turnos" 
+              className={inicioStyles['inicio-logo-desktop']}
+            />
+          </a>
         </div>
       </div>
     </div>
