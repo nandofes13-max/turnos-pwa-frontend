@@ -1,6 +1,9 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Actividad {
   id: number;
@@ -10,14 +13,56 @@ interface Actividad {
 export default function ActividadPorNegocio() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { actividades, negocioId, negocioNombre } = location.state || { 
-    actividades: [], 
-    negocioId: null, 
-    negocioNombre: '' 
-  };
+  const { url } = useParams<{ url: string }>();
+  const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [negocioId, setNegocioId] = useState<number | null>(null);
+  const [negocioNombre, setNegocioNombre] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const cargarActividades = async () => {
+      // Intentar obtener del state primero
+      if (location.state?.actividades) {
+        setActividades(location.state.actividades);
+        setNegocioId(location.state.negocioId);
+        setNegocioNombre(location.state.negocioNombre);
+        setLoading(false);
+        return;
+      }
+
+      // Si no hay state, obtener del backend
+      try {
+        // Primero obtener el negocio por URL
+        const negocioRes = await fetch(`${API_BASE_URL}/negocios/url/${url}`);
+        const negocioData = await negocioRes.json();
+        
+        if (negocioData.id) {
+          setNegocioId(negocioData.id);
+          setNegocioNombre(negocioData.nombre);
+          
+          // Luego obtener sus actividades
+          const actividadesRes = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${negocioData.id}`);
+          const actividadesData = await actividadesRes.json();
+          
+          const actividadesList = actividadesData.map((item: any) => ({
+            id: item.actividadId,
+            nombre: item.actividad?.nombre || 'Actividad'
+          }));
+          
+          setActividades(actividadesList);
+        }
+      } catch (error) {
+        console.error('Error al cargar actividades:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarActividades();
+  }, [url, location.state]);
 
   const handleActividadSeleccionada = (actividad: Actividad) => {
-    // Redirigir a la pantalla de especialidades para esta actividad
+    // Mantener el negocioId en la URL
     navigate(`/actividad/${actividad.id}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}`, {
       state: {
         negocioId: negocioId,
@@ -27,13 +72,27 @@ export default function ActividadPorNegocio() {
     });
   };
 
-  if (!actividades || actividades.length === 0) {
+  if (loading) {
     return (
       <div className={inicioStyles['inicio-container']}>
         <div className={inicioStyles['inicio-left']}>
           <div className={inicioStyles['inicio-left-content']}>
             <div className={inicioStyles['inicio-card']}>
               <h1 className={inicioStyles['inicio-titulo']}>Cargando actividades...</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (actividades.length === 0) {
+    return (
+      <div className={inicioStyles['inicio-container']}>
+        <div className={inicioStyles['inicio-left']}>
+          <div className={inicioStyles['inicio-left-content']}>
+            <div className={inicioStyles['inicio-card']}>
+              <h1 className={inicioStyles['inicio-titulo']}>No hay actividades disponibles</h1>
             </div>
           </div>
         </div>
@@ -48,7 +107,7 @@ export default function ActividadPorNegocio() {
           <div className={inicioStyles['inicio-card']}>
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona una actividad</h1>
             <div className={styles['actividad-grid']}>
-              {actividades.map((actividad: Actividad) => (
+              {actividades.map((actividad) => (
                 <button
                   key={actividad.id}
                   onClick={() => handleActividadSeleccionada(actividad)}
