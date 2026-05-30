@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -12,7 +12,6 @@ interface Actividad {
 
 export default function ActividadPorNegocio() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { url } = useParams<{ url: string }>();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [negocioId, setNegocioId] = useState<number | null>(null);
@@ -20,49 +19,41 @@ export default function ActividadPorNegocio() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const cargarActividades = async () => {
-      // Intentar obtener del state primero
-      if (location.state?.actividades) {
-        setActividades(location.state.actividades);
-        setNegocioId(location.state.negocioId);
-        setNegocioNombre(location.state.negocioNombre);
-        setLoading(false);
-        return;
-      }
+    const cargarDatos = async () => {
+      if (!url) return;
 
-      // Si no hay state, obtener del backend
       try {
-        // Primero obtener el negocio por URL
+        // 1. Obtener el negocio por URL
         const negocioRes = await fetch(`${API_BASE_URL}/negocios/url/${url}`);
         const negocioData = await negocioRes.json();
-        
+
         if (negocioData.id) {
           setNegocioId(negocioData.id);
           setNegocioNombre(negocioData.nombre);
-          
-          // Luego obtener sus actividades
+
+          // 2. Obtener las actividades del negocio
           const actividadesRes = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${negocioData.id}`);
-          const actividadesData = await actividadesRes.json();
-          
-          const actividadesList = actividadesData.map((item: any) => ({
-            id: item.actividadId,
-            nombre: item.actividad?.nombre || 'Actividad'
+          const relaciones = await actividadesRes.json();
+
+          const actividadesList = relaciones.map((rel: any) => ({
+            id: rel.actividadId,
+            nombre: rel.actividad?.nombre || 'Sin nombre',
           }));
-          
+
           setActividades(actividadesList);
         }
       } catch (error) {
-        console.error('Error al cargar actividades:', error);
+        console.error('Error cargando datos del negocio:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    cargarActividades();
-  }, [url, location.state]);
+    cargarDatos();
+  }, [url]);
 
-  const handleActividadSeleccionada = (actividad: Actividad) => {
-    // Mantener el negocioId en la URL
+  const handleActividadClick = (actividad: Actividad) => {
+    // Redirigir a la pantalla de especialidades, pasando el negocioId
     navigate(`/actividad/${actividad.id}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}`, {
       state: {
         negocioId: negocioId,
@@ -110,7 +101,7 @@ export default function ActividadPorNegocio() {
               {actividades.map((actividad) => (
                 <button
                   key={actividad.id}
-                  onClick={() => handleActividadSeleccionada(actividad)}
+                  onClick={() => handleActividadClick(actividad)}
                   className={`${inicioStyles['inicio-btn']} ${inicioStyles['inicio-btn-demo']}`}
                 >
                   {actividad.nombre}
