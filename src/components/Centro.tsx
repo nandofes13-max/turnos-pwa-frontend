@@ -23,7 +23,6 @@ interface CentroType {
 
 export default function Centro() {
   const navigate = useNavigate();
-  // ✅ Leer negocioUrl de los parámetros de la ruta
   const { actividadId, especialidadId, negocioUrl: negocioUrlParam } = useParams<{ 
     actividadId: string; 
     especialidadId: string;
@@ -54,8 +53,8 @@ export default function Centro() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  // ✅ Prioridad: parámetro de ruta > queryParams > state
-  const negocioUrl = negocioUrlParam || negocioUrlFromQuery || negocioUrlFromState || null;
+  // ✅ Prioridad: query params > parámetro de ruta > state
+  const negocioUrl = negocioUrlFromQuery || negocioUrlParam || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const especialidadNombreFinal = especialidadNombre || 'Especialidad';
   const esNegocioReal = !!negocioUrl && negocioUrl !== '';
