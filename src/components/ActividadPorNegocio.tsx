@@ -118,7 +118,7 @@ export default function ActividadPorNegocio() {
               <span className={styles['breadcrumb-item']}>Actividad</span>
             </div>
 
-            <div className={styles['seleccion-info']}>
+            <div className="seleccion-info">
               Has seleccionado: <strong>{negocioNombre}</strong>
             </div>
 
