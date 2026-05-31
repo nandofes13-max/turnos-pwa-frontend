@@ -53,7 +53,7 @@ export default function Centro() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  // ✅ Prioridad: query params > parámetro de ruta > state
+  // Prioridad: query params > parámetro de ruta > state
   const negocioUrl = negocioUrlFromQuery || negocioUrlParam || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const especialidadNombreFinal = especialidadNombre || 'Especialidad';
@@ -128,7 +128,11 @@ export default function Centro() {
   if (esNegocioReal && negocioUrl) {
     breadcrumbItems.push({ label: negocioNombre, path: `/negocio/${negocioUrl}` });
     breadcrumbItems.push({ label: 'Actividad', path: `/negocio/${negocioUrl}/actividad` });
-    breadcrumbItems.push({ label: 'Especialidad', path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad` });
+    // ✅ Pasar negocioNombre en la URL para que Especialidad lo reciba
+    breadcrumbItems.push({ 
+      label: 'Especialidad', 
+      path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl}`
+    });
     breadcrumbItems.push({ label: 'Centro' });
   } else {
     breadcrumbItems.push({ label: 'Actividad', path: '/actividad' });
