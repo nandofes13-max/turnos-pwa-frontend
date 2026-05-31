@@ -7,7 +7,6 @@ import inicioStyles from '../styles/Inicio.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// ✅ Agregar campos para dirección estructurada (vienen del backend en GET /centros/:id)
 interface CentroType {
   id: number;
   nombre: string;
@@ -26,10 +25,34 @@ export default function Centro() {
   const navigate = useNavigate();
   const { actividadId, especialidadId } = useParams<{ actividadId: string; especialidadId: string }>();
   const location = useLocation();
-  const { actividadNombre, especialidadNombre } = location.state || { 
+  
+  // Leer query params
+  const queryParams = new URLSearchParams(location.search);
+  const negocioIdFromQuery = queryParams.get('negocioId');
+  const negocioNombreFromQuery = queryParams.get('negocioNombre');
+  const negocioUrlFromQuery = queryParams.get('negocioUrl');
+  
+  // Prioridad: state > query params > valores por defecto
+  const { 
+    actividadNombre, 
+    especialidadNombre,
+    negocioId: negocioIdFromState, 
+    negocioNombre: negocioNombreFromState,
+    negocioUrl: negocioUrlFromState 
+  } = location.state || { 
     actividadNombre: 'Actividad', 
-    especialidadNombre: 'Especialidad' 
+    especialidadNombre: 'Especialidad',
+    negocioId: null,
+    negocioNombre: null,
+    negocioUrl: null
   };
+  
+  const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
+  const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
+  const negocioUrl = negocioUrlFromState || negocioUrlFromQuery || null;
+  const actividadNombreFinal = actividadNombre || 'Actividad';
+  const especialidadNombreFinal = especialidadNombre || 'Especialidad';
+  const esNegocioReal = !!negocioUrl && negocioUrl !== '';
   
   const [centros, setCentros] = useState<CentroType[]>([]);
   const [filtrados, setFiltrados] = useState<CentroType[]>([]);
@@ -38,13 +61,10 @@ export default function Centro() {
   const [modalCentro, setModalCentro] = useState<CentroType | null>(null);
   const [cargandoDireccion, setCargandoDireccion] = useState(false);
 
-  const NEGOCIO_DEMO_ID = 6;
-
-  // ✅ Función para formatear dirección (usa campos estructurados si existen)
+  // Función para formatear dirección
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
-    // Si tenemos los campos estructurados, usarlos (mismo que el email)
     if (centro.street) {
       let direccion = centro.street;
       if (centro.street_number) {
@@ -56,11 +76,9 @@ export default function Centro() {
       }
     }
     
-    // Fallback: usar formatted_address
     return centro.formatted_address || 'Dirección no disponible';
   };
 
-  // ✅ Función para obtener datos completos del centro (incluyendo dirección estructurada)
   const obtenerCentroCompleto = async (centroId: number): Promise<Partial<CentroType>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/centros/${centroId}`);
@@ -79,31 +97,40 @@ export default function Centro() {
   };
 
   const handleAbrirModal = async (centro: CentroType) => {
-    // Mostrar modal con datos básicos primero
     setModalCentro(centro);
     setCargandoDireccion(true);
     
-    // Traer datos completos del centro (street, street_number, country)
     const datosCompletos = await obtenerCentroCompleto(centro.id);
-    
-    // Actualizar el modal con los datos de dirección estructurada
-    setModalCentro(prev => prev ? {
-      ...prev,
-      ...datosCompletos,
-    } : null);
-    
+    setModalCentro(prev => prev ? { ...prev, ...datosCompletos } : null);
     setCargandoDireccion(false);
   };
 
   const handleCentroSeleccionado = (centro: CentroType) => {
-    navigate(`/actividad/${actividadId}/especialidad/${especialidadId}/centro/${centro.id}/agenda`, {
+    navigate(`/actividad/${actividadId}/especialidad/${especialidadId}/centro/${centro.id}/agenda?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl || ''}`, {
       state: {
-        actividadNombre: actividadNombre,
-        especialidadNombre: especialidadNombre,
-        centroNombre: centro.nombre
+        actividadNombre: actividadNombreFinal,
+        especialidadNombre: especialidadNombreFinal,
+        centroNombre: centro.nombre,
+        negocioId: negocioId,
+        negocioNombre: negocioNombre,
+        negocioUrl: negocioUrl
       }
     });
   };
+
+  // Definir breadcrumb según si hay negocio o no
+  const breadcrumbItems = [];
+  
+  if (esNegocioReal && negocioUrl) {
+    breadcrumbItems.push({ label: negocioNombre, path: `/negocio/${negocioUrl}` });
+    breadcrumbItems.push({ label: 'Actividad', path: `/negocio/${negocioUrl}/actividad` });
+    breadcrumbItems.push({ label: 'Especialidad', path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad` });
+    breadcrumbItems.push({ label: 'Centro' });
+  } else {
+    breadcrumbItems.push({ label: 'Actividad', path: '/actividad' });
+    breadcrumbItems.push({ label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` });
+    breadcrumbItems.push({ label: 'Centro' });
+  }
 
   useEffect(() => {
     const cargarCentros = async () => {
@@ -115,9 +142,11 @@ export default function Centro() {
 
       try {
         setLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/profesional-centro/centros-por-especialidad/${NEGOCIO_DEMO_ID}/${especialidadId}`
-        );
+        // Usar negocioId dinámico
+        const url = `${API_BASE_URL}/profesional-centro/centros-por-especialidad/${negocioId}/${especialidadId}`;
+        console.log('Cargando centros desde:', url);
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error('Error al cargar los centros');
@@ -139,7 +168,7 @@ export default function Centro() {
     };
 
     cargarCentros();
-  }, [especialidadId]);
+  }, [especialidadId, negocioId]);
 
   useEffect(() => {
     if (busqueda.trim() === '') {
@@ -179,7 +208,7 @@ export default function Centro() {
         <div className={inicioStyles['inicio-left-content']}>
           
           <div className={inicioStyles['inicio-logo-mobile']}>
-            <a href="/">
+            <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
               <img 
                 src="/1000133565.png" 
                 alt="PWA Turnos" 
@@ -189,14 +218,12 @@ export default function Centro() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            <Breadcrumb items={[
-              { label: 'Actividad', path: '/actividad' },
-              { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
-              { label: 'Centro' }
-            ]} />
+            <Breadcrumb items={breadcrumbItems} />
 
             <div className={styles['seleccion-info']}>
-              Has seleccionado: <strong>{actividadNombre}</strong> &gt; <strong>{especialidadNombre}</strong>
+              Has seleccionado: 
+              {esNegocioReal && <strong> {negocioNombre} &gt; </strong>}
+              <strong>{actividadNombreFinal} &gt; {especialidadNombreFinal}</strong>
             </div>
 
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona un centro</h1>
@@ -253,7 +280,7 @@ export default function Centro() {
 
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
-          <a href="/">
+          <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
