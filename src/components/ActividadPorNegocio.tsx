@@ -24,7 +24,6 @@ export default function ActividadPorNegocio() {
       if (!url) return;
 
       try {
-        // 1. Obtener el negocio por URL
         const negocioRes = await fetch(`${API_BASE_URL}/negocios/url/${url}`);
         const negocioData = await negocioRes.json();
 
@@ -32,7 +31,6 @@ export default function ActividadPorNegocio() {
           setNegocioId(negocioData.id);
           setNegocioNombre(negocioData.nombre);
 
-          // 2. Obtener las actividades del negocio
           const actividadesRes = await fetch(`${API_BASE_URL}/negocio-actividades/negocio/${negocioData.id}`);
           const relaciones = await actividadesRes.json();
 
@@ -54,7 +52,8 @@ export default function ActividadPorNegocio() {
   }, [url]);
 
   const handleActividadClick = (actividad: Actividad) => {
-    navigate(`/actividad/${actividad.id}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}`, {
+    // ✅ Incluir negocioUrl en URL y state
+    navigate(`/actividad/${actividad.id}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${url}`, {
       state: {
         negocioId: negocioId,
         negocioNombre: negocioNombre,
@@ -94,11 +93,9 @@ export default function ActividadPorNegocio() {
 
   return (
     <div className={inicioStyles['inicio-container']}>
-      {/* Columna izquierda - Actividades */}
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo móvil - redirige al home del negocio */}
           <div className={inicioStyles['inicio-logo-mobile']}>
             <a href={`/negocio/${url}`}>
               <img 
@@ -110,7 +107,6 @@ export default function ActividadPorNegocio() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* ✅ Breadcrumb usando el componente existente */}
             <Breadcrumb items={[
               { label: negocioNombre, path: `/negocio/${url}` },
               { label: 'Actividad' }
@@ -148,7 +144,6 @@ export default function ActividadPorNegocio() {
         </div>
       </div>
 
-      {/* Columna derecha - Logo (solo desktop) - redirige al home del negocio */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
           <a href={`/negocio/${url}`}>
