@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Breadcrumb from './Breadcrumb';
 import styles from '../styles/Actividad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -109,14 +110,11 @@ export default function ActividadPorNegocio() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Breadcrumb con negocio */}
-            <div className={styles['breadcrumb-wrapper']}>
-              <span className={styles['breadcrumb-item']}>
-                <a href={`/negocio/${url}`} className={styles['breadcrumb-link']}>{negocioNombre}</a>
-              </span>
-              <span className={styles['breadcrumb-separator']}> &gt; </span>
-              <span className={styles['breadcrumb-item']}>Actividad</span>
-            </div>
+            {/* ✅ Breadcrumb usando el componente existente */}
+            <Breadcrumb items={[
+              { label: negocioNombre, path: `/negocio/${url}` },
+              { label: 'Actividad' }
+            ]} />
 
             <div className="seleccion-info">
               Has seleccionado: <strong>{negocioNombre}</strong>
