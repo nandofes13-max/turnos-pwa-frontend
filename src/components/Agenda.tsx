@@ -27,7 +27,6 @@ interface ProfesionalSlots {
   slots: string[];
 }
 
-// Función para formatear timezone de forma amigable
 const formatearTimezone = (tz: string | undefined): string => {
   if (!tz) return '';
   const parts = tz.split('/');
@@ -41,13 +40,45 @@ const formatearTimezone = (tz: string | undefined): string => {
 
 export default function Agenda() {
   const navigate = useNavigate();
-  const { actividadId, especialidadId, centroId } = useParams();
+  const { actividadId, especialidadId, centroId, negocioUrl: negocioUrlParam } = useParams<{ 
+    actividadId: string; 
+    especialidadId: string; 
+    centroId: string;
+    negocioUrl: string;
+  }>();
   const location = useLocation();
-  const { actividadNombre, especialidadNombre, centroNombre } = location.state || {
+  
+  // Leer query params
+  const queryParams = new URLSearchParams(location.search);
+  const negocioIdFromQuery = queryParams.get('negocioId');
+  const negocioNombreFromQuery = queryParams.get('negocioNombre');
+  const negocioUrlFromQuery = queryParams.get('negocioUrl');
+  
+  // Prioridad: state > query params > parámetros de ruta > valores por defecto
+  const { 
+    actividadNombre, 
+    especialidadNombre, 
+    centroNombre,
+    negocioId: negocioIdFromState, 
+    negocioNombre: negocioNombreFromState,
+    negocioUrl: negocioUrlFromState 
+  } = location.state || {
     actividadNombre: 'Actividad',
     especialidadNombre: 'Especialidad',
-    centroNombre: 'Centro'
+    centroNombre: 'Centro',
+    negocioId: null,
+    negocioNombre: null,
+    negocioUrl: null
   };
+
+  const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
+  const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
+  // Prioridad: query params > parámetro de ruta > state
+  const negocioUrl = negocioUrlFromQuery || negocioUrlParam || negocioUrlFromState || null;
+  const actividadNombreFinal = actividadNombre || 'Actividad';
+  const especialidadNombreFinal = especialidadNombre || 'Especialidad';
+  const centroNombreFinal = centroNombre || 'Centro';
+  const esNegocioReal = !!negocioUrl && negocioUrl !== '';
 
   const [dias, setDias] = useState<DiaDisponible[]>([]);
   const [profesionales, setProfesionales] = useState<ProfesionalSlots[]>([]);
@@ -56,14 +87,12 @@ export default function Agenda() {
   const [cargandoProfesionales, setCargandoProfesionales] = useState(false);
   const [centroTimezone, setCentroTimezone] = useState<string>('');
   
-  // Estado para el modal de confirmación
   const [modalAbierto, setModalAbierto] = useState(false);
   const [slotSeleccionado, setSlotSeleccionado] = useState<{
     profesional: ProfesionalSlots;
     hora: string;
   } | null>(null);
 
-  // Cargar el centro para obtener su timezone
   useEffect(() => {
     const cargarCentro = async () => {
       if (!centroId) return;
@@ -81,7 +110,6 @@ export default function Agenda() {
     cargarCentro();
   }, [centroId]);
 
-  // 🔹 FUNCIÓN AUXILIAR: Obtener fecha actual en formato YYYY-MM-DD
   const obtenerFechaActualStr = (): string => {
     const hoy = new Date();
     const year = hoy.getFullYear();
@@ -90,7 +118,6 @@ export default function Agenda() {
     return `${year}-${month}-${day}`;
   };
 
-  // Generar rango de 30 días desde hoy
   const generarRangoFechas = () => {
     const hoyStr = obtenerFechaActualStr();
     const hoy = new Date(hoyStr);
@@ -100,7 +127,6 @@ export default function Agenda() {
     return { desde, hasta: hasta.toISOString().split('T')[0] };
   };
 
-  // Formatear fecha como "LUN 04/05/26"
   const formatearFechaCorta = (fechaStr: string) => {
     const [year, month, day] = fechaStr.split('-').map(Number);
     const fecha = new Date(Date.UTC(year, month - 1, day));
@@ -111,7 +137,6 @@ export default function Agenda() {
     return `${diaSemana} ${dia}/${mes}/${anio}`;
   };
 
-  // Cargar días disponibles al montar el componente
   useEffect(() => {
     const cargarDias = async () => {
       try {
@@ -128,22 +153,12 @@ export default function Agenda() {
         const data = await response.json();
         setDias(data);
 
-        console.log('=== Días recibidos del backend ===');
-        console.log('Primer día de la lista:', data[0]);
-        console.log('Primer día disponible (sin filtrar fecha):', data.find((d: DiaDisponible) => d.disponible === true));
-
-        // 🔹 CORRECCIÓN: Seleccionar el primer día disponible usando string YYYY-MM-DD
         const hoyStr = obtenerFechaActualStr();
-        console.log('Hoy en string YYYY-MM-DD:', hoyStr);
-
         const primerDiaDisponible = data.find((d: DiaDisponible) => {
           const esDisponible = d.disponible === true;
-          // 🔹 Comparación directa de strings (sin Date)
           const esPosterior = d.fecha >= hoyStr;
           return esDisponible && esPosterior;
         });
-
-        console.log('Primer día disponible (con filtro):', primerDiaDisponible);
 
         if (primerDiaDisponible) {
           console.log('✅ Seleccionando fecha:', primerDiaDisponible.fecha);
@@ -162,7 +177,6 @@ export default function Agenda() {
     cargarDias();
   }, [centroId, especialidadId]);
 
-  // Cargar profesionales y slots cuando cambia la fecha seleccionada
   useEffect(() => {
     const cargarProfesionales = async () => {
       if (!selectedFecha) return;
@@ -204,6 +218,22 @@ export default function Agenda() {
     setSlotSeleccionado(null);
   };
 
+  // Definir breadcrumb según si hay negocio o no
+  const breadcrumbItems = [];
+  
+  if (esNegocioReal && negocioUrl) {
+    breadcrumbItems.push({ label: negocioNombre, path: `/negocio/${negocioUrl}` });
+    breadcrumbItems.push({ label: 'Actividad', path: `/negocio/${negocioUrl}/actividad` });
+    breadcrumbItems.push({ label: 'Especialidad', path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl}` });
+    breadcrumbItems.push({ label: 'Centro', path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad/${especialidadId}/centro?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl}` });
+    breadcrumbItems.push({ label: 'Agenda' });
+  } else {
+    breadcrumbItems.push({ label: 'Actividad', path: '/actividad' });
+    breadcrumbItems.push({ label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` });
+    breadcrumbItems.push({ label: 'Centro', path: `/actividad/${actividadId}/especialidad/${especialidadId}/centro` });
+    breadcrumbItems.push({ label: 'Agenda' });
+  }
+
   if (loading) {
     return (
       <div className={inicioStyles['inicio-container']}>
@@ -223,9 +253,8 @@ export default function Agenda() {
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo móvil */}
           <div className={inicioStyles['inicio-logo-mobile']}>
-            <a href="/">
+            <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
               <img 
                 src="/1000133565.png" 
                 alt="PWA Turnos" 
@@ -235,28 +264,22 @@ export default function Agenda() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            {/* Breadcrumb */}
-            <Breadcrumb items={[
-              { label: 'Actividad', path: '/actividad' },
-              { label: 'Especialidad', path: `/actividad/${actividadId}/especialidad` },
-              { label: 'Centro', path: `/actividad/${actividadId}/especialidad/${especialidadId}/centro` },
-              { label: 'Agenda' }
-            ]} />
+            <Breadcrumb items={breadcrumbItems} />
 
             <div className={styles['seleccion-info']}>
-              Has seleccionado: <strong>{actividadNombre}</strong> &gt; <strong>{especialidadNombre}</strong> &gt; <strong>{centroNombre}</strong>
+              Has seleccionado: 
+              {esNegocioReal && <strong> {negocioNombre} &gt; </strong>}
+              <strong>{actividadNombreFinal} &gt; {especialidadNombreFinal} &gt; {centroNombreFinal}</strong>
             </div>
 
             <h1 className={inicioStyles['inicio-titulo']}>Elige horario y profesional</h1>
             
-            {/* Carrusel vertical de días */}
             <CarruselDias 
               dias={dias}
               selectedFecha={selectedFecha}
               onDiaSeleccionado={handleDiaSeleccionado}
             />
 
-            {/* Lista de profesionales y slots */}
             {cargandoProfesionales ? (
               <div className={styles['cargando']}>Cargando profesionales...</div>
             ) : profesionales.length === 0 ? (
@@ -272,23 +295,22 @@ export default function Agenda() {
                     onSlotSeleccionado={(hora) => handleSlotSeleccionado(profesional, hora)}
                     fechaSeleccionada={selectedFecha || undefined}
                     formatearFechaCorta={formatearFechaCorta}
-                    especialidadNombre={especialidadNombre}
-                    centroNombre={centroNombre}
+                    especialidadNombre={especialidadNombreFinal}
+                    centroNombre={centroNombreFinal}
                     centroTimezone={centroTimezone}
                   />
                 ))}
               </div>
             )}
 
-            {/* Modal de confirmación de turno */}
             {slotSeleccionado && selectedFecha && (
               <ConfirmarTurnoModal
                 isOpen={modalAbierto}
                 onClose={handleCerrarModal}
                 datosSlot={{
                   profesionalNombre: slotSeleccionado.profesional.nombre,
-                  especialidadNombre: especialidadNombre,
-                  centroNombre: centroNombre,
+                  especialidadNombre: especialidadNombreFinal,
+                  centroNombre: centroNombreFinal,
                   zonaHoraria: centroTimezone ? formatearTimezone(centroTimezone) : 'Buenos Aires (Argentina)',
                   fecha: selectedFecha,
                   hora: slotSeleccionado.hora,
@@ -299,7 +321,6 @@ export default function Agenda() {
               />
             )}
 
-            {/* Footer */}
             <div className={inicioStyles['inicio-footer']}>
               <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
                 ¿Necesitas Ayuda?
@@ -318,7 +339,7 @@ export default function Agenda() {
 
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
-          <a href="/">
+          <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
