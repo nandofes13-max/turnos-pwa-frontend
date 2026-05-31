@@ -57,6 +57,7 @@ export default function ActividadPorNegocio() {
       state: {
         negocioId: negocioId,
         negocioNombre: negocioNombre,
+        negocioUrl: url,
         actividadNombre: actividad.nombre,
       },
     });
@@ -96,9 +97,9 @@ export default function ActividadPorNegocio() {
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo móvil */}
+          {/* Logo móvil - redirige al home del negocio */}
           <div className={inicioStyles['inicio-logo-mobile']}>
-            <a href="/">
+            <a href={`/negocio/${url}`}>
               <img 
                 src="/1000133565.png" 
                 alt="PWA Turnos" 
@@ -108,6 +109,19 @@ export default function ActividadPorNegocio() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
+            {/* Breadcrumb con negocio */}
+            <div className={styles['breadcrumb-wrapper']}>
+              <span className={styles['breadcrumb-item']}>
+                <a href={`/negocio/${url}`} className={styles['breadcrumb-link']}>{negocioNombre}</a>
+              </span>
+              <span className={styles['breadcrumb-separator']}> &gt; </span>
+              <span className={styles['breadcrumb-item']}>Actividad</span>
+            </div>
+
+            <div className={styles['seleccion-info']}>
+              Has seleccionado: <strong>{negocioNombre}</strong>
+            </div>
+
             <h1 className={inicioStyles['inicio-titulo']}>Selecciona una actividad</h1>
             <div className={styles['actividad-grid']}>
               {actividades.map((actividad) => (
@@ -136,10 +150,10 @@ export default function ActividadPorNegocio() {
         </div>
       </div>
 
-      {/* Columna derecha - Logo (solo desktop) */}
+      {/* Columna derecha - Logo (solo desktop) - redirige al home del negocio */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
-          <a href="/">
+          <a href={`/negocio/${url}`}>
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
