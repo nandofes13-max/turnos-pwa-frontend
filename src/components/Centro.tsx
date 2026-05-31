@@ -23,7 +23,12 @@ interface CentroType {
 
 export default function Centro() {
   const navigate = useNavigate();
-  const { actividadId, especialidadId } = useParams<{ actividadId: string; especialidadId: string }>();
+  // ✅ Leer negocioUrl de los parámetros de la ruta
+  const { actividadId, especialidadId, negocioUrl: negocioUrlParam } = useParams<{ 
+    actividadId: string; 
+    especialidadId: string;
+    negocioUrl: string;
+  }>();
   const location = useLocation();
   
   // Leer query params
@@ -32,7 +37,7 @@ export default function Centro() {
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
   const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // Prioridad: state > query params > valores por defecto
+  // Prioridad: state > query params > parámetros de ruta > valores por defecto
   const { 
     actividadNombre, 
     especialidadNombre,
@@ -49,7 +54,8 @@ export default function Centro() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  const negocioUrl = negocioUrlFromState || negocioUrlFromQuery || null;
+  // ✅ Prioridad: parámetro de ruta > queryParams > state
+  const negocioUrl = negocioUrlParam || negocioUrlFromQuery || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const especialidadNombreFinal = especialidadNombre || 'Especialidad';
   const esNegocioReal = !!negocioUrl && negocioUrl !== '';
@@ -61,7 +67,6 @@ export default function Centro() {
   const [modalCentro, setModalCentro] = useState<CentroType | null>(null);
   const [cargandoDireccion, setCargandoDireccion] = useState(false);
 
-  // Función para formatear dirección
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
     
@@ -142,7 +147,6 @@ export default function Centro() {
 
       try {
         setLoading(true);
-        // Usar negocioId dinámico
         const url = `${API_BASE_URL}/profesional-centro/centros-por-especialidad/${negocioId}/${especialidadId}`;
         console.log('Cargando centros desde:', url);
         
