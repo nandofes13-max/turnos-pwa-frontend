@@ -154,15 +154,15 @@ export default function Agenda() {
         setDias(data);
 
         const hoyStr = obtenerFechaActualStr();
-        const primerDiaDisponible = data.find((d: DiaDisponible) => {
+        const primerDiaDisponibile = data.find((d: DiaDisponible) => {
           const esDisponible = d.disponible === true;
           const esPosterior = d.fecha >= hoyStr;
           return esDisponible && esPosterior;
         });
 
-        if (primerDiaDisponible) {
-          console.log('✅ Seleccionando fecha:', primerDiaDisponible.fecha);
-          setSelectedFecha(primerDiaDisponible.fecha);
+        if (primerDiaDisponibile) {
+          console.log('✅ Seleccionando fecha:', primerDiaDisponibile.fecha);
+          setSelectedFecha(primerDiaDisponibile.fecha);
         } else {
           console.log('❌ No hay días disponibles');
           setSelectedFecha(null);
@@ -317,6 +317,7 @@ export default function Agenda() {
                   centroId: Number(centroId),
                   profesionalCentroId: slotSeleccionado.profesional.profesionalCentroId,
                   especialidadId: slotSeleccionado.profesional.especialidadId,
+                  negocioUrl: negocioUrl || undefined
                 }}
               />
             )}
