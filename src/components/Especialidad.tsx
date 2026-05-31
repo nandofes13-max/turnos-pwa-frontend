@@ -17,7 +17,8 @@ interface EspecialidadType {
 export default function Especialidad() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { actividadId } = useParams<{ actividadId: string }>();
+  // ✅ Leer negocioUrl de los parámetros de la ruta (para rutas como /negocio/:url/actividad/:actividadId/especialidad)
+  const { actividadId, negocioUrl: negocioUrlParam } = useParams<{ actividadId: string; negocioUrl: string }>();
   
   // Leer query params
   const queryParams = new URLSearchParams(location.search);
@@ -25,7 +26,7 @@ export default function Especialidad() {
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
   const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // Prioridad: state > query params > valores por defecto
+  // Prioridad: state > query params > parámetros de ruta > valores por defecto
   const { 
     actividadNombre, 
     negocioId: negocioIdFromState, 
@@ -40,7 +41,8 @@ export default function Especialidad() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  const negocioUrl = negocioUrlFromState || negocioUrlFromQuery || null;
+  // ✅ Prioridad: parámetro de ruta > queryParams > state
+  const negocioUrl = negocioUrlParam || negocioUrlFromQuery || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const esNegocioReal = !!negocioUrl && negocioUrl !== '';
   
