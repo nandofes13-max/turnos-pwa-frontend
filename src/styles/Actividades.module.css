@@ -1,8 +1,35 @@
 /* =============================================
-   ESTILOS ESPECÍFICOS DE ACTIVIDADES
+   ESTILOS PARA BREADCRUMB Y SELECCIÓN DE NEGOCIO
    ============================================= */
 
-/* Si en el futuro necesitamos algo específico para 
-   la pantalla de actividades, lo agregamos acá */
+.breadcrumb-wrapper {
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  color: #666;
+}
 
-/* Por ahora, todo se maneja desde tablas-maestras.css */
+.breadcrumb-item {
+  color: #666;
+}
+
+.breadcrumb-link {
+  color: #4CAF50;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  margin: 0 4px;
+}
+
+.seleccion-info {
+  background-color: #e8f5e9;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: #2e7d32;
+}
