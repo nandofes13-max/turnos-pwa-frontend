@@ -19,21 +19,30 @@ export default function Especialidad() {
   const location = useLocation();
   const { actividadId } = useParams<{ actividadId: string }>();
   
-  // ✅ Leer negocioId de query params (por si el state falla)
+  // Leer query params
   const queryParams = new URLSearchParams(location.search);
   const negocioIdFromQuery = queryParams.get('negocioId');
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
+  const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // ✅ Prioridad: state > query params > valores por defecto
-  const { actividadNombre, negocioId: negocioIdFromState, negocioNombre: negocioNombreFromState } = location.state || { 
+  // Prioridad: state > query params > valores por defecto
+  const { 
+    actividadNombre, 
+    negocioId: negocioIdFromState, 
+    negocioNombre: negocioNombreFromState,
+    negocioUrl: negocioUrlFromState 
+  } = location.state || { 
     actividadNombre: 'Actividad',
     negocioId: null,
-    negocioNombre: null
+    negocioNombre: null,
+    negocioUrl: null
   };
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
+  const negocioUrl = negocioUrlFromState || negocioUrlFromQuery || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
+  const esNegocioReal = negocioId !== 6;
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
@@ -41,12 +50,13 @@ export default function Especialidad() {
   const [loading, setLoading] = useState(true);
 
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
-    navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro`, {
+    navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl || ''}`, {
       state: {
         actividadNombre: actividadNombreFinal,
         especialidadNombre: especialidad.nombre,
         negocioId: negocioId,
-        negocioNombre: negocioNombre
+        negocioNombre: negocioNombre,
+        negocioUrl: negocioUrl
       }
     });
   };
@@ -101,6 +111,18 @@ export default function Especialidad() {
     }
   }, [busqueda, especialidades]);
 
+  // Definir los items del breadcrumb según si hay negocio o no
+  const breadcrumbItems = [];
+  
+  if (esNegocioReal && negocioUrl) {
+    breadcrumbItems.push({ label: negocioNombre, path: `/negocio/${negocioUrl}` });
+    breadcrumbItems.push({ label: 'Actividad', path: `/negocio/${negocioUrl}/actividad` });
+    breadcrumbItems.push({ label: 'Especialidad' });
+  } else {
+    breadcrumbItems.push({ label: 'Actividad', path: '/actividad' });
+    breadcrumbItems.push({ label: 'Especialidad' });
+  }
+
   if (loading) {
     return (
       <div className={inicioStyles['inicio-container']}>
@@ -120,8 +142,9 @@ export default function Especialidad() {
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
+          {/* Logo móvil - redirige al home del negocio si existe */}
           <div className={inicioStyles['inicio-logo-mobile']}>
-            <a href="/">
+            <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
               <img 
                 src="/1000133565.png" 
                 alt="PWA Turnos" 
@@ -131,16 +154,12 @@ export default function Especialidad() {
           </div>
 
           <div className={inicioStyles['inicio-card']}>
-            <Breadcrumb items={[
-              { label: 'Actividad', path: '/actividad' },
-              { label: 'Especialidad' }
-            ]} />
+            <Breadcrumb items={breadcrumbItems} />
 
             <div className={styles['seleccion-info']}>
-              Has seleccionado: <strong>{actividadNombreFinal}</strong>
-              {negocioId !== 6 && (
-                <span className={styles['negocio-info']}> - Negocio: {negocioNombre}</span>
-              )}
+              Has seleccionado: 
+              {esNegocioReal && <strong> {negocioNombre} &gt; </strong>}
+              <strong>{actividadNombreFinal}</strong>
             </div>
 
             <h1 className={inicioStyles['inicio-titulo']}>Busca o selecciona una especialidad</h1>
@@ -194,9 +213,10 @@ export default function Especialidad() {
         </div>
       </div>
 
+      {/* Columna derecha - Logo (solo desktop) - redirige al home del negocio si existe */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
-          <a href="/">
+          <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
             <img 
               src="/1000133565.png" 
               alt="PWA Turnos" 
