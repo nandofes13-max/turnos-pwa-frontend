@@ -20,7 +20,7 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
-import ActividadPorNegocio from './components/ActividadPorNegocio'; // ✅ NUEVO IMPORT
+import ActividadPorNegocio from './components/ActividadPorNegocio';
 import './App.css';
 
 function App() {
@@ -28,13 +28,27 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Inicio />} />
-        {/* ✅ Ruta: URL pública del negocio (redirección inteligente) */}
+        
+        {/* ============================================================ */}
+        {/* RUTAS PARA NEGOCIOS (URL amigable) */}
+        {/* ============================================================ */}
         <Route path="/negocio/:url" element={<RedireccionNegocio />} />
-        {/* ✅ NUEVA RUTA: Selección de actividades para un negocio */}
         <Route path="/negocio/:url/actividad" element={<ActividadPorNegocio />} />
+        <Route path="/negocio/:url/actividad/:actividadId/especialidad" element={<Especialidad />} />
+        <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
+        <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
+        
+        {/* ============================================================ */}
+        {/* RUTAS PARA DEMO (compatibilidad hacia atrás) */}
+        {/* ============================================================ */}
         <Route path="/actividad" element={<Actividad />} />
         <Route path="/actividad/:actividadId/especialidad" element={<Especialidad />} />
         <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
+        <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
+        
+        {/* ============================================================ */}
+        {/* RUTAS DE ADMINISTRACIÓN */}
+        {/* ============================================================ */}
         <Route path="/cpanel" element={<CPanel />} />
         <Route path="/actividades" element={<Actividades />} />
         <Route path="/usuarios" element={<Usuarios />} />
@@ -49,7 +63,6 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
-        <Route path="/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
         <Route path="/turnos" element={<Turnos />} />
       </Routes>
     </BrowserRouter>
