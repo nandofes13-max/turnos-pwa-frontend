@@ -1,6 +1,5 @@
 /* =============================================
    ESTILOS GLOBALES PARA PANTALLAS PÚBLICAS
-   (Actividad, Especialidad, Centro, Agenda)
    ============================================= */
 
 .breadcrumb-wrapper {
@@ -26,11 +25,13 @@
   margin: 0 4px;
 }
 
+/* ✅ Estilo gris (coincide con Especialidad) */
 .seleccion-info {
-  background-color: #e8f5e9;
-  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.15rem;
+  padding: 4px 8px;
+  background-color: #f0f0f0;
   border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.85rem;
-  color: #2e7d32;
 }
