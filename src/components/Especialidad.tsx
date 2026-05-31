@@ -42,7 +42,7 @@ export default function Especialidad() {
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
   const negocioUrl = negocioUrlFromState || negocioUrlFromQuery || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
-  const esNegocioReal = negocioId !== 6;
+  const esNegocioReal = !!negocioUrl && negocioUrl !== '';
   
   const [especialidades, setEspecialidades] = useState<EspecialidadType[]>([]);
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
