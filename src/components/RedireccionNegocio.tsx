@@ -55,6 +55,7 @@ export default function RedireccionNegocio() {
               state: { 
                 negocioId: data.id,
                 negocioNombre: data.nombre,
+                negocioUrl: url,
                 actividades: actividades
               }
             });
@@ -85,6 +86,7 @@ export default function RedireccionNegocio() {
               state: {
                 negocioId: data.id,
                 negocioNombre: data.nombre,
+                negocioUrl: url,
                 actividadNombre: actividadNombre,
                 especialidades: especialidades
               }
@@ -115,6 +117,7 @@ export default function RedireccionNegocio() {
               state: {
                 negocioId: data.id,
                 negocioNombre: data.nombre,
+                negocioUrl: url,
                 actividadNombre: actividadNombre,
                 especialidadNombre: especialidadNombre,
                 centros: centros
@@ -136,7 +139,8 @@ export default function RedireccionNegocio() {
               especialidadNombre: especialidadNombre,
               centroNombre: centroNombre,
               negocioId: data.id,
-              negocioNombre: data.nombre
+              negocioNombre: data.nombre,
+              negocioUrl: url
             }
           });
           
