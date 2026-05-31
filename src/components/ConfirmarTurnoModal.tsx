@@ -20,6 +20,7 @@ interface DatosSlot {
   profesionalCentroId: number;
   especialidadId: number;
   negocioId?: number;      // Se obtiene del centro
+  negocioUrl?: string;     // URL del negocio (para volver al inicio)
 }
 
 interface DatosUsuario {
@@ -450,9 +451,12 @@ export default function ConfirmarTurnoModal({
     </div>
   );
 
-  // ✅ VISTA 3: Éxito (con videollamada debajo de Centro)
+  // ✅ VISTA 3: Éxito - Volver al inicio del negocio (si existe) o a /actividad
   const renderVistaExito = () => {
     const esCentroVirtual = datosSlot.centroNombre?.toUpperCase().includes('VIRTUAL') || datosSlot.centroId === 9;
+    
+    // Determinar la URL de inicio
+    const inicioUrl = datosSlot.negocioUrl ? `/negocio/${datosSlot.negocioUrl}` : '/actividad';
     
     return (
       <div className={styles['modal-content']}>
@@ -472,7 +476,6 @@ export default function ConfirmarTurnoModal({
             <span className={styles['detalle-valor']}>{datosSlot.centroNombre}</span>
           </div>
 
-          {/* ✅ Enlace debajo de Centro */}
           {esCentroVirtual && turnoCreado?.videollamadaUrl && (
             <div className={styles['detalle-linea-enlace']}>
               <span className={styles['detalle-label']}>🔗 Videollamada</span>
@@ -503,7 +506,7 @@ export default function ConfirmarTurnoModal({
         </div>
 
         <div className={styles['modal-botones']}>
-          <button className={styles['btn-inicio']} onClick={() => window.location.href = '/actividad'}>
+          <button className={styles['btn-inicio']} onClick={() => window.location.href = inicioUrl}>
             Volver al inicio
           </button>
         </div>
