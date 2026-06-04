@@ -272,7 +272,7 @@ export default function Agenda() {
               <strong>{actividadNombreFinal} &gt; {especialidadNombreFinal} &gt; {centroNombreFinal}</strong>
             </div>
 
-            <h1 className={inicioStyles['inicio-titulo']}>Elige horario y profesional</h1>
+            <h1 className={inicioStyles['inicio-titulo']}>Elige día, horario y profesional</h1>
             
             <CarruselDias 
               dias={dias}
