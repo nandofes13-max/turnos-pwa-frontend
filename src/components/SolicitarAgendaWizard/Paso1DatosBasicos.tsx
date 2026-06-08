@@ -5,12 +5,13 @@
 // - Muestra checkbox de centro virtual SOLO si la actividad lo permite (virtual === true)
 // - centroEsVirtual = false por defecto
 // - Dirección obligatoria cuando el centro es físico
-// - Corrección de validación URL (por ahora, se maneja en apiWizard)
+// - Corrección de validación URL
 // - WhatsApp con PhoneInput (bandera y validación)
 // - Botón Cancelar para volver al inicio
 // - Selector de actividades sin texto entre paréntesis
+// - AUTO-COMPLETADO de datos del dueño al escribir el email
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -34,7 +35,7 @@ interface Paso1DatosBasicosProps {
 interface FormData {
   // Negocio
   negocioNombre: string;
-  negocioWhatsapp: string; // Ahora es un solo campo con PhoneInput
+  negocioWhatsapp: string;
   // Usuario
   usuarioEmail: string;
   usuarioApellido: string;
@@ -62,6 +63,8 @@ interface ValidationErrors {
   domicilio?: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
+
 const formatearDireccionSimplificada = (domicilio: DomicilioDto): string => {
   const calleCompleta = `${domicilio.street} ${domicilio.street_number}`.trim();
   return `${calleCompleta}, ${domicilio.city}, ${domicilio.country}`;
@@ -74,6 +77,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [enviando, setEnviando] = useState(false);
   const [urlDisponible, setUrlDisponible] = useState<boolean | null>(null);
   const [verificandoUrl, setVerificandoUrl] = useState(false);
+  const [buscandoUsuario, setBuscandoUsuario] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     negocioNombre: '',
@@ -93,6 +98,51 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
 
   // Obtener la actividad seleccionada
   const actividadSeleccionada = actividades.find(a => a.id === formData.actividadId);
+
+  // Función para buscar usuario por email (auto-completado)
+  const buscarUsuarioPorEmail = async (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return;
+    
+    setBuscandoUsuario(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
+      const data = await response.json();
+      
+      if (data.id && !data.fecha_baja) {
+        // Auto-completar campos si el usuario existe
+        setFormData(prev => ({
+          ...prev,
+          usuarioApellido: data.apellido || '',
+          usuarioNombre: data.nombre || '',
+          usuarioTelefono: data.telefono || ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error al buscar usuario:', err);
+    } finally {
+      setBuscandoUsuario(false);
+    }
+  };
+
+  // Debounce para búsqueda de usuario por email
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    if (formData.usuarioEmail && formData.usuarioEmail.length > 5) {
+      timeoutRef.current = setTimeout(() => {
+        buscarUsuarioPorEmail(formData.usuarioEmail);
+      }, 500);
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [formData.usuarioEmail]);
 
   // Cargar actividades (excluyendo ID=10)
   useEffect(() => {
@@ -349,17 +399,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             <span className={styles.errorText}>{errors.negocioNombre}</span>
           )}
           {formData.negocioNombre && (
-  <span className={styles.helperText}>
-    URL generada: {window.location.origin}/negocio/{generarSlug(formData.negocioNombre)}
-    {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
-    {urlDisponible === true && !verificandoUrl && (
-      <span className={styles.successText}> ✅ Disponible</span>
-    )}
-    {urlDisponible === false && !verificandoUrl && (
-      <span className={styles.errorText}> ❌ No disponible. Cambiá el nombre del negocio</span>
-    )}
-  </span>
-)}
+            <span className={styles.helperText}>
+              URL generada: {window.location.origin}/negocio/{generarSlug(formData.negocioNombre)}
+              {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
+              {urlDisponible === true && !verificandoUrl && (
+                <span className={styles.successText}> ✅ Disponible</span>
+              )}
+              {urlDisponible === false && !verificandoUrl && (
+                <span className={styles.errorText}> ❌ No disponible. Cambiá el nombre del negocio</span>
+              )}
+            </span>
+          )}
           {errors.negocioUrl && (
             <span className={styles.errorText}>{errors.negocioUrl}</span>
           )}
@@ -437,6 +487,9 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             className={`${styles.input} ${errors.usuarioEmail ? styles.inputError : ''}`}
             placeholder="Ej: carlos@ejemplo.com"
           />
+          {buscandoUsuario && (
+            <span className={styles.helperText}>Buscando usuario...</span>
+          )}
           {errors.usuarioEmail && (
             <span className={styles.errorText}>{errors.usuarioEmail}</span>
           )}
