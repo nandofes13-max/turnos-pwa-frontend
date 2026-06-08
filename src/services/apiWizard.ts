@@ -233,15 +233,18 @@ export async function getRolDueno(): Promise<Rol> {
 
 // 3. Verificar si una URL única ya existe (para validación en tiempo real)
 export async function verificarUrlUnica(url: string): Promise<boolean> {
-  // Intentamos obtener el negocio por URL
   const response = await fetch(`${API_URL}/negocios/url/${url}`);
-  if (response.status === 404) {
-    return true; // URL disponible
+  
+  if (response.status === 200) {
+    const data = await response.json();
+    // El backend devuelve 200 con { message: 'Negocio no encontrado' } cuando no existe
+    if (data.message === 'Negocio no encontrado') {
+      return true; // URL disponible
+    }
+    return false; // URL ya existe (encontró un negocio real)
   }
-  if (response.ok) {
-    return false; // URL ya existe
-  }
-  // Si hay otro error, asumimos que no está disponible por seguridad
+  
+  // Si hay otro error (500, etc.), asumimos que no está disponible por seguridad
   return false;
 }
 
