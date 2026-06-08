@@ -1,12 +1,19 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// CON AJUSTES:
+// VERSIÓN FINAL CON TODOS LOS AJUSTES:
 // - Excluye actividad ID=10
 // - Muestra checkbox de centro virtual SOLO si la actividad lo permite (virtual === true)
 // - centroEsVirtual = false por defecto
 // - Dirección obligatoria cuando el centro es físico
+// - Corrección de validación URL (por ahora, se maneja en apiWizard)
+// - WhatsApp con PhoneInput (bandera y validación)
+// - Botón Cancelar para volver al inicio
+// - Selector de actividades sin texto entre paréntesis
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import { 
   getActividades, 
   verificarUrlUnica, 
@@ -27,8 +34,7 @@ interface Paso1DatosBasicosProps {
 interface FormData {
   // Negocio
   negocioNombre: string;
-  negocioCountryCode: number;
-  negocioNationalNumber: string;
+  negocioWhatsapp: string; // Ahora es un solo campo con PhoneInput
   // Usuario
   usuarioEmail: string;
   usuarioApellido: string;
@@ -39,10 +45,8 @@ interface FormData {
   centroEsVirtual: boolean;
   // Actividad
   actividadId: number;
-  actividadSeleccionada: Actividad | null;
-  // Domicilio (completo, como viene del MapaSelector)
+  // Domicilio
   domicilio: DomicilioDto | null;
-  // Dirección simplificada para mostrar en pantalla
   direccionSimplificada: string;
 }
 
@@ -58,13 +62,13 @@ interface ValidationErrors {
   domicilio?: string;
 }
 
-// Función para generar dirección simplificada (formato: "Calle Número, Ciudad, País")
 const formatearDireccionSimplificada = (domicilio: DomicilioDto): string => {
   const calleCompleta = `${domicilio.street} ${domicilio.street_number}`.trim();
   return `${calleCompleta}, ${domicilio.city}, ${domicilio.country}`;
 };
 
 const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onError }) => {
+  const navigate = useNavigate();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [cargandoActividades, setCargandoActividades] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -73,28 +77,28 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   
   const [formData, setFormData] = useState<FormData>({
     negocioNombre: '',
-    negocioCountryCode: 54,
-    negocioNationalNumber: '',
+    negocioWhatsapp: '',
     usuarioEmail: '',
     usuarioApellido: '',
     usuarioNombre: '',
     usuarioTelefono: '',
     centroNombre: '',
-    centroEsVirtual: false, // Por defecto: centro físico
+    centroEsVirtual: false,
     actividadId: 0,
-    actividadSeleccionada: null,
     domicilio: null,
     direccionSimplificada: '',
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  // Cargar actividades al montar el componente (excluyendo ID=10)
+  // Obtener la actividad seleccionada
+  const actividadSeleccionada = actividades.find(a => a.id === formData.actividadId);
+
+  // Cargar actividades (excluyendo ID=10)
   useEffect(() => {
     const cargarActividades = async () => {
       try {
         const data = await getActividades();
-        // Filtrar: solo activas y excluir ID=10 ("SOLICITAR OTRAS ACTIVIDADES")
         const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
         setActividades(activas);
       } catch (error) {
@@ -107,18 +111,14 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     cargarActividades();
   }, [onError]);
 
-  // Cuando cambia la actividad, actualizar el objeto actividadSeleccionada
+  // Cuando cambia la actividad, forzar centroEsVirtual = false si no permite virtual
   useEffect(() => {
-    const actividad = actividades.find(a => a.id === formData.actividadId);
-    setFormData(prev => ({ ...prev, actividadSeleccionada: actividad || null }));
-    
-    // Si la actividad NO permite virtual, forzar centroEsVirtual = false
-    if (actividad && !actividad.virtual) {
+    if (actividadSeleccionada && !actividadSeleccionada.virtual) {
       setFormData(prev => ({ ...prev, centroEsVirtual: false }));
     }
-  }, [formData.actividadId, actividades]);
+  }, [formData.actividadId, actividadSeleccionada]);
 
-  // Verificar disponibilidad de URL cuando cambia el nombre del negocio
+  // Verificar disponibilidad de URL
   useEffect(() => {
     const verificarUrl = async () => {
       if (!formData.negocioNombre || formData.negocioNombre.length < 3) {
@@ -157,11 +157,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return regex.test(email);
   };
 
-  const validarWhatsapp = (number: string): boolean => {
-    const soloNumeros = number.replace(/\D/g, '');
-    return soloNumeros.length >= 10 && soloNumeros.length <= 15;
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -176,9 +171,14 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
   };
 
-  // Manejar selección de dirección desde el MapaSelector
+  const handleWhatsappChange = (value: string) => {
+    setFormData(prev => ({ ...prev, negocioWhatsapp: value || '' }));
+    if (errors.negocioWhatsapp) {
+      setErrors(prev => ({ ...prev, negocioWhatsapp: undefined }));
+    }
+  };
+
   const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
-    // Convertir la dirección del MapaSelector al formato DomicilioDto que espera el backend
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -192,7 +192,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       formatted_address: direccionCompleta.formatted_address || '',
     };
     
-    // Generar versión simplificada para mostrar en pantalla
     const direccionSimplificada = formatearDireccionSimplificada(domicilioDto);
     
     setFormData(prev => ({ 
@@ -206,25 +205,25 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
   };
 
-  // Determinar si el centro requiere dirección (físico)
   const requiereDireccion = (): boolean => {
-    // Si la actividad no permite virtual, siempre requiere dirección
-    if (formData.actividadSeleccionada && !formData.actividadSeleccionada.virtual) {
+    if (actividadSeleccionada && !actividadSeleccionada.virtual) {
       return true;
     }
-    // Si la actividad permite virtual, requiere dirección solo si NO es virtual
     return !formData.centroEsVirtual;
   };
 
-  // Determinar si se debe mostrar el checkbox de centro virtual
   const mostrarCheckboxVirtual = (): boolean => {
-    return formData.actividadSeleccionada?.virtual === true;
+    return actividadSeleccionada?.virtual === true;
+  };
+
+  const handleCancelar = () => {
+    navigate('/');
   };
 
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
     
-    // Validar negocio
+    // Negocio
     if (!formData.negocioNombre.trim()) {
       newErrors.negocioNombre = 'El nombre del negocio es obligatorio';
     } else if (formData.negocioNombre.length < 3) {
@@ -232,16 +231,16 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
     
     if (urlDisponible === false) {
-      newErrors.negocioUrl = 'Esta URL ya está en uso. Elige otro nombre de negocio';
+      newErrors.negocioUrl = 'Esta URL ya está en uso. Cambiá el nombre del negocio (ej: agregando tu ciudad o dirección)';
     }
     
-    if (!formData.negocioNationalNumber.trim()) {
+    if (!formData.negocioWhatsapp) {
       newErrors.negocioWhatsapp = 'El número de WhatsApp es obligatorio';
-    } else if (!validarWhatsapp(formData.negocioNationalNumber)) {
-      newErrors.negocioWhatsapp = 'Número inválido (mínimo 10 dígitos)';
+    } else if (!isValidPhoneNumber(formData.negocioWhatsapp)) {
+      newErrors.negocioWhatsapp = 'Número de WhatsApp inválido';
     }
     
-    // Validar usuario
+    // Usuario
     if (!formData.usuarioEmail.trim()) {
       newErrors.usuarioEmail = 'El email es obligatorio';
     } else if (!validarEmail(formData.usuarioEmail)) {
@@ -256,17 +255,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       newErrors.usuarioNombre = 'El nombre es obligatorio';
     }
     
-    // Validar centro
+    // Centro
     if (!formData.centroNombre.trim()) {
       newErrors.centroNombre = 'El nombre del centro es obligatorio';
     }
     
-    // Validar actividad
+    // Actividad
     if (!formData.actividadId || formData.actividadId === 0) {
       newErrors.actividadId = 'Seleccioná una actividad';
     }
     
-    // Validar domicilio (si requiere dirección)
+    // Domicilio
     if (requiereDireccion() && !formData.domicilio) {
       newErrors.domicilio = 'Seleccioná una dirección en el mapa';
     }
@@ -282,7 +281,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       return;
     }
     
-    // Verificar que si requiere dirección, esté presente
     if (requiereDireccion() && !formData.domicilio) {
       setErrors({ domicilio: 'Seleccioná una dirección en el mapa' });
       return;
@@ -291,11 +289,23 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     setEnviando(true);
     
     try {
+      // Extraer country_code y national_number del whatsapp
+      let countryCode = 54;
+      let nationalNumber = '';
+      
+      if (formData.negocioWhatsapp) {
+        const match = formData.negocioWhatsapp.match(/^\+(\d+)(.+)$/);
+        if (match) {
+          countryCode = parseInt(match[1], 10);
+          nationalNumber = match[2].replace(/\D/g, '');
+        }
+      }
+      
       const resultado = await registrarPaso1DatosBasicos({
         negocioNombre: formData.negocioNombre,
-        negocioCountryCode: formData.negocioCountryCode,
-        negocioNationalNumber: formData.negocioNationalNumber,
-        domicilio: formData.domicilio!, // Se envía la dirección COMPLETA al backend
+        negocioCountryCode: countryCode,
+        negocioNationalNumber: nationalNumber,
+        domicilio: formData.domicilio!,
         usuarioEmail: formData.usuarioEmail,
         usuarioApellido: formData.usuarioApellido,
         usuarioNombre: formData.usuarioNombre,
@@ -318,7 +328,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2 className={styles.title}>Paso 1: Datos del Negocio</h2>
       
-      {/* ===== SECCIÓN NEGOCIO ===== */}
+      {/* SECCIÓN NEGOCIO */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Información del Negocio</legend>
         
@@ -346,7 +356,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 <span className={styles.successText}> ✅ Disponible</span>
               )}
               {urlDisponible === false && !verificandoUrl && (
-                <span className={styles.errorText}> ❌ No disponible</span>
+                <span className={styles.errorText}> ❌ No disponible. Cambiá el nombre del negocio</span>
               )}
             </span>
           )}
@@ -355,55 +365,24 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           )}
         </div>
         
-        <div className={styles.row}>
-          <div className={styles.formGroup}>
-            <label htmlFor="negocioCountryCode" className={styles.label}>
-              Código país *
-            </label>
-            <select
-              id="negocioCountryCode"
-              name="negocioCountryCode"
-              value={formData.negocioCountryCode}
-              onChange={handleChange}
-              className={styles.select}
-            >
-              <option value="54">Argentina (+54)</option>
-              <option value="598">Uruguay (+598)</option>
-              <option value="56">Chile (+56)</option>
-              <option value="591">Bolivia (+591)</option>
-              <option value="595">Paraguay (+595)</option>
-              <option value="55">Brasil (+55)</option>
-              <option value="57">Colombia (+57)</option>
-              <option value="51">Perú (+51)</option>
-              <option value="58">Venezuela (+58)</option>
-              <option value="52">México (+52)</option>
-              <option value="1">EE.UU./Canadá (+1)</option>
-              <option value="34">España (+34)</option>
-            </select>
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="negocioNationalNumber" className={styles.label}>
-              WhatsApp *
-            </label>
-            <input
-              type="tel"
-              id="negocioNationalNumber"
-              name="negocioNationalNumber"
-              value={formData.negocioNationalNumber}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.negocioWhatsapp ? styles.inputError : ''}`}
-              placeholder="Ej: 91123456789"
-            />
-            {errors.negocioWhatsapp && (
-              <span className={styles.errorText}>{errors.negocioWhatsapp}</span>
-            )}
-            <span className={styles.helperText}>Sin espacios ni símbolos. Código de área incluido.</span>
-          </div>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>WhatsApp *</label>
+          <PhoneInput
+            international
+            defaultCountry="AR"
+            value={formData.negocioWhatsapp}
+            onChange={handleWhatsappChange}
+            className={`${styles.phoneInput} ${errors.negocioWhatsapp ? styles.inputError : ''}`}
+            limitMaxLength={true}
+          />
+          {errors.negocioWhatsapp && (
+            <span className={styles.errorText}>{errors.negocioWhatsapp}</span>
+          )}
+          <span className={styles.helperText}>Con código de país. Ej: +54 9 11 1234 5678</span>
         </div>
       </fieldset>
       
-      {/* ===== SECCIÓN USUARIO (DUEÑO) ===== */}
+      {/* SECCIÓN USUARIO */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Datos del Dueño</legend>
         
@@ -480,7 +459,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         </div>
       </fieldset>
       
-      {/* ===== SECCIÓN ACTIVIDAD ===== */}
+      {/* SECCIÓN ACTIVIDAD */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Actividad del Negocio</legend>
         
@@ -499,7 +478,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             <option value="0">Seleccionar...</option>
             {actividades.map(act => (
               <option key={act.id} value={act.id}>
-                {act.nombre} {act.virtual ? '(Permite virtual)' : '(Solo presencial)'}
+                {act.nombre}
               </option>
             ))}
           </select>
@@ -509,7 +488,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           {errors.actividadId && (
             <span className={styles.errorText}>{errors.actividadId}</span>
           )}
-          {formData.actividadSeleccionada && !formData.actividadSeleccionada.virtual && (
+          {actividadSeleccionada && !actividadSeleccionada.virtual && (
             <span className={styles.helperText} style={{ color: '#d97706' }}>
               ⚠️ Esta actividad solo permite centros presenciales (con dirección física)
             </span>
@@ -517,7 +496,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         </div>
       </fieldset>
       
-      {/* ===== SECCIÓN CENTRO ===== */}
+      {/* SECCIÓN CENTRO */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Centro / Sucursal</legend>
         
@@ -539,7 +518,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           )}
         </div>
         
-        {/* Checkbox de centro virtual - SOLO si la actividad lo permite */}
         {mostrarCheckboxVirtual() && (
           <div className={styles.checkboxGroup}>
             <label className={styles.checkboxLabel}>
@@ -554,7 +532,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           </div>
         )}
         
-        {/* MapaSelector - solo si requiere dirección */}
         {requiereDireccion() && (
           <div className={styles.mapaContainer}>
             <label className={styles.label}>
@@ -575,7 +552,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           </div>
         )}
         
-        {/* Mensaje informativo cuando NO requiere dirección (centro virtual) */}
         {!requiereDireccion() && mostrarCheckboxVirtual() && formData.centroEsVirtual && (
           <div className={styles.direccionConfirmada} style={{ backgroundColor: '#e0f2fe', borderColor: '#7dd3fc', color: '#0369a1' }}>
             💻 Centro virtual - No requiere dirección física
@@ -583,8 +559,16 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         )}
       </fieldset>
       
-      {/* ===== BOTONES ===== */}
+      {/* BOTONES */}
       <div className={styles.buttonsContainer}>
+        <button
+          type="button"
+          onClick={handleCancelar}
+          className={styles.buttonSecondary}
+          disabled={enviando}
+        >
+          Cancelar
+        </button>
         <button
           type="submit"
           disabled={enviando || (urlDisponible === false)}
