@@ -349,17 +349,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             <span className={styles.errorText}>{errors.negocioNombre}</span>
           )}
           {formData.negocioNombre && (
-            <span className={styles.helperText}>
-              URL generada: {generarSlug(formData.negocioNombre)}
-              {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
-              {urlDisponible === true && !verificandoUrl && (
-                <span className={styles.successText}> ✅ Disponible</span>
-              )}
-              {urlDisponible === false && !verificandoUrl && (
-                <span className={styles.errorText}> ❌ No disponible. Cambiá el nombre del negocio</span>
-              )}
-            </span>
-          )}
+  <span className={styles.helperText}>
+    URL generada: /negocio/{generarSlug(formData.negocioNombre)}
+    {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
+    {urlDisponible === true && !verificandoUrl && (
+      <span className={styles.successText}> ✅ Disponible</span>
+    )}
+    {urlDisponible === false && !verificandoUrl && (
+      <span className={styles.errorText}> ❌ No disponible. Cambiá el nombre del negocio</span>
+    )}
+  </span>
+)}
           {errors.negocioUrl && (
             <span className={styles.errorText}>{errors.negocioUrl}</span>
           )}
