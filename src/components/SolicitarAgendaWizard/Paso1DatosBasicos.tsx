@@ -433,84 +433,84 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       </fieldset>
       
       {/* SECCIÓN USUARIO */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Datos del Dueño</legend>
-        
-        <div className={styles.row}>
-          <div className={styles.formGroup}>
-            <label htmlFor="usuarioApellido" className={styles.label}>
-              Apellido *
-            </label>
-            <input
-              type="text"
-              id="usuarioApellido"
-              name="usuarioApellido"
-              value={formData.usuarioApellido}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.usuarioApellido ? styles.inputError : ''}`}
-              placeholder="Ej: García"
-            />
-            {errors.usuarioApellido && (
-              <span className={styles.errorText}>{errors.usuarioApellido}</span>
-            )}
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="usuarioNombre" className={styles.label}>
-              Nombre *
-            </label>
-            <input
-              type="text"
-              id="usuarioNombre"
-              name="usuarioNombre"
-              value={formData.usuarioNombre}
-              onChange={handleChange}
-              className={`${styles.input} ${errors.usuarioNombre ? styles.inputError : ''}`}
-              placeholder="Ej: Carlos"
-            />
-            {errors.usuarioNombre && (
-              <span className={styles.errorText}>{errors.usuarioNombre}</span>
-            )}
-          </div>
-        </div>
-        
-        <div className={styles.formGroup}>
-          <label htmlFor="usuarioEmail" className={styles.label}>
-            Email *
-          </label>
-          <input
-            type="email"
-            id="usuarioEmail"
-            name="usuarioEmail"
-            value={formData.usuarioEmail}
-            onChange={handleChange}
-            className={`${styles.input} ${errors.usuarioEmail ? styles.inputError : ''}`}
-            placeholder="Ej: carlos@ejemplo.com"
-          />
-          {buscandoUsuario && (
-            <span className={styles.helperText}>Buscando usuario...</span>
-          )}
-          {errors.usuarioEmail && (
-            <span className={styles.errorText}>{errors.usuarioEmail}</span>
-          )}
-          <span className={styles.helperText}>Recibirás los links de acceso y gestión</span>
-        </div>
-        
-        <div className={styles.formGroup}>
-          <label htmlFor="usuarioTelefono" className={styles.label}>
-            Teléfono (opcional)
-          </label>
-          <input
-            type="tel"
-            id="usuarioTelefono"
-            name="usuarioTelefono"
-            value={formData.usuarioTelefono}
-            onChange={handleChange}
-            className={styles.input}
-            placeholder="Ej: 5491112345678"
-          />
-        </div>
-      </fieldset>
+<fieldset className={styles.fieldset}>
+  <legend className={styles.legend}>Datos del Dueño</legend>
+  
+  <div className={styles.formGroup}>
+    <label htmlFor="usuarioEmail" className={styles.label}>
+      Email *
+    </label>
+    <input
+      type="email"
+      id="usuarioEmail"
+      name="usuarioEmail"
+      value={formData.usuarioEmail}
+      onChange={handleChange}
+      className={`${styles.input} ${errors.usuarioEmail ? styles.inputError : ''}`}
+      placeholder="Ej: carlos@ejemplo.com"
+    />
+    {buscandoUsuario && (
+      <span className={styles.helperText}>Buscando usuario...</span>
+    )}
+    {errors.usuarioEmail && (
+      <span className={styles.errorText}>{errors.usuarioEmail}</span>
+    )}
+    <span className={styles.helperText}>Recibirás los links de acceso y gestión</span>
+  </div>
+  
+  <div className={styles.row}>
+    <div className={styles.formGroup}>
+      <label htmlFor="usuarioApellido" className={styles.label}>
+        Apellido *
+      </label>
+      <input
+        type="text"
+        id="usuarioApellido"
+        name="usuarioApellido"
+        value={formData.usuarioApellido}
+        onChange={handleChange}
+        className={`${styles.input} ${errors.usuarioApellido ? styles.inputError : ''}`}
+        placeholder="Ej: García"
+      />
+      {errors.usuarioApellido && (
+        <span className={styles.errorText}>{errors.usuarioApellido}</span>
+      )}
+    </div>
+    
+    <div className={styles.formGroup}>
+      <label htmlFor="usuarioNombre" className={styles.label}>
+        Nombre *
+      </label>
+      <input
+        type="text"
+        id="usuarioNombre"
+        name="usuarioNombre"
+        value={formData.usuarioNombre}
+        onChange={handleChange}
+        className={`${styles.input} ${errors.usuarioNombre ? styles.inputError : ''}`}
+        placeholder="Ej: Carlos"
+      />
+      {errors.usuarioNombre && (
+        <span className={styles.errorText}>{errors.usuarioNombre}</span>
+      )}
+    </div>
+  </div>
+  
+  <div className={styles.formGroup}>
+    <label htmlFor="usuarioTelefono" className={styles.label}>
+      Teléfono (opcional)
+    </label>
+    <input
+      type="tel"
+      id="usuarioTelefono"
+      name="usuarioTelefono"
+      value={formData.usuarioTelefono}
+      onChange={handleChange}
+      className={styles.input}
+      placeholder="Ej: 5491112345678"
+    />
+  </div>
+</fieldset>
       
       {/* SECCIÓN ACTIVIDAD */}
       <fieldset className={styles.fieldset}>
