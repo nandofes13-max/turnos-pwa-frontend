@@ -33,8 +33,8 @@ export default function Inicio() {
   };
 
   const handleSolicitarAgenda = () => {
-    // TODO: Abrir modal de solicitud de agenda gratis
-    alert('Próximamente: Formulario para solicitar agenda gratis');
+    // Redirigir al wizard de solicitud de agenda gratis
+    navigate('/solicitar-agenda');
   };
 
   const handleAyuda = () => {
