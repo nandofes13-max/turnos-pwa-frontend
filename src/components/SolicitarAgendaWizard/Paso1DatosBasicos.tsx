@@ -1,6 +1,10 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// CON AJUSTES: Muestra dirección simplificada pero envía estructura completa al backend
+// CON AJUSTES:
+// - Excluye actividad ID=10
+// - Muestra checkbox de centro virtual SOLO si la actividad lo permite (virtual === true)
+// - centroEsVirtual = false por defecto
+// - Dirección obligatoria cuando el centro es físico
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -35,6 +39,7 @@ interface FormData {
   centroEsVirtual: boolean;
   // Actividad
   actividadId: number;
+  actividadSeleccionada: Actividad | null;
   // Domicilio (completo, como viene del MapaSelector)
   domicilio: DomicilioDto | null;
   // Dirección simplificada para mostrar en pantalla
@@ -75,20 +80,22 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     usuarioNombre: '',
     usuarioTelefono: '',
     centroNombre: '',
-    centroEsVirtual: true,
+    centroEsVirtual: false, // Por defecto: centro físico
     actividadId: 0,
+    actividadSeleccionada: null,
     domicilio: null,
     direccionSimplificada: '',
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  // Cargar actividades al montar el componente
+  // Cargar actividades al montar el componente (excluyendo ID=10)
   useEffect(() => {
     const cargarActividades = async () => {
       try {
         const data = await getActividades();
-        const activas = data.filter(a => !a.fecha_baja);
+        // Filtrar: solo activas y excluir ID=10 ("SOLICITAR OTRAS ACTIVIDADES")
+        const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
         setActividades(activas);
       } catch (error) {
         console.error('Error cargando actividades:', error);
@@ -99,6 +106,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     };
     cargarActividades();
   }, [onError]);
+
+  // Cuando cambia la actividad, actualizar el objeto actividadSeleccionada
+  useEffect(() => {
+    const actividad = actividades.find(a => a.id === formData.actividadId);
+    setFormData(prev => ({ ...prev, actividadSeleccionada: actividad || null }));
+    
+    // Si la actividad NO permite virtual, forzar centroEsVirtual = false
+    if (actividad && !actividad.virtual) {
+      setFormData(prev => ({ ...prev, centroEsVirtual: false }));
+    }
+  }, [formData.actividadId, actividades]);
 
   // Verificar disponibilidad de URL cuando cambia el nombre del negocio
   useEffect(() => {
@@ -188,6 +206,21 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
   };
 
+  // Determinar si el centro requiere dirección (físico)
+  const requiereDireccion = (): boolean => {
+    // Si la actividad no permite virtual, siempre requiere dirección
+    if (formData.actividadSeleccionada && !formData.actividadSeleccionada.virtual) {
+      return true;
+    }
+    // Si la actividad permite virtual, requiere dirección solo si NO es virtual
+    return !formData.centroEsVirtual;
+  };
+
+  // Determinar si se debe mostrar el checkbox de centro virtual
+  const mostrarCheckboxVirtual = (): boolean => {
+    return formData.actividadSeleccionada?.virtual === true;
+  };
+
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
     
@@ -233,8 +266,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       newErrors.actividadId = 'Seleccioná una actividad';
     }
     
-    // Validar domicilio (solo si el centro NO es virtual)
-    if (!formData.centroEsVirtual && !formData.domicilio) {
+    // Validar domicilio (si requiere dirección)
+    if (requiereDireccion() && !formData.domicilio) {
       newErrors.domicilio = 'Seleccioná una dirección en el mapa';
     }
     
@@ -249,7 +282,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       return;
     }
     
-    if (!formData.centroEsVirtual && !formData.domicilio) {
+    // Verificar que si requiere dirección, esté presente
+    if (requiereDireccion() && !formData.domicilio) {
       setErrors({ domicilio: 'Seleccioná una dirección en el mapa' });
       return;
     }
@@ -465,7 +499,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             <option value="0">Seleccionar...</option>
             {actividades.map(act => (
               <option key={act.id} value={act.id}>
-                {act.nombre}
+                {act.nombre} {act.virtual ? '(Permite virtual)' : '(Solo presencial)'}
               </option>
             ))}
           </select>
@@ -474,6 +508,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           )}
           {errors.actividadId && (
             <span className={styles.errorText}>{errors.actividadId}</span>
+          )}
+          {formData.actividadSeleccionada && !formData.actividadSeleccionada.virtual && (
+            <span className={styles.helperText} style={{ color: '#d97706' }}>
+              ⚠️ Esta actividad solo permite centros presenciales (con dirección física)
+            </span>
           )}
         </div>
       </fieldset>
@@ -500,19 +539,23 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           )}
         </div>
         
-        <div className={styles.checkboxGroup}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              name="centroEsVirtual"
-              checked={formData.centroEsVirtual}
-              onChange={handleChange}
-            />
-            Es un centro virtual (sin dirección física)
-          </label>
-        </div>
+        {/* Checkbox de centro virtual - SOLO si la actividad lo permite */}
+        {mostrarCheckboxVirtual() && (
+          <div className={styles.checkboxGroup}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                name="centroEsVirtual"
+                checked={formData.centroEsVirtual}
+                onChange={handleChange}
+              />
+              Es un centro virtual (sin dirección física)
+            </label>
+          </div>
+        )}
         
-        {!formData.centroEsVirtual && (
+        {/* MapaSelector - solo si requiere dirección */}
+        {requiereDireccion() && (
           <div className={styles.mapaContainer}>
             <label className={styles.label}>
               Dirección del centro *
@@ -529,6 +572,13 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
             {errors.domicilio && (
               <span className={styles.errorText}>{errors.domicilio}</span>
             )}
+          </div>
+        )}
+        
+        {/* Mensaje informativo cuando NO requiere dirección (centro virtual) */}
+        {!requiereDireccion() && mostrarCheckboxVirtual() && formData.centroEsVirtual && (
+          <div className={styles.direccionConfirmada} style={{ backgroundColor: '#e0f2fe', borderColor: '#7dd3fc', color: '#0369a1' }}>
+            💻 Centro virtual - No requiere dirección física
           </div>
         )}
       </fieldset>
