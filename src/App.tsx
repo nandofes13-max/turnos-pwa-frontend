@@ -21,6 +21,7 @@ import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
+import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import './App.css';
 
 function App() {
@@ -28,6 +29,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Inicio />} />
+        
+        {/* ============================================================ */}
+        {/* RUTA PARA SOLICITAR AGENDA GRATIS (WIZARD) */}
+        {/* ============================================================ */}
+        <Route path="/solicitar-agenda" element={<SolicitarAgendaWizard />} />
         
         {/* ============================================================ */}
         {/* RUTAS PARA NEGOCIOS (URL amigable) */}
