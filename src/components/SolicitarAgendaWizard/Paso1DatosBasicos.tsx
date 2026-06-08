@@ -350,7 +350,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           )}
           {formData.negocioNombre && (
   <span className={styles.helperText}>
-    URL generada: /negocio/{generarSlug(formData.negocioNombre)}
+    URL generada: {window.location.origin}/negocio/{generarSlug(formData.negocioNombre)}
     {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
     {urlDisponible === true && !verificandoUrl && (
       <span className={styles.successText}> ✅ Disponible</span>
