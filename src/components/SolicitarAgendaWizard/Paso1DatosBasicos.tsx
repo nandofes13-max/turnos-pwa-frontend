@@ -1,8 +1,7 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON CORRECCIÓN:
-// - Centro virtual aparece INMEDIATAMENTE al seleccionar actividad con virtual: true
-// - Usa estado separado `permiteVirtual` para evitar problemas de async
+// VERSIÓN CON CORRECCIÓN EN HANDLE CHANGE:
+// - Actualiza permiteVirtual INMEDIATAMENTE al seleccionar actividad
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -73,7 +72,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [verificandoUrl, setVerificandoUrl] = useState(false);
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
   const [mostrarPreguntaSegundoCentro, setMostrarPreguntaSegundoCentro] = useState(false);
-  const [permiteVirtual, setPermiteVirtual] = useState(false); // 👈 NUEVO ESTADO
+  const [permiteVirtual, setPermiteVirtual] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -98,16 +97,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const maxCentrosFisicos = 2;
-
-  // 👈 ACTUALIZAR permiteVirtual cuando cambia la actividad o se cargan actividades
-  useEffect(() => {
-    if (formData.actividadId && actividades.length > 0) {
-      const actividad = actividades.find(a => a.id === formData.actividadId);
-      setPermiteVirtual(actividad?.virtual === true);
-    } else if (formData.actividadId === 0) {
-      setPermiteVirtual(false);
-    }
-  }, [formData.actividadId, actividades]);
 
   const buscarUsuarioPorEmail = async (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -193,9 +182,25 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return regex.test(email);
   };
 
+  // 👈 HANDLE CHANGE MODIFICADO - Actualiza permiteVirtual inmediatamente
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Si es el select de actividad, actualizar permiteVirtual inmediatamente
+    if (name === 'actividadId') {
+      const actividadEncontrada = actividades.find(a => a.id === Number(value));
+      const nuevaPermiteVirtual = actividadEncontrada?.virtual === true;
+      setPermiteVirtual(nuevaPermiteVirtual);
+      console.log('Actividad seleccionada:', { 
+        actividadId: value, 
+        encontrada: actividadEncontrada?.nombre,
+        virtual: actividadEncontrada?.virtual,
+        permiteVirtual: nuevaPermiteVirtual 
+      });
+    }
+    
     if (errors[name as keyof ValidationErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -458,7 +463,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Centros / Sucursales</legend>
         
-        {/* Centro Virtual - se muestra según el estado permiteVirtual */}
+        {/* Centro Virtual - se muestra según permiteVirtual */}
         {permiteVirtual && (
           <div className={styles.centroVirtualSection}>
             <h4 className={styles.subtitle}>Centro Virtual</h4>
