@@ -473,6 +473,25 @@
   text-align: center;
 }
 
+/* Mensaje de éxito */
+.mensajeExito {
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  text-align: center;
+  color: #166534;
+}
+
+.mensajeExito p {
+  margin: 0 0 8px 0;
+}
+
+.mensajeExito p:last-child {
+  margin-bottom: 0;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
