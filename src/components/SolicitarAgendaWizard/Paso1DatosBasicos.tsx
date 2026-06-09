@@ -1,6 +1,5 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON OCULTAMIENTO TOTAL AL LLEGAR AL LÍMITE
+// Versión con pregunta en el mismo nivel y limpieza correcta
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -96,7 +95,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
 
   const maxCentrosFisicos = 2;
 
-  // Inicializar centro virtual si la actividad lo permite
   useEffect(() => {
     if (permiteVirtual && centrosCargados.length === 0 && !centrosCargados.some(c => c.es_virtual)) {
       setCentrosCargados([{
@@ -248,13 +246,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     const fisicosActuales = centrosCargados.filter(c => !c.es_virtual).length;
     
-    // Verificar si ya se alcanzó el límite
     if (fisicosActuales >= maxCentrosFisicos) {
       alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
       return;
     }
     
-    // Agregar el centro físico a la lista
     const nuevoCentro: CentroCargado = {
       id: `fisico-${Date.now()}`,
       nombre: `Centro Físico ${fisicosActuales + 1}`,
@@ -265,21 +261,19 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar la dirección seleccionada
+    // Limpiar dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
     
-    // Resetear el MapaSelector
+    // Resetear mapa
     if (mapaSelectorRef.current) {
       mapaSelectorRef.current.reset();
     }
     
-    // Deshabilitar botón Agregar temporalmente
     setBotonAgregarDisabled(true);
     
-    // Verificar si se puede agregar otro
     const nuevosFisicos = fisicosActuales + 1;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarPreguntaOtroCentro(true);
@@ -295,12 +289,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     setCentrosCargados(prev => prev.filter(c => c.id !== id));
     setBotonAgregarDisabled(false);
     setMostrarPreguntaOtroCentro(false);
-    // Limpiar dirección seleccionada al eliminar
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
-    // Resetear el mapa
     if (mapaSelectorRef.current) {
       mapaSelectorRef.current.reset();
     }
@@ -478,7 +470,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Centros</legend>
                 
-                {/* Lista de centros cargados */}
                 {centrosCargados.length > 0 && (
                   <div className={styles.centrosLista}>
                     {centrosCargados.map(centro => (
@@ -503,29 +494,48 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Formulario de carga - SOLO si NO se alcanzó el límite */}
+                {/* Formulario de carga - SOLO si no se alcanzó el límite */}
                 {!limiteAlcanzado && (
                   <>
-                    <div className={styles.centroFisicoForm}>
-                      <div className={styles.formGroup}>
-                        <label className={styles.label}>Dirección del centro *</label>
-                        {direccionSeleccionada.direccionSimplificada && (
-                          <div className={styles.direccionConfirmada}>
-                            <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
-                            <button 
-                              type="button"
-                              onClick={handleAgregarCentroFisico}
-                              disabled={botonAgregarDisabled}
-                              className={styles.buttonAgregar}
-                            >
-                              Agregar
-                            </button>
-                          </div>
-                        )}
+                    {/* Recuadro verde con dirección seleccionada - SOLO si hay dirección Y no estamos preguntando */}
+                    {!mostrarPreguntaOtroCentro && direccionSeleccionada.direccionSimplificada && (
+                      <div className={styles.direccionConfirmada}>
+                        <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
+                        <button 
+                          type="button"
+                          onClick={handleAgregarCentroFisico}
+                          disabled={botonAgregarDisabled}
+                          className={styles.buttonAgregar}
+                        >
+                          Agregar
+                        </button>
                       </div>
-                    </div>
+                    )}
                     
-                    {/* Mapa */}
+                    {/* Pregunta "¿Desea cargar otro centro?" - ocupa el mismo lugar que el recuadro verde */}
+                    {mostrarPreguntaOtroCentro && (
+                      <div className={styles.preguntaSegundoCentro}>
+                        <p>¿Desea cargar otro centro físico?</p>
+                        <div className={styles.buttonsContainerInline}>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRespuestaOtroCentro(true)} 
+                            className={styles.buttonSmall}
+                          >
+                            Sí
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRespuestaOtroCentro(false)} 
+                            className={styles.buttonSmall}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Mapa - siempre visible */}
                     <div className={styles.mapaContainer}>
                       <MapaSelector 
                         ref={mapaSelectorRef}
@@ -540,29 +550,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 {limiteAlcanzado && (
                   <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
                     ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
-                  </div>
-                )}
-                
-                {/* Pregunta otro centro */}
-                {mostrarPreguntaOtroCentro && !limiteAlcanzado && (
-                  <div className={styles.preguntaSegundoCentro}>
-                    <p>¿Desea cargar otro centro físico?</p>
-                    <div className={styles.buttonsContainerInline}>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRespuestaOtroCentro(true)} 
-                        className={styles.buttonSmall}
-                      >
-                        Sí
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRespuestaOtroCentro(false)} 
-                        className={styles.buttonSmall}
-                      >
-                        No
-                      </button>
-                    </div>
                   </div>
                 )}
                 
