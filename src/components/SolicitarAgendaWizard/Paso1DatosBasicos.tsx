@@ -1,5 +1,5 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Versión con pregunta en el mismo nivel y limpieza correcta
+// Versión con flujo simplificado (sin pregunta, solo selección de dirección)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -77,7 +77,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     direccionSimplificada: '',
   });
   const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
-  const [mostrarPreguntaOtroCentro, setMostrarPreguntaOtroCentro] = useState(false);
   const mapaSelectorRef = useRef<MapaSelectorRef>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -261,34 +260,23 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar dirección seleccionada
+    // Limpiar dirección seleccionada para que desaparezca el recuadro verde
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
     
-    // Resetear mapa
+    // Resetear el mapa
     if (mapaSelectorRef.current) {
       mapaSelectorRef.current.reset();
     }
     
-    setBotonAgregarDisabled(true);
-    
-    const nuevosFisicos = fisicosActuales + 1;
-    if (nuevosFisicos < maxCentrosFisicos) {
-      setMostrarPreguntaOtroCentro(true);
-    }
-  };
-
-  const handleRespuestaOtroCentro = (respuesta: boolean) => {
-    setMostrarPreguntaOtroCentro(false);
     setBotonAgregarDisabled(false);
   };
 
   const handleEliminarCentroFisico = (id: string) => {
     setCentrosCargados(prev => prev.filter(c => c.id !== id));
     setBotonAgregarDisabled(false);
-    setMostrarPreguntaOtroCentro(false);
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
@@ -497,8 +485,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 {/* Formulario de carga - SOLO si no se alcanzó el límite */}
                 {!limiteAlcanzado && (
                   <>
-                    {/* Recuadro verde con dirección seleccionada - SOLO si hay dirección Y no estamos preguntando */}
-                    {!mostrarPreguntaOtroCentro && direccionSeleccionada.direccionSimplificada && (
+                    {/* Recuadro verde con dirección seleccionada - SOLO cuando hay una dirección */}
+                    {direccionSeleccionada.direccionSimplificada && (
                       <div className={styles.direccionConfirmada}>
                         <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
                         <button 
@@ -509,29 +497,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                         >
                           Agregar
                         </button>
-                      </div>
-                    )}
-                    
-                    {/* Pregunta "¿Desea cargar otro centro?" - ocupa el mismo lugar que el recuadro verde */}
-                    {mostrarPreguntaOtroCentro && (
-                      <div className={styles.preguntaSegundoCentro}>
-                        <p>¿Desea cargar otro centro físico?</p>
-                        <div className={styles.buttonsContainerInline}>
-                          <button 
-                            type="button" 
-                            onClick={() => handleRespuestaOtroCentro(true)} 
-                            className={styles.buttonSmall}
-                          >
-                            Sí
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleRespuestaOtroCentro(false)} 
-                            className={styles.buttonSmall}
-                          >
-                            No
-                          </button>
-                        </div>
                       </div>
                     )}
                     
