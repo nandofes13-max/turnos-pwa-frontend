@@ -415,6 +415,123 @@
     font-size: 13px;
   }
 
+ /* ============================================================
+   LISTA DE CENTROS CARGADOS
+   ============================================================ */
+
+.centrosLista {
+  margin-bottom: 24px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.centroCargado {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.centroCargado:last-child {
+  margin-bottom: 0;
+}
+
+.centroDireccion {
+  color: #64748b;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+/* ============================================================
+   FORMULARIO DE CENTRO FÍSICO
+   ============================================================ */
+
+.centroFisicoForm {
+  padding: 16px;
+  background-color: #fefce8;
+  border-radius: 8px;
+  border: 1px solid #fde047;
+  margin-bottom: 16px;
+}
+
+.direccionConfirmada {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #166534;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.buttonAgregar {
+  background-color: #10b981;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.buttonAgregar:hover {
+  background-color: #059669;
+}
+
+/* ============================================================
+   BOTONES PEQUEÑOS (Sí/No)
+   ============================================================ */
+
+.buttonsContainerInline {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.buttonSmall {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.buttonSmall:hover {
+  background-color: #cbd5e1;
+}
+
+.preguntaSegundoCentro {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preguntaSegundoCentro p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: #1e293b;
+}  
+
   .input,
   .select {
     font-size: 13px;
