@@ -1,11 +1,6 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN FINAL CORREGIDA:
-// - Eliminado logo móvil
-// - Eliminado mensaje de advertencia de actividades
-// - Eliminado cartel automático de límite
-// - Reset del MapaSelector mediante ref
-// - Limpieza correcta de dirección después de agregar
+// VERSIÓN CON OCULTAMIENTO TOTAL AL LLEGAR AL LÍMITE
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -205,7 +200,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       const actividadEncontrada = actividades.find(a => a.id === Number(value));
       const nuevaPermiteVirtual = actividadEncontrada?.virtual === true;
       setPermiteVirtual(nuevaPermiteVirtual);
-      // Resetear centros cargados si cambia la actividad
       if (!nuevaPermiteVirtual) {
         setCentrosCargados([]);
       }
@@ -254,7 +248,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     const fisicosActuales = centrosCargados.filter(c => !c.es_virtual).length;
     
-    // Verificar si ya se alcanzó el límite (para el tercer centro)
+    // Verificar si ya se alcanzó el límite
     if (fisicosActuales >= maxCentrosFisicos) {
       alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
       return;
@@ -285,7 +279,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     // Deshabilitar botón Agregar temporalmente
     setBotonAgregarDisabled(true);
     
-    // Verificar si se puede agregar otro (después de agregar el actual)
+    // Verificar si se puede agregar otro
     const nuevosFisicos = fisicosActuales + 1;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarPreguntaOtroCentro(true);
@@ -295,19 +289,21 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const handleRespuestaOtroCentro = (respuesta: boolean) => {
     setMostrarPreguntaOtroCentro(false);
     setBotonAgregarDisabled(false);
-    if (!respuesta) {
-      // No quiere agregar más, continuar
-      return;
-    }
-    // Si quiere agregar otro, el formulario ya está limpio
-    // El cursor vuelve al mapa automáticamente
   };
 
   const handleEliminarCentroFisico = (id: string) => {
     setCentrosCargados(prev => prev.filter(c => c.id !== id));
-    // Si se eliminó un centro y estábamos en límite, habilitar nuevamente
     setBotonAgregarDisabled(false);
     setMostrarPreguntaOtroCentro(false);
+    // Limpiar dirección seleccionada al eliminar
+    setDireccionSeleccionada({
+      domicilio: null,
+      direccionSimplificada: '',
+    });
+    // Resetear el mapa
+    if (mapaSelectorRef.current) {
+      mapaSelectorRef.current.reset();
+    }
   };
 
   const handleCancelar = () => navigate('/');
@@ -337,7 +333,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     if (!formData.usuarioNombre.trim()) newErrors.usuarioNombre = 'El nombre es obligatorio';
     if (!formData.actividadId || formData.actividadId === 0) newErrors.actividadId = 'Seleccioná una actividad';
     
-    // Validar que haya al menos un centro físico
     const centrosFisicos = centrosCargados.filter(c => !c.es_virtual);
     if (centrosFisicos.length === 0) {
       newErrors.centroFisico = 'Debe agregar al menos un centro físico';
@@ -389,20 +384,16 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const centrosFisicosCargados = centrosCargados.filter(c => !c.es_virtual);
+  const limiteAlcanzado = centrosFisicosCargados.length >= maxCentrosFisicos;
 
   return (
     <div className={styles['wizard-container-page']}>
-      {/* Columna izquierda - FORMULARIO */}
       <div className={styles['wizard-left']}>
         <div className={styles['wizard-left-content']}>
-          
-          {/* Logo móvil - ELIMINADO para consistencia con Inicio.tsx */}
-
           <div className={styles['wizard-card']}>
             <form onSubmit={handleSubmit} className={styles.form}>
               <h2 className={styles.title}>Solicitar Agenda Gratis</h2>
               
-              {/* Indicador de pasos */}
               <div className={styles['steps-indicator']}>
                 <div className={`${styles.step} ${styles['step-active']}`}>
                   <span className={styles['step-number']}>1</span>
@@ -420,7 +411,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 </div>
               </div>
               
-              {/* SECCIÓN NEGOCIO */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Información del Negocio</legend>
                 <div className={styles.formGroup}>
@@ -445,7 +435,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 </div>
               </fieldset>
               
-              {/* SECCIÓN USUARIO */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Datos del Dueño</legend>
                 <div className={styles.formGroup}>
@@ -473,7 +462,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 </div>
               </fieldset>
               
-              {/* SECCIÓN ACTIVIDAD */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Actividad del Negocio</legend>
                 <div className={styles.formGroup}>
@@ -487,11 +475,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 </div>
               </fieldset>
               
-              {/* SECCIÓN CENTROS */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Centros</legend>
                 
-                {/* Lista de centros cargados (sin título) */}
+                {/* Lista de centros cargados */}
                 {centrosCargados.length > 0 && (
                   <div className={styles.centrosLista}>
                     {centrosCargados.map(centro => (
@@ -516,30 +503,48 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Formulario para agregar centro físico (sin título) */}
-                {centrosFisicosCargados.length < maxCentrosFisicos && (
-                  <div className={styles.centroFisicoForm}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Dirección del centro *</label>
-                      {direccionSeleccionada.direccionSimplificada && (
-                        <div className={styles.direccionConfirmada}>
-                          <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
-                          <button 
-                            type="button"
-                            onClick={handleAgregarCentroFisico}
-                            disabled={botonAgregarDisabled}
-                            className={styles.buttonAgregar}
-                          >
-                            Agregar
-                          </button>
-                        </div>
-                      )}
+                {/* Formulario de carga - SOLO si NO se alcanzó el límite */}
+                {!limiteAlcanzado && (
+                  <>
+                    <div className={styles.centroFisicoForm}>
+                      <div className={styles.formGroup}>
+                        <label className={styles.label}>Dirección del centro *</label>
+                        {direccionSeleccionada.direccionSimplificada && (
+                          <div className={styles.direccionConfirmada}>
+                            <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
+                            <button 
+                              type="button"
+                              onClick={handleAgregarCentroFisico}
+                              disabled={botonAgregarDisabled}
+                              className={styles.buttonAgregar}
+                            >
+                              Agregar
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Mapa */}
+                    <div className={styles.mapaContainer}>
+                      <MapaSelector 
+                        ref={mapaSelectorRef}
+                        onChange={handleDireccionSeleccionada}
+                        autoLocate={true}
+                      />
+                    </div>
+                  </>
+                )}
+                
+                {/* Mensaje de límite alcanzado */}
+                {limiteAlcanzado && (
+                  <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
+                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
                   </div>
                 )}
                 
-                {/* Pregunta si desea cargar otro centro (al mismo nivel) */}
-                {mostrarPreguntaOtroCentro && centrosFisicosCargados.length < maxCentrosFisicos && (
+                {/* Pregunta otro centro */}
+                {mostrarPreguntaOtroCentro && !limiteAlcanzado && (
                   <div className={styles.preguntaSegundoCentro}>
                     <p>¿Desea cargar otro centro físico?</p>
                     <div className={styles.buttonsContainerInline}>
@@ -561,21 +566,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Mapa (siempre al final) */}
-                <div className={styles.mapaContainer}>
-                  <MapaSelector 
-                    ref={mapaSelectorRef}
-                    onChange={handleDireccionSeleccionada}
-                    autoLocate={true}
-                  />
-                </div>
-                
                 {errors.centroFisico && typeof errors.centroFisico === 'string' && (
                   <span className={styles.errorText}>{errors.centroFisico}</span>
                 )}
               </fieldset>
               
-              {/* BOTONES */}
               <div className={styles.buttonsContainer}>
                 <button type="button" onClick={handleCancelar} className={styles.buttonSecondary} disabled={enviando}>Cancelar</button>
                 <button type="submit" disabled={enviando || (urlDisponible === false) || centrosFisicosCargados.length === 0} className={styles.buttonPrimary}>
@@ -587,7 +582,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         </div>
       </div>
       
-      {/* Columna derecha - LOGO (solo desktop) */}
       <div className={styles['wizard-right']}>
         <div className={styles['wizard-right-content']}>
           <img 
