@@ -1,5 +1,5 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Versión con flujo simplificado (sin pregunta, solo selección de dirección)
+// Versión con flag para ignorar onChange después de reset
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -77,6 +77,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     direccionSimplificada: '',
   });
   const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
+  const [ignorarProximoOnChange, setIgnorarProximoOnChange] = useState(false);
   const mapaSelectorRef = useRef<MapaSelectorRef>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -213,6 +214,12 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
+    // Ignorar el evento si estamos en proceso de limpieza
+    if (ignorarProximoOnChange) {
+      console.log('Ignorando onChange por limpieza');
+      return;
+    }
+    
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -260,7 +267,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar dirección seleccionada para que desaparezca el recuadro verde
+    // Activar flag para ignorar el próximo onChange del mapa
+    setIgnorarProximoOnChange(true);
+    
+    // Limpiar dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
@@ -272,6 +282,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
     
     setBotonAgregarDisabled(false);
+    
+    // Desactivar el flag después de un tiempo
+    setTimeout(() => {
+      setIgnorarProximoOnChange(false);
+    }, 300);
   };
 
   const handleEliminarCentroFisico = (id: string) => {
