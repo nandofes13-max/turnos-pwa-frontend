@@ -1,5 +1,5 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Versión con flag para ignorar onChange después de reset
+// Versión con key para recrear MapaSelector
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -77,7 +77,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     direccionSimplificada: '',
   });
   const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
-  const [ignorarProximoOnChange, setIgnorarProximoOnChange] = useState(false);
+  const [mapaKey, setMapaKey] = useState(0);
   const mapaSelectorRef = useRef<MapaSelectorRef>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -214,12 +214,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
-    // Ignorar el evento si estamos en proceso de limpieza
-    if (ignorarProximoOnChange) {
-      console.log('Ignorando onChange por limpieza');
-      return;
-    }
-    
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -267,26 +261,16 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Activar flag para ignorar el próximo onChange del mapa
-    setIgnorarProximoOnChange(true);
-    
-    // Limpiar dirección seleccionada
+    // Limpiar dirección seleccionada (desaparece el recuadro verde)
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
     
-    // Resetear el mapa
-    if (mapaSelectorRef.current) {
-      mapaSelectorRef.current.reset();
-    }
+    // Forzar recreado del MapaSelector (limpia su estado interno)
+    setMapaKey(prev => prev + 1);
     
     setBotonAgregarDisabled(false);
-    
-    // Desactivar el flag después de un tiempo
-    setTimeout(() => {
-      setIgnorarProximoOnChange(false);
-    }, 300);
   };
 
   const handleEliminarCentroFisico = (id: string) => {
@@ -296,9 +280,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       domicilio: null,
       direccionSimplificada: '',
     });
-    if (mapaSelectorRef.current) {
-      mapaSelectorRef.current.reset();
-    }
+    // Forzar recreado del mapa al eliminar también
+    setMapaKey(prev => prev + 1);
   };
 
   const handleCancelar = () => navigate('/');
@@ -515,9 +498,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                       </div>
                     )}
                     
-                    {/* Mapa - siempre visible */}
+                    {/* Mapa - siempre visible, con key para forzar recreado */}
                     <div className={styles.mapaContainer}>
                       <MapaSelector 
+                        key={mapaKey}
                         ref={mapaSelectorRef}
                         onChange={handleDireccionSeleccionada}
                         autoLocate={true}
