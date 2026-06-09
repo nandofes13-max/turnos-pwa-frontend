@@ -1,10 +1,12 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON LISTA DE CENTROS Y BOTÓN AGREGAR:
-// - Centro virtual fijo (sin input)
-// - Lista de centros cargados en la parte superior
-// - Botón "Agregar" al seleccionar dirección
-// - Pregunta "¿Desea cargar otro centro?" después de cada agregado
+// VERSIÓN CON FLUJO CORREGIDO:
+// - Legend "Centros" (sin "/ Sucursales")
+// - Sin títulos "📋 Centros cargados:" ni "Agregar centro físico"
+// - Botón eliminar (❌) en centros físicos
+// - Limpieza de mapa después de agregar
+// - Pregunta Sí/No después de agregar (al mismo nivel)
+// - Mapa al final de todo
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,12 +36,6 @@ interface CentroCargado {
   es_virtual: boolean;
   domicilio?: DomicilioDto;
   direccionSimplificada?: string;
-}
-
-interface CentroFisicoTemp {
-  nombre: string;
-  domicilio: DomicilioDto | null;
-  direccionSimplificada: string;
 }
 
 interface FormData {
@@ -80,13 +76,18 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
   const [permiteVirtual, setPermiteVirtual] = useState(false);
   const [centrosCargados, setCentrosCargados] = useState<CentroCargado[]>([]);
-  const [centroFisicoTemp, setCentroFisicoTemp] = useState<CentroFisicoTemp>({
-    nombre: '',
+  const [direccionSeleccionada, setDireccionSeleccionada] = useState<{
+    domicilio: DomicilioDto | null;
+    direccionSimplificada: string;
+  }>({
     domicilio: null,
     direccionSimplificada: '',
   });
+  const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
   const [mostrarPreguntaOtroCentro, setMostrarPreguntaOtroCentro] = useState(false);
+  const [mapaKey, setMapaKey] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mapaSelectorRef = useRef<any>(null);
   
   const [formData, setFormData] = useState<FormData>({
     negocioNombre: '',
@@ -222,7 +223,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     if (errors.negocioWhatsapp) setErrors(prev => ({ ...prev, negocioWhatsapp: undefined }));
   };
 
-  const handleDireccionFisicaSeleccionada = (direccionCompleta: Direccion) => {
+  const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -237,8 +238,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     };
     const direccionSimplificada = formatearDireccionSimplificada(domicilioDto);
     
-    setCentroFisicoTemp({
-      nombre: `Centro Físico ${centrosCargados.filter(c => !c.es_virtual).length + 1}`,
+    setDireccionSeleccionada({
       domicilio: domicilioDto,
       direccionSimplificada,
     });
@@ -249,7 +249,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const handleAgregarCentroFisico = () => {
-    if (!centroFisicoTemp.domicilio) {
+    if (!direccionSeleccionada.domicilio) {
       setErrors({ centroFisico: 'Seleccioná una dirección en el mapa' });
       return;
     }
@@ -264,38 +264,51 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     // Agregar el centro físico a la lista
     const nuevoCentro: CentroCargado = {
       id: `fisico-${Date.now()}`,
-      nombre: centroFisicoTemp.nombre,
+      nombre: `Centro Físico ${fisicosActuales + 1}`,
       es_virtual: false,
-      domicilio: centroFisicoTemp.domicilio!,
-      direccionSimplificada: centroFisicoTemp.direccionSimplificada,
+      domicilio: direccionSeleccionada.domicilio!,
+      direccionSimplificada: direccionSeleccionada.direccionSimplificada,
     };
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar el formulario temporal
-    setCentroFisicoTemp({
-      nombre: '',
+    // Limpiar la dirección seleccionada
+    setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
+    
+    // Forzar reset del mapa cambiando la key
+    setMapaKey(prev => prev + 1);
+    
+    // Deshabilitar botón Agregar temporalmente
+    setBotonAgregarDisabled(true);
     
     // Verificar si se puede agregar otro
     const nuevosFisicos = fisicosActuales + 1;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarPreguntaOtroCentro(true);
     } else {
-      // Ya llegó al límite
       alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
     }
   };
 
   const handleRespuestaOtroCentro = (respuesta: boolean) => {
     setMostrarPreguntaOtroCentro(false);
+    setBotonAgregarDisabled(false);
     if (!respuesta) {
       // No quiere agregar más, continuar
       return;
     }
-    // Si quiere agregar otro, el formulario ya está limpio, solo esperar nueva dirección
+    // Si quiere agregar otro, el formulario ya está limpio
+    // El cursor vuelve al mapa automáticamente
+  };
+
+  const handleEliminarCentroFisico = (id: string) => {
+    setCentrosCargados(prev => prev.filter(c => c.id !== id));
+    // Si se eliminó un centro y estábamos en límite, habilitar nuevamente
+    setBotonAgregarDisabled(false);
+    setMostrarPreguntaOtroCentro(false);
   };
 
   const handleCancelar = () => navigate('/');
@@ -379,173 +392,231 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const centrosFisicosCargados = centrosCargados.filter(c => !c.es_virtual);
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <h2 className={styles.title}>Paso 1: Datos del Negocio</h2>
-      
-      {/* SECCIÓN NEGOCIO */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Información del Negocio</legend>
-        <div className={styles.formGroup}>
-          <label htmlFor="negocioNombre" className={styles.label}>Nombre del negocio *</label>
-          <input type="text" id="negocioNombre" name="negocioNombre" value={formData.negocioNombre} onChange={handleChange} className={`${styles.input} ${errors.negocioNombre ? styles.inputError : ''}`} placeholder="Ej: Galicia Salud" />
-          {errors.negocioNombre && <span className={styles.errorText}>{errors.negocioNombre}</span>}
-          {formData.negocioNombre && (
-            <span className={styles.helperText}>
-              URL generada: {window.location.origin}/negocio/{generarSlug(formData.negocioNombre)}
-              {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
-              {urlDisponible === true && !verificandoUrl && <span className={styles.successText}> ✅ Disponible</span>}
-              {urlDisponible === false && !verificandoUrl && <span className={styles.errorText}> ❌ No disponible</span>}
-            </span>
-          )}
-          {errors.negocioUrl && <span className={styles.errorText}>{errors.negocioUrl}</span>}
-        </div>
-        <div className={styles.formGroup}>
-          <label className={styles.label}>WhatsApp *</label>
-          <PhoneInput international defaultCountry="AR" value={formData.negocioWhatsapp} onChange={handleWhatsappChange} className={`${styles.phoneInput} ${errors.negocioWhatsapp ? styles.inputError : ''}`} limitMaxLength={true} />
-          {errors.negocioWhatsapp && <span className={styles.errorText}>{errors.negocioWhatsapp}</span>}
-          <span className={styles.helperText}>Con código de país. Ej: +54 9 11 1234 5678</span>
-        </div>
-      </fieldset>
-      
-      {/* SECCIÓN USUARIO */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Datos del Dueño</legend>
-        <div className={styles.formGroup}>
-          <label htmlFor="usuarioEmail" className={styles.label}>Email *</label>
-          <input type="email" id="usuarioEmail" name="usuarioEmail" value={formData.usuarioEmail} onChange={handleChange} className={`${styles.input} ${errors.usuarioEmail ? styles.inputError : ''}`} placeholder="Ej: carlos@ejemplo.com" />
-          {buscandoUsuario && <span className={styles.helperText}>Buscando usuario...</span>}
-          {errors.usuarioEmail && <span className={styles.errorText}>{errors.usuarioEmail}</span>}
-          <span className={styles.helperText}>Recibirás los links de acceso y gestión</span>
-        </div>
-        <div className={styles.row}>
-          <div className={styles.formGroup}>
-            <label htmlFor="usuarioApellido" className={styles.label}>Apellido *</label>
-            <input type="text" id="usuarioApellido" name="usuarioApellido" value={formData.usuarioApellido} onChange={handleChange} className={`${styles.input} ${errors.usuarioApellido ? styles.inputError : ''}`} placeholder="Ej: García" />
-            {errors.usuarioApellido && <span className={styles.errorText}>{errors.usuarioApellido}</span>}
+    <div className={styles['wizard-container-page']}>
+      {/* Columna izquierda - FORMULARIO */}
+      <div className={styles['wizard-left']}>
+        <div className={styles['wizard-left-content']}>
+          
+          {/* Logo móvil */}
+          <div className={styles['wizard-logo-mobile']}>
+            <img 
+              src="/logo-pwa-turnos.svg" 
+              alt="PWA Turnos" 
+              className={styles['wizard-logo-mobile-img']}
+            />
           </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="usuarioNombre" className={styles.label}>Nombre *</label>
-            <input type="text" id="usuarioNombre" name="usuarioNombre" value={formData.usuarioNombre} onChange={handleChange} className={`${styles.input} ${errors.usuarioNombre ? styles.inputError : ''}`} placeholder="Ej: Carlos" />
-            {errors.usuarioNombre && <span className={styles.errorText}>{errors.usuarioNombre}</span>}
-          </div>
-        </div>
-        <div className={styles.formGroup}>
-          <label htmlFor="usuarioTelefono" className={styles.label}>Teléfono (opcional)</label>
-          <input type="tel" id="usuarioTelefono" name="usuarioTelefono" value={formData.usuarioTelefono} onChange={handleChange} className={styles.input} placeholder="Ej: 5491112345678" />
-        </div>
-      </fieldset>
-      
-      {/* SECCIÓN ACTIVIDAD */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Actividad del Negocio</legend>
-        <div className={styles.formGroup}>
-          <label htmlFor="actividadId" className={styles.label}>Seleccioná tu actividad principal *</label>
-          <select id="actividadId" name="actividadId" value={formData.actividadId} onChange={handleChange} className={`${styles.select} ${errors.actividadId ? styles.inputError : ''}`} disabled={cargandoActividades}>
-            <option value="0">Seleccionar...</option>
-            {actividades.map(act => <option key={act.id} value={act.id}>{act.nombre}</option>)}
-          </select>
-          {cargandoActividades && <span className={styles.helperText}>Cargando actividades...</span>}
-          {errors.actividadId && <span className={styles.errorText}>{errors.actividadId}</span>}
-          {!permiteVirtual && formData.actividadId !== 0 && (
-            <span className={styles.helperText} style={{ color: '#d97706' }}>⚠️ Esta actividad solo permite centros presenciales</span>
-          )}
-        </div>
-      </fieldset>
-      
-      {/* SECCIÓN CENTROS */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Centros / Sucursales</legend>
-        
-        {/* Lista de centros cargados */}
-        {centrosCargados.length > 0 && (
-          <div className={styles.centrosLista}>
-            <h4 className={styles.subtitle}>📋 Centros cargados:</h4>
-            {centrosCargados.map(centro => (
-              <div key={centro.id} className={styles.centroCargado}>
-                {centro.es_virtual ? '💻' : '📍'} {centro.nombre}
-                {!centro.es_virtual && centro.direccionSimplificada && (
-                  <span className={styles.centroDireccion}> - {centro.direccionSimplificada}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Formulario para agregar centro físico (solo si no se alcanzó el límite) */}
-        {centrosFisicosCargados.length < maxCentrosFisicos && (
-          <div className={styles.centroFisicoForm}>
-            <h4 className={styles.subtitle}>
-              {centrosFisicosCargados.length === 0 
-                ? 'Agregar centro físico (obligatorio)' 
-                : `Agregar centro físico ${centrosFisicosCargados.length + 1} (opcional)`}
-            </h4>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Dirección del centro *</label>
-              {centroFisicoTemp.direccionSimplificada && (
-                <div className={styles.direccionConfirmada}>
-                  <strong>Dirección seleccionada:</strong> {centroFisicoTemp.direccionSimplificada}
-                  <button 
-                    type="button"
-                    onClick={handleAgregarCentroFisico}
-                    className={styles.buttonAgregar}
-                  >
-                    Agregar
-                  </button>
+
+          <div className={styles['wizard-card']}>
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <h2 className={styles.title}>Solicitar Agenda Gratis</h2>
+              
+              {/* Indicador de pasos */}
+              <div className={styles['steps-indicator']}>
+                <div className={`${styles.step} ${styles['step-active']}`}>
+                  <span className={styles['step-number']}>1</span>
+                  <span className={styles['step-label']}>Negocio</span>
                 </div>
-              )}
-              <MapaSelector 
-                onChange={handleDireccionFisicaSeleccionada}
-                autoLocate={true}
-              />
-              {errors.centroFisico && <span className={styles.errorText}>{errors.centroFisico}</span>}
-            </div>
+                <div className={styles['step-line']} />
+                <div className={styles.step}>
+                  <span className={styles['step-number']}>2</span>
+                  <span className={styles['step-label']}>Profesionales</span>
+                </div>
+                <div className={styles['step-line']} />
+                <div className={styles.step}>
+                  <span className={styles['step-number']}>3</span>
+                  <span className={styles['step-label']}>Agenda</span>
+                </div>
+              </div>
+              
+              {/* SECCIÓN NEGOCIO */}
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.legend}>Información del Negocio</legend>
+                <div className={styles.formGroup}>
+                  <label htmlFor="negocioNombre" className={styles.label}>Nombre del negocio *</label>
+                  <input type="text" id="negocioNombre" name="negocioNombre" value={formData.negocioNombre} onChange={handleChange} className={`${styles.input} ${errors.negocioNombre ? styles.inputError : ''}`} placeholder="Ej: Galicia Salud" />
+                  {errors.negocioNombre && <span className={styles.errorText}>{errors.negocioNombre}</span>}
+                  {formData.negocioNombre && (
+                    <span className={styles.helperText}>
+                      URL generada: {window.location.origin}/negocio/{generarSlug(formData.negocioNombre)}
+                      {verificandoUrl && <span className={styles.spinnerSmall}> 🔄</span>}
+                      {urlDisponible === true && !verificandoUrl && <span className={styles.successText}> ✅ Disponible</span>}
+                      {urlDisponible === false && !verificandoUrl && <span className={styles.errorText}> ❌ No disponible</span>}
+                    </span>
+                  )}
+                  {errors.negocioUrl && <span className={styles.errorText}>{errors.negocioUrl}</span>}
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>WhatsApp *</label>
+                  <PhoneInput international defaultCountry="AR" value={formData.negocioWhatsapp} onChange={handleWhatsappChange} className={`${styles.phoneInput} ${errors.negocioWhatsapp ? styles.inputError : ''}`} limitMaxLength={true} />
+                  {errors.negocioWhatsapp && <span className={styles.errorText}>{errors.negocioWhatsapp}</span>}
+                  <span className={styles.helperText}>Con código de país. Ej: +54 9 11 1234 5678</span>
+                </div>
+              </fieldset>
+              
+              {/* SECCIÓN USUARIO */}
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.legend}>Datos del Dueño</legend>
+                <div className={styles.formGroup}>
+                  <label htmlFor="usuarioEmail" className={styles.label}>Email *</label>
+                  <input type="email" id="usuarioEmail" name="usuarioEmail" value={formData.usuarioEmail} onChange={handleChange} className={`${styles.input} ${errors.usuarioEmail ? styles.inputError : ''}`} placeholder="Ej: carlos@ejemplo.com" />
+                  {buscandoUsuario && <span className={styles.helperText}>Buscando usuario...</span>}
+                  {errors.usuarioEmail && <span className={styles.errorText}>{errors.usuarioEmail}</span>}
+                  <span className={styles.helperText}>Recibirás los links de acceso y gestión</span>
+                </div>
+                <div className={styles.row}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="usuarioApellido" className={styles.label}>Apellido *</label>
+                    <input type="text" id="usuarioApellido" name="usuarioApellido" value={formData.usuarioApellido} onChange={handleChange} className={`${styles.input} ${errors.usuarioApellido ? styles.inputError : ''}`} placeholder="Ej: García" />
+                    {errors.usuarioApellido && <span className={styles.errorText}>{errors.usuarioApellido}</span>}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="usuarioNombre" className={styles.label}>Nombre *</label>
+                    <input type="text" id="usuarioNombre" name="usuarioNombre" value={formData.usuarioNombre} onChange={handleChange} className={`${styles.input} ${errors.usuarioNombre ? styles.inputError : ''}`} placeholder="Ej: Carlos" />
+                    {errors.usuarioNombre && <span className={styles.errorText}>{errors.usuarioNombre}</span>}
+                  </div>
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="usuarioTelefono" className={styles.label}>Teléfono (opcional)</label>
+                  <input type="tel" id="usuarioTelefono" name="usuarioTelefono" value={formData.usuarioTelefono} onChange={handleChange} className={styles.input} placeholder="Ej: 5491112345678" />
+                </div>
+              </fieldset>
+              
+              {/* SECCIÓN ACTIVIDAD */}
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.legend}>Actividad del Negocio</legend>
+                <div className={styles.formGroup}>
+                  <label htmlFor="actividadId" className={styles.label}>Seleccioná tu actividad principal *</label>
+                  <select id="actividadId" name="actividadId" value={formData.actividadId} onChange={handleChange} className={`${styles.select} ${errors.actividadId ? styles.inputError : ''}`} disabled={cargandoActividades}>
+                    <option value="0">Seleccionar...</option>
+                    {actividades.map(act => <option key={act.id} value={act.id}>{act.nombre}</option>)}
+                  </select>
+                  {cargandoActividades && <span className={styles.helperText}>Cargando actividades...</span>}
+                  {errors.actividadId && <span className={styles.errorText}>{errors.actividadId}</span>}
+                  {!permiteVirtual && formData.actividadId !== 0 && (
+                    <span className={styles.helperText} style={{ color: '#d97706' }}>⚠️ Esta actividad solo permite centros presenciales</span>
+                  )}
+                </div>
+              </fieldset>
+              
+              {/* SECCIÓN CENTROS */}
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.legend}>Centros</legend>
+                
+                {/* Lista de centros cargados (sin título) */}
+                {centrosCargados.length > 0 && (
+                  <div className={styles.centrosLista}>
+                    {centrosCargados.map(centro => (
+                      <div key={centro.id} className={styles.centroCargado}>
+                        <div>
+                          {centro.es_virtual ? '💻' : '📍'} {centro.nombre}
+                          {!centro.es_virtual && centro.direccionSimplificada && (
+                            <span className={styles.centroDireccion}> - {centro.direccionSimplificada}</span>
+                          )}
+                        </div>
+                        {!centro.es_virtual && (
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarCentroFisico(centro.id)}
+                            className={styles.buttonEliminar}
+                          >
+                            ❌
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Formulario para agregar centro físico (sin título) */}
+                {centrosFisicosCargados.length < maxCentrosFisicos && (
+                  <div className={styles.centroFisicoForm}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>Dirección del centro *</label>
+                      {direccionSeleccionada.direccionSimplificada && (
+                        <div className={styles.direccionConfirmada}>
+                          <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
+                          <button 
+                            type="button"
+                            onClick={handleAgregarCentroFisico}
+                            disabled={botonAgregarDisabled}
+                            className={styles.buttonAgregar}
+                          >
+                            Agregar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Pregunta si desea cargar otro centro (al mismo nivel) */}
+                {mostrarPreguntaOtroCentro && centrosFisicosCargados.length < maxCentrosFisicos && (
+                  <div className={styles.preguntaSegundoCentro}>
+                    <p>¿Desea cargar otro centro físico?</p>
+                    <div className={styles.buttonsContainerInline}>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRespuestaOtroCentro(true)} 
+                        className={styles.buttonSmall}
+                      >
+                        Sí
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRespuestaOtroCentro(false)} 
+                        className={styles.buttonSmall}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Mapa (siempre al final) */}
+                <div className={styles.mapaContainer}>
+                  <MapaSelector 
+                    key={mapaKey}
+                    onChange={handleDireccionSeleccionada}
+                    autoLocate={true}
+                  />
+                </div>
+                
+                {/* Mensaje si ya llegó al límite */}
+                {centrosFisicosCargados.length === maxCentrosFisicos && (
+                  <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
+                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
+                  </div>
+                )}
+                
+                {errors.centroFisico && typeof errors.centroFisico === 'string' && (
+                  <span className={styles.errorText}>{errors.centroFisico}</span>
+                )}
+              </fieldset>
+              
+              {/* BOTONES */}
+              <div className={styles.buttonsContainer}>
+                <button type="button" onClick={handleCancelar} className={styles.buttonSecondary} disabled={enviando}>Cancelar</button>
+                <button type="submit" disabled={enviando || (urlDisponible === false) || centrosFisicosCargados.length === 0} className={styles.buttonPrimary}>
+                  {enviando ? 'Procesando...' : 'Continuar al Paso 2'}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-        
-        {/* Pregunta si desea cargar otro centro */}
-        {mostrarPreguntaOtroCentro && centrosFisicosCargados.length < maxCentrosFisicos && (
-          <div className={styles.preguntaSegundoCentro}>
-            <p>¿Desea cargar otro centro físico?</p>
-            <div className={styles.buttonsContainerInline}>
-              <button 
-                type="button" 
-                onClick={() => handleRespuestaOtroCentro(true)} 
-                className={styles.buttonSmall}
-              >
-                Sí
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleRespuestaOtroCentro(false)} 
-                className={styles.buttonSmall}
-              >
-                No
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Mensaje si ya llegó al límite */}
-        {centrosFisicosCargados.length === maxCentrosFisicos && (
-          <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' }}>
-            ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
-          </div>
-        )}
-        
-        {errors.centroFisico && typeof errors.centroFisico === 'string' && (
-          <span className={styles.errorText}>{errors.centroFisico}</span>
-        )}
-      </fieldset>
-      
-      {/* BOTONES */}
-      <div className={styles.buttonsContainer}>
-        <button type="button" onClick={handleCancelar} className={styles.buttonSecondary} disabled={enviando}>Cancelar</button>
-        <button type="submit" disabled={enviando || (urlDisponible === false) || centrosFisicosCargados.length === 0} className={styles.buttonPrimary}>
-          {enviando ? 'Procesando...' : 'Continuar al Paso 2'}
-        </button>
+        </div>
       </div>
-    </form>
+      
+      {/* Columna derecha - LOGO (solo desktop) */}
+      <div className={styles['wizard-right']}>
+        <div className={styles['wizard-right-content']}>
+          <img 
+            src="/1000133565.png" 
+            alt="PWA Turnos" 
+            className={styles['wizard-logo-desktop']}
+            onClick={() => navigate('/')}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 
