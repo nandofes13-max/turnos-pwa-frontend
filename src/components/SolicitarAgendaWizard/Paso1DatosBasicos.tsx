@@ -1,9 +1,8 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN DEFINITIVA:
+// VERSIÓN CON CORRECCIÓN:
 // - Centro virtual aparece INMEDIATAMENTE al seleccionar actividad con virtual: true
-// - Recuadro de dirección confirmada ANTES del mapa
-// - Multi-centro funcionando
+// - Usa estado separado `permiteVirtual` para evitar problemas de async
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -74,6 +73,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [verificandoUrl, setVerificandoUrl] = useState(false);
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
   const [mostrarPreguntaSegundoCentro, setMostrarPreguntaSegundoCentro] = useState(false);
+  const [permiteVirtual, setPermiteVirtual] = useState(false); // 👈 NUEVO ESTADO
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -99,9 +99,15 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
 
   const maxCentrosFisicos = 2;
 
-  // Calcular si la actividad permite virtual (EN TIEMPO REAL)
-  const actividadSeleccionada = actividades.find(a => a.id === formData.actividadId);
-  const permiteVirtual = actividadSeleccionada?.virtual === true;
+  // 👈 ACTUALIZAR permiteVirtual cuando cambia la actividad o se cargan actividades
+  useEffect(() => {
+    if (formData.actividadId && actividades.length > 0) {
+      const actividad = actividades.find(a => a.id === formData.actividadId);
+      setPermiteVirtual(actividad?.virtual === true);
+    } else if (formData.actividadId === 0) {
+      setPermiteVirtual(false);
+    }
+  }, [formData.actividadId, actividades]);
 
   const buscarUsuarioPorEmail = async (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -442,7 +448,9 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
           </select>
           {cargandoActividades && <span className={styles.helperText}>Cargando actividades...</span>}
           {errors.actividadId && <span className={styles.errorText}>{errors.actividadId}</span>}
-          {actividadSeleccionada && !permiteVirtual && <span className={styles.helperText} style={{ color: '#d97706' }}>⚠️ Esta actividad solo permite centros presenciales</span>}
+          {!permiteVirtual && formData.actividadId !== 0 && (
+            <span className={styles.helperText} style={{ color: '#d97706' }}>⚠️ Esta actividad solo permite centros presenciales</span>
+          )}
         </div>
       </fieldset>
       
@@ -450,7 +458,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Centros / Sucursales</legend>
         
-        {/* Centro Virtual - se muestra INMEDIATAMENTE si la actividad lo permite */}
+        {/* Centro Virtual - se muestra según el estado permiteVirtual */}
         {permiteVirtual && (
           <div className={styles.centroVirtualSection}>
             <h4 className={styles.subtitle}>Centro Virtual</h4>
