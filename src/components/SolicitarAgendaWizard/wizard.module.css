@@ -1,38 +1,91 @@
 /* src/components/SolicitarAgendaWizard/wizard.module.css */
-/* Estilos consistentes con ConfirmarTurnoModal */
+/* Estilos consistentes con Inicio.module.css - Opción A */
+/* Layout de página normal, sin overlay */
 
 /* ============================================================
-   CONTENEDOR PRINCIPAL
+   CONTENEDOR PRINCIPAL (como inicio-container)
    ============================================================ */
 
-.wizard-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+.wizard-container-page {
+  min-height: 100vh;
+  display: flex;
+  background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
+}
+
+/* Columna izquierda - FORMULARIO */
+.wizard-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 2rem;
+  background: white;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.02);
+}
+
+.wizard-left-content {
+  max-width: 500px;
+  width: 100%;
+}
+
+/* Columna derecha - LOGO (como en inicio) */
+.wizard-right {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  overflow-y: auto;
-  padding: 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: #f0f9ff;
 }
 
-.wizard-container {
-  background: white;
-  border-radius: 12px;
-  max-width: 800px;
+.wizard-right-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  position: relative;
 }
 
-.wizard-content {
-  padding: 24px;
+.wizard-logo-desktop {
+  max-width: 80%;
+  max-height: 80vh;
+  object-fit: contain;
+  padding: 2rem;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.wizard-logo-desktop:hover {
+  transform: scale(1.05);
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+/* Logo móvil */
+.wizard-logo-mobile {
+  display: none;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.wizard-logo-mobile-img {
+  max-width: 180px;
+  height: auto;
+}
+
+/* ============================================================
+   TARJETA DEL FORMULARIO (como inicio-card)
+   ============================================================ */
+
+.wizard-card {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  text-align: left;
+  border: none;
 }
 
 /* ============================================================
@@ -43,9 +96,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 24px 0 24px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 32px;
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
 }
 
 .step {
@@ -106,10 +160,10 @@
 }
 
 .title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 8px;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: #0056b3;
+  margin-bottom: 0.5rem;
   text-align: center;
 }
 
@@ -210,172 +264,25 @@
   margin-left: 4px;
 }
 
-/* Checkbox */
-.checkboxGroup {
-  margin: 16px 0;
-}
-
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
-}
-
-.checkboxLabel input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-/* Mapa */
-.mapaContainer {
-  margin-top: 16px;
-}
-
-.direccionConfirmada {
-  background-color: #f0fdf4;
-  border: 1px solid #86efac;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 12px;
-  font-size: 13px;
-  color: #166534;
-}
-
-/* ============================================================
-   BOTONES
-   ============================================================ */
-
-.buttonsContainer {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.buttonPrimary,
-.buttonSecondary,
-.btnConfirmar,
-.btnVolver,
-.btnInicio {
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.buttonPrimary {
-  background-color: #3b82f6;
-  color: white;
-  flex: 1;
-}
-
-.buttonPrimary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.buttonPrimary:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-}
-
-.buttonSecondary {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.buttonSecondary:hover:not(:disabled) {
-  background-color: #d1d5db;
-}
-
-.buttonSecondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.buttonRemove {
-  background-color: #ef4444;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-left: 12px;
-  border: none;
-  cursor: pointer;
-}
-
-.buttonRemove:hover {
-  background-color: #dc2626;
-}
-
-/* ============================================================
-   MENSAJES
-   ============================================================ */
-
-.mensajeError {
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 14px;
-  text-align: center;
-}
-
-.textoAyuda {
-  color: #6b7280;
-  font-size: 14px;
-  text-align: center;
-  margin: 20px 0;
-}
-
-/* ============================================================
-   MODAL
-   ============================================================ */
-
-.modalContent {
-  padding: 24px;
-}
-
-.modalTitulo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.modalBotones {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-}
-
 /* ============================================================
    LISTA DE CENTROS CARGADOS
    ============================================================ */
 
 .centrosLista {
   margin-bottom: 24px;
-  padding: 12px;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  padding: 0;
+  background-color: transparent;
+  border: none;
 }
 
 .centroCargado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 10px 12px;
   margin-bottom: 8px;
-  background-color: white;
-  border-radius: 6px;
+  background-color: #f8fafc;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   font-size: 14px;
   color: #1e293b;
@@ -389,6 +296,23 @@
   color: #64748b;
   font-size: 12px;
   margin-left: 8px;
+  flex: 1;
+}
+
+.buttonEliminar {
+  background-color: #ef4444;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.buttonEliminar:hover {
+  background-color: #dc2626;
 }
 
 /* ============================================================
@@ -396,10 +320,9 @@
    ============================================================ */
 
 .centroFisicoForm {
-  padding: 16px;
-  background-color: #fefce8;
-  border-radius: 8px;
-  border: 1px solid #fde047;
+  padding: 0;
+  background-color: transparent;
+  border: none;
   margin-bottom: 16px;
 }
 
@@ -435,15 +358,34 @@
   background-color: #059669;
 }
 
+.buttonAgregar:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
 /* ============================================================
-   BOTONES PEQUEÑOS (Sí/No)
+   PREGUNTA OTRO CENTRO
    ============================================================ */
+
+.preguntaSegundoCentro {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preguntaSegundoCentro p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: #1e293b;
+}
 
 .buttonsContainerInline {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .buttonSmall {
@@ -462,18 +404,73 @@
   background-color: #cbd5e1;
 }
 
-.preguntaSegundoCentro {
+/* ============================================================
+   MAPA
+   ============================================================ */
+
+.mapaContainer {
   margin-top: 16px;
-  padding: 12px;
-  background-color: #f1f5f9;
-  border-radius: 8px;
-  text-align: center;
 }
 
-.preguntaSegundoCentro p {
-  margin: 0 0 8px 0;
-  font-weight: 500;
-  color: #1e293b;
+/* ============================================================
+   BOTONES PRINCIPALES
+   ============================================================ */
+
+.buttonsContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.buttonPrimary,
+.buttonSecondary {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  flex: 1;
+}
+
+.buttonPrimary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.buttonPrimary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background-color: #d1d5db;
+}
+
+/* ============================================================
+   MENSAJES
+   ============================================================ */
+
+.mensajeError {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: center;
 }
 
 /* ============================================================
@@ -481,13 +478,27 @@
    ============================================================ */
 
 @media (max-width: 768px) {
-  .wizard-container {
-    max-width: 95%;
-    max-height: 95vh;
+  .wizard-container-page {
+    flex-direction: column;
+    background: white;
   }
 
-  .wizard-content {
-    padding: 16px;
+  .wizard-left {
+    padding: 2rem 1.5rem;
+    box-shadow: none;
+  }
+
+  .wizard-right {
+    display: none;
+  }
+
+  .wizard-logo-mobile {
+    display: block;
+  }
+
+  .title,
+  .subtitle {
+    text-align: center;
   }
 
   .row {
@@ -506,7 +517,7 @@
   }
 
   .title {
-    font-size: 20px;
+    font-size: 1.4rem;
   }
 
   .buttonsContainer {
@@ -517,17 +528,16 @@
   .buttonSecondary {
     width: 100%;
   }
-  
-  /* Ajustes responsive para centros */
+
   .direccionConfirmada {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .buttonAgregar {
     width: 100%;
   }
-  
+
   .buttonsContainerInline {
     flex-direction: row;
     justify-content: center;
@@ -552,11 +562,12 @@
     font-size: 13px;
     padding: 8px 10px;
   }
-  
+
   .centroCargado {
     font-size: 12px;
+    flex-wrap: wrap;
   }
-  
+
   .buttonSmall {
     padding: 6px 16px;
     font-size: 12px;
