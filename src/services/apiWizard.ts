@@ -180,7 +180,7 @@ export interface CreateCentroDto {
   country_code: number;
   national_number: string;
   es_virtual?: boolean;
-  domicilio?: DomicilioDto;  // Obligatorio si es_virtual = false
+  domicilio?: DomicilioDto;
   timezone?: string;
 }
 
@@ -195,6 +195,13 @@ export interface CreateNegocioUsuarioRolDto {
   negocioId: number;
   usuarioId: number;
   rolId: number;
+}
+
+// Datos para crear un centro (desde el wizard)
+export interface CentroData {
+  nombre: string;
+  es_virtual: boolean;
+  domicilio?: DomicilioDto;
 }
 
 // ============================================================
@@ -222,8 +229,6 @@ export async function getActividades(): Promise<Actividad[]> {
 
 // 2. Obtener el rol DUEÑO (ID = 7 según la BD)
 export async function getRolDueno(): Promise<Rol> {
-  // Como ya sabemos que ID = 7, podemos usarlo directamente
-  // Pero por si acaso, consultamos por nombre
   const response = await fetch(`${API_URL}/roles/nombre/DUEÑO`);
   if (!response.ok) {
     throw new Error(`Error al obtener rol DUEÑO: ${response.statusText}`);
@@ -237,14 +242,12 @@ export async function verificarUrlUnica(url: string): Promise<boolean> {
   
   if (response.status === 200) {
     const data = await response.json();
-    // El backend devuelve 200 con { message: 'Negocio no encontrado' } cuando no existe
     if (data.message === 'Negocio no encontrado') {
-      return true; // URL disponible
+      return true;
     }
-    return false; // URL ya existe (encontró un negocio real)
+    return false;
   }
   
-  // Si hay otro error (500, etc.), asumimos que no está disponible por seguridad
   return false;
 }
 
@@ -328,14 +331,13 @@ export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto):
   return response.json();
 }
 
-// 9. Enviar email de bienvenida (endpoint pendiente de confirmar estructura)
+// 9. Enviar email de bienvenida
 export async function enviarEmailBienvenida(data: {
   email: string;
   nombreNegocio: string;
   urlPublica: string;
   urlGestion: string;
 }): Promise<void> {
-  // Este endpoint aún no lo tenemos, lo ajustaremos cuando me pases los archivos de email
   const response = await fetch(`${API_URL}/enviar-bienvenida`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -349,13 +351,13 @@ export async function enviarEmailBienvenida(data: {
 }
 
 // ============================================================
-// FUNCIÓN PRINCIPAL DEL PASO 1 (crea todo)
+// FUNCIÓN PRINCIPAL DEL PASO 1 (crea todo - VERSIÓN MULTI-CENTRO)
 // ============================================================
 
 export interface Paso1Result {
   negocio: Negocio;
   usuario: Usuario;
-  centro: Centro;
+  centros: Centro[];  // Array de centros (virtual + físicos)
   negocioActividad: NegocioActividad;
   negocioUsuarioRol: NegocioUsuarioRol;
 }
@@ -365,25 +367,28 @@ export async function registrarPaso1DatosBasicos(params: {
   negocioNombre: string;
   negocioCountryCode: number;
   negocioNationalNumber: string;
-  domicilio: DomicilioDto;
   // Datos del usuario
   usuarioEmail: string;
   usuarioApellido: string;
   usuarioNombre: string;
   usuarioTelefono?: string;
-  // Datos del centro
-  centroNombre: string;
-  centroEsVirtual?: boolean;
   // Actividad seleccionada
   actividadId: number;
+  // Centros (array con virtual y físicos)
+  centros: CentroData[];
 }): Promise<Paso1Result> {
   
-  // 1. Crear negocio
+  // 1. Crear negocio (requiere domicilio del primer centro físico)
+  const primerCentroFisico = params.centros.find(c => !c.es_virtual);
+  if (!primerCentroFisico || !primerCentroFisico.domicilio) {
+    throw new Error('Se requiere al menos un centro físico con domicilio');
+  }
+  
   const negocio = await createNegocio({
     nombre: params.negocioNombre,
     country_code: params.negocioCountryCode,
     national_number: params.negocioNationalNumber,
-    domicilio: params.domicilio,
+    domicilio: primerCentroFisico.domicilio,
   });
   
   // 2. Crear usuario
@@ -394,15 +399,19 @@ export async function registrarPaso1DatosBasicos(params: {
     telefono: params.usuarioTelefono,
   });
   
-  // 3. Crear centro
-  const centro = await createCentro({
-    negocioId: negocio.id,
-    nombre: params.centroNombre,
-    country_code: params.negocioCountryCode,  // mismo WhatsApp que el negocio
-    national_number: params.negocioNationalNumber,
-    es_virtual: params.centroEsVirtual ?? true,  // Por defecto virtual
-    domicilio: params.centroEsVirtual ? undefined : params.domicilio,
-  });
+  // 3. Crear todos los centros
+  const centrosCreados: Centro[] = [];
+  for (const centroData of params.centros) {
+    const centro = await createCentro({
+      negocioId: negocio.id,
+      nombre: centroData.nombre,
+      country_code: params.negocioCountryCode,
+      national_number: params.negocioNationalNumber,
+      es_virtual: centroData.es_virtual,
+      domicilio: centroData.domicilio,
+    });
+    centrosCreados.push(centro);
+  }
   
   // 4. Asignar actividad al negocio
   const negocioActividad = await createNegocioActividad({
@@ -420,7 +429,7 @@ export async function registrarPaso1DatosBasicos(params: {
   return {
     negocio,
     usuario,
-    centro,
+    centros: centrosCreados,
     negocioActividad,
     negocioUsuarioRol,
   };
