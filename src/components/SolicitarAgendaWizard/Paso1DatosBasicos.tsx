@@ -1,14 +1,11 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CORREGIDA:
-// - Corregido: limpieza del recuadro verde después de agregar centro
-// - Corregido: alerta solo al intentar agregar el 3er centro físico
-// - Legend "Centros" (sin "/ Sucursales")
-// - Sin títulos "📋 Centros cargados:" ni "Agregar centro físico"
-// - Botón eliminar (❌) en centros físicos
-// - Limpieza de mapa después de agregar
-// - Pregunta Sí/No después de agregar (al mismo nivel)
-// - Mapa al final de todo
+// VERSIÓN FINAL CORREGIDA:
+// - Eliminado logo móvil
+// - Eliminado mensaje de advertencia de actividades
+// - Eliminado cartel automático de límite
+// - Reset del MapaSelector mediante ref
+// - Limpieza correcta de dirección después de agregar
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +20,7 @@ import {
   CentroData,
   Paso1Result
 } from '../../services/apiWizard';
-import MapaSelector from '../MapaSelector';
+import MapaSelector, { MapaSelectorRef } from '../MapaSelector';
 import { Direccion } from '../../hooks/useDireccion';
 import styles from './wizard.module.css';
 
@@ -87,8 +84,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   });
   const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
   const [mostrarPreguntaOtroCentro, setMostrarPreguntaOtroCentro] = useState(false);
-  const [mapaKey, setMapaKey] = useState(0);
-  const [limpiandoMapa, setLimpiandoMapa] = useState(false);
+  const mapaSelectorRef = useRef<MapaSelectorRef>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -226,11 +222,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
-    // Si estamos en proceso de limpieza, ignorar el evento
-    if (limpiandoMapa) {
-      return;
-    }
-    
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -280,32 +271,25 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Marcar que estamos limpiando el mapa para ignorar eventos
-    setLimpiandoMapa(true);
-    
     // Limpiar la dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
     
-    // Forzar reset del mapa cambiando la key
-    setMapaKey(prev => prev + 1);
+    // Resetear el MapaSelector
+    if (mapaSelectorRef.current) {
+      mapaSelectorRef.current.reset();
+    }
     
     // Deshabilitar botón Agregar temporalmente
     setBotonAgregarDisabled(true);
-    
-    // Restaurar el flag de limpieza después de un pequeño delay
-    setTimeout(() => {
-      setLimpiandoMapa(false);
-    }, 100);
     
     // Verificar si se puede agregar otro (después de agregar el actual)
     const nuevosFisicos = fisicosActuales + 1;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarPreguntaOtroCentro(true);
     }
-    // Si llegó al límite exacto (2 centros), no muestra pregunta, solo el cartel de límite
   };
 
   const handleRespuestaOtroCentro = (respuesta: boolean) => {
@@ -412,14 +396,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       <div className={styles['wizard-left']}>
         <div className={styles['wizard-left-content']}>
           
-          {/* Logo móvil */}
-          <div className={styles['wizard-logo-mobile']}>
-            <img 
-              src="/logo-pwa-turnos.svg" 
-              alt="PWA Turnos" 
-              className={styles['wizard-logo-mobile-img']}
-            />
-          </div>
+          {/* Logo móvil - ELIMINADO para consistencia con Inicio.tsx */}
 
           <div className={styles['wizard-card']}>
             <form onSubmit={handleSubmit} className={styles.form}>
@@ -507,9 +484,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </select>
                   {cargandoActividades && <span className={styles.helperText}>Cargando actividades...</span>}
                   {errors.actividadId && <span className={styles.errorText}>{errors.actividadId}</span>}
-                  {!permiteVirtual && formData.actividadId !== 0 && (
-                    <span className={styles.helperText} style={{ color: '#d97706' }}>⚠️ Esta actividad solo permite centros presenciales</span>
-                  )}
                 </div>
               </fieldset>
               
@@ -590,18 +564,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 {/* Mapa (siempre al final) */}
                 <div className={styles.mapaContainer}>
                   <MapaSelector 
-                    key={mapaKey}
+                    ref={mapaSelectorRef}
                     onChange={handleDireccionSeleccionada}
                     autoLocate={true}
                   />
                 </div>
-                
-                {/* Mensaje si ya llegó al límite (2 centros físicos) */}
-                {centrosFisicosCargados.length === maxCentrosFisicos && (
-                  <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
-                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
-                  </div>
-                )}
                 
                 {errors.centroFisico && typeof errors.centroFisico === 'string' && (
                   <span className={styles.errorText}>{errors.centroFisico}</span>
