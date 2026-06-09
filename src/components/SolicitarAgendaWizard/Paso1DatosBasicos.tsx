@@ -1,7 +1,10 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON CORRECCIÓN EN HANDLE CHANGE:
-// - Actualiza permiteVirtual INMEDIATAMENTE al seleccionar actividad
+// VERSIÓN CON LISTA DE CENTROS Y BOTÓN AGREGAR:
+// - Centro virtual fijo (sin input)
+// - Lista de centros cargados en la parte superior
+// - Botón "Agregar" al seleccionar dirección
+// - Pregunta "¿Desea cargar otro centro?" después de cada agregado
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -25,8 +28,15 @@ interface Paso1DatosBasicosProps {
   onError?: (error: string) => void;
 }
 
-interface CentroFisicoForm {
+interface CentroCargado {
   id: string;
+  nombre: string;
+  es_virtual: boolean;
+  domicilio?: DomicilioDto;
+  direccionSimplificada?: string;
+}
+
+interface CentroFisicoTemp {
   nombre: string;
   domicilio: DomicilioDto | null;
   direccionSimplificada: string;
@@ -39,8 +49,6 @@ interface FormData {
   usuarioApellido: string;
   usuarioNombre: string;
   usuarioTelefono: string;
-  centroVirtualNombre: string;
-  centrosFisicos: CentroFisicoForm[];
   actividadId: number;
 }
 
@@ -51,9 +59,8 @@ interface ValidationErrors {
   usuarioEmail?: string;
   usuarioApellido?: string;
   usuarioNombre?: string;
-  centroVirtualNombre?: string;
-  centrosFisicos?: { [key: string]: { nombre?: string; domicilio?: string } };
   actividadId?: string;
+  centroFisico?: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
@@ -71,8 +78,14 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [urlDisponible, setUrlDisponible] = useState<boolean | null>(null);
   const [verificandoUrl, setVerificandoUrl] = useState(false);
   const [buscandoUsuario, setBuscandoUsuario] = useState(false);
-  const [mostrarPreguntaSegundoCentro, setMostrarPreguntaSegundoCentro] = useState(false);
   const [permiteVirtual, setPermiteVirtual] = useState(false);
+  const [centrosCargados, setCentrosCargados] = useState<CentroCargado[]>([]);
+  const [centroFisicoTemp, setCentroFisicoTemp] = useState<CentroFisicoTemp>({
+    nombre: '',
+    domicilio: null,
+    direccionSimplificada: '',
+  });
+  const [mostrarPreguntaOtroCentro, setMostrarPreguntaOtroCentro] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -82,21 +95,23 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     usuarioApellido: '',
     usuarioNombre: '',
     usuarioTelefono: '',
-    centroVirtualNombre: '',
-    centrosFisicos: [
-      {
-        id: crypto.randomUUID(),
-        nombre: '',
-        domicilio: null,
-        direccionSimplificada: '',
-      }
-    ],
     actividadId: 0,
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const maxCentrosFisicos = 2;
+
+  // Inicializar centro virtual si la actividad lo permite
+  useEffect(() => {
+    if (permiteVirtual && centrosCargados.length === 0 && !centrosCargados.some(c => c.es_virtual)) {
+      setCentrosCargados([{
+        id: 'virtual',
+        nombre: 'Centro virtual',
+        es_virtual: true,
+      }]);
+    }
+  }, [permiteVirtual, centrosCargados]);
 
   const buscarUsuarioPorEmail = async (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -182,23 +197,19 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return regex.test(email);
   };
 
-  // 👈 HANDLE CHANGE MODIFICADO - Actualiza permiteVirtual inmediatamente
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Si es el select de actividad, actualizar permiteVirtual inmediatamente
     if (name === 'actividadId') {
       const actividadEncontrada = actividades.find(a => a.id === Number(value));
       const nuevaPermiteVirtual = actividadEncontrada?.virtual === true;
       setPermiteVirtual(nuevaPermiteVirtual);
-      console.log('Actividad seleccionada:', { 
-        actividadId: value, 
-        encontrada: actividadEncontrada?.nombre,
-        virtual: actividadEncontrada?.virtual,
-        permiteVirtual: nuevaPermiteVirtual 
-      });
+      // Resetear centros cargados si cambia la actividad
+      if (!nuevaPermiteVirtual) {
+        setCentrosCargados([]);
+      }
     }
     
     if (errors[name as keyof ValidationErrors]) {
@@ -211,14 +222,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     if (errors.negocioWhatsapp) setErrors(prev => ({ ...prev, negocioWhatsapp: undefined }));
   };
 
-  const handleCentroFisicoChange = (id: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      centrosFisicos: prev.centrosFisicos.map(c => c.id === id ? { ...c, [field]: value } : c)
-    }));
-  };
-
-  const handleDireccionFisicaSeleccionada = (id: string, direccionCompleta: Direccion) => {
+  const handleDireccionFisicaSeleccionada = (direccionCompleta: Direccion) => {
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -232,24 +236,66 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       formatted_address: direccionCompleta.formatted_address || '',
     };
     const direccionSimplificada = formatearDireccionSimplificada(domicilioDto);
-    setFormData(prev => ({
-      ...prev,
-      centrosFisicos: prev.centrosFisicos.map(c =>
-        c.id === id ? { ...c, domicilio: domicilioDto, direccionSimplificada } : c
-      )
-    }));
+    
+    setCentroFisicoTemp({
+      nombre: `Centro Físico ${centrosCargados.filter(c => !c.es_virtual).length + 1}`,
+      domicilio: domicilioDto,
+      direccionSimplificada,
+    });
+    
+    if (errors.centroFisico) {
+      setErrors(prev => ({ ...prev, centroFisico: undefined }));
+    }
   };
 
-  const agregarCentroFisico = () => {
-    if (formData.centrosFisicos.length >= maxCentrosFisicos) {
+  const handleAgregarCentroFisico = () => {
+    if (!centroFisicoTemp.domicilio) {
+      setErrors({ centroFisico: 'Seleccioná una dirección en el mapa' });
+      return;
+    }
+    
+    const fisicosActuales = centrosCargados.filter(c => !c.es_virtual).length;
+    
+    if (fisicosActuales >= maxCentrosFisicos) {
       alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
       return;
     }
-    setFormData(prev => ({
-      ...prev,
-      centrosFisicos: [...prev.centrosFisicos, { id: crypto.randomUUID(), nombre: '', domicilio: null, direccionSimplificada: '' }]
-    }));
-    setMostrarPreguntaSegundoCentro(false);
+    
+    // Agregar el centro físico a la lista
+    const nuevoCentro: CentroCargado = {
+      id: `fisico-${Date.now()}`,
+      nombre: centroFisicoTemp.nombre,
+      es_virtual: false,
+      domicilio: centroFisicoTemp.domicilio!,
+      direccionSimplificada: centroFisicoTemp.direccionSimplificada,
+    };
+    
+    setCentrosCargados(prev => [...prev, nuevoCentro]);
+    
+    // Limpiar el formulario temporal
+    setCentroFisicoTemp({
+      nombre: '',
+      domicilio: null,
+      direccionSimplificada: '',
+    });
+    
+    // Verificar si se puede agregar otro
+    const nuevosFisicos = fisicosActuales + 1;
+    if (nuevosFisicos < maxCentrosFisicos) {
+      setMostrarPreguntaOtroCentro(true);
+    } else {
+      // Ya llegó al límite
+      alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
+    }
+  };
+
+  const handleRespuestaOtroCentro = (respuesta: boolean) => {
+    setMostrarPreguntaOtroCentro(false);
+    if (!respuesta) {
+      // No quiere agregar más, continuar
+      return;
+    }
+    // Si quiere agregar otro, el formulario ya está limpio, solo esperar nueva dirección
   };
 
   const handleCancelar = () => navigate('/');
@@ -279,23 +325,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     if (!formData.usuarioNombre.trim()) newErrors.usuarioNombre = 'El nombre es obligatorio';
     if (!formData.actividadId || formData.actividadId === 0) newErrors.actividadId = 'Seleccioná una actividad';
     
-    if (permiteVirtual && !formData.centroVirtualNombre.trim()) {
-      newErrors.centroVirtualNombre = 'El nombre del centro virtual es obligatorio';
-    }
-    
-    const centrosFisicosErrors: { [key: string]: { nombre?: string; domicilio?: string } } = {};
-    let tieneCentroFisicoValido = false;
-    for (const centro of formData.centrosFisicos) {
-      if (centro.nombre.trim() || centro.domicilio) {
-        tieneCentroFisicoValido = true;
-        if (!centro.nombre.trim()) centrosFisicosErrors[centro.id] = { ...centrosFisicosErrors[centro.id], nombre: 'El nombre del centro es obligatorio' };
-        if (!centro.domicilio) centrosFisicosErrors[centro.id] = { ...centrosFisicosErrors[centro.id], domicilio: 'Seleccioná una dirección en el mapa' };
-      }
-    }
-    if (!tieneCentroFisicoValido) {
-      newErrors.centrosFisicos = { general: 'Debe agregar al menos un centro físico' };
-    } else if (Object.keys(centrosFisicosErrors).length > 0) {
-      newErrors.centrosFisicos = centrosFisicosErrors;
+    // Validar que haya al menos un centro físico
+    const centrosFisicos = centrosCargados.filter(c => !c.es_virtual);
+    if (centrosFisicos.length === 0) {
+      newErrors.centroFisico = 'Debe agregar al menos un centro físico';
     }
     
     setErrors(newErrors);
@@ -317,15 +350,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         }
       }
       
-      const centrosData: CentroData[] = [];
-      if (permiteVirtual && formData.centroVirtualNombre.trim()) {
-        centrosData.push({ nombre: formData.centroVirtualNombre, es_virtual: true, domicilio: undefined });
-      }
-      for (const centro of formData.centrosFisicos) {
-        if (centro.nombre.trim() && centro.domicilio) {
-          centrosData.push({ nombre: centro.nombre, es_virtual: false, domicilio: centro.domicilio });
-        }
-      }
+      const centrosData: CentroData[] = centrosCargados.map(centro => ({
+        nombre: centro.nombre,
+        es_virtual: centro.es_virtual,
+        domicilio: centro.domicilio,
+      }));
       
       const resultado = await registrarPaso1DatosBasicos({
         negocioNombre: formData.negocioNombre,
@@ -347,43 +376,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
   };
 
-  const renderCentroFisico = (centro: CentroFisicoForm, index: number) => {
-    const centroErrors = errors.centrosFisicos && typeof errors.centrosFisicos === 'object' && !Array.isArray(errors.centrosFisicos)
-      ? (errors.centrosFisicos as any)[centro.id] || {}
-      : {};
-
-    return (
-      <div key={centro.id} className={styles.centroFisicoCard}>
-        <h4 className={styles.subtitle}>Centro Físico {index + 1}</h4>
-        
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Nombre del centro *</label>
-          <input
-            type="text"
-            value={centro.nombre}
-            onChange={(e) => handleCentroFisicoChange(centro.id, 'nombre', e.target.value)}
-            className={`${styles.input} ${centroErrors.nombre ? styles.inputError : ''}`}
-            placeholder="Ej: Sucursal Centro"
-          />
-          {centroErrors.nombre && <span className={styles.errorText}>{centroErrors.nombre}</span>}
-        </div>
-        
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Dirección del centro *</label>
-          {centro.direccionSimplificada && (
-            <div className={styles.direccionConfirmada}>
-              <strong>Dirección seleccionada:</strong> {centro.direccionSimplificada}
-            </div>
-          )}
-          <MapaSelector 
-            onChange={(direccion) => handleDireccionFisicaSeleccionada(centro.id, direccion)}
-            autoLocate={true}
-          />
-          {centroErrors.domicilio && <span className={styles.errorText}>{centroErrors.domicilio}</span>}
-        </div>
-      </div>
-    );
-  };
+  const centrosFisicosCargados = centrosCargados.filter(c => !c.es_virtual);
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
@@ -463,46 +456,92 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Centros / Sucursales</legend>
         
-        {/* Centro Virtual - se muestra según permiteVirtual */}
-        {permiteVirtual && (
-          <div className={styles.centroVirtualSection}>
-            <h4 className={styles.subtitle}>Centro Virtual</h4>
+        {/* Lista de centros cargados */}
+        {centrosCargados.length > 0 && (
+          <div className={styles.centrosLista}>
+            <h4 className={styles.subtitle}>📋 Centros cargados:</h4>
+            {centrosCargados.map(centro => (
+              <div key={centro.id} className={styles.centroCargado}>
+                {centro.es_virtual ? '💻' : '📍'} {centro.nombre}
+                {!centro.es_virtual && centro.direccionSimplificada && (
+                  <span className={styles.centroDireccion}> - {centro.direccionSimplificada}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Formulario para agregar centro físico (solo si no se alcanzó el límite) */}
+        {centrosFisicosCargados.length < maxCentrosFisicos && (
+          <div className={styles.centroFisicoForm}>
+            <h4 className={styles.subtitle}>
+              {centrosFisicosCargados.length === 0 
+                ? 'Agregar centro físico (obligatorio)' 
+                : `Agregar centro físico ${centrosFisicosCargados.length + 1} (opcional)`}
+            </h4>
+            
             <div className={styles.formGroup}>
-              <label className={styles.label}>Nombre del centro virtual *</label>
-              <input type="text" name="centroVirtualNombre" value={formData.centroVirtualNombre} onChange={handleChange} className={`${styles.input} ${errors.centroVirtualNombre ? styles.inputError : ''}`} placeholder="Ej: Atención Virtual" />
-              {errors.centroVirtualNombre && <span className={styles.errorText}>{errors.centroVirtualNombre}</span>}
-            </div>
-            <div className={styles.direccionConfirmada} style={{ backgroundColor: '#e0f2fe', borderColor: '#7dd3fc', color: '#0369a1' }}>
-              💻 Centro virtual - No requiere dirección física
+              <label className={styles.label}>Dirección del centro *</label>
+              {centroFisicoTemp.direccionSimplificada && (
+                <div className={styles.direccionConfirmada}>
+                  <strong>Dirección seleccionada:</strong> {centroFisicoTemp.direccionSimplificada}
+                  <button 
+                    type="button"
+                    onClick={handleAgregarCentroFisico}
+                    className={styles.buttonAgregar}
+                  >
+                    Agregar
+                  </button>
+                </div>
+              )}
+              <MapaSelector 
+                onChange={handleDireccionFisicaSeleccionada}
+                autoLocate={true}
+              />
+              {errors.centroFisico && <span className={styles.errorText}>{errors.centroFisico}</span>}
             </div>
           </div>
         )}
         
-        {/* Centros Físicos */}
-        <div className={styles.centrosFisicosSection}>
-          <h4 className={styles.subtitle}>Centros Físicos</h4>
-          {formData.centrosFisicos.map((centro, idx) => renderCentroFisico(centro, idx))}
-          
-          {errors.centrosFisicos && typeof errors.centrosFisicos === 'object' && 'general' in errors.centrosFisicos && (
-            <span className={styles.errorText}>{(errors.centrosFisicos as any).general}</span>
-          )}
-          
-          {formData.centrosFisicos.length === 1 && formData.centrosFisicos[0].domicilio && !mostrarPreguntaSegundoCentro && (
-            <div className={styles.preguntaSegundoCentro}>
-              <p>¿Desea cargar otro centro físico?</p>
-              <div className={styles.buttonsContainerInline}>
-                <button type="button" onClick={agregarCentroFisico} className={styles.buttonSmall}>Sí</button>
-                <button type="button" onClick={() => setMostrarPreguntaSegundoCentro(true)} className={styles.buttonSmall}>No</button>
-              </div>
+        {/* Pregunta si desea cargar otro centro */}
+        {mostrarPreguntaOtroCentro && centrosFisicosCargados.length < maxCentrosFisicos && (
+          <div className={styles.preguntaSegundoCentro}>
+            <p>¿Desea cargar otro centro físico?</p>
+            <div className={styles.buttonsContainerInline}>
+              <button 
+                type="button" 
+                onClick={() => handleRespuestaOtroCentro(true)} 
+                className={styles.buttonSmall}
+              >
+                Sí
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleRespuestaOtroCentro(false)} 
+                className={styles.buttonSmall}
+              >
+                No
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        
+        {/* Mensaje si ya llegó al límite */}
+        {centrosFisicosCargados.length === maxCentrosFisicos && (
+          <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e' }}>
+            ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
+          </div>
+        )}
+        
+        {errors.centroFisico && typeof errors.centroFisico === 'string' && (
+          <span className={styles.errorText}>{errors.centroFisico}</span>
+        )}
       </fieldset>
       
       {/* BOTONES */}
       <div className={styles.buttonsContainer}>
         <button type="button" onClick={handleCancelar} className={styles.buttonSecondary} disabled={enviando}>Cancelar</button>
-        <button type="submit" disabled={enviando || (urlDisponible === false)} className={styles.buttonPrimary}>
+        <button type="submit" disabled={enviando || (urlDisponible === false) || centrosFisicosCargados.length === 0} className={styles.buttonPrimary}>
           {enviando ? 'Procesando...' : 'Continuar al Paso 2'}
         </button>
       </div>
