@@ -1,5 +1,5 @@
 // src/components/MapaSelector.tsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -27,6 +27,10 @@ function MapEvents({ onMove }: { onMove: (lat: number, lng: number) => void }) {
   return null;
 }
 
+export interface MapaSelectorRef {
+  reset: () => void;
+}
+
 interface MapaSelectorProps {
   value?: Partial<Direccion>;
   onChange: (direccion: Direccion) => void;
@@ -34,12 +38,12 @@ interface MapaSelectorProps {
   autoLocate?: boolean;
 }
 
-export default function MapaSelector({
+const MapaSelector = forwardRef<MapaSelectorRef, MapaSelectorProps>(({
   value,
   onChange,
   defaultCountry = 'AR',
   autoLocate = true,
-}: MapaSelectorProps) {
+}, ref) => {
   const {
     direccion,
     loading,
@@ -56,6 +60,17 @@ export default function MapaSelector({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  // Exponer el método reset al padre
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      resetear();
+      // Limpiar el input de búsqueda
+      if (searchInputRef.current) {
+        searchInputRef.current.value = '';
+      }
+    }
+  }));
 
   // Si hay un valor inicial, actualizar el hook
   useEffect(() => {
@@ -164,4 +179,8 @@ export default function MapaSelector({
       {loading && <div className="mapa-loading">Cargando dirección...</div>}
     </div>
   );
-}
+});
+
+MapaSelector.displayName = 'MapaSelector';
+
+export default MapaSelector;
