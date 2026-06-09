@@ -136,7 +136,7 @@
 }
 
 /* ============================================================
-   CAMPOS DEL FORMULARIO (consistentes con ConfirmarTurnoModal)
+   CAMPOS DEL FORMULARIO
    ============================================================ */
 
 .formGroup {
@@ -246,7 +246,7 @@
 }
 
 /* ============================================================
-   BOTONES (consistentes con ConfirmarTurnoModal)
+   BOTONES
    ============================================================ */
 
 .buttonsContainer {
@@ -315,7 +315,7 @@
 }
 
 /* ============================================================
-   MENSAJES (consistentes con ConfirmarTurnoModal)
+   MENSAJES
    ============================================================ */
 
 .mensajeError {
@@ -337,7 +337,7 @@
 }
 
 /* ============================================================
-   MODAL (para paso futuro)
+   MODAL
    ============================================================ */
 
 .modalContent {
@@ -360,62 +360,6 @@
 }
 
 /* ============================================================
-   RESPONSIVE
-   ============================================================ */
-
-@media (max-width: 768px) {
-  .wizard-container {
-    max-width: 95%;
-    max-height: 95vh;
-  }
-
-  .wizard-content {
-    padding: 16px;
-  }
-
-  .row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .step-label {
-    display: none;
-  }
-
-  .step-number {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .buttonsContainer {
-    flex-direction: column;
-  }
-
-  .buttonPrimary,
-  .buttonSecondary {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .fieldset {
-    padding: 12px;
-  }
-
-  .legend {
-    font-size: 14px;
-  }
-
-  .label {
-    font-size: 13px;
-  }
-
- /* ============================================================
    LISTA DE CENTROS CARGADOS
    ============================================================ */
 
@@ -530,11 +474,91 @@
   margin: 0 0 8px 0;
   font-weight: 500;
   color: #1e293b;
-}  
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .wizard-container {
+    max-width: 95%;
+    max-height: 95vh;
+  }
+
+  .wizard-content {
+    padding: 16px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .buttonsContainer {
+    flex-direction: column;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary {
+    width: 100%;
+  }
+  
+  /* Ajustes responsive para centros */
+  .direccionConfirmada {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .buttonAgregar {
+    width: 100%;
+  }
+  
+  .buttonsContainerInline {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .fieldset {
+    padding: 12px;
+  }
+
+  .legend {
+    font-size: 14px;
+  }
+
+  .label {
+    font-size: 13px;
+  }
 
   .input,
   .select {
     font-size: 13px;
     padding: 8px 10px;
+  }
+  
+  .centroCargado {
+    font-size: 12px;
+  }
+  
+  .buttonSmall {
+    padding: 6px 16px;
+    font-size: 12px;
   }
 }
