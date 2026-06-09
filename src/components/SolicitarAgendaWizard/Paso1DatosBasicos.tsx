@@ -1,5 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Versión con key para recrear MapaSelector
+// Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
+// VERSIÓN CON MENSAJE DE ÉXITO:
+// - Después de agregar un centro, desaparece el mapa y el recuadro verde
+// - Aparece mensaje "✅ Centro agregado. ¿Desea agregar otro?" con botones Sí/No
+// - El usuario controla cuándo seguir agregando
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +18,7 @@ import {
   CentroData,
   Paso1Result
 } from '../../services/apiWizard';
-import MapaSelector, { MapaSelectorRef } from '../MapaSelector';
+import MapaSelector from '../MapaSelector';
 import { Direccion } from '../../hooks/useDireccion';
 import styles from './wizard.module.css';
 
@@ -76,9 +80,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     domicilio: null,
     direccionSimplificada: '',
   });
-  const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
-  const [mapaKey, setMapaKey] = useState(0);
-  const mapaSelectorRef = useRef<MapaSelectorRef>(null);
+  const [mostrarFormularioCarga, setMostrarFormularioCarga] = useState(true);
+  const [mostrarMensajeExito, setMostrarMensajeExito] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -261,27 +264,35 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar dirección seleccionada (desaparece el recuadro verde)
+    // Limpiar dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
     });
     
-    // Forzar recreado del MapaSelector (limpia su estado interno)
-    setMapaKey(prev => prev + 1);
-    
-    setBotonAgregarDisabled(false);
+    // Ocultar formulario de carga y mostrar mensaje de éxito
+    setMostrarFormularioCarga(false);
+    setMostrarMensajeExito(true);
+  };
+
+  const handleAgregarOtroCentro = () => {
+    setMostrarMensajeExito(false);
+    setMostrarFormularioCarga(true);
+  };
+
+  const handleNoAgregarMasCentros = () => {
+    setMostrarMensajeExito(false);
+    setMostrarFormularioCarga(false);
   };
 
   const handleEliminarCentroFisico = (id: string) => {
     setCentrosCargados(prev => prev.filter(c => c.id !== id));
-    setBotonAgregarDisabled(false);
-    setDireccionSeleccionada({
-      domicilio: null,
-      direccionSimplificada: '',
-    });
-    // Forzar recreado del mapa al eliminar también
-    setMapaKey(prev => prev + 1);
+    // Si después de eliminar tenemos menos de 2 centros, volvemos a mostrar el formulario
+    const nuevosFisicos = centrosCargados.filter(c => c.id !== id && !c.es_virtual).length;
+    if (nuevosFisicos < maxCentrosFisicos) {
+      setMostrarFormularioCarga(true);
+      setMostrarMensajeExito(false);
+    }
   };
 
   const handleCancelar = () => navigate('/');
@@ -456,6 +467,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Centros</legend>
                 
+                {/* Lista de centros cargados */}
                 {centrosCargados.length > 0 && (
                   <div className={styles.centrosLista}>
                     {centrosCargados.map(centro => (
@@ -480,17 +492,22 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Formulario de carga - SOLO si no se alcanzó el límite */}
-                {!limiteAlcanzado && (
+                {/* Mensaje de límite alcanzado (cuando ya hay 2 centros) */}
+                {limiteAlcanzado && !mostrarFormularioCarga && !mostrarMensajeExito && (
+                  <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
+                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
+                  </div>
+                )}
+                
+                {/* Formulario de carga (mapa + recuadro verde) */}
+                {mostrarFormularioCarga && !limiteAlcanzado && (
                   <>
-                    {/* Recuadro verde con dirección seleccionada - SOLO cuando hay una dirección */}
                     {direccionSeleccionada.direccionSimplificada && (
                       <div className={styles.direccionConfirmada}>
                         <strong>Dirección seleccionada:</strong> {direccionSeleccionada.direccionSimplificada}
                         <button 
                           type="button"
                           onClick={handleAgregarCentroFisico}
-                          disabled={botonAgregarDisabled}
                           className={styles.buttonAgregar}
                         >
                           Agregar
@@ -498,11 +515,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                       </div>
                     )}
                     
-                    {/* Mapa - siempre visible, con key para forzar recreado */}
                     <div className={styles.mapaContainer}>
                       <MapaSelector 
-                        key={mapaKey}
-                        ref={mapaSelectorRef}
                         onChange={handleDireccionSeleccionada}
                         autoLocate={true}
                       />
@@ -510,10 +524,33 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </>
                 )}
                 
-                {/* Mensaje de límite alcanzado */}
-                {limiteAlcanzado && (
-                  <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
-                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
+                {/* Mensaje de éxito después de agregar un centro */}
+                {mostrarMensajeExito && !limiteAlcanzado && (
+                  <div className={styles.mensajeExito}>
+                    <p>✅ Centro agregado correctamente.</p>
+                    {centrosFisicosCargados.length < maxCentrosFisicos ? (
+                      <>
+                        <p>¿Desea agregar otro centro físico?</p>
+                        <div className={styles.buttonsContainerInline}>
+                          <button 
+                            type="button" 
+                            onClick={handleAgregarOtroCentro} 
+                            className={styles.buttonSmall}
+                          >
+                            Sí
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={handleNoAgregarMasCentros} 
+                            className={styles.buttonSmall}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p>✅ Límite de centros físicos alcanzado.</p>
+                    )}
                   </div>
                 )}
                 
