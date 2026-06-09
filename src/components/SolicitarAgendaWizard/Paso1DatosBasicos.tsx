@@ -1,6 +1,8 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON FLUJO CORREGIDO:
+// VERSIÓN CORREGIDA:
+// - Corregido: limpieza del recuadro verde después de agregar centro
+// - Corregido: alerta solo al intentar agregar el 3er centro físico
 // - Legend "Centros" (sin "/ Sucursales")
 // - Sin títulos "📋 Centros cargados:" ni "Agregar centro físico"
 // - Botón eliminar (❌) en centros físicos
@@ -86,8 +88,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const [botonAgregarDisabled, setBotonAgregarDisabled] = useState(false);
   const [mostrarPreguntaOtroCentro, setMostrarPreguntaOtroCentro] = useState(false);
   const [mapaKey, setMapaKey] = useState(0);
+  const [limpiandoMapa, setLimpiandoMapa] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const mapaSelectorRef = useRef<any>(null);
   
   const [formData, setFormData] = useState<FormData>({
     negocioNombre: '',
@@ -224,6 +226,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   };
 
   const handleDireccionSeleccionada = (direccionCompleta: Direccion) => {
+    // Si estamos en proceso de limpieza, ignorar el evento
+    if (limpiandoMapa) {
+      return;
+    }
+    
     const domicilioDto: DomicilioDto = {
       street: direccionCompleta.street || '',
       street_number: direccionCompleta.street_number || '',
@@ -256,6 +263,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     const fisicosActuales = centrosCargados.filter(c => !c.es_virtual).length;
     
+    // Verificar si ya se alcanzó el límite (para el tercer centro)
     if (fisicosActuales >= maxCentrosFisicos) {
       alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
       return;
@@ -272,6 +280,9 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
+    // Marcar que estamos limpiando el mapa para ignorar eventos
+    setLimpiandoMapa(true);
+    
     // Limpiar la dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
@@ -284,13 +295,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     // Deshabilitar botón Agregar temporalmente
     setBotonAgregarDisabled(true);
     
-    // Verificar si se puede agregar otro
+    // Restaurar el flag de limpieza después de un pequeño delay
+    setTimeout(() => {
+      setLimpiandoMapa(false);
+    }, 100);
+    
+    // Verificar si se puede agregar otro (después de agregar el actual)
     const nuevosFisicos = fisicosActuales + 1;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarPreguntaOtroCentro(true);
-    } else {
-      alert('Por favor comuníquese con la ayuda para que en caso de corresponder sea agregado');
     }
+    // Si llegó al límite exacto (2 centros), no muestra pregunta, solo el cartel de límite
   };
 
   const handleRespuestaOtroCentro = (respuesta: boolean) => {
@@ -581,7 +596,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   />
                 </div>
                 
-                {/* Mensaje si ya llegó al límite */}
+                {/* Mensaje si ya llegó al límite (2 centros físicos) */}
                 {centrosFisicosCargados.length === maxCentrosFisicos && (
                   <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
                     ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
