@@ -1,7 +1,7 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CORREGIDA:
-// - Centro virtual aparece inmediatamente al seleccionar actividad con virtual: true
+// VERSIÓN DEFINITIVA:
+// - Centro virtual aparece INMEDIATAMENTE al seleccionar actividad con virtual: true
 // - Recuadro de dirección confirmada ANTES del mapa
 // - Multi-centro funcionando
 
@@ -97,10 +97,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
+  const maxCentrosFisicos = 2;
+
   // Calcular si la actividad permite virtual (EN TIEMPO REAL)
   const actividadSeleccionada = actividades.find(a => a.id === formData.actividadId);
   const permiteVirtual = actividadSeleccionada?.virtual === true;
-  const maxCentrosFisicos = 2;
 
   const buscarUsuarioPorEmail = async (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
