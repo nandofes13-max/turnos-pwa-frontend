@@ -265,6 +265,49 @@
 }
 
 /* ============================================================
+   PHONE INPUT (estilos consistentes con ConfirmarTurnoModal)
+   ============================================================ */
+
+.phoneInput {
+  width: 100%;
+}
+
+.phoneInput :global(.PhoneInput) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.phoneInput :global(.PhoneInputInput) {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background-color: white;
+}
+
+.phoneInput :global(.PhoneInputInput):focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.phoneInput :global(.PhoneInputCountry) {
+  padding: 10px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.phoneInput :global(.PhoneInputCountrySelect) {
+  padding: 4px;
+}
+
+/* ============================================================
    LISTA DE CENTROS CARGADOS
    ============================================================ */
 
@@ -299,20 +342,26 @@
   flex: 1;
 }
 
+/* Botón eliminar con ícono papelera */
 .buttonEliminar {
-  background-color: #ef4444;
-  color: white;
-  padding: 4px 10px;
+  background-color: #f1f5f9;
+  color: #ef4444;
+  padding: 6px 12px;
   border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .buttonEliminar:hover {
-  background-color: #dc2626;
+  background-color: #fee2e2;
+  border-color: #fecaca;
+  transform: scale(1.02);
 }
 
 /* ============================================================
@@ -590,5 +639,14 @@
   .buttonSmall {
     padding: 6px 16px;
     font-size: 12px;
+  }
+  
+  .phoneInput :global(.PhoneInputInput) {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .phoneInput :global(.PhoneInputCountry) {
+    padding: 8px 6px;
   }
 }
