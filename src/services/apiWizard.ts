@@ -1,5 +1,9 @@
 // src/services/apiWizard.ts
 // Servicio para el wizard de solicitud de agenda gratis
+// VERSIÓN MODIFICADA:
+// - Usa upsertUsuario en lugar de createUsuario
+// - Envía usuario_alta (email del dueño) a todas las tablas
+// - Nombre de centros físicos = dirección simplificada
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
 
@@ -140,10 +144,10 @@ export interface NegocioActividad {
 }
 
 // ============================================================
-// DTOs PARA ENVIAR AL BACKEND (exactamente como los espera)
+// DTOs PARA ENVIAR AL BACKEND
 // ============================================================
 
-// DTO para domicilio (dentro de CreateNegocioDto y CreateCentroDto)
+// DTO para domicilio
 export interface DomicilioDto {
   street: string;
   street_number: string;
@@ -151,29 +155,31 @@ export interface DomicilioDto {
   city: string;
   state: string;
   country: string;
-  country_code: string;  // ISO 3166-1 alpha-2, ej: "AR"
+  country_code: string;
   latitude: number;
   longitude: number;
   formatted_address: string;
 }
 
-// POST /negocios
+// POST /negocios (con usuario_alta)
 export interface CreateNegocioDto {
   nombre: string;
   country_code: number;
   national_number: string;
   domicilio: DomicilioDto;
+  usuario_alta?: string;
 }
 
-// POST /usuarios
-export interface CreateUsuarioDto {
+// POST /usuarios/upsert
+export interface UpsertUsuarioDto {
   email: string;
   apellido: string;
   nombre: string;
   telefono?: string;
+  usuario_alta?: string;
 }
 
-// POST /centros
+// POST /centros (con usuario_alta)
 export interface CreateCentroDto {
   negocioId: number;
   nombre: string;
@@ -182,36 +188,29 @@ export interface CreateCentroDto {
   es_virtual?: boolean;
   domicilio?: DomicilioDto;
   timezone?: string;
+  usuario_alta?: string;
 }
 
-// POST /negocio-actividades
+// POST /negocio-actividades (con usuario_alta)
 export interface CreateNegocioActividadDto {
   negocioId: number;
   actividadId: number;
+  usuario_alta?: string;
 }
 
-// POST /negocios-usuarios-roles
+// POST /negocios-usuarios-roles (con usuario_alta)
 export interface CreateNegocioUsuarioRolDto {
   negocioId: number;
   usuarioId: number;
   rolId: number;
+  usuario_alta?: string;
 }
 
-// Datos para crear un centro (desde el wizard)
+// Datos para crear un centro desde el wizard
 export interface CentroData {
   nombre: string;
   es_virtual: boolean;
   domicilio?: DomicilioDto;
-}
-
-// ============================================================
-// RESPUESTAS DEL BACKEND (para creación)
-// ============================================================
-
-export interface ApiResponse<T> {
-  status?: number;
-  message?: string;
-  data?: T;
 }
 
 // ============================================================
@@ -236,7 +235,7 @@ export async function getRolDueno(): Promise<Rol> {
   return response.json();
 }
 
-// 3. Verificar si una URL única ya existe (para validación en tiempo real)
+// 3. Verificar si una URL única ya existe
 export async function verificarUrlUnica(url: string): Promise<boolean> {
   const response = await fetch(`${API_URL}/negocios/url/${url}`);
   
@@ -251,12 +250,17 @@ export async function verificarUrlUnica(url: string): Promise<boolean> {
   return false;
 }
 
-// 4. Crear negocio
-export async function createNegocio(data: CreateNegocioDto): Promise<Negocio> {
+// 4. Crear negocio (con usuario_alta)
+export async function createNegocio(data: CreateNegocioDto, usuarioAlta?: string): Promise<Negocio> {
+  const body = {
+    ...data,
+    usuario_alta: usuarioAlta || data.nombre,
+  };
+  
   const response = await fetch(`${API_URL}/negocios`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
@@ -267,28 +271,38 @@ export async function createNegocio(data: CreateNegocioDto): Promise<Negocio> {
   return response.json();
 }
 
-// 5. Crear usuario
-export async function createUsuario(data: CreateUsuarioDto): Promise<Usuario> {
-  const response = await fetch(`${API_URL}/usuarios`, {
+// 5. Crear o actualizar usuario (upsert) con usuario_alta
+export async function upsertUsuario(data: UpsertUsuarioDto, usuarioAlta?: string): Promise<Usuario> {
+  const body = {
+    ...data,
+    usuario_alta: usuarioAlta || data.email,
+  };
+  
+  const response = await fetch(`${API_URL}/usuarios/upsert`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || `Error al crear usuario: ${response.statusText}`);
+    throw new Error(error.message || `Error al crear/actualizar usuario: ${response.statusText}`);
   }
   
   return response.json();
 }
 
-// 6. Crear centro
-export async function createCentro(data: CreateCentroDto): Promise<Centro> {
+// 6. Crear centro (con usuario_alta)
+export async function createCentro(data: CreateCentroDto, usuarioAlta?: string): Promise<Centro> {
+  const body = {
+    ...data,
+    usuario_alta: usuarioAlta || 'demo',
+  };
+  
   const response = await fetch(`${API_URL}/centros`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
@@ -299,12 +313,17 @@ export async function createCentro(data: CreateCentroDto): Promise<Centro> {
   return response.json();
 }
 
-// 7. Asignar actividad al negocio
-export async function createNegocioActividad(data: CreateNegocioActividadDto): Promise<NegocioActividad> {
+// 7. Asignar actividad al negocio (con usuario_alta)
+export async function createNegocioActividad(data: CreateNegocioActividadDto, usuarioAlta?: string): Promise<NegocioActividad> {
+  const body = {
+    ...data,
+    usuario_alta: usuarioAlta || 'demo',
+  };
+  
   const response = await fetch(`${API_URL}/negocio-actividades`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
@@ -315,12 +334,17 @@ export async function createNegocioActividad(data: CreateNegocioActividadDto): P
   return response.json();
 }
 
-// 8. Asignar rol DUEÑO al usuario en el negocio
-export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto): Promise<NegocioUsuarioRol> {
+// 8. Asignar rol DUEÑO al usuario en el negocio (con usuario_alta)
+export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto, usuarioAlta?: string): Promise<NegocioUsuarioRol> {
+  const body = {
+    ...data,
+    usuario_alta: usuarioAlta || 'demo',
+  };
+  
   const response = await fetch(`${API_URL}/negocios-usuarios-roles`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
@@ -351,34 +375,33 @@ export async function enviarEmailBienvenida(data: {
 }
 
 // ============================================================
-// FUNCIÓN PRINCIPAL DEL PASO 1 (crea todo - VERSIÓN MULTI-CENTRO)
+// FUNCIÓN PRINCIPAL DEL PASO 1 (MULTI-CENTRO CON USUARIO_ALTA)
 // ============================================================
 
 export interface Paso1Result {
   negocio: Negocio;
   usuario: Usuario;
-  centros: Centro[];  // Array de centros (virtual + físicos)
+  centros: Centro[];
   negocioActividad: NegocioActividad;
   negocioUsuarioRol: NegocioUsuarioRol;
 }
 
 export async function registrarPaso1DatosBasicos(params: {
-  // Datos del negocio
   negocioNombre: string;
   negocioCountryCode: number;
   negocioNationalNumber: string;
-  // Datos del usuario
   usuarioEmail: string;
   usuarioApellido: string;
   usuarioNombre: string;
   usuarioTelefono?: string;
-  // Actividad seleccionada
   actividadId: number;
-  // Centros (array con virtual y físicos)
   centros: CentroData[];
+  usuarioAlta?: string;  // Email del dueño para auditoría
 }): Promise<Paso1Result> {
   
-  // 1. Crear negocio (requiere domicilio del primer centro físico)
+  const usuarioAlta = params.usuarioAlta || params.usuarioEmail;
+  
+  // 1. Crear negocio
   const primerCentroFisico = params.centros.find(c => !c.es_virtual);
   if (!primerCentroFisico || !primerCentroFisico.domicilio) {
     throw new Error('Se requiere al menos un centro físico con domicilio');
@@ -389,15 +412,15 @@ export async function registrarPaso1DatosBasicos(params: {
     country_code: params.negocioCountryCode,
     national_number: params.negocioNationalNumber,
     domicilio: primerCentroFisico.domicilio,
-  });
+  }, usuarioAlta);
   
-  // 2. Crear usuario
-  const usuario = await createUsuario({
+  // 2. Crear o actualizar usuario (upsert)
+  const usuario = await upsertUsuario({
     email: params.usuarioEmail,
     apellido: params.usuarioApellido,
     nombre: params.usuarioNombre,
     telefono: params.usuarioTelefono,
-  });
+  }, usuarioAlta);
   
   // 3. Crear todos los centros
   const centrosCreados: Centro[] = [];
@@ -409,7 +432,7 @@ export async function registrarPaso1DatosBasicos(params: {
       national_number: params.negocioNationalNumber,
       es_virtual: centroData.es_virtual,
       domicilio: centroData.domicilio,
-    });
+    }, usuarioAlta);
     centrosCreados.push(centro);
   }
   
@@ -417,14 +440,14 @@ export async function registrarPaso1DatosBasicos(params: {
   const negocioActividad = await createNegocioActividad({
     negocioId: negocio.id,
     actividadId: params.actividadId,
-  });
+  }, usuarioAlta);
   
   // 5. Asignar rol DUEÑO al usuario en el negocio
   const negocioUsuarioRol = await createNegocioUsuarioRol({
     negocioId: negocio.id,
     usuarioId: usuario.id,
-    rolId: 7, // DUEÑO
-  });
+    rolId: 7,
+  }, usuarioAlta);
   
   return {
     negocio,
