@@ -142,22 +142,33 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
   }, [formData.usuarioEmail]);
 
-  useEffect(() => {
-    const cargarActividades = async () => {
-      try {
-        const data = await getActividades();
-        const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
-        setActividades(activas);
-      } catch (error) {
-        console.error('Error cargando actividades:', error);
-        onError?.('No se pudieron cargar las actividades');
-      } finally {
-        setCargandoActividades(false);
-      }
-    };
-    cargarActividades();
-  }, [onError]);
-
+ useEffect(() => {
+  const cargarActividades = async () => {
+    try {
+      const data = await getActividades();
+      const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
+      
+      // Orden personalizado de actividades
+      const ordenIds = [6, 9, 11, 7, 12, 8];
+      const ordenadas = [...activas].sort((a, b) => {
+        const indexA = ordenIds.indexOf(a.id);
+        const indexB = ordenIds.indexOf(b.id);
+        // Si alguna actividad no está en el orden, va al final
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+      
+      setActividades(ordenadas);
+    } catch (error) {
+      console.error('Error cargando actividades:', error);
+      onError?.('No se pudieron cargar las actividades');
+    } finally {
+      setCargandoActividades(false);
+    }
+  };
+  cargarActividades();
+}, [onError]);
   useEffect(() => {
     const verificarUrl = async () => {
       if (!formData.negocioNombre || formData.negocioNombre.length < 3) {
