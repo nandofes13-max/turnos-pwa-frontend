@@ -1,10 +1,8 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN FINAL CORREGIDA:
-// - Recuadro verde desaparece después de agregar centro
-// - Mensaje de éxito con opción de agregar otro centro
-// - Mensaje de límite alcanzado cuando hay 2 centros físicos
-// - Estilos consistentes con el resto del sistema
+// VERSIÓN MODIFICADA:
+// - Nombre de centros físicos = dirección simplificada
+// - Envío de usuarioAlta (email del dueño) al backend
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -142,33 +140,33 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
   }, [formData.usuarioEmail]);
 
- useEffect(() => {
-  const cargarActividades = async () => {
-    try {
-      const data = await getActividades();
-      const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
-      
-      // Orden personalizado de actividades
-      const ordenIds = [6, 9, 11, 7, 12, 8];
-      const ordenadas = [...activas].sort((a, b) => {
-        const indexA = ordenIds.indexOf(a.id);
-        const indexB = ordenIds.indexOf(b.id);
-        // Si alguna actividad no está en el orden, va al final
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-      });
-      
-      setActividades(ordenadas);
-    } catch (error) {
-      console.error('Error cargando actividades:', error);
-      onError?.('No se pudieron cargar las actividades');
-    } finally {
-      setCargandoActividades(false);
-    }
-  };
-  cargarActividades();
-}, [onError]);
+  useEffect(() => {
+    const cargarActividades = async () => {
+      try {
+        const data = await getActividades();
+        const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
+        
+        // Orden personalizado de actividades
+        const ordenIds = [6, 9, 11, 7, 12, 8];
+        const ordenadas = [...activas].sort((a, b) => {
+          const indexA = ordenIds.indexOf(a.id);
+          const indexB = ordenIds.indexOf(b.id);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+        
+        setActividades(ordenadas);
+      } catch (error) {
+        console.error('Error cargando actividades:', error);
+        onError?.('No se pudieron cargar las actividades');
+      } finally {
+        setCargandoActividades(false);
+      }
+    };
+    cargarActividades();
+  }, [onError]);
+
   useEffect(() => {
     const verificarUrl = async () => {
       if (!formData.negocioNombre || formData.negocioNombre.length < 3) {
@@ -267,9 +265,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       return;
     }
     
+    // 👈 CAMBIO IMPORTANTE: El nombre del centro es la dirección simplificada
     const nuevoCentro: CentroCargado = {
       id: `fisico-${Date.now()}`,
-      nombre: `Centro Físico ${fisicosActuales + 1}`,
+      nombre: direccionSeleccionada.direccionSimplificada,  // Ej: "Tandil 7044, Buenos Aires, Argentina"
       es_virtual: false,
       domicilio: direccionSeleccionada.domicilio!,
       direccionSimplificada: direccionSeleccionada.direccionSimplificada,
@@ -286,11 +285,9 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     const nuevosFisicos = fisicosActuales + 1;
     
     if (nuevosFisicos === maxCentrosFisicos) {
-      // Se alcanzó el límite de 2 centros → ocultar formulario y no mostrar mensaje de éxito
       setMostrarFormularioCarga(false);
       setMostrarMensajeExito(false);
     } else {
-      // Aún no se alcanza el límite → ocultar formulario y mostrar mensaje para agregar otro
       setMostrarFormularioCarga(false);
       setMostrarMensajeExito(true);
     }
@@ -382,6 +379,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         domicilio: centro.domicilio,
       }));
       
+      // 👈 CAMBIO IMPORTANTE: Enviar usuarioAlta con el email del dueño
       const resultado = await registrarPaso1DatosBasicos({
         negocioNombre: formData.negocioNombre,
         negocioCountryCode: countryCode,
@@ -392,6 +390,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         usuarioTelefono: formData.usuarioTelefono || undefined,
         actividadId: formData.actividadId,
         centros: centrosData,
+        usuarioAlta: formData.usuarioEmail,  // 👈 Email del dueño para auditoría
       });
       onSuccess(resultado);
     } catch (error) {
