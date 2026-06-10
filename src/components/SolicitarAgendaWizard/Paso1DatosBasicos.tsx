@@ -1,9 +1,5 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN CON MENSAJE DE ÉXITO:
-// - Después de agregar un centro, desaparece el mapa y el recuadro verde
-// - Aparece mensaje "✅ Centro agregado. ¿Desea agregar otro?" con botones Sí/No
-// - El usuario controla cuándo seguir agregando
+// Versión definitiva con corrección de recuadro verde y estilos originales
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -82,6 +78,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   });
   const [mostrarFormularioCarga, setMostrarFormularioCarga] = useState(true);
   const [mostrarMensajeExito, setMostrarMensajeExito] = useState(false);
+  const [mapaKey, setMapaKey] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -270,7 +267,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       direccionSimplificada: '',
     });
     
-    // Ocultar formulario de carga y mostrar mensaje de éxito
+    // Ocultar formulario de carga
     setMostrarFormularioCarga(false);
     setMostrarMensajeExito(true);
   };
@@ -278,6 +275,11 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
   const handleAgregarOtroCentro = () => {
     setMostrarMensajeExito(false);
     setMostrarFormularioCarga(true);
+    setMapaKey(prev => prev + 1);
+    setDireccionSeleccionada({
+      domicilio: null,
+      direccionSimplificada: '',
+    });
   };
 
   const handleNoAgregarMasCentros = () => {
@@ -287,11 +289,15 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
 
   const handleEliminarCentroFisico = (id: string) => {
     setCentrosCargados(prev => prev.filter(c => c.id !== id));
-    // Si después de eliminar tenemos menos de 2 centros, volvemos a mostrar el formulario
     const nuevosFisicos = centrosCargados.filter(c => c.id !== id && !c.es_virtual).length;
     if (nuevosFisicos < maxCentrosFisicos) {
       setMostrarFormularioCarga(true);
       setMostrarMensajeExito(false);
+      setMapaKey(prev => prev + 1);
+      setDireccionSeleccionada({
+        domicilio: null,
+        direccionSimplificada: '',
+      });
     }
   };
 
@@ -492,14 +498,14 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Mensaje de límite alcanzado (cuando ya hay 2 centros) */}
+                {/* Mensaje de límite alcanzado */}
                 {limiteAlcanzado && !mostrarFormularioCarga && !mostrarMensajeExito && (
                   <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
                     ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
                   </div>
                 )}
                 
-                {/* Formulario de carga (mapa + recuadro verde) */}
+                {/* Formulario de carga */}
                 {mostrarFormularioCarga && !limiteAlcanzado && (
                   <>
                     {direccionSeleccionada.direccionSimplificada && (
@@ -517,6 +523,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                     
                     <div className={styles.mapaContainer}>
                       <MapaSelector 
+                        key={mapaKey}
                         onChange={handleDireccionSeleccionada}
                         autoLocate={true}
                       />
@@ -524,7 +531,7 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </>
                 )}
                 
-                {/* Mensaje de éxito después de agregar un centro */}
+                {/* Mensaje de éxito después de agregar */}
                 {mostrarMensajeExito && !limiteAlcanzado && (
                   <div className={styles.mensajeExito}>
                     <p>✅ Centro agregado correctamente.</p>
