@@ -1,5 +1,10 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
-// Versión definitiva con corrección de recuadro verde y estilos originales
+// Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
+// VERSIÓN FINAL CORREGIDA:
+// - Recuadro verde desaparece después de agregar centro
+// - Mensaje de éxito con opción de agregar otro centro
+// - Mensaje de límite alcanzado cuando hay 2 centros físicos
+// - Estilos consistentes con el resto del sistema
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -267,9 +272,17 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       direccionSimplificada: '',
     });
     
-    // Ocultar formulario de carga
-    setMostrarFormularioCarga(false);
-    setMostrarMensajeExito(true);
+    const nuevosFisicos = fisicosActuales + 1;
+    
+    if (nuevosFisicos === maxCentrosFisicos) {
+      // Se alcanzó el límite de 2 centros → ocultar formulario y no mostrar mensaje de éxito
+      setMostrarFormularioCarga(false);
+      setMostrarMensajeExito(false);
+    } else {
+      // Aún no se alcanza el límite → ocultar formulario y mostrar mensaje para agregar otro
+      setMostrarFormularioCarga(false);
+      setMostrarMensajeExito(true);
+    }
   };
 
   const handleAgregarOtroCentro = () => {
@@ -531,33 +544,27 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </>
                 )}
                 
-                {/* Mensaje de éxito después de agregar */}
+                {/* Mensaje de éxito después de agregar (solo si no se alcanzó el límite) */}
                 {mostrarMensajeExito && !limiteAlcanzado && (
                   <div className={styles.mensajeExito}>
                     <p>✅ Centro agregado correctamente.</p>
-                    {centrosFisicosCargados.length < maxCentrosFisicos ? (
-                      <>
-                        <p>¿Desea agregar otro centro físico?</p>
-                        <div className={styles.buttonsContainerInline}>
-                          <button 
-                            type="button" 
-                            onClick={handleAgregarOtroCentro} 
-                            className={styles.buttonSmall}
-                          >
-                            Sí
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={handleNoAgregarMasCentros} 
-                            className={styles.buttonSmall}
-                          >
-                            No
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <p>✅ Límite de centros físicos alcanzado.</p>
-                    )}
+                    <p>¿Desea agregar otro centro físico?</p>
+                    <div className={styles.buttonsContainerInline}>
+                      <button 
+                        type="button" 
+                        onClick={handleAgregarOtroCentro} 
+                        className={styles.buttonSmall}
+                      >
+                        Sí
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={handleNoAgregarMasCentros} 
+                        className={styles.buttonSmall}
+                      >
+                        No
+                      </button>
+                    </div>
                   </div>
                 )}
                 
