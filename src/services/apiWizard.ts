@@ -1,8 +1,9 @@
 // src/services/apiWizard.ts
 // Servicio para el wizard de solicitud de agenda gratis
-// VERSIÓN MODIFICADA:
+// VERSIÓN CON ORDEN CORREGIDO:
 // - Usa upsertUsuario (crea o actualiza usuario)
-// - Manejo de errores específicos para WhatsApp duplicado y relación DUEÑO duplicada
+// - Orden: Negocio → Usuario → Actividad → Centros → Rol DUEÑO
+// - Manejo de errores específicos
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
 
@@ -261,7 +262,6 @@ export async function createNegocio(data: CreateNegocioDto): Promise<Negocio> {
   return response.json();
 }
 
-// 👈 NUEVA FUNCIÓN: upsertUsuario (crea o actualiza)
 export async function upsertUsuario(data: UpsertUsuarioDto): Promise<Usuario> {
   const response = await fetch(`${API_URL}/usuarios/upsert`, {
     method: 'POST',
@@ -316,7 +316,6 @@ export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto):
   
   if (!response.ok) {
     const error = await response.json();
-    // Verificar si es error de relación duplicada (usuario ya es dueño)
     if (error.message && error.message.includes('El usuario ya tiene este rol activo en el negocio')) {
       throw new Error('RELACION_DUPLICADA');
     }
@@ -345,7 +344,7 @@ export async function enviarEmailBienvenida(data: {
 }
 
 // ============================================================
-// FUNCIÓN PRINCIPAL DEL PASO 1
+// FUNCIÓN PRINCIPAL DEL PASO 1 (ORDEN CORREGIDO)
 // ============================================================
 
 export interface Paso1Result {
@@ -393,7 +392,13 @@ export async function registrarPaso1DatosBasicos(params: {
     telefono: params.usuarioTelefono,
   });
   
-  // 3. Crear todos los centros
+  // 3. Asignar actividad al negocio (ANTES de crear centros)
+  const negocioActividad = await createNegocioActividad({
+    negocioId: negocio.id,
+    actividadId: params.actividadId,
+  });
+  
+  // 4. Crear todos los centros (AHORA el negocio ya tiene actividad)
   const centrosCreados: Centro[] = [];
   for (const centroData of params.centros) {
     const centro = await createCentro({
@@ -407,13 +412,7 @@ export async function registrarPaso1DatosBasicos(params: {
     centrosCreados.push(centro);
   }
   
-  // 4. Asignar actividad al negocio
-  const negocioActividad = await createNegocioActividad({
-    negocioId: negocio.id,
-    actividadId: params.actividadId,
-  });
-  
-  // 5. Asignar rol DUEÑO al usuario en el negocio (puede fallar si ya existe)
+  // 5. Asignar rol DUEÑO al usuario en el negocio (al final)
   let negocioUsuarioRol: NegocioUsuarioRol | null = null;
   try {
     negocioUsuarioRol = await createNegocioUsuarioRol({
