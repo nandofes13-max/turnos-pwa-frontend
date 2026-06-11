@@ -1,8 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN MODIFICADA:
+// VERSIÓN SIMPLIFICADA:
+// - Sin envío de usuarioAlta (el backend asigna 'demo')
 // - Nombre de centros físicos = dirección simplificada
-// - Envío de usuarioAlta (email del dueño) al backend
+// - WhatsApp se envía como string completo (se parsea en apiWizard)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -146,7 +147,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
         const data = await getActividades();
         const activas = data.filter(a => !a.fecha_baja && a.id !== 10);
         
-        // Orden personalizado de actividades
         const ordenIds = [6, 9, 11, 7, 12, 8];
         const ordenadas = [...activas].sort((a, b) => {
           const indexA = ordenIds.indexOf(a.id);
@@ -265,10 +265,9 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       return;
     }
     
-    // 👈 CAMBIO IMPORTANTE: El nombre del centro es la dirección simplificada
     const nuevoCentro: CentroCargado = {
       id: `fisico-${Date.now()}`,
-      nombre: direccionSeleccionada.direccionSimplificada,  // Ej: "Tandil 7044, Buenos Aires, Argentina"
+      nombre: direccionSeleccionada.direccionSimplificada,
       es_virtual: false,
       domicilio: direccionSeleccionada.domicilio!,
       direccionSimplificada: direccionSeleccionada.direccionSimplificada,
@@ -276,7 +275,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     
     setCentrosCargados(prev => [...prev, nuevoCentro]);
     
-    // Limpiar dirección seleccionada
     setDireccionSeleccionada({
       domicilio: null,
       direccionSimplificada: '',
@@ -364,33 +362,21 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     setEnviando(true);
     
     try {
-      let countryCode = 54, nationalNumber = '';
-      if (formData.negocioWhatsapp) {
-        const match = formData.negocioWhatsapp.match(/^\+(\d+)(.+)$/);
-        if (match) {
-          countryCode = parseInt(match[1], 10);
-          nationalNumber = match[2].replace(/\D/g, '');
-        }
-      }
-      
       const centrosData: CentroData[] = centrosCargados.map(centro => ({
         nombre: centro.nombre,
         es_virtual: centro.es_virtual,
         domicilio: centro.domicilio,
       }));
       
-      // 👈 CAMBIO IMPORTANTE: Enviar usuarioAlta con el email del dueño
       const resultado = await registrarPaso1DatosBasicos({
         negocioNombre: formData.negocioNombre,
-        negocioCountryCode: countryCode,
-        negocioNationalNumber: nationalNumber,
+        negocioWhatsapp: formData.negocioWhatsapp,
         usuarioEmail: formData.usuarioEmail,
         usuarioApellido: formData.usuarioApellido,
         usuarioNombre: formData.usuarioNombre,
         usuarioTelefono: formData.usuarioTelefono || undefined,
         actividadId: formData.actividadId,
         centros: centrosData,
-        usuarioAlta: formData.usuarioEmail,  // 👈 Email del dueño para auditoría
       });
       onSuccess(resultado);
     } catch (error) {
@@ -496,7 +482,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
               <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Centros</legend>
                 
-                {/* Lista de centros cargados */}
                 {centrosCargados.length > 0 && (
                   <div className={styles.centrosLista}>
                     {centrosCargados.map(centro => (
@@ -521,14 +506,12 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </div>
                 )}
                 
-                {/* Mensaje de límite alcanzado */}
                 {limiteAlcanzado && !mostrarFormularioCarga && !mostrarMensajeExito && (
                   <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
                     ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
                   </div>
                 )}
                 
-                {/* Formulario de carga */}
                 {mostrarFormularioCarga && !limiteAlcanzado && (
                   <>
                     {direccionSeleccionada.direccionSimplificada && (
@@ -554,7 +537,6 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                   </>
                 )}
                 
-                {/* Mensaje de éxito después de agregar (solo si no se alcanzó el límite) */}
                 {mostrarMensajeExito && !limiteAlcanzado && (
                   <div className={styles.mensajeExito}>
                     <p>✅ Centro agregado correctamente.</p>
