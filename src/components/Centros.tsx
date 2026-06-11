@@ -6,12 +6,11 @@ import 'react-phone-number-input/style.css';
 import '../styles/tablas-maestras.css';
 import styles from '../styles/Centros.module.css';
 
-// 🔹 NUEVO: Componente de selector de timezone con búsqueda
+// Componente de selector de timezone con búsqueda
 function TimezoneSelector({ value, onChange }: { value: string; onChange: (tz: string) => void }) {
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   
-  // Lista completa de timezones comunes
   const timezones = [
     'America/Argentina/Buenos_Aires',
     'America/Argentina/Cordoba',
@@ -130,7 +129,7 @@ interface Negocio {
   id: number;
   nombre: string;
   url: string;
-  timezone?: string;  // 🔹 AGREGADO
+  timezone?: string;
   fecha_baja?: string | null;
 }
 
@@ -141,7 +140,7 @@ interface Centro {
   nombre: string;
   codigo: string;
   es_virtual: boolean;
-  timezone?: string;  // 🔹 AGREGADO
+  timezone?: string;
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
@@ -186,7 +185,7 @@ export default function Centros() {
     nombre: '',
     es_virtual: false,
     domicilio: null as any,
-    timezone: '',  // 🔹 NUEVO
+    timezone: '',
   });
   const [phoneValue, setPhoneValue] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState<Centro | null>(null);
@@ -195,7 +194,7 @@ export default function Centros() {
   const [puedeSerVirtual, setPuedeSerVirtual] = useState(false);
   const [yaTieneVirtual, setYaTieneVirtual] = useState(false);
   const [tieneActividades, setTieneActividades] = useState(false);
-  const [negocioTimezone, setNegocioTimezone] = useState<string>('');  // 🔹 NUEVO: timezone del negocio seleccionado
+  const [negocioTimezone, setNegocioTimezone] = useState<string>('');
   
   // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
@@ -270,7 +269,6 @@ export default function Centros() {
       
       setPuedeSerVirtual(tieneVirtual);
       
-      // 🔹 Obtener timezone del negocio para precargar en centros virtuales
       const tzNegocio = await obtenerTimezoneDelNegocio(negocioId);
       setNegocioTimezone(tzNegocio);
       if (formData.es_virtual) {
@@ -355,7 +353,8 @@ export default function Centros() {
     setModalMode('add');
   };
 
-  const handleEditar = (centro: Centro) => {
+  // 👈 CORREGIDO: handleEditar ahora verifica actividades del negocio
+  const handleEditar = async (centro: Centro) => {
     const domicilioObj = centro.street ? {
       street: centro.street,
       street_number: centro.street_number,
@@ -379,6 +378,13 @@ export default function Centros() {
     setPhoneValue(centro.whatsapp_e164);
     setSelectedCentro(centro);
     setErrorMessage(null);
+    
+    // 👈 Verificar actividades del negocio al editar (para que el modal sepa si el negocio tiene actividades)
+    if (centro.negocioId) {
+      await verificarActividadesDelNegocio(centro.negocioId);
+      await verificarYaTieneVirtual(centro.negocioId);
+    }
+    
     setModalMode('edit');
   };
 
@@ -416,15 +422,20 @@ export default function Centros() {
     return partes.join(' ') || c.formatted_address || '';
   };
 
+  // 👈 CORREGIDO: validarFormulario ahora diferencia entre add y edit
   const validarFormulario = (): boolean => {
     if (!formData.negocioId) {
       setErrorMessage('Debe seleccionar un negocio');
       return false;
     }
-    if (!tieneActividades) {
+    
+    // ⚠️ SOLO para creación (modo 'add') se valida que el negocio tenga actividades
+    // Para edición (modo 'edit') NO se valida, porque el centro ya existe
+    if (modalMode === 'add' && !tieneActividades) {
       setErrorMessage('Este negocio no tiene actividades asignadas. Debe asignar al menos una actividad antes de crear un centro.');
       return false;
     }
+    
     if (!formData.nombre.trim()) {
       setErrorMessage('El nombre del centro es obligatorio');
       return false;
@@ -440,7 +451,6 @@ export default function Centros() {
         return false;
       }
     } else {
-      // 🔹 Para centros virtuales, validar que tenga timezone
       if (!formData.timezone) {
         setErrorMessage('Debe seleccionar una zona horaria');
         return false;
@@ -490,7 +500,6 @@ export default function Centros() {
       es_virtual: formData.es_virtual,
     };
     
-    // 🔹 Agregar timezone si es virtual
     if (formData.es_virtual) {
       datosParaEnviar.timezone = formData.timezone;
     }
@@ -567,7 +576,7 @@ export default function Centros() {
           country_code: confirmReactivar.country_code,
           national_number: confirmReactivar.national_number,
           es_virtual: confirmReactivar.es_virtual,
-          timezone: confirmReactivar.timezone,  // 🔹 AGREGADO
+          timezone: confirmReactivar.timezone,
           street: confirmReactivar.street,
           street_number: confirmReactivar.street_number,
           postal_code: confirmReactivar.postal_code,
@@ -620,7 +629,6 @@ export default function Centros() {
 
   const mostrarCheckboxVirtual = puedeSerVirtual && !yaTieneVirtual && modalMode === 'add' && tieneActividades;
 
-  // 🔹 Función para obtener display de timezone
   const getTimezoneDisplay = (tz: string) => {
     if (!tz) return 'No definido';
     const parts = tz.split('/');
@@ -919,7 +927,7 @@ export default function Centros() {
         </div>
       )}
 
-            {/* MODAL EDITAR */}
+      {/* MODAL EDITAR */}
       {modalMode === 'edit' && selectedCentro && (
         <div className="tm-modal-overlay" onClick={() => setModalMode(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -974,7 +982,7 @@ export default function Centros() {
               />
             </div>
 
-            {/* 🔹 Zona Horaria - para centros virtuales (editable) o físicos (solo lectura) */}
+            {/* Zona Horaria - para centros virtuales (editable) o físicos (solo lectura) */}
             {selectedCentro.es_virtual ? (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Zona Horaria *</label>
@@ -1049,7 +1057,6 @@ export default function Centros() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Nombre</span><p className="tm-modal-detalle-valor">{selectedCentro.nombre}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Tipo</span><p className="tm-modal-detalle-valor">{selectedCentro.es_virtual ? 'Virtual' : 'Físico'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">WhatsApp</span><p className="tm-modal-detalle-valor">{selectedCentro.whatsapp_e164}</p></div>
-            {/* 🔹 Mostrar timezone en detalle */}
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">Zona Horaria</span>
               <p className="tm-modal-detalle-valor">{getTimezoneDisplay(selectedCentro.timezone || '')}</p>
@@ -1103,4 +1110,3 @@ export default function Centros() {
     </div>
   );
 }
-
