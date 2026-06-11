@@ -1,9 +1,8 @@
 // src/components/SolicitarAgendaWizard/Paso1DatosBasicos.tsx
 // Paso 1 del Wizard: Datos del Negocio + Usuario + Centro + Actividad
-// VERSIÓN SIMPLIFICADA:
-// - Sin envío de usuarioAlta (el backend asigna 'demo')
-// - Nombre de centros físicos = dirección simplificada
-// - WhatsApp se envía como string completo (se parsea en apiWizard)
+// VERSIÓN MODIFICADA:
+// - Manejo de errores específicos (WhatsApp duplicado, relación duplicada, etc.)
+// - Mensajes claros para el usuario según el tipo de error
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -356,6 +355,28 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     return Object.keys(newErrors).length === 0;
   };
 
+  // 👈 Función para mostrar mensajes de error amigables
+  const mostrarErrorAmigable = (errorMessage: string): string => {
+    // Error de WhatsApp duplicado (detectado por el mensaje del backend)
+    if (errorMessage.includes('whatsapp') || errorMessage.includes('duplicate key') || errorMessage.includes('whatsapp_e164')) {
+      return 'Este número de WhatsApp ya está registrado en otro negocio. Por favor, utilizá otro número o contactate con nosotros si necesitas ayuda.';
+    }
+    // Error de relación duplicada (usuario ya es dueño)
+    if (errorMessage.includes('Ya eres dueño') || errorMessage.includes('RELACION_DUPLICADA')) {
+      return 'Ya eres dueño de este negocio. Si necesitas modificarlo, por favor contactate con nuestro equipo de ayuda.';
+    }
+    // Error de URL duplicada
+    if (errorMessage.includes('url') && errorMessage.includes('ya existe')) {
+      return 'Esta URL ya está en uso. Por favor, cambiá el nombre del negocio.';
+    }
+    // Error de email duplicado (aunque upsert debería manejarlo)
+    if (errorMessage.includes('email') && errorMessage.includes('ya existe')) {
+      return 'Este email ya está registrado. Por favor, utilizá otro email o iniciá sesión.';
+    }
+    // Otros errores
+    return errorMessage;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validarFormulario()) return;
@@ -381,7 +402,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
       onSuccess(resultado);
     } catch (error) {
       console.error('Error al registrar:', error);
-      onError?.(error instanceof Error ? error.message : 'Error al procesar el formulario');
+      const mensajeAmigable = mostrarErrorAmigable(error instanceof Error ? error.message : 'Error al procesar el formulario');
+      onError?.(mensajeAmigable);
     } finally {
       setEnviando(false);
     }
