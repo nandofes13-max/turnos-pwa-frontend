@@ -561,6 +561,27 @@
   color: #1e293b;
 }
 
+/* Foto preview */
+.fotoPreview {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.fotoPreviewImg {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+}
+
+@media (max-width: 480px) {
+  .fotoPreviewImg {
+    width: 72px;
+    height: 72px;
+  }
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
