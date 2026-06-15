@@ -1,9 +1,7 @@
 // src/services/apiWizard.ts
 // Servicio para el wizard de solicitud de agenda gratis
-// VERSIÓN CON ORDEN CORREGIDO:
-// - Usa upsertUsuario (crea o actualiza usuario)
-// - Orden: Negocio → Usuario → Actividad → Centros → Rol DUEÑO
-// - Manejo de errores específicos
+// VERSIÓN CON FUNCIONES PARA PASO 2:
+// - Profesionales, Especialidades, Actividad-Especialidad, Profesional-Especialidad
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
 
@@ -87,6 +85,66 @@ export interface Actividad {
   id: number;
   nombre: string;
   virtual: boolean;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
+export interface Especialidad {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
+export interface Profesional {
+  id: number;
+  documento: string;
+  nombre: string;
+  email: string;
+  country_code: number;
+  national_number: string;
+  whatsapp_e164: string;
+  genero: string | null;
+  matricula: string | null;
+  foto: string | null;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
+export interface ActividadEspecialidad {
+  id: number;
+  actividadId: number;
+  especialidadId: number;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
+export interface ProfesionalEspecialidad {
+  id: number;
+  profesionalId: number;
+  especialidadId: number;
+  descripcion: string | null;
   fecha_alta: string;
   usuario_alta: string;
   fecha_modificacion: string | null;
@@ -199,6 +257,37 @@ export interface CentroData {
   nombre: string;
   es_virtual: boolean;
   domicilio?: DomicilioDto;
+}
+
+// ============================================================
+// DTOs PARA PASO 2
+// ============================================================
+
+export interface CreateProfesionalDto {
+  documento: string;
+  nombre: string;
+  email: string;
+  country_code: number;
+  national_number: string;
+  genero?: string;
+  matricula?: string;
+  foto?: string;
+}
+
+export interface CreateEspecialidadDto {
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface CreateActividadEspecialidadDto {
+  actividadId: number;
+  especialidadId: number;
+}
+
+export interface CreateProfesionalEspecialidadDto {
+  profesionalId: number;
+  especialidadId: number;
+  descripcion?: string;
 }
 
 // ============================================================
@@ -325,6 +414,103 @@ export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto):
   return response.json();
 }
 
+// ============================================================
+// FUNCIONES PARA PASO 2 (Profesionales y Especialidades)
+// ============================================================
+
+// Obtener especialidades filtradas por actividad (usando el endpoint optimizado)
+export async function getEspecialidadesPorActividad(actividadId: number): Promise<Especialidad[]> {
+  // Este endpoint devuelve especialidades que tienen relación con la actividad
+  const response = await fetch(`${API_URL}/actividad-especialidad/por-actividad/${actividadId}`);
+  if (!response.ok) {
+    throw new Error(`Error al obtener especialidades: ${response.statusText}`);
+  }
+  const data = await response.json();
+  // Extraer las especialidades de las relaciones
+  return data.map((rel: any) => rel.especialidad);
+}
+
+// Buscar especialidad por nombre (para verificar si existe)
+export async function buscarEspecialidadPorNombre(nombre: string): Promise<Especialidad | null> {
+  const response = await fetch(`${API_URL}/especialidades`);
+  if (!response.ok) {
+    throw new Error(`Error al buscar especialidades: ${response.statusText}`);
+  }
+  const especialidades: Especialidad[] = await response.json();
+  const encontrada = especialidades.find(
+    e => e.nombre.toUpperCase() === nombre.toUpperCase() && !e.fecha_baja
+  );
+  return encontrada || null;
+}
+
+// Crear nueva especialidad
+export async function createEspecialidad(data: CreateEspecialidadDto): Promise<Especialidad> {
+  const response = await fetch(`${API_URL}/especialidades`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Error al crear especialidad: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Crear relación actividad-especialidad
+export async function createActividadEspecialidad(data: CreateActividadEspecialidadDto): Promise<ActividadEspecialidad> {
+  const response = await fetch(`${API_URL}/actividad-especialidad`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Error al vincular actividad con especialidad: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Crear profesional
+export async function createProfesional(data: CreateProfesionalDto): Promise<Profesional> {
+  const response = await fetch(`${API_URL}/profesionales`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Error al crear profesional: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Crear relación profesional-especialidad
+export async function createProfesionalEspecialidad(data: CreateProfesionalEspecialidadDto): Promise<ProfesionalEspecialidad> {
+  const response = await fetch(`${API_URL}/profesional-especialidad`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Error al vincular profesional con especialidad: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// ============================================================
+// FUNCIONES DE EMAIL
+// ============================================================
+
 export async function enviarEmailBienvenida(data: {
   email: string;
   nombreNegocio: string;
@@ -344,7 +530,7 @@ export async function enviarEmailBienvenida(data: {
 }
 
 // ============================================================
-// FUNCIÓN PRINCIPAL DEL PASO 1 (ORDEN CORREGIDO)
+// FUNCIÓN PRINCIPAL DEL PASO 1
 // ============================================================
 
 export interface Paso1Result {
@@ -376,7 +562,6 @@ export async function registrarPaso1DatosBasicos(params: {
     throw new Error('Se requiere al menos un centro físico con domicilio');
   }
   
-  // 1. Crear negocio
   const negocio = await createNegocio({
     nombre: params.negocioNombre,
     country_code,
@@ -384,7 +569,6 @@ export async function registrarPaso1DatosBasicos(params: {
     domicilio: primerCentroFisico.domicilio,
   });
   
-  // 2. Crear o actualizar usuario (upsert)
   const usuario = await upsertUsuario({
     email: params.usuarioEmail,
     apellido: params.usuarioApellido,
@@ -392,13 +576,11 @@ export async function registrarPaso1DatosBasicos(params: {
     telefono: params.usuarioTelefono,
   });
   
-  // 3. Asignar actividad al negocio (ANTES de crear centros)
   const negocioActividad = await createNegocioActividad({
     negocioId: negocio.id,
     actividadId: params.actividadId,
   });
   
-  // 4. Crear todos los centros (AHORA el negocio ya tiene actividad)
   const centrosCreados: Centro[] = [];
   for (const centroData of params.centros) {
     const centro = await createCentro({
@@ -412,7 +594,6 @@ export async function registrarPaso1DatosBasicos(params: {
     centrosCreados.push(centro);
   }
   
-  // 5. Asignar rol DUEÑO al usuario en el negocio (al final)
   let negocioUsuarioRol: NegocioUsuarioRol | null = null;
   try {
     negocioUsuarioRol = await createNegocioUsuarioRol({
@@ -433,5 +614,60 @@ export async function registrarPaso1DatosBasicos(params: {
     centros: centrosCreados,
     negocioActividad,
     negocioUsuarioRol: negocioUsuarioRol!,
+  };
+}
+
+// ============================================================
+// FUNCIÓN PRINCIPAL DEL PASO 2
+// ============================================================
+
+export interface Paso2Result {
+  profesional: Profesional;
+  especialidad: Especialidad;
+  profesionalEspecialidad: ProfesionalEspecialidad;
+  actividadEspecialidad?: ActividadEspecialidad; // Solo si se creó especialidad nueva
+}
+
+export async function registrarPaso2Profesional(params: {
+  negocioId: number;
+  actividadId: number;
+  profesionalData: CreateProfesionalDto;
+  especialidadNombre: string;
+  especialidadDescripcion?: string;
+}): Promise<Paso2Result> {
+  
+  // 1. Crear profesional
+  const profesional = await createProfesional(params.profesionalData);
+  
+  // 2. Buscar si la especialidad ya existe
+  let especialidad = await buscarEspecialidadPorNombre(params.especialidadNombre);
+  let actividadEspecialidad: ActividadEspecialidad | undefined = undefined;
+  
+  // 3. Si no existe, crearla
+  if (!especialidad) {
+    especialidad = await createEspecialidad({
+      nombre: params.especialidadNombre.toUpperCase(),
+      descripcion: params.especialidadDescripcion,
+    });
+    
+    // 4. Crear relación actividad-especialidad
+    actividadEspecialidad = await createActividadEspecialidad({
+      actividadId: params.actividadId,
+      especialidadId: especialidad.id,
+    });
+  }
+  
+  // 5. Crear relación profesional-especialidad
+  const profesionalEspecialidad = await createProfesionalEspecialidad({
+    profesionalId: profesional.id,
+    especialidadId: especialidad.id,
+    descripcion: null,
+  });
+  
+  return {
+    profesional,
+    especialidad,
+    profesionalEspecialidad,
+    actividadEspecialidad,
   };
 }
