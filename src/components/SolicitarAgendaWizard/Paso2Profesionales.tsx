@@ -1,11 +1,12 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// - Solo 1 profesional por wizard (límite = 1)
-// - Solo 1 especialidad por profesional
-// - Especialidades filtradas por actividad del negocio
-// - Permite crear nueva especialidad si no existe
+// VERSIÓN MODIFICADA:
+// - Auto-completado de profesional por documento
+// - Campo foto con upload a Cloudinary
+// - Opción "Agregar" dentro del select de especialidades (al inicio)
+// - Descripción de especialidad para profesional_especialidad
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -16,6 +17,7 @@ import {
   createProfesionalEspecialidad,
   getEspecialidadesPorActividad,
   buscarEspecialidadPorNombre,
+  buscarProfesionalPorDocumento,
   Especialidad,
   Paso2Result,
 } from '../../services/apiWizard';
@@ -41,6 +43,7 @@ interface FormData {
   // Especialidad
   especialidadSeleccionada: string;
   especialidadDescripcion: string;
+  especialidadDescripcionProfesional: string; // Descripción para profesional_especialidad
 }
 
 interface ValidationErrors {
@@ -50,7 +53,11 @@ interface ValidationErrors {
   whatsapp?: string;
   genero?: string;
   especialidad?: string;
+  foto?: string;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const UPLOAD_URL = `${API_BASE_URL}/upload`;
 
 const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   negocioId,
@@ -63,9 +70,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cargandoEspecialidades, setCargandoEspecialidades] = useState(true);
   const [enviando, setEnviando] = useState(false);
-  const [mostrarModalNuevaEspecialidad, setMostrarModalNuevaEspecialidad] = useState(false);
-  const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
-  const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [buscandoProfesional, setBuscandoProfesional] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     documento: '',
@@ -77,9 +84,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     foto: '',
     especialidadSeleccionada: '',
     especialidadDescripcion: '',
+    especialidadDescripcionProfesional: '',
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
+
+  // Opción especial para "Agregar nueva especialidad" (al inicio de la lista)
+  const OPCION_AGREGAR_ESPECIALIDAD = '__AGREGAR_NUEVA_ESPECIALIDAD__';
 
   // Cargar especialidades filtradas por actividad
   useEffect(() => {
@@ -101,8 +112,60 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     cargarEspecialidades();
   }, [actividadId, onError]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Auto-completado por documento (debounce)
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    if (formData.documento && formData.documento.length >= 6) {
+      timeoutRef.current = setTimeout(async () => {
+        setBuscandoProfesional(true);
+        try {
+          const profesional = await buscarProfesionalPorDocumento(formData.documento);
+          if (profesional) {
+            setFormData(prev => ({
+              ...prev,
+              nombre: profesional.nombre || '',
+              email: profesional.email || '',
+              genero: profesional.genero || '',
+              matricula: profesional.matricula || '',
+              foto: profesional.foto || '',
+            }));
+            // Auto-completar WhatsApp si está disponible
+            if (profesional.whatsapp_e164) {
+              setFormData(prev => ({ ...prev, whatsapp: profesional.whatsapp_e164 || '' }));
+            }
+            onError?.('✅ Profesional encontrado. Datos auto-completados.');
+          }
+        } catch (error) {
+          console.error('Error buscando profesional:', error);
+        } finally {
+          setBuscandoProfesional(false);
+        }
+      }, 500);
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [formData.documento, onError]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Manejar selección de especialidad
+    if (name === 'especialidadSeleccionada') {
+      if (value === OPCION_AGREGAR_ESPECIALIDAD) {
+        // Limpiar la selección y mostrar el modal inline
+        setFormData(prev => ({ ...prev, especialidadSeleccionada: '' }));
+        setMostrarModalNuevaEspecialidad(true);
+        return;
+      }
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof ValidationErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -116,10 +179,68 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
+  // Upload de foto a Cloudinary
+  const uploadImage = async (file: File): Promise<string> => {
+    setUploading(true);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64 = reader.result as string;
+          const res = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64 }),
+          });
+          if (!res.ok) throw new Error('Error al subir imagen');
+          const data = await res.json();
+          resolve(data.url);
+        } catch (err) {
+          reject(err);
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        reject(new Error('Error al leer el archivo'));
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, foto: 'Solo se permiten imágenes' }));
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, foto: 'La imagen no debe superar los 2MB' }));
+      return;
+    }
+
+    try {
+      const url = await uploadImage(file);
+      setFormData(prev => ({ ...prev, foto: url }));
+      setErrors(prev => ({ ...prev, foto: undefined }));
+    } catch (err) {
+      console.error(err);
+      setErrors(prev => ({ ...prev, foto: 'Error al subir la imagen' }));
+    }
+  };
+
   const validarEmail = (email: string): boolean => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
   };
+
+  const [mostrarModalNuevaEspecialidad, setMostrarModalNuevaEspecialidad] = useState(false);
+  const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
+  const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
 
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -257,10 +378,11 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       // Crear profesional
       const profesional = await createProfesional(profesionalData);
       
-      // Crear relación profesional-especialidad
+      // Crear relación profesional-especialidad (con descripción)
       const profesionalEspecialidad = await createProfesionalEspecialidad({
         profesionalId: profesional.id,
         especialidadId: especialidadId,
+        descripcion: formData.especialidadDescripcionProfesional || null,
       });
       
       // Obtener la especialidad completa para el resultado
@@ -281,6 +403,21 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const handleCancelar = () => {
     navigate('/');
+  };
+
+  // Construir lista de opciones del select (con opción "Agregar" al inicio)
+  const opcionesEspecialidades = () => {
+    const opciones = [
+      <option key="agregar" value={OPCION_AGREGAR_ESPECIALIDAD}>
+        + Agregar nueva especialidad
+      </option>,
+      ...especialidades.map(esp => (
+        <option key={esp.id} value={esp.nombre}>
+          {esp.nombre}
+        </option>
+      )),
+    ];
+    return opciones;
   };
 
   return (
@@ -309,6 +446,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     className={`${styles.input} ${errors.documento ? styles.inputError : ''}`}
                     placeholder="Ej: 12345678"
                   />
+                  {buscandoProfesional && (
+                    <span className={styles.helperText}>Buscando profesional...</span>
+                  )}
                   {errors.documento && (
                     <span className={styles.errorText}>{errors.documento}</span>
                   )}
@@ -401,6 +541,39 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     placeholder="Ej: MP-12345"
                   />
                 </div>
+                
+                {/* Campo Foto */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Foto</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className={styles.input}
+                    disabled={uploading}
+                  />
+                  {uploading && <span className={styles.helperText}>Subiendo imagen...</span>}
+                  {errors.foto && (
+                    <span className={styles.errorText}>{errors.foto}</span>
+                  )}
+                  {formData.foto && (
+                    <div className={styles.fotoPreview}>
+                      <img 
+                        src={formData.foto} 
+                        alt="Vista previa" 
+                        className={styles.fotoPreviewImg}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, foto: '' }))}
+                        className={styles.buttonEliminar}
+                        style={{ marginTop: '8px' }}
+                      >
+                        🗑️ Quitar foto
+                      </button>
+                    </div>
+                  )}
+                </div>
               </fieldset>
               
               {/* SECCIÓN ESPECIALIDAD */}
@@ -425,25 +598,30 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                             className={`${styles.select} ${errors.especialidad ? styles.inputError : ''}`}
                           >
                             <option value="">Seleccionar especialidad...</option>
-                            {especialidades.map(esp => (
-                              <option key={esp.id} value={esp.nombre}>
-                                {esp.nombre}
-                              </option>
-                            ))}
+                            {opcionesEspecialidades()}
                           </select>
                           {errors.especialidad && (
                             <span className={styles.errorText}>{errors.especialidad}</span>
                           )}
                         </div>
                         
-                        <div className={styles.buttonsContainerInline}>
-                          <button
-                            type="button"
-                            onClick={() => setMostrarModalNuevaEspecialidad(true)}
-                            className={styles.buttonSecondary}
-                          >
-                            + Agregar especialidad
-                          </button>
+                        {/* Descripción de la especialidad para este profesional */}
+                        <div className={styles.formGroup}>
+                          <label htmlFor="especialidadDescripcionProfesional" className={styles.label}>
+                            Descripción de la especialidad (opcional)
+                          </label>
+                          <textarea
+                            id="especialidadDescripcionProfesional"
+                            name="especialidadDescripcionProfesional"
+                            value={formData.especialidadDescripcionProfesional}
+                            onChange={handleChange}
+                            className={styles.input}
+                            placeholder="Ej: Especialista en psicología infantil"
+                            rows={3}
+                          />
+                          <span className={styles.helperText}>
+                            Esta descripción se mostrará al cliente al momento de reservar el turno.
+                          </span>
                         </div>
                       </>
                     ) : (
