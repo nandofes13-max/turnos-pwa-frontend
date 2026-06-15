@@ -443,6 +443,20 @@ export async function buscarEspecialidadPorNombre(nombre: string): Promise<Espec
   return encontrada || null;
 }
 
+// 👈 AGREGAR AQUÍ LA NUEVA FUNCIÓN
+// Buscar profesional por documento (para auto-completado)
+export async function buscarProfesionalPorDocumento(documento: string): Promise<Profesional | null> {
+  const response = await fetch(`${API_URL}/profesionales`);
+  if (!response.ok) {
+    throw new Error(`Error al buscar profesionales: ${response.statusText}`);
+  }
+  const profesionales: Profesional[] = await response.json();
+  const encontrado = profesionales.find(
+    p => p.documento === documento && !p.fecha_baja
+  );
+  return encontrado || null;
+}
+
 // Crear nueva especialidad
 export async function createEspecialidad(data: CreateEspecialidadDto): Promise<Especialidad> {
   const response = await fetch(`${API_URL}/especialidades`, {
