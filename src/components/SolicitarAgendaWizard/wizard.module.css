@@ -542,6 +542,26 @@
 }
 
 /* ============================================================
+   MODAL INLINE (para nueva especialidad)
+   ============================================================ */
+
+.modalInline {
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-top: 16px;
+}
+
+.modalInline h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 
