@@ -1,10 +1,11 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CORREGIDA:
-// - Auto-completado de profesional por documento (con limpieza de campos si no existe)
-// - Campo foto con upload a Cloudinary
-// - Opción "Agregar" dentro del select de especialidades (al inicio)
-// - Descripción de especialidad para profesional_especialidad
+// VERSIÓN CON AJUSTES:
+// - Foco automático en campo documento al cargar
+// - Sin mensaje de éxito al auto-completar
+// - Limpieza de errores al modificar campos
+// - Resumen de profesional cargado con botón eliminar
+// - Cartel de límite alcanzado
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +33,6 @@ interface Paso2ProfesionalesProps {
 }
 
 interface FormData {
-  // Datos del profesional
   documento: string;
   nombre: string;
   email: string;
@@ -40,7 +40,6 @@ interface FormData {
   genero: string;
   matricula: string;
   foto: string;
-  // Especialidad
   especialidadSeleccionada: string;
   especialidadDescripcion: string;
   especialidadDescripcionProfesional: string;
@@ -54,6 +53,17 @@ interface ValidationErrors {
   genero?: string;
   especialidad?: string;
   foto?: string;
+}
+
+// Datos guardados después de crear el profesional
+interface ProfesionalGuardado {
+  id: number;
+  documento: string;
+  nombre: string;
+  email: string;
+  whatsapp: string;
+  especialidadNombre: string;
+  especialidadDescripcionProfesional: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -72,7 +82,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [enviando, setEnviando] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [buscandoProfesional, setBuscandoProfesional] = useState(false);
+  const [profesionalGuardado, setProfesionalGuardado] = useState<ProfesionalGuardado | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const documentoInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState<FormData>({
     documento: '',
@@ -89,10 +101,16 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  // Opción especial para "Agregar nueva especialidad" (al inicio de la lista)
   const OPCION_AGREGAR_ESPECIALIDAD = '__AGREGAR_NUEVA_ESPECIALIDAD__';
+  const maxProfesionales = 1; // Límite de 1 profesional
 
-  // Cargar especialidades filtradas por actividad
+  // Foco en el campo documento al montar el componente
+  useEffect(() => {
+    if (documentoInputRef.current) {
+      documentoInputRef.current.focus();
+    }
+  }, []);
+
   useEffect(() => {
     const cargarEspecialidades = async () => {
       if (!actividadId) return;
@@ -112,7 +130,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     cargarEspecialidades();
   }, [actividadId, onError]);
 
-  // Auto-completado por documento (debounce) - CON LIMPIEZA DE CAMPOS
+  // Auto-completado por documento - SIN mensaje de éxito
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -120,7 +138,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     
     const documento = formData.documento;
     
-    // Si el documento está vacío o tiene menos de 6 caracteres, limpiar campos
     if (!documento || documento.length < 6) {
       setFormData(prev => ({
         ...prev,
@@ -149,9 +166,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             foto: profesional.foto || '',
             whatsapp: profesional.whatsapp_e164 || '',
           }));
-          onError?.('✅ Profesional encontrado. Datos auto-completados.');
+          // No mostrar mensaje de éxito
         } else {
-          // Si NO existe, limpiar campos
           setFormData(prev => ({
             ...prev,
             nombre: '',
@@ -174,12 +190,16 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [formData.documento, onError]);
+  }, [formData.documento]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Manejar selección de especialidad
+    // Limpiar error global cuando el usuario modifica cualquier campo
+    if (errors[name as keyof ValidationErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+    
     if (name === 'especialidadSeleccionada') {
       if (value === OPCION_AGREGAR_ESPECIALIDAD) {
         setFormData(prev => ({ ...prev, especialidadSeleccionada: '' }));
@@ -189,9 +209,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
     
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name as keyof ValidationErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
   };
 
   const handleWhatsappChange = (value: string) => {
@@ -201,7 +218,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
-  // Upload de foto a Cloudinary
   const uploadImage = async (file: File): Promise<string> => {
     setUploading(true);
     return new Promise((resolve, reject) => {
@@ -342,8 +358,37 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
+  const handleEliminarProfesional = () => {
+    setProfesionalGuardado(null);
+    setFormData({
+      documento: '',
+      nombre: '',
+      email: '',
+      whatsapp: '',
+      genero: '',
+      matricula: '',
+      foto: '',
+      especialidadSeleccionada: '',
+      especialidadDescripcion: '',
+      especialidadDescripcionProfesional: '',
+    });
+    setErrors({});
+    // Re-enfocar el campo documento
+    setTimeout(() => {
+      if (documentoInputRef.current) {
+        documentoInputRef.current.focus();
+      }
+    }, 100);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Si ya hay un profesional guardado, no permitir crear otro
+    if (profesionalGuardado) {
+      onError?.('Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.');
+      return;
+    }
     
     if (!validarFormulario()) {
       return;
@@ -398,6 +443,17 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
       
+      // Guardar en el resumen
+      setProfesionalGuardado({
+        id: profesional.id,
+        documento: profesional.documento,
+        nombre: profesional.nombre,
+        email: profesional.email,
+        whatsapp: profesional.whatsapp_e164,
+        especialidadNombre: especialidadFinal!.nombre,
+        especialidadDescripcionProfesional: formData.especialidadDescripcionProfesional,
+      });
+      
       onSuccess({
         profesional,
         especialidad: especialidadFinal!,
@@ -429,6 +485,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     return opciones;
   };
 
+  const limiteAlcanzado = profesionalGuardado !== null;
+
   return (
     <div className={styles['wizard-container-page']}>
       <div className={styles['wizard-left']}>
@@ -438,253 +496,293 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               <h2 className={styles.title}>Paso 2: Datos del Profesional</h2>
               <p className={styles.subtitle}>Cargá el profesional que atenderá en tu negocio</p>
               
-              {/* SECCIÓN PROFESIONAL */}
-              <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>Datos del Profesional</legend>
-                
-                <div className={styles.formGroup}>
-                  <label htmlFor="documento" className={styles.label}>
-                    Documento *
-                  </label>
-                  <input
-                    type="text"
-                    id="documento"
-                    name="documento"
-                    value={formData.documento}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.documento ? styles.inputError : ''}`}
-                    placeholder="Ej: 12345678"
-                  />
-                  {buscandoProfesional && (
-                    <span className={styles.helperText}>Buscando profesional...</span>
-                  )}
-                  {errors.documento && (
-                    <span className={styles.errorText}>{errors.documento}</span>
-                  )}
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label htmlFor="nombre" className={styles.label}>
-                    Nombre completo *
-                  </label>
-                  <input
-                    type="text"
-                    id="nombre"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.nombre ? styles.inputError : ''}`}
-                    placeholder="Ej: Juan Carlos Pérez"
-                  />
-                  {errors.nombre && (
-                    <span className={styles.errorText}>{errors.nombre}</span>
-                  )}
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label htmlFor="email" className={styles.label}>
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-                    placeholder="Ej: juan@ejemplo.com"
-                  />
-                  {errors.email && (
-                    <span className={styles.errorText}>{errors.email}</span>
-                  )}
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>WhatsApp *</label>
-                  <PhoneInput
-                    international
-                    defaultCountry="AR"
-                    value={formData.whatsapp}
-                    onChange={handleWhatsappChange}
-                    className={`${styles.phoneInput} ${errors.whatsapp ? styles.inputError : ''}`}
-                    limitMaxLength={true}
-                  />
-                  {errors.whatsapp && (
-                    <span className={styles.errorText}>{errors.whatsapp}</span>
-                  )}
-                  <span className={styles.helperText}>Con código de país. Ej: +54 9 11 1234 5678</span>
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label htmlFor="genero" className={styles.label}>
-                    Género *
-                  </label>
-                  <select
-                    id="genero"
-                    name="genero"
-                    value={formData.genero}
-                    onChange={handleChange}
-                    className={`${styles.select} ${errors.genero ? styles.inputError : ''}`}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                    <option value="X">No binario</option>
-                  </select>
-                  {errors.genero && (
-                    <span className={styles.errorText}>{errors.genero}</span>
-                  )}
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label htmlFor="matricula" className={styles.label}>
-                    Matrícula (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="matricula"
-                    name="matricula"
-                    value={formData.matricula}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="Ej: MP-12345"
-                  />
-                </div>
-                
-                {/* Campo Foto */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Foto</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className={styles.input}
-                    disabled={uploading}
-                  />
-                  {uploading && <span className={styles.helperText}>Subiendo imagen...</span>}
-                  {errors.foto && (
-                    <span className={styles.errorText}>{errors.foto}</span>
-                  )}
-                  {formData.foto && (
-                    <div className={styles.fotoPreview}>
-                      <img 
-                        src={formData.foto} 
-                        alt="Vista previa" 
-                        className={styles.fotoPreviewImg}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, foto: '' }))}
-                        className={styles.buttonEliminar}
-                        style={{ marginTop: '8px' }}
-                      >
-                        🗑️ Quitar foto
-                      </button>
+              {/* Resumen de profesional cargado */}
+              {profesionalGuardado && (
+                <div className={styles.centrosLista}>
+                  <h4 className={styles.subtitle}>📋 Profesional cargado:</h4>
+                  <div className={styles.centroCargado}>
+                    <div>
+                      <strong>{profesionalGuardado.nombre}</strong>
+                      <br />
+                      <span className={styles.centroDireccion}>
+                        Documento: {profesionalGuardado.documento} | Email: {profesionalGuardado.email}
+                        <br />
+                        Especialidad: {profesionalGuardado.especialidadNombre}
+                        {profesionalGuardado.especialidadDescripcionProfesional && (
+                          <> - {profesionalGuardado.especialidadDescripcionProfesional}</>
+                        )}
+                      </span>
                     </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={handleEliminarProfesional}
+                      className={styles.buttonEliminar}
+                    >
+                      ❌
+                    </button>
+                  </div>
                 </div>
-              </fieldset>
+              )}
               
-              {/* SECCIÓN ESPECIALIDAD */}
-              <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>Especialidad</legend>
-                
-                {cargandoEspecialidades ? (
-                  <div className={styles.helperText}>Cargando especialidades...</div>
-                ) : (
-                  <>
-                    {!mostrarModalNuevaEspecialidad ? (
-                      <>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="especialidadSeleccionada" className={styles.label}>
-                            Seleccioná la especialidad *
-                          </label>
-                          <select
-                            id="especialidadSeleccionada"
-                            name="especialidadSeleccionada"
-                            value={formData.especialidadSeleccionada}
-                            onChange={handleChange}
-                            className={`${styles.select} ${errors.especialidad ? styles.inputError : ''}`}
-                          >
-                            <option value="">Seleccionar especialidad...</option>
-                            {opcionesEspecialidades()}
-                          </select>
-                          {errors.especialidad && (
-                            <span className={styles.errorText}>{errors.especialidad}</span>
-                          )}
-                        </div>
-                        
-                        {/* Descripción de la especialidad para este profesional */}
-                        <div className={styles.formGroup}>
-                          <label htmlFor="especialidadDescripcionProfesional" className={styles.label}>
-                            Descripción de la especialidad (opcional)
-                          </label>
-                          <textarea
-                            id="especialidadDescripcionProfesional"
-                            name="especialidadDescripcionProfesional"
-                            value={formData.especialidadDescripcionProfesional}
-                            onChange={handleChange}
-                            className={styles.input}
-                            placeholder="Ej: Especialista en psicología infantil"
-                            rows={3}
+              {/* Cartel de límite alcanzado */}
+              {limiteAlcanzado && (
+                <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginBottom: '16px' }}>
+                  ⚠️ Límite de profesionales alcanzado. Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.
+                </div>
+              )}
+              
+              {/* Formulario de carga - solo si no se alcanzó el límite */}
+              {!limiteAlcanzado && (
+                <>
+                  {/* SECCIÓN PROFESIONAL */}
+                  <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>Datos del Profesional</legend>
+                    
+                    <div className={styles.formGroup}>
+                      <label htmlFor="documento" className={styles.label}>
+                        Documento *
+                      </label>
+                      <input
+                        type="text"
+                        id="documento"
+                        name="documento"
+                        ref={documentoInputRef}
+                        value={formData.documento}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors.documento ? styles.inputError : ''}`}
+                        placeholder="Ej: 12345678"
+                      />
+                      {buscandoProfesional && (
+                        <span className={styles.helperText}>Buscando profesional...</span>
+                      )}
+                      {errors.documento && (
+                        <span className={styles.errorText}>{errors.documento}</span>
+                      )}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label htmlFor="nombre" className={styles.label}>
+                        Nombre completo *
+                      </label>
+                      <input
+                        type="text"
+                        id="nombre"
+                        name="nombre"
+                        value={formData.nombre}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors.nombre ? styles.inputError : ''}`}
+                        placeholder="Ej: Juan Carlos Pérez"
+                      />
+                      {errors.nombre && (
+                        <span className={styles.errorText}>{errors.nombre}</span>
+                      )}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label htmlFor="email" className={styles.label}>
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+                        placeholder="Ej: juan@ejemplo.com"
+                      />
+                      {errors.email && (
+                        <span className={styles.errorText}>{errors.email}</span>
+                      )}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>WhatsApp *</label>
+                      <PhoneInput
+                        international
+                        defaultCountry="AR"
+                        value={formData.whatsapp}
+                        onChange={handleWhatsappChange}
+                        className={`${styles.phoneInput} ${errors.whatsapp ? styles.inputError : ''}`}
+                        limitMaxLength={true}
+                      />
+                      {errors.whatsapp && (
+                        <span className={styles.errorText}>{errors.whatsapp}</span>
+                      )}
+                      <span className={styles.helperText}>Con código de país. Ej: +54 9 11 1234 5678</span>
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label htmlFor="genero" className={styles.label}>
+                        Género *
+                      </label>
+                      <select
+                        id="genero"
+                        name="genero"
+                        value={formData.genero}
+                        onChange={handleChange}
+                        className={`${styles.select} ${errors.genero ? styles.inputError : ''}`}
+                      >
+                        <option value="">Seleccionar...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="X">No binario</option>
+                      </select>
+                      {errors.genero && (
+                        <span className={styles.errorText}>{errors.genero}</span>
+                      )}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label htmlFor="matricula" className={styles.label}>
+                        Matrícula (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        id="matricula"
+                        name="matricula"
+                        value={formData.matricula}
+                        onChange={handleChange}
+                        className={styles.input}
+                        placeholder="Ej: MP-12345"
+                      />
+                    </div>
+                    
+                    {/* Campo Foto */}
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>Foto</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className={styles.input}
+                        disabled={uploading}
+                      />
+                      {uploading && <span className={styles.helperText}>Subiendo imagen...</span>}
+                      {errors.foto && (
+                        <span className={styles.errorText}>{errors.foto}</span>
+                      )}
+                      {formData.foto && (
+                        <div className={styles.fotoPreview}>
+                          <img 
+                            src={formData.foto} 
+                            alt="Vista previa" 
+                            className={styles.fotoPreviewImg}
                           />
-                          <span className={styles.helperText}>
-                            Esta descripción se mostrará al cliente al momento de reservar el turno.
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, foto: '' }))}
+                            className={styles.buttonEliminar}
+                            style={{ marginTop: '8px' }}
+                          >
+                            🗑️ Quitar foto
+                          </button>
                         </div>
-                      </>
+                      )}
+                    </div>
+                  </fieldset>
+                  
+                  {/* SECCIÓN ESPECIALIDAD */}
+                  <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>Especialidad</legend>
+                    
+                    {cargandoEspecialidades ? (
+                      <div className={styles.helperText}>Cargando especialidades...</div>
                     ) : (
-                      <div className={styles.modalInline}>
-                        <h4 className={styles.subtitle}>Nueva Especialidad</h4>
-                        
-                        <div className={styles.formGroup}>
-                          <label className={styles.label}>Nombre de la especialidad *</label>
-                          <input
-                            type="text"
-                            value={nuevaEspecialidadNombre}
-                            onChange={(e) => setNuevaEspecialidadNombre(e.target.value.toUpperCase())}
-                            className={styles.input}
-                            placeholder="Ej: CARDIOLOGÍA"
-                            autoFocus
-                          />
-                        </div>
-                        
-                        <div className={styles.formGroup}>
-                          <label className={styles.label}>Descripción (opcional)</label>
-                          <textarea
-                            value={nuevaEspecialidadDescripcion}
-                            onChange={(e) => setNuevaEspecialidadDescripcion(e.target.value)}
-                            className={styles.input}
-                            placeholder="Descripción de la especialidad"
-                            rows={2}
-                          />
-                        </div>
-                        
-                        <div className={styles.buttonsContainerInline}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMostrarModalNuevaEspecialidad(false);
-                              setNuevaEspecialidadNombre('');
-                              setNuevaEspecialidadDescripcion('');
-                            }}
-                            className={styles.buttonSecondary}
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleAgregarEspecialidad}
-                            className={styles.buttonPrimary}
-                          >
-                            Agregar
-                          </button>
-                        </div>
-                      </div>
+                      <>
+                        {!mostrarModalNuevaEspecialidad ? (
+                          <>
+                            <div className={styles.formGroup}>
+                              <label htmlFor="especialidadSeleccionada" className={styles.label}>
+                                Seleccioná la especialidad *
+                              </label>
+                              <select
+                                id="especialidadSeleccionada"
+                                name="especialidadSeleccionada"
+                                value={formData.especialidadSeleccionada}
+                                onChange={handleChange}
+                                className={`${styles.select} ${errors.especialidad ? styles.inputError : ''}`}
+                              >
+                                <option value="">Seleccionar especialidad...</option>
+                                {opcionesEspecialidades()}
+                              </select>
+                              {errors.especialidad && (
+                                <span className={styles.errorText}>{errors.especialidad}</span>
+                              )}
+                            </div>
+                            
+                            <div className={styles.formGroup}>
+                              <label htmlFor="especialidadDescripcionProfesional" className={styles.label}>
+                                Descripción de la especialidad (opcional)
+                              </label>
+                              <textarea
+                                id="especialidadDescripcionProfesional"
+                                name="especialidadDescripcionProfesional"
+                                value={formData.especialidadDescripcionProfesional}
+                                onChange={handleChange}
+                                className={styles.input}
+                                placeholder="Ej: Especialista en psicología infantil"
+                                rows={3}
+                              />
+                              <span className={styles.helperText}>
+                                Esta descripción se mostrará al cliente al momento de reservar el turno.
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className={styles.modalInline}>
+                            <h4 className={styles.subtitle}>Nueva Especialidad</h4>
+                            
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>Nombre de la especialidad *</label>
+                              <input
+                                type="text"
+                                value={nuevaEspecialidadNombre}
+                                onChange={(e) => setNuevaEspecialidadNombre(e.target.value.toUpperCase())}
+                                className={styles.input}
+                                placeholder="Ej: CARDIOLOGÍA"
+                                autoFocus
+                              />
+                            </div>
+                            
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>Descripción (opcional)</label>
+                              <textarea
+                                value={nuevaEspecialidadDescripcion}
+                                onChange={(e) => setNuevaEspecialidadDescripcion(e.target.value)}
+                                className={styles.input}
+                                placeholder="Descripción de la especialidad"
+                                rows={2}
+                              />
+                            </div>
+                            
+                            <div className={styles.buttonsContainerInline}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMostrarModalNuevaEspecialidad(false);
+                                  setNuevaEspecialidadNombre('');
+                                  setNuevaEspecialidadDescripcion('');
+                                }}
+                                className={styles.buttonSecondary}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleAgregarEspecialidad}
+                                className={styles.buttonPrimary}
+                              >
+                                Agregar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </fieldset>
+                  </fieldset>
+                </>
+              )}
               
               {/* BOTONES */}
               <div className={styles.buttonsContainer}>
@@ -696,7 +794,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                 >
                   Cancelar
                 </button>
-                {onBack && (
+                {onBack && !limiteAlcanzado && (
                   <button
                     type="button"
                     onClick={onBack}
@@ -706,13 +804,28 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     Volver
                   </button>
                 )}
-                <button
-                  type="submit"
-                  disabled={enviando}
-                  className={styles.buttonPrimary}
-                >
-                  {enviando ? 'Guardando...' : 'Continuar al Paso 3'}
-                </button>
+                {!limiteAlcanzado && (
+                  <button
+                    type="submit"
+                    disabled={enviando}
+                    className={styles.buttonPrimary}
+                  >
+                    {enviando ? 'Guardando...' : 'Guardar Profesional'}
+                  </button>
+                )}
+                {limiteAlcanzado && (
+                  <button
+                    type="button"
+                    onClick={() => onSuccess({
+                      profesional: {} as any,
+                      especialidad: {} as any,
+                      profesionalEspecialidad: {} as any,
+                    })}
+                    className={styles.buttonPrimary}
+                  >
+                    Continuar al Paso 3
+                  </button>
+                )}
               </div>
             </form>
           </div>
