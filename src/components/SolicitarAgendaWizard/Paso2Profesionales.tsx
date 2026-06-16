@@ -1,11 +1,13 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CON AJUSTES:
+// VERSIÓN FINAL CORREGIDA:
 // - Foco automático en campo documento al cargar
 // - Sin mensaje de éxito al auto-completar
 // - Limpieza de errores al modificar campos
 // - Resumen de profesional cargado con botón eliminar
 // - Cartel de límite alcanzado
+// - Descripción específica del profesional se guarda en profesional_especialidad
+// - Especialidad NUEVA se crea SIN descripción (solo nombre)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -41,8 +43,7 @@ interface FormData {
   matricula: string;
   foto: string;
   especialidadSeleccionada: string;
-  especialidadDescripcion: string;
-  especialidadDescripcionProfesional: string;
+  especialidadDescripcionProfesional: string; // Solo esta descripción, la específica del profesional
 }
 
 interface ValidationErrors {
@@ -55,7 +56,6 @@ interface ValidationErrors {
   foto?: string;
 }
 
-// Datos guardados después de crear el profesional
 interface ProfesionalGuardado {
   id: number;
   documento: string;
@@ -95,14 +95,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     matricula: '',
     foto: '',
     especialidadSeleccionada: '',
-    especialidadDescripcion: '',
     especialidadDescripcionProfesional: '',
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const OPCION_AGREGAR_ESPECIALIDAD = '__AGREGAR_NUEVA_ESPECIALIDAD__';
-  const maxProfesionales = 1; // Límite de 1 profesional
+  const maxProfesionales = 1;
 
   // Foco en el campo documento al montar el componente
   useEffect(() => {
@@ -166,7 +165,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             foto: profesional.foto || '',
             whatsapp: profesional.whatsapp_e164 || '',
           }));
-          // No mostrar mensaje de éxito
         } else {
           setFormData(prev => ({
             ...prev,
@@ -195,7 +193,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Limpiar error global cuando el usuario modifica cualquier campo
     if (errors[name as keyof ValidationErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -278,7 +275,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const [mostrarModalNuevaEspecialidad, setMostrarModalNuevaEspecialidad] = useState(false);
   const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
-  const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
 
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -347,11 +343,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     setFormData(prev => ({
       ...prev,
       especialidadSeleccionada: nuevaEspecialidadNombre,
-      especialidadDescripcion: nuevaEspecialidadDescripcion,
     }));
     
     setNuevaEspecialidadNombre('');
-    setNuevaEspecialidadDescripcion('');
     
     if (errors.especialidad) {
       setErrors(prev => ({ ...prev, especialidad: undefined }));
@@ -369,11 +363,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       matricula: '',
       foto: '',
       especialidadSeleccionada: '',
-      especialidadDescripcion: '',
       especialidadDescripcionProfesional: '',
     });
     setErrors({});
-    // Re-enfocar el campo documento
     setTimeout(() => {
       if (documentoInputRef.current) {
         documentoInputRef.current.focus();
@@ -384,7 +376,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Si ya hay un profesional guardado, no permitir crear otro
     if (profesionalGuardado) {
       onError?.('Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.');
       return;
@@ -421,9 +412,10 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       if (especialidadExistente) {
         especialidadId = especialidadExistente.id;
       } else {
+        // Crear nueva especialidad SIN descripción (solo nombre)
         const nuevaEspecialidad = await createEspecialidad({
           nombre: especialidadNombre.toUpperCase(),
-          descripcion: formData.especialidadDescripcion,
+          // descripcion NO se envía
         });
         especialidadId = nuevaEspecialidad.id;
         
@@ -435,6 +427,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       
       const profesional = await createProfesional(profesionalData);
       
+      // Crear relación profesional-especialidad CON la descripción específica
       const profesionalEspecialidad = await createProfesionalEspecialidad({
         profesionalId: profesional.id,
         especialidadId: especialidadId,
@@ -443,7 +436,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
       
-      // Guardar en el resumen
       setProfesionalGuardado({
         id: profesional.id,
         documento: profesional.documento,
@@ -648,7 +640,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       />
                     </div>
                     
-                    {/* Campo Foto */}
                     <div className={styles.formGroup}>
                       <label className={styles.label}>Foto</label>
                       <input
@@ -745,24 +736,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                               />
                             </div>
                             
-                            <div className={styles.formGroup}>
-                              <label className={styles.label}>Descripción (opcional)</label>
-                              <textarea
-                                value={nuevaEspecialidadDescripcion}
-                                onChange={(e) => setNuevaEspecialidadDescripcion(e.target.value)}
-                                className={styles.input}
-                                placeholder="Descripción de la especialidad"
-                                rows={2}
-                              />
-                            </div>
-                            
                             <div className={styles.buttonsContainerInline}>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setMostrarModalNuevaEspecialidad(false);
                                   setNuevaEspecialidadNombre('');
-                                  setNuevaEspecialidadDescripcion('');
                                 }}
                                 className={styles.buttonSecondary}
                               >
@@ -816,11 +795,15 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                 {limiteAlcanzado && (
                   <button
                     type="button"
-                    onClick={() => onSuccess({
-                      profesional: {} as any,
-                      especialidad: {} as any,
-                      profesionalEspecialidad: {} as any,
-                    })}
+                    onClick={() => {
+                      if (profesionalGuardado) {
+                        onSuccess({
+                          profesional: {} as any,
+                          especialidad: {} as any,
+                          profesionalEspecialidad: {} as any,
+                        });
+                      }
+                    }}
                     className={styles.buttonPrimary}
                   >
                     Continuar al Paso 3
