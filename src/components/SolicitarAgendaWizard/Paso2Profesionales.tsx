@@ -1,13 +1,10 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN FINAL CORREGIDA:
-// - Foco automático en campo documento al cargar
-// - Sin mensaje de éxito al auto-completar
-// - Limpieza de errores al modificar campos
-// - Resumen de profesional cargado con botón eliminar
-// - Cartel de límite alcanzado
-// - Descripción específica del profesional se guarda en profesional_especialidad
-// - Especialidad NUEVA se crea SIN descripción (solo nombre)
+// VERSIÓN CON FLUJO DE AGREGAR (similar a centros):
+// - Al hacer clic en "Agregar", solo se muestra en el resumen (NO se guarda en BD)
+// - Botón ❌ para eliminar del resumen
+// - Límite de 1 profesional (cartel de ayuda)
+// - Al hacer clic en "Continuar al Paso 3", se guarda TODO en la BD
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -43,7 +40,7 @@ interface FormData {
   matricula: string;
   foto: string;
   especialidadSeleccionada: string;
-  especialidadDescripcionProfesional: string; // Solo esta descripción, la específica del profesional
+  especialidadDescripcionProfesional: string;
 }
 
 interface ValidationErrors {
@@ -56,12 +53,14 @@ interface ValidationErrors {
   foto?: string;
 }
 
-interface ProfesionalGuardado {
-  id: number;
+interface ProfesionalPendiente {
   documento: string;
   nombre: string;
   email: string;
   whatsapp: string;
+  genero: string;
+  matricula: string;
+  foto: string;
   especialidadNombre: string;
   especialidadDescripcionProfesional: string;
 }
@@ -82,7 +81,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [enviando, setEnviando] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [buscandoProfesional, setBuscandoProfesional] = useState(false);
-  const [profesionalGuardado, setProfesionalGuardado] = useState<ProfesionalGuardado | null>(null);
+  const [profesionalPendiente, setProfesionalPendiente] = useState<ProfesionalPendiente | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const documentoInputRef = useRef<HTMLInputElement>(null);
   
@@ -101,9 +100,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const OPCION_AGREGAR_ESPECIALIDAD = '__AGREGAR_NUEVA_ESPECIALIDAD__';
-  const maxProfesionales = 1;
 
-  // Foco en el campo documento al montar el componente
   useEffect(() => {
     if (documentoInputRef.current) {
       documentoInputRef.current.focus();
@@ -129,7 +126,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     cargarEspecialidades();
   }, [actividadId, onError]);
 
-  // Auto-completado por documento - SIN mensaje de éxito
+  // Auto-completado por documento
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -352,8 +349,37 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
-  const handleEliminarProfesional = () => {
-    setProfesionalGuardado(null);
+  // Agregar profesional al resumen (sin guardar en BD)
+  const handleAgregarProfesional = () => {
+    if (!validarFormulario()) {
+      return;
+    }
+    
+    if (profesionalPendiente) {
+      onError?.('Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.');
+      return;
+    }
+    
+    const phoneData = parsePhoneE164(formData.whatsapp);
+    if (!phoneData) {
+      setErrors({ whatsapp: 'El número de WhatsApp no es válido' });
+      return;
+    }
+    
+    // Guardar en el estado pendiente (NO en BD)
+    setProfesionalPendiente({
+      documento: formData.documento,
+      nombre: formData.nombre.toUpperCase(),
+      email: formData.email.toLowerCase(),
+      whatsapp: formData.whatsapp,
+      genero: formData.genero,
+      matricula: formData.matricula,
+      foto: formData.foto,
+      especialidadNombre: formData.especialidadSeleccionada,
+      especialidadDescripcionProfesional: formData.especialidadDescripcionProfesional,
+    });
+    
+    // Limpiar formulario
     setFormData({
       documento: '',
       nombre: '',
@@ -366,6 +392,10 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       especialidadDescripcionProfesional: '',
     });
     setErrors({});
+  };
+
+  const handleEliminarProfesional = () => {
+    setProfesionalPendiente(null);
     setTimeout(() => {
       if (documentoInputRef.current) {
         documentoInputRef.current.focus();
@@ -373,49 +403,42 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }, 100);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (profesionalGuardado) {
-      onError?.('Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.');
-      return;
-    }
-    
-    if (!validarFormulario()) {
+  // Guardar TODO en la BD y continuar al Paso 3
+  const handleContinuar = async () => {
+    if (!profesionalPendiente) {
+      onError?.('No hay profesional cargado para continuar');
       return;
     }
     
     setEnviando(true);
     
     try {
-      const phoneData = parsePhoneE164(formData.whatsapp);
+      const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
       if (!phoneData) {
         throw new Error('El número de WhatsApp no es válido');
       }
       
       const profesionalData = {
-        documento: formData.documento,
-        nombre: formData.nombre.toUpperCase(),
-        email: formData.email.toLowerCase(),
+        documento: profesionalPendiente.documento,
+        nombre: profesionalPendiente.nombre,
+        email: profesionalPendiente.email,
         country_code: phoneData.country_code,
         national_number: phoneData.national_number,
-        genero: formData.genero,
-        matricula: formData.matricula || undefined,
-        foto: formData.foto || undefined,
+        genero: profesionalPendiente.genero,
+        matricula: profesionalPendiente.matricula || undefined,
+        foto: profesionalPendiente.foto || undefined,
       };
       
       let especialidadId: number;
-      let especialidadNombre = formData.especialidadSeleccionada;
+      let especialidadNombre = profesionalPendiente.especialidadNombre;
       
       let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
       
       if (especialidadExistente) {
         especialidadId = especialidadExistente.id;
       } else {
-        // Crear nueva especialidad SIN descripción (solo nombre)
         const nuevaEspecialidad = await createEspecialidad({
           nombre: especialidadNombre.toUpperCase(),
-          // descripcion NO se envía
         });
         especialidadId = nuevaEspecialidad.id;
         
@@ -427,24 +450,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       
       const profesional = await createProfesional(profesionalData);
       
-      // Crear relación profesional-especialidad CON la descripción específica
       const profesionalEspecialidad = await createProfesionalEspecialidad({
         profesionalId: profesional.id,
         especialidadId: especialidadId,
-        descripcion: formData.especialidadDescripcionProfesional || null,
+        descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
       });
       
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
-      
-      setProfesionalGuardado({
-        id: profesional.id,
-        documento: profesional.documento,
-        nombre: profesional.nombre,
-        email: profesional.email,
-        whatsapp: profesional.whatsapp_e164,
-        especialidadNombre: especialidadFinal!.nombre,
-        especialidadDescripcionProfesional: formData.especialidadDescripcionProfesional,
-      });
       
       onSuccess({
         profesional,
@@ -452,7 +464,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         profesionalEspecialidad,
       });
     } catch (error) {
-      console.error('Error al registrar profesional:', error);
+      console.error('Error al guardar profesional:', error);
       onError?.(error instanceof Error ? error.message : 'Error al procesar el formulario');
     } finally {
       setEnviando(false);
@@ -477,31 +489,31 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     return opciones;
   };
 
-  const limiteAlcanzado = profesionalGuardado !== null;
+  const limiteAlcanzado = profesionalPendiente !== null;
 
   return (
     <div className={styles['wizard-container-page']}>
       <div className={styles['wizard-left']}>
         <div className={styles['wizard-left-content']}>
           <div className={styles['wizard-card']}>
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={(e) => e.preventDefault()} className={styles.form}>
               <h2 className={styles.title}>Paso 2: Datos del Profesional</h2>
               <p className={styles.subtitle}>Cargá el profesional que atenderá en tu negocio</p>
               
               {/* Resumen de profesional cargado */}
-              {profesionalGuardado && (
+              {profesionalPendiente && (
                 <div className={styles.centrosLista}>
                   <h4 className={styles.subtitle}>📋 Profesional cargado:</h4>
                   <div className={styles.centroCargado}>
                     <div>
-                      <strong>{profesionalGuardado.nombre}</strong>
+                      <strong>{profesionalPendiente.nombre}</strong>
                       <br />
                       <span className={styles.centroDireccion}>
-                        Documento: {profesionalGuardado.documento} | Email: {profesionalGuardado.email}
+                        Documento: {profesionalPendiente.documento} | Email: {profesionalPendiente.email}
                         <br />
-                        Especialidad: {profesionalGuardado.especialidadNombre}
-                        {profesionalGuardado.especialidadDescripcionProfesional && (
-                          <> - {profesionalGuardado.especialidadDescripcionProfesional}</>
+                        Especialidad: {profesionalPendiente.especialidadNombre}
+                        {profesionalPendiente.especialidadDescripcionProfesional && (
+                          <> - {profesionalPendiente.especialidadDescripcionProfesional}</>
                         )}
                       </span>
                     </div>
@@ -526,7 +538,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               {/* Formulario de carga - solo si no se alcanzó el límite */}
               {!limiteAlcanzado && (
                 <>
-                  {/* SECCIÓN PROFESIONAL */}
                   <fieldset className={styles.fieldset}>
                     <legend className={styles.legend}>Datos del Profesional</legend>
                     
@@ -673,7 +684,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     </div>
                   </fieldset>
                   
-                  {/* SECCIÓN ESPECIALIDAD */}
                   <fieldset className={styles.fieldset}>
                     <legend className={styles.legend}>Especialidad</legend>
                     
@@ -760,56 +770,59 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       </>
                     )}
                   </fieldset>
+                  
+                  <div className={styles.buttonsContainer}>
+                    <button
+                      type="button"
+                      onClick={handleCancelar}
+                      className={styles.buttonSecondary}
+                      disabled={enviando}
+                    >
+                      Cancelar
+                    </button>
+                    {onBack && (
+                      <button
+                        type="button"
+                        onClick={onBack}
+                        className={styles.buttonSecondary}
+                        disabled={enviando}
+                      >
+                        Volver
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAgregarProfesional}
+                      disabled={enviando || limiteAlcanzado}
+                      className={styles.buttonPrimary}
+                    >
+                      Agregar
+                    </button>
+                  </div>
                 </>
               )}
               
-              {/* BOTONES */}
-              <div className={styles.buttonsContainer}>
-                <button
-                  type="button"
-                  onClick={handleCancelar}
-                  className={styles.buttonSecondary}
-                  disabled={enviando}
-                >
-                  Cancelar
-                </button>
-                {onBack && !limiteAlcanzado && (
+              {/* Botón Continuar - solo visible después de agregar */}
+              {limiteAlcanzado && (
+                <div className={styles.buttonsContainer}>
                   <button
                     type="button"
-                    onClick={onBack}
+                    onClick={handleCancelar}
                     className={styles.buttonSecondary}
                     disabled={enviando}
                   >
-                    Volver
+                    Cancelar
                   </button>
-                )}
-                {!limiteAlcanzado && (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleContinuar}
                     disabled={enviando}
                     className={styles.buttonPrimary}
                   >
-                    {enviando ? 'Guardando...' : 'Guardar Profesional'}
+                    {enviando ? 'Guardando...' : 'Continuar al Paso 3'}
                   </button>
-                )}
-                {limiteAlcanzado && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (profesionalGuardado) {
-                        onSuccess({
-                          profesional: {} as any,
-                          especialidad: {} as any,
-                          profesionalEspecialidad: {} as any,
-                        });
-                      }
-                    }}
-                    className={styles.buttonPrimary}
-                  >
-                    Continuar al Paso 3
-                  </button>
-                )}
-              </div>
+                </div>
+              )}
             </form>
           </div>
         </div>
