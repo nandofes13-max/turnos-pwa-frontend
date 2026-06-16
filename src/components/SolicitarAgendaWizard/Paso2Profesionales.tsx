@@ -1,7 +1,7 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN MODIFICADA:
-// - Auto-completado de profesional por documento
+// VERSIÓN CORREGIDA:
+// - Auto-completado de profesional por documento (con limpieza de campos si no existe)
 // - Campo foto con upload a Cloudinary
 // - Opción "Agregar" dentro del select de especialidades (al inicio)
 // - Descripción de especialidad para profesional_especialidad
@@ -43,7 +43,7 @@ interface FormData {
   // Especialidad
   especialidadSeleccionada: string;
   especialidadDescripcion: string;
-  especialidadDescripcionProfesional: string; // Descripción para profesional_especialidad
+  especialidadDescripcionProfesional: string;
 }
 
 interface ValidationErrors {
@@ -112,39 +112,62 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     cargarEspecialidades();
   }, [actividadId, onError]);
 
-  // Auto-completado por documento (debounce)
+  // Auto-completado por documento (debounce) - CON LIMPIEZA DE CAMPOS
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     
-    if (formData.documento && formData.documento.length >= 6) {
-      timeoutRef.current = setTimeout(async () => {
-        setBuscandoProfesional(true);
-        try {
-          const profesional = await buscarProfesionalPorDocumento(formData.documento);
-          if (profesional) {
-            setFormData(prev => ({
-              ...prev,
-              nombre: profesional.nombre || '',
-              email: profesional.email || '',
-              genero: profesional.genero || '',
-              matricula: profesional.matricula || '',
-              foto: profesional.foto || '',
-            }));
-            // Auto-completar WhatsApp si está disponible
-            if (profesional.whatsapp_e164) {
-              setFormData(prev => ({ ...prev, whatsapp: profesional.whatsapp_e164 || '' }));
-            }
-            onError?.('✅ Profesional encontrado. Datos auto-completados.');
-          }
-        } catch (error) {
-          console.error('Error buscando profesional:', error);
-        } finally {
-          setBuscandoProfesional(false);
-        }
-      }, 500);
+    const documento = formData.documento;
+    
+    // Si el documento está vacío o tiene menos de 6 caracteres, limpiar campos
+    if (!documento || documento.length < 6) {
+      setFormData(prev => ({
+        ...prev,
+        nombre: '',
+        email: '',
+        genero: '',
+        matricula: '',
+        foto: '',
+        whatsapp: '',
+      }));
+      setBuscandoProfesional(false);
+      return;
     }
+    
+    timeoutRef.current = setTimeout(async () => {
+      setBuscandoProfesional(true);
+      try {
+        const profesional = await buscarProfesionalPorDocumento(documento);
+        if (profesional) {
+          setFormData(prev => ({
+            ...prev,
+            nombre: profesional.nombre || '',
+            email: profesional.email || '',
+            genero: profesional.genero || '',
+            matricula: profesional.matricula || '',
+            foto: profesional.foto || '',
+            whatsapp: profesional.whatsapp_e164 || '',
+          }));
+          onError?.('✅ Profesional encontrado. Datos auto-completados.');
+        } else {
+          // Si NO existe, limpiar campos
+          setFormData(prev => ({
+            ...prev,
+            nombre: '',
+            email: '',
+            genero: '',
+            matricula: '',
+            foto: '',
+            whatsapp: '',
+          }));
+        }
+      } catch (error) {
+        console.error('Error buscando profesional:', error);
+      } finally {
+        setBuscandoProfesional(false);
+      }
+    }, 500);
     
     return () => {
       if (timeoutRef.current) {
@@ -159,7 +182,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     // Manejar selección de especialidad
     if (name === 'especialidadSeleccionada') {
       if (value === OPCION_AGREGAR_ESPECIALIDAD) {
-        // Limpiar la selección y mostrar el modal inline
         setFormData(prev => ({ ...prev, especialidadSeleccionada: '' }));
         setMostrarModalNuevaEspecialidad(true);
         return;
@@ -299,14 +321,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // Verificar que no exista ya una especialidad con ese nombre
     const existente = await buscarEspecialidadPorNombre(nuevaEspecialidadNombre);
     if (existente) {
       onError?.('Ya existe una especialidad con ese nombre');
       return;
     }
     
-    // Cerrar modal y seleccionar la nueva especialidad
     setMostrarModalNuevaEspecialidad(false);
     setFormData(prev => ({
       ...prev,
@@ -314,7 +334,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       especialidadDescripcion: nuevaEspecialidadDescripcion,
     }));
     
-    // Limpiar campos del modal
     setNuevaEspecialidadNombre('');
     setNuevaEspecialidadDescripcion('');
     
@@ -333,13 +352,11 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     setEnviando(true);
     
     try {
-      // Parsear WhatsApp
       const phoneData = parsePhoneE164(formData.whatsapp);
       if (!phoneData) {
         throw new Error('El número de WhatsApp no es válido');
       }
       
-      // Datos del profesional
       const profesionalData = {
         documento: formData.documento,
         nombre: formData.nombre.toUpperCase(),
@@ -351,41 +368,34 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         foto: formData.foto || undefined,
       };
       
-      // Crear profesional y especialidad
       let especialidadId: number;
       let especialidadNombre = formData.especialidadSeleccionada;
       
-      // Verificar si la especialidad ya existe
       let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
       
       if (especialidadExistente) {
         especialidadId = especialidadExistente.id;
       } else {
-        // Crear nueva especialidad
         const nuevaEspecialidad = await createEspecialidad({
           nombre: especialidadNombre.toUpperCase(),
           descripcion: formData.especialidadDescripcion,
         });
         especialidadId = nuevaEspecialidad.id;
         
-        // Crear relación actividad-especialidad
         await createActividadEspecialidad({
           actividadId: actividadId,
           especialidadId: especialidadId,
         });
       }
       
-      // Crear profesional
       const profesional = await createProfesional(profesionalData);
       
-      // Crear relación profesional-especialidad (con descripción)
       const profesionalEspecialidad = await createProfesionalEspecialidad({
         profesionalId: profesional.id,
         especialidadId: especialidadId,
         descripcion: formData.especialidadDescripcionProfesional || null,
       });
       
-      // Obtener la especialidad completa para el resultado
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
       
       onSuccess({
@@ -405,7 +415,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     navigate('/');
   };
 
-  // Construir lista de opciones del select (con opción "Agregar" al inicio)
   const opcionesEspecialidades = () => {
     const opciones = [
       <option key="agregar" value={OPCION_AGREGAR_ESPECIALIDAD}>
