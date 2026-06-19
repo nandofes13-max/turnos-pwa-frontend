@@ -640,6 +640,7 @@ export interface Paso2Result {
   especialidad: Especialidad;
   profesionalEspecialidad: ProfesionalEspecialidad;
   actividadEspecialidad?: ActividadEspecialidad; // Solo si se creó especialidad nueva
+  profesionalCentroIds: number[]; // 👈 NUEVO: IDs de las relaciones profesional-centro creadas
 }
 
 export async function registrarPaso2Profesional(params: {
