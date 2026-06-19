@@ -1,9 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CON RESUMEN DE ESPECIALIDAD:
-// - Después de agregar especialidad (nueva o existente), se oculta el select y muestra resumen
-// - Botón ❌ para eliminar la especialidad seleccionada y volver al select
-// - El resumen del profesional se mantiene independiente
+// VERSIÓN MODIFICADA:
+// - Al hacer clic en "Continuar al Paso 3", también crea las relaciones profesional-centro
+// - Obtiene los centros del negocio desde la BD usando GET /centros/negocio/:negocioId
+// - Pasa los IDs de las relaciones al Paso 3
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -62,6 +62,16 @@ interface ProfesionalPendiente {
   foto: string;
   especialidadNombre: string;
   especialidadDescripcionProfesional: string;
+}
+
+// Interface para los centros que devuelve la API
+interface Centro {
+  id: number;
+  negocioId: number;
+  nombre: string;
+  codigo: string;
+  es_virtual: boolean;
+  fecha_baja: string | null;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -373,7 +383,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       especialidadSeleccionada: '',
       especialidadDescripcionProfesional: '',
     }));
-    // Si el modal de nueva especialidad estaba abierto, cerrarlo
     setMostrarModalNuevaEspecialidad(false);
   };
 
@@ -428,6 +437,56 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }, 100);
   };
 
+  // ============================================================
+  // FUNCIÓN PARA OBTENER CENTROS DEL NEGOCIO
+  // ============================================================
+  const obtenerCentrosDelNegocio = async (negocioId: number): Promise<Centro[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/centros/negocio/${negocioId}`);
+      if (!response.ok) {
+        throw new Error(`Error al obtener centros: ${response.statusText}`);
+      }
+      const centros = await response.json();
+      // Filtrar solo centros activos (fecha_baja = null)
+      return centros.filter((c: Centro) => !c.fecha_baja);
+    } catch (error) {
+      console.error('Error obteniendo centros del negocio:', error);
+      throw new Error('No se pudieron obtener los centros del negocio');
+    }
+  };
+
+  // ============================================================
+  // FUNCIÓN PARA CREAR UNA RELACIÓN PROFESIONAL-CENTRO
+  // ============================================================
+  const crearProfesionalCentro = async (
+    profesionalId: number,
+    especialidadId: number,
+    centroId: number
+  ): Promise<{ id: number }> => {
+    const response = await fetch(`${API_BASE_URL}/profesional-centro`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profesionalId,
+        especialidadId,
+        centroId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      // Si es error de duplicado (400), lo manejamos sin lanzar excepción
+      if (response.status === 400 && errorData.message?.includes('ya tiene asignada')) {
+        console.warn(`El profesional ya está asignado al centro ${centroId}`);
+        return { id: 0 }; // ID 0 indica que ya existía
+      }
+      throw new Error(errorData.message || `Error al asignar profesional al centro ${centroId}`);
+    }
+
+    const data = await response.json();
+    return { id: data.id };
+  };
+
   const handleContinuar = async () => {
     if (!profesionalPendiente) {
       onError?.('No hay profesional cargado para continuar');
@@ -435,6 +494,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
     
     setEnviando(true);
+    const relacionesCreadas: number[] = [];
     
     try {
       const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
@@ -442,6 +502,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         throw new Error('El número de WhatsApp no es válido');
       }
       
+      // ============================================================
+      // 1. Crear el Profesional
+      // ============================================================
       const profesionalData = {
         documento: profesionalPendiente.documento,
         nombre: profesionalPendiente.nombre,
@@ -453,6 +516,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         foto: profesionalPendiente.foto || undefined,
       };
       
+      const profesional = await createProfesional(profesionalData);
+      console.log(`✅ Profesional creado: ID ${profesional.id}`);
+      
+      // ============================================================
+      // 2. Crear (o buscar) la Especialidad
+      // ============================================================
       let especialidadId: number;
       let especialidadNombre = profesionalPendiente.especialidadNombre;
       
@@ -460,33 +529,79 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       
       if (especialidadExistente) {
         especialidadId = especialidadExistente.id;
+        console.log(`✅ Especialidad existente: ID ${especialidadId}`);
       } else {
         const nuevaEspecialidad = await createEspecialidad({
           nombre: especialidadNombre.toUpperCase(),
         });
         especialidadId = nuevaEspecialidad.id;
+        console.log(`✅ Especialidad creada: ID ${especialidadId}`);
         
         await createActividadEspecialidad({
           actividadId: actividadId,
           especialidadId: especialidadId,
         });
+        console.log(`✅ Relación Actividad-Especialidad creada`);
       }
       
-      const profesional = await createProfesional(profesionalData);
-      
+      // ============================================================
+      // 3. Crear la relación Profesional-Especialidad
+      // ============================================================
       const profesionalEspecialidad = await createProfesionalEspecialidad({
         profesionalId: profesional.id,
         especialidadId: especialidadId,
         descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
       });
+      console.log(`✅ Relación Profesional-Especialidad creada: ID ${profesionalEspecialidad.id}`);
       
+      // ============================================================
+      // 4. Obtener los centros activos del negocio
+      // ============================================================
+      const centros = await obtenerCentrosDelNegocio(negocioId);
+      console.log(`📋 Centros obtenidos: ${centros.length}`);
+      
+      if (centros.length === 0) {
+        console.warn('⚠️ El negocio no tiene centros activos');
+      }
+      
+      // ============================================================
+      // 5. Crear relación Profesional-Centro para CADA centro
+      // ============================================================
+      for (const centro of centros) {
+        try {
+          const resultado = await crearProfesionalCentro(
+            profesional.id,
+            especialidadId,
+            centro.id
+          );
+          
+          if (resultado.id > 0) {
+            relacionesCreadas.push(resultado.id);
+            console.log(`✅ Relación Profesional-Centro creada: ID ${resultado.id} (centro: ${centro.nombre})`);
+          } else {
+            // ID 0 significa que ya existía (duplicado)
+            console.log(`ℹ️ Relación ya existente para centro ${centro.nombre}`);
+          }
+        } catch (error) {
+          // No interrumpimos el flujo si falla una relación
+          console.error(`❌ Error al crear relación para centro ${centro.id}:`, error);
+        }
+      }
+      
+      console.log(`📊 Relaciones creadas: ${relacionesCreadas.length}`);
+      
+      // ============================================================
+      // 6. Obtener la especialidad final y pasar al Paso 3
+      // ============================================================
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
       
       onSuccess({
         profesional,
         especialidad: especialidadFinal!,
         profesionalEspecialidad,
+        profesionalCentroIds: relacionesCreadas, // 👈 NUEVO: pasamos los IDs al Paso 3
       });
+      
     } catch (error) {
       console.error('Error al guardar profesional:', error);
       onError?.(error instanceof Error ? error.message : 'Error al procesar el formulario');
