@@ -1,9 +1,8 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
 // VERSIÓN CON AJUSTES:
-// - Modal de nueva especialidad con campo "Descripción" (opcional)
-// - Resumen del profesional con diseño de tarjeta (similar a TarjetaProfesional)
-// - Al agregar nueva especialidad, se selecciona automáticamente con su descripción
+// - Resumen de especialidad seleccionada debajo del select
+// - Botón "Agregar" solo habilitado cuando todos los campos obligatorios son válidos
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -198,7 +197,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       if (value === OPCION_AGREGAR_ESPECIALIDAD) {
         setFormData(prev => ({ ...prev, especialidadSeleccionada: '' }));
         setMostrarModalNuevaEspecialidad(true);
-        // Limpiar campos del modal al abrirlo
         setNuevaEspecialidadNombre('');
         setNuevaEspecialidadDescripcion('');
         return;
@@ -277,6 +275,19 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
   const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
 
+  // 👈 FUNCIÓN PARA VERIFICAR SI EL FORMULARIO ES VÁLIDO
+  const isFormularioValido = (): boolean => {
+    // Validar campos obligatorios
+    const documentoValido = formData.documento.trim().length >= 6;
+    const nombreValido = formData.nombre.trim().length >= 3;
+    const emailValido = validarEmail(formData.email);
+    const whatsappValido = formData.whatsapp && isValidPhoneNumber(formData.whatsapp);
+    const generoValido = formData.genero !== '';
+    const especialidadValida = formData.especialidadSeleccionada.trim() !== '';
+    
+    return documentoValido && nombreValido && emailValido && whatsappValido && generoValido && especialidadValida;
+  };
+
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
     
@@ -340,17 +351,14 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // Cerrar modal
     setMostrarModalNuevaEspecialidad(false);
     
-    // Seleccionar la nueva especialidad y guardar la descripción
     setFormData(prev => ({
       ...prev,
       especialidadSeleccionada: nuevaEspecialidadNombre,
       especialidadDescripcionProfesional: nuevaEspecialidadDescripcion,
     }));
     
-    // Limpiar campos del modal
     setNuevaEspecialidadNombre('');
     setNuevaEspecialidadDescripcion('');
     
@@ -359,7 +367,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
-  // Agregar profesional al resumen (sin guardar en BD)
   const handleAgregarProfesional = () => {
     if (!validarFormulario()) {
       return;
@@ -376,7 +383,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // Guardar en el estado pendiente (NO en BD)
     setProfesionalPendiente({
       documento: formData.documento,
       nombre: formData.nombre.toUpperCase(),
@@ -389,7 +395,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       especialidadDescripcionProfesional: formData.especialidadDescripcionProfesional,
     });
     
-    // Limpiar formulario
     setFormData({
       documento: '',
       nombre: '',
@@ -413,7 +418,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }, 100);
   };
 
-  // Guardar TODO en la BD y continuar al Paso 3
   const handleContinuar = async () => {
     if (!profesionalPendiente) {
       onError?.('No hay profesional cargado para continuar');
@@ -500,8 +504,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const limiteAlcanzado = profesionalPendiente !== null;
+  const formularioValido = isFormularioValido();
 
-  // Función para obtener la foto (con fallback)
   const obtenerFoto = (foto: string | undefined): string => {
     return foto || AVATAR_DEFAULT;
   };
@@ -515,7 +519,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               <h2 className={styles.title}>Paso 2: Datos del Profesional</h2>
               <p className={styles.subtitle}>Cargá el profesional que atenderá en tu negocio</p>
               
-              {/* Resumen de profesional cargado - ESTILO TARJETA */}
+              {/* Resumen de profesional cargado */}
               {profesionalPendiente && (
                 <div className={styles.tarjetaProfesionalResumen}>
                   <div className={styles.tarjetaProfesionalHeader}>
@@ -745,6 +749,18 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                               )}
                             </div>
                             
+                            {/* 👈 RESUMEN DE ESPECIALIDAD SELECCIONADA */}
+                            {formData.especialidadSeleccionada && (
+                              <div className={styles.resumenEspecialidadSeleccionada}>
+                                <strong>Especialidad seleccionada:</strong> {formData.especialidadSeleccionada}
+                                {formData.especialidadDescripcionProfesional && (
+                                  <span className={styles.resumenEspecialidadDescripcion}>
+                                    - {formData.especialidadDescripcionProfesional}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
                             <div className={styles.formGroup}>
                               <label htmlFor="especialidadDescripcionProfesional" className={styles.label}>
                                 Descripción de la especialidad (opcional)
@@ -841,7 +857,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     <button
                       type="button"
                       onClick={handleAgregarProfesional}
-                      disabled={enviando || limiteAlcanzado}
+                      disabled={enviando || limiteAlcanzado || !formularioValido}
                       className={styles.buttonPrimary}
                     >
                       Agregar
