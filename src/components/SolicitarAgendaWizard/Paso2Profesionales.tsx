@@ -1,8 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CON AJUSTES:
-// - Resumen de especialidad seleccionada debajo del select
-// - Botón "Agregar" solo habilitado cuando todos los campos obligatorios son válidos
+// VERSIÓN CON RESUMEN DE ESPECIALIDAD:
+// - Después de agregar especialidad (nueva o existente), se oculta el select y muestra resumen
+// - Botón ❌ para eliminar la especialidad seleccionada y volver al select
+// - El resumen del profesional se mantiene independiente
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -275,9 +276,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
   const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
 
-  // 👈 FUNCIÓN PARA VERIFICAR SI EL FORMULARIO ES VÁLIDO
   const isFormularioValido = (): boolean => {
-    // Validar campos obligatorios
     const documentoValido = formData.documento.trim().length >= 6;
     const nombreValido = formData.nombre.trim().length >= 3;
     const emailValido = validarEmail(formData.email);
@@ -365,6 +364,17 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     if (errors.especialidad) {
       setErrors(prev => ({ ...prev, especialidad: undefined }));
     }
+  };
+
+  // 👈 Eliminar especialidad seleccionada (volver al select)
+  const handleEliminarEspecialidad = () => {
+    setFormData(prev => ({
+      ...prev,
+      especialidadSeleccionada: '',
+      especialidadDescripcionProfesional: '',
+    }));
+    // Si el modal de nueva especialidad estaba abierto, cerrarlo
+    setMostrarModalNuevaEspecialidad(false);
   };
 
   const handleAgregarProfesional = () => {
@@ -505,6 +515,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const limiteAlcanzado = profesionalPendiente !== null;
   const formularioValido = isFormularioValido();
+  const tieneEspecialidadSeleccionada = formData.especialidadSeleccionada.trim() !== '';
 
   const obtenerFoto = (foto: string | undefined): string => {
     return foto || AVATAR_DEFAULT;
@@ -728,7 +739,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       <div className={styles.helperText}>Cargando especialidades...</div>
                     ) : (
                       <>
-                        {!mostrarModalNuevaEspecialidad ? (
+                        {/* Si NO hay especialidad seleccionada, mostrar el select */}
+                        {!tieneEspecialidadSeleccionada ? (
                           <>
                             <div className={styles.formGroup}>
                               <label htmlFor="especialidadSeleccionada" className={styles.label}>
@@ -749,18 +761,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                               )}
                             </div>
                             
-                            {/* 👈 RESUMEN DE ESPECIALIDAD SELECCIONADA */}
-                            {formData.especialidadSeleccionada && (
-                              <div className={styles.resumenEspecialidadSeleccionada}>
-                                <strong>Especialidad seleccionada:</strong> {formData.especialidadSeleccionada}
-                                {formData.especialidadDescripcionProfesional && (
-                                  <span className={styles.resumenEspecialidadDescripcion}>
-                                    - {formData.especialidadDescripcionProfesional}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            
                             <div className={styles.formGroup}>
                               <label htmlFor="especialidadDescripcionProfesional" className={styles.label}>
                                 Descripción de la especialidad (opcional)
@@ -780,6 +780,32 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                             </div>
                           </>
                         ) : (
+                          /* 👈 Si HAY especialidad seleccionada, mostrar el resumen */
+                          <div className={styles.resumenEspecialidadSeleccionada}>
+                            <div className={styles.resumenEspecialidadHeader}>
+                              <div>
+                                <strong>Especialidad seleccionada:</strong> {formData.especialidadSeleccionada}
+                                {formData.especialidadDescripcionProfesional && (
+                                  <div className={styles.resumenEspecialidadDescripcion}>
+                                    {formData.especialidadDescripcionProfesional}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleEliminarEspecialidad}
+                                className={styles.buttonEliminar}
+                                title="Eliminar especialidad"
+                                style={{ marginLeft: 'auto' }}
+                              >
+                                ❌
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Modal de nueva especialidad */}
+                        {mostrarModalNuevaEspecialidad && (
                           <div className={styles.modalInline}>
                             <h4 className={styles.subtitle}>Nueva Especialidad</h4>
                             
