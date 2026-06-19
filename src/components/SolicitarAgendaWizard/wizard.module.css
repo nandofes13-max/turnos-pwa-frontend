@@ -583,6 +583,105 @@
 }
 
 /* ============================================================
+   TARJETA DE PROFESIONAL (resumen)
+   ============================================================ */
+
+.tarjetaProfesionalResumen {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.tarjetaProfesionalHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.tarjetaProfesionalFoto {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.tarjetaProfesionalDatos {
+  flex: 1;
+  min-width: 0;
+}
+
+.tarjetaProfesionalNombre {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.tarjetaProfesionalInfo {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.tarjetaProfesionalEspecialidad {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-top: 4px;
+}
+
+.tarjetaProfesionalDescripcion {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 4px;
+  padding: 6px 10px;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+}
+
+.tarjetaProfesionalEliminar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.tarjetaProfesionalEliminar:hover {
+  background-color: #fee2e2;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .tarjetaProfesionalHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .tarjetaProfesionalFoto {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .tarjetaProfesionalEliminar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 
