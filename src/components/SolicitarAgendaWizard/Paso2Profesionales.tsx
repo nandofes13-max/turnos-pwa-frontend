@@ -1,10 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CON FLUJO DE AGREGAR (similar a centros):
-// - Al hacer clic en "Agregar", solo se muestra en el resumen (NO se guarda en BD)
-// - Botón ❌ para eliminar del resumen
-// - Límite de 1 profesional (cartel de ayuda)
-// - Al hacer clic en "Continuar al Paso 3", se guarda TODO en la BD
+// VERSIÓN CON AJUSTES:
+// - Modal de nueva especialidad con campo "Descripción" (opcional)
+// - Resumen del profesional con diseño de tarjeta (similar a TarjetaProfesional)
+// - Al agregar nueva especialidad, se selecciona automáticamente con su descripción
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -67,6 +66,7 @@ interface ProfesionalPendiente {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const UPLOAD_URL = `${API_BASE_URL}/upload`;
+const AVATAR_DEFAULT = 'https://via.placeholder.com/96?text=Sin+foto';
 
 const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   negocioId,
@@ -198,6 +198,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       if (value === OPCION_AGREGAR_ESPECIALIDAD) {
         setFormData(prev => ({ ...prev, especialidadSeleccionada: '' }));
         setMostrarModalNuevaEspecialidad(true);
+        // Limpiar campos del modal al abrirlo
+        setNuevaEspecialidadNombre('');
+        setNuevaEspecialidadDescripcion('');
         return;
       }
     }
@@ -272,6 +275,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const [mostrarModalNuevaEspecialidad, setMostrarModalNuevaEspecialidad] = useState(false);
   const [nuevaEspecialidadNombre, setNuevaEspecialidadNombre] = useState('');
+  const [nuevaEspecialidadDescripcion, setNuevaEspecialidadDescripcion] = useState('');
 
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -336,13 +340,19 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
+    // Cerrar modal
     setMostrarModalNuevaEspecialidad(false);
+    
+    // Seleccionar la nueva especialidad y guardar la descripción
     setFormData(prev => ({
       ...prev,
       especialidadSeleccionada: nuevaEspecialidadNombre,
+      especialidadDescripcionProfesional: nuevaEspecialidadDescripcion,
     }));
     
+    // Limpiar campos del modal
     setNuevaEspecialidadNombre('');
+    setNuevaEspecialidadDescripcion('');
     
     if (errors.especialidad) {
       setErrors(prev => ({ ...prev, especialidad: undefined }));
@@ -491,6 +501,11 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const limiteAlcanzado = profesionalPendiente !== null;
 
+  // Función para obtener la foto (con fallback)
+  const obtenerFoto = (foto: string | undefined): string => {
+    return foto || AVATAR_DEFAULT;
+  };
+
   return (
     <div className={styles['wizard-container-page']}>
       <div className={styles['wizard-left']}>
@@ -500,27 +515,45 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               <h2 className={styles.title}>Paso 2: Datos del Profesional</h2>
               <p className={styles.subtitle}>Cargá el profesional que atenderá en tu negocio</p>
               
-              {/* Resumen de profesional cargado */}
+              {/* Resumen de profesional cargado - ESTILO TARJETA */}
               {profesionalPendiente && (
-                <div className={styles.centrosLista}>
-                  <h4 className={styles.subtitle}>📋 Profesional cargado:</h4>
-                  <div className={styles.centroCargado}>
-                    <div>
-                      <strong>{profesionalPendiente.nombre}</strong>
-                      <br />
-                      <span className={styles.centroDireccion}>
-                        Documento: {profesionalPendiente.documento} | Email: {profesionalPendiente.email}
-                        <br />
+                <div className={styles.tarjetaProfesionalResumen}>
+                  <div className={styles.tarjetaProfesionalHeader}>
+                    <img 
+                      src={obtenerFoto(profesionalPendiente.foto)}
+                      alt={profesionalPendiente.nombre}
+                      className={styles.tarjetaProfesionalFoto}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = AVATAR_DEFAULT;
+                      }}
+                    />
+                    <div className={styles.tarjetaProfesionalDatos}>
+                      <div className={styles.tarjetaProfesionalNombre}>
+                        {profesionalPendiente.nombre}
+                      </div>
+                      <div className={styles.tarjetaProfesionalInfo}>
+                        📄 Documento: {profesionalPendiente.documento}
+                      </div>
+                      <div className={styles.tarjetaProfesionalInfo}>
+                        📧 Email: {profesionalPendiente.email}
+                      </div>
+                      <div className={styles.tarjetaProfesionalInfo}>
+                        📱 WhatsApp: {profesionalPendiente.whatsapp}
+                      </div>
+                      <div className={styles.tarjetaProfesionalEspecialidad}>
                         Especialidad: {profesionalPendiente.especialidadNombre}
-                        {profesionalPendiente.especialidadDescripcionProfesional && (
-                          <> - {profesionalPendiente.especialidadDescripcionProfesional}</>
-                        )}
-                      </span>
+                      </div>
+                      {profesionalPendiente.especialidadDescripcionProfesional && (
+                        <div className={styles.tarjetaProfesionalDescripcion}>
+                          📝 {profesionalPendiente.especialidadDescripcionProfesional}
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
                       onClick={handleEliminarProfesional}
-                      className={styles.buttonEliminar}
+                      className={styles.tarjetaProfesionalEliminar}
+                      title="Eliminar profesional"
                     >
                       ❌
                     </button>
@@ -746,12 +779,27 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                               />
                             </div>
                             
+                            <div className={styles.formGroup}>
+                              <label className={styles.label}>Descripción (opcional)</label>
+                              <textarea
+                                value={nuevaEspecialidadDescripcion}
+                                onChange={(e) => setNuevaEspecialidadDescripcion(e.target.value)}
+                                className={styles.input}
+                                placeholder="Ej: Rama de la medicina que estudia el corazón"
+                                rows={2}
+                              />
+                              <span className={styles.helperText}>
+                                Esta descripción se guardará para este profesional y se mostrará al cliente.
+                              </span>
+                            </div>
+                            
                             <div className={styles.buttonsContainerInline}>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setMostrarModalNuevaEspecialidad(false);
                                   setNuevaEspecialidadNombre('');
+                                  setNuevaEspecialidadDescripcion('');
                                 }}
                                 className={styles.buttonSecondary}
                               >
