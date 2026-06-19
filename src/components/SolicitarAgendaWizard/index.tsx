@@ -1,6 +1,6 @@
 // src/components/SolicitarAgendaWizard/index.tsx
 // Wizard principal - Sin overlay, layout consistente con Inicio
-// VERSIÓN CON PASO 2 INTEGRADO
+// VERSIÓN CON PASO 2 INTEGRADO Y PASO 3 PREPARADO PARA RECIBIR IDs DE RELACIONES
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +32,7 @@ export default function SolicitarAgendaWizard() {
     setPaso2Data(data);
     setStep(3);
     setError(null);
+    console.log('✅ Relaciones profesional-centro creadas:', data.profesionalCentroIds?.length || 0);
   };
 
   const handlePaso2Error = (err: string) => {
@@ -78,7 +79,12 @@ export default function SolicitarAgendaWizard() {
           />
         );
       case 3:
-        // Placeholder para Paso 3 (Agenda - se implementará después)
+        // Paso 3: Configurar Agenda
+        // Ahora recibimos profesionalCentroIds desde paso2Data
+        const relacionesCreadas = paso2Data?.profesionalCentroIds?.length || 0;
+        const profesionalNombre = paso2Data?.profesional?.nombre || 'Profesional';
+        const especialidadNombre = paso2Data?.especialidad?.nombre || 'Especialidad';
+        
         return (
           <div className={styles['wizard-container-page']}>
             <div className={styles['wizard-left']}>
@@ -91,16 +97,55 @@ export default function SolicitarAgendaWizard() {
                   />
                 </div>
                 <div className={styles['wizard-card']}>
-                  <h2 className={styles.title}>Paso 3: Próximamente</h2>
-                  <p className={styles['texto-ayuda']}>
-                    El paso 3 (Agenda) estará disponible en la próxima actualización.
-                  </p>
+                  <h2 className={styles.title}>Paso 3: Configurar Agenda</h2>
+                  
+                  {/* Resumen de lo que se creó en el Paso 2 */}
+                  <div className={styles.resumenPaso2}>
+                    <div className={styles.resumenItem}>
+                      <span className={styles.resumenLabel}>👤 Profesional:</span>
+                      <span className={styles.resumenValor}>{profesionalNombre}</span>
+                    </div>
+                    <div className={styles.resumenItem}>
+                      <span className={styles.resumenLabel}>📋 Especialidad:</span>
+                      <span className={styles.resumenValor}>{especialidadNombre}</span>
+                    </div>
+                    <div className={styles.resumenItem}>
+                      <span className={styles.resumenLabel}>🏢 Centros asignados:</span>
+                      <span className={styles.resumenValor}>{relacionesCreadas} centros</span>
+                    </div>
+                  </div>
+                  
+                  {relacionesCreadas > 0 ? (
+                    <>
+                      <p className={styles.subtitle}>
+                        Configurá los días y horarios de atención para cada centro.
+                      </p>
+                      <div className={styles.centrosAgendaLista}>
+                        {paso2Data?.profesionalCentroIds?.map((id, index) => (
+                          <div key={id} className={styles.centroAgendaItem}>
+                            <span className={styles.centroAgendaNumero}>#{index + 1}</span>
+                            <span className={styles.centroAgendaId}>Relación ID: {id}</span>
+                            <button className={styles.buttonSmall}>
+                              Configurar Agenda
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className={styles.mensajeAdvertencia}>
+                      ⚠️ No se encontraron centros para asignar agenda.
+                      <br />
+                      <small>Verificá que el negocio tenga centros activos.</small>
+                    </div>
+                  )}
+                  
                   <div className={styles.buttonsContainer}>
                     <button className={styles.buttonSecondary} onClick={handleVolver}>
                       Volver al Paso 2
                     </button>
                     <button className={styles.buttonPrimary} onClick={handleVolverInicio}>
-                      Volver al inicio
+                      Finalizar
                     </button>
                   </div>
                 </div>
