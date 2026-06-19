@@ -689,16 +689,22 @@
   background-color: #f0fdf4;
   border: 1px solid #86efac;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   margin-bottom: 16px;
-  font-size: 14px;
-  color: #166534;
+}
+
+.resumenEspecialidadHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .resumenEspecialidadDescripcion {
   color: #475569;
   font-style: italic;
-  margin-left: 6px;
+  font-size: 14px;
+  margin-top: 4px;
 }
 
 /* ============================================================
