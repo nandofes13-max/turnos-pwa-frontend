@@ -1,10 +1,11 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN MODIFICADA:
+// VERSIÓN COMPLETA Y CORREGIDA:
 // - Manejo de errores contextuales con botón de cerrar
 // - Flujo de profesional existente: autocompleta en modo solo lectura
 // - Si el profesional ya existe, no se crea duplicado, solo se usan sus datos
 // - Usa las funciones centralizadas de apiWizard.ts
+// - Todos los errores tienen botón "✕" para cerrar
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +21,6 @@ import {
   registrarPaso2Profesional,
   crearRelacionesProfesionalCentro,
   Especialidad,
-  Profesional,
   Paso2Result,
 } from '../../services/apiWizard';
 import styles from './wizard.module.css';
@@ -65,11 +65,10 @@ interface ProfesionalPendiente {
   foto: string;
   especialidadNombre: string;
   especialidadDescripcionProfesional: string;
-  profesionalId?: number; // 👈 NUEVO: si el profesional ya existe
-  esExistente?: boolean; // 👈 NUEVO: flag para saber si es existente
+  profesionalId?: number;
+  esExistente?: boolean;
 }
 
-// Interface para errores contextuales
 interface ErrorContextual {
   campo: string;
   mensaje: string;
@@ -97,7 +96,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const documentoInputRef = useRef<HTMLInputElement>(null);
   
-  // 👈 NUEVO: Estado para errores contextuales
   const [erroresContextuales, setErroresContextuales] = useState<ErrorContextual[]>([]);
   
   const [formData, setFormData] = useState<FormData>({
@@ -116,20 +114,21 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
 
   const OPCION_AGREGAR_ESPECIALIDAD = '__AGREGAR_NUEVA_ESPECIALIDAD__';
 
-  // 👈 NUEVO: Función para agregar error contextual
   const agregarErrorContextual = (campo: string, mensaje: string) => {
     const id = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setErroresContextuales(prev => [...prev, { campo, mensaje, id }]);
   };
 
-  // 👈 NUEVO: Función para eliminar error contextual
   const eliminarErrorContextual = (id: string) => {
     setErroresContextuales(prev => prev.filter(e => e.id !== id));
   };
 
-  // 👈 NUEVO: Función para limpiar errores de un campo específico
   const limpiarErroresDelCampo = (campo: string) => {
     setErroresContextuales(prev => prev.filter(e => e.campo !== campo));
+  };
+
+  const limpiarTodosLosErrores = () => {
+    setErroresContextuales([]);
   };
 
   useEffect(() => {
@@ -157,7 +156,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     cargarEspecialidades();
   }, [actividadId]);
 
-  // 👈 MODIFICADO: Auto-completado por documento con detección de existencia
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -165,7 +163,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     
     const documento = formData.documento;
     
-    // Limpiar errores del campo documento al escribir
     limpiarErroresDelCampo('documento');
     
     if (!documento || documento.length < 6) {
@@ -179,7 +176,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         whatsapp: '',
       }));
       setBuscandoProfesional(false);
-      // Si el profesional pendiente era existente, lo limpiamos
       if (profesionalPendiente?.esExistente) {
         setProfesionalPendiente(null);
       }
@@ -191,7 +187,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       try {
         const profesional = await buscarProfesionalPorDocumento(documento);
         if (profesional) {
-          // 👈 El profesional EXISTE → modo solo lectura
           setFormData(prev => ({
             ...prev,
             nombre: profesional.nombre || '',
@@ -202,22 +197,16 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             whatsapp: profesional.whatsapp_e164 || '',
           }));
           
-          // Marcar que el profesional existe y guardar su ID
           setProfesionalPendiente(prev => {
             if (prev && !prev.esExistente) {
-              // Si había un profesional pendiente que era nuevo, lo reemplazamos
               return null;
             }
             return prev;
           });
           
-          // Mostrar un mensaje contextual suave (no un error)
           agregarErrorContextual('documento', '✅ Profesional existente. Los datos se cargaron en modo lectura.');
-          
-          // Limpiar errores del campo documento
           limpiarErroresDelCampo('documento');
         } else {
-          // 👈 El profesional NO EXISTE → modo edición
           setFormData(prev => ({
             ...prev,
             nombre: '',
@@ -228,12 +217,10 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             whatsapp: '',
           }));
           
-          // Si el profesional pendiente era existente, lo limpiamos
           if (profesionalPendiente?.esExistente) {
             setProfesionalPendiente(null);
           }
           
-          // Limpiar errores del campo documento
           limpiarErroresDelCampo('documento');
         }
       } catch (error) {
@@ -254,7 +241,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Limpiar error contextual del campo
     limpiarErroresDelCampo(name);
     
     if (errors[name as keyof ValidationErrors]) {
@@ -271,7 +257,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       }
     }
     
-    // Si el campo es de solo lectura (porque el profesional existe), no permitir cambios
     if (profesionalPendiente?.esExistente && ['nombre', 'email', 'whatsapp', 'genero', 'matricula', 'foto'].includes(name)) {
       return;
     }
@@ -280,10 +265,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const handleWhatsappChange = (value: string) => {
-    // Limpiar error contextual del campo whatsapp
     limpiarErroresDelCampo('whatsapp');
     
-    if (profesionalPendiente?.esExistente) return; // No permitir cambios si es existente
+    if (profesionalPendiente?.esExistente) return;
     
     setFormData(prev => ({ ...prev, whatsapp: value || '' }));
     if (errors.whatsapp) {
@@ -367,6 +351,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
     let esValido = true;
+    
+    limpiarTodosLosErrores();
     
     if (!formData.documento.trim()) {
       newErrors.documento = 'El documento es obligatorio';
@@ -473,8 +459,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const handleAgregarProfesional = () => {
-    // Limpiar errores previos
-    setErroresContextuales([]);
+    limpiarTodosLosErrores();
     
     if (!validarFormulario()) {
       return;
@@ -491,23 +476,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // 👈 Verificar si el profesional existe (basado en el autocompletado)
     const esExistente = formData.nombre !== '' && formData.email !== '' && formData.whatsapp !== '';
-    // Nota: realmente sabemos si es existente porque el autocompletado solo se activa cuando se encuentra un profesional
-    
-    // Para saber si es existente, verificamos si el campo documento fue autocompletado
-    // y si los campos están en modo solo lectura (no se pueden editar)
-    // Usamos una heurística: si el profesional pendiente tiene esExistente = true
     const profesionalExistente = profesionalPendiente?.esExistente || false;
     
-    // Si el profesional existe, no deberíamos tener que crear uno nuevo
     if (profesionalExistente) {
-      // Ya tenemos el profesional pendiente con sus datos
-      // No hacemos nada más, solo pasamos al siguiente paso
       return;
     }
     
-    // 👈 Si NO existe, creamos el pendiente como nuevo
     setProfesionalPendiente({
       documento: formData.documento,
       nombre: formData.nombre.toUpperCase(),
@@ -547,144 +522,129 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const handleContinuar = async () => {
-  if (!profesionalPendiente) {
-    agregarErrorContextual('general', 'No hay profesional cargado para continuar');
-    return;
-  }
-  
-  setEnviando(true);
-  setErroresContextuales([]);
-  
-  try {
-    const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
-    if (!phoneData) {
-      throw new Error('El número de WhatsApp no es válido');
-    }
-    
-    let profesionalId: number;
-    let profesional: any;
-    let esProfesionalExistente = false;
-    
-    // 👈 1. Verificar si el profesional ya existe en la BD
-    const profesionalExistente = await buscarProfesionalPorDocumento(profesionalPendiente.documento);
-    
-    if (profesionalExistente) {
-      // 👈 El profesional YA EXISTE → usamos su ID y datos
-      profesionalId = profesionalExistente.id;
-      profesional = profesionalExistente;
-      esProfesionalExistente = true;
-      console.log(`✅ Usando profesional existente: ID ${profesionalId}`);
-    } else {
-      // 👈 El profesional es NUEVO → lo creamos usando la función centralizada
-      const profesionalData = {
-        documento: profesionalPendiente.documento,
-        nombre: profesionalPendiente.nombre,
-        email: profesionalPendiente.email,
-        country_code: phoneData.country_code,
-        national_number: phoneData.national_number,
-        genero: profesionalPendiente.genero,
-        matricula: profesionalPendiente.matricula || undefined,
-        foto: profesionalPendiente.foto || undefined,
-      };
-      
-      // Usamos la función centralizada de apiWizard que crea el profesional y las relaciones
-      const resultado = await registrarPaso2Profesional({
-        negocioId,
-        actividadId,
-        profesionalData,
-        especialidadNombre: profesionalPendiente.especialidadNombre,
-        especialidadDescripcion: profesionalPendiente.especialidadDescripcionProfesional,
-        // ⚠️ NO pasamos profesionalExistenteId, así que crea el profesional
-      });
-      
-      // Si llegamos aquí, todo salió bien
-      onSuccess({
-        ...resultado,
-        esProfesionalExistente: false,
-      });
-      
-      setEnviando(false);
+    if (!profesionalPendiente) {
+      agregarErrorContextual('general', '⚠️ No hay profesional cargado para continuar');
       return;
     }
     
-    // ============================================================
-    // 👈 A partir de aquí, SOLO para el caso de profesional EXISTENTE
-    // ============================================================
+    setEnviando(true);
+    setErroresContextuales([]);
     
-    // 2. Buscar o crear la especialidad
-    let especialidadId: number;
-    let especialidadNombre = profesionalPendiente.especialidadNombre;
-    
-    let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
-    
-    if (especialidadExistente) {
-      especialidadId = especialidadExistente.id;
-      console.log(`✅ Especialidad existente: ID ${especialidadId}`);
-    } else {
-      const nuevaEspecialidad = await createEspecialidad({
-        nombre: especialidadNombre.toUpperCase(),
-      });
-      especialidadId = nuevaEspecialidad.id;
-      console.log(`✅ Especialidad creada: ID ${especialidadId}`);
-      
-      await createActividadEspecialidad({
-        actividadId: actividadId,
-        especialidadId: especialidadId,
-      });
-      console.log(`✅ Relación Actividad-Especialidad creada`);
-    }
-    
-    // 3. Crear relación profesional-especialidad (si no existe)
-    let profesionalEspecialidad;
     try {
-      profesionalEspecialidad = await createProfesionalEspecialidad({
-        profesionalId: profesionalId,
-        especialidadId: especialidadId,
-        descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
-      });
-      console.log(`✅ Relación Profesional-Especialidad creada: ID ${profesionalEspecialidad.id}`);
-    } catch (error: any) {
-      if (error.message?.includes('duplicate') || error.message?.includes('ya existe')) {
-        console.log(`ℹ️ La relación Profesional-Especialidad ya existe`);
-        // Buscar la relación existente
-        const relaciones = await fetch(`${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`).then(res => res.json());
-        profesionalEspecialidad = relaciones.find((pe: any) => pe.especialidadId === especialidadId && !pe.fecha_baja);
-        if (!profesionalEspecialidad) {
-          throw new Error('No se pudo obtener la relación existente');
-        }
-      } else {
-        throw error;
+      const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
+      if (!phoneData) {
+        agregarErrorContextual('general', '❌ El número de WhatsApp no es válido');
+        setEnviando(false);
+        return;
       }
+      
+      let profesionalId: number;
+      let profesional: any;
+      let esProfesionalExistente = false;
+      
+      const profesionalExistente = await buscarProfesionalPorDocumento(profesionalPendiente.documento);
+      
+      if (profesionalExistente) {
+        profesionalId = profesionalExistente.id;
+        profesional = profesionalExistente;
+        esProfesionalExistente = true;
+        console.log(`✅ Usando profesional existente: ID ${profesionalId}`);
+      } else {
+        const profesionalData = {
+          documento: profesionalPendiente.documento,
+          nombre: profesionalPendiente.nombre,
+          email: profesionalPendiente.email,
+          country_code: phoneData.country_code,
+          national_number: phoneData.national_number,
+          genero: profesionalPendiente.genero,
+          matricula: profesionalPendiente.matricula || undefined,
+          foto: profesionalPendiente.foto || undefined,
+        };
+        
+        const resultado = await registrarPaso2Profesional({
+          negocioId,
+          actividadId,
+          profesionalData,
+          especialidadNombre: profesionalPendiente.especialidadNombre,
+          especialidadDescripcion: profesionalPendiente.especialidadDescripcionProfesional,
+        });
+        
+        onSuccess({
+          ...resultado,
+          esProfesionalExistente: false,
+        });
+        
+        setEnviando(false);
+        return;
+      }
+      
+      // ============================================================
+      // Caso: Profesional EXISTENTE
+      // ============================================================
+      
+      let especialidadId: number;
+      let especialidadNombre = profesionalPendiente.especialidadNombre;
+      
+      let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
+      
+      if (especialidadExistente) {
+        especialidadId = especialidadExistente.id;
+      } else {
+        const nuevaEspecialidad = await createEspecialidad({
+          nombre: especialidadNombre.toUpperCase(),
+        });
+        especialidadId = nuevaEspecialidad.id;
+        
+        await createActividadEspecialidad({
+          actividadId: actividadId,
+          especialidadId: especialidadId,
+        });
+      }
+      
+      let profesionalEspecialidad;
+      try {
+        profesionalEspecialidad = await createProfesionalEspecialidad({
+          profesionalId: profesionalId,
+          especialidadId: especialidadId,
+          descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
+        });
+      } catch (error: any) {
+        if (error.message?.includes('duplicate') || error.message?.includes('ya existe')) {
+          const relaciones = await fetch(`${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`).then(res => res.json());
+          profesionalEspecialidad = relaciones.find((pe: any) => pe.especialidadId === especialidadId && !pe.fecha_baja);
+          if (!profesionalEspecialidad) {
+            throw new Error('No se pudo obtener la relación existente');
+          }
+        } else {
+          throw error;
+        }
+      }
+      
+      const profesionalCentroIds = await crearRelacionesProfesionalCentro(
+        profesionalId,
+        especialidadId,
+        negocioId
+      );
+      
+      const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
+      
+      onSuccess({
+        profesional: profesional,
+        especialidad: especialidadFinal!,
+        profesionalEspecialidad,
+        profesionalCentroIds,
+        esProfesionalExistente: true,
+      });
+      
+    } catch (error) {
+      console.error('Error al guardar profesional:', error);
+      const mensaje = error instanceof Error ? error.message : 'Error al procesar el formulario';
+      agregarErrorContextual('general', `❌ ${mensaje}`);
+    } finally {
+      setEnviando(false);
     }
-    
-    // 4. Crear relaciones profesional-centro (usando función centralizada)
-    const profesionalCentroIds = await crearRelacionesProfesionalCentro(
-      profesionalId,
-      especialidadId,
-      negocioId
-    );
-    
-    // 5. Obtener la especialidad final para el resultado
-    const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
-    
-    // 6. Pasar al Paso 3
-    onSuccess({
-      profesional: profesional, // ✅ Usamos el profesional existente
-      especialidad: especialidadFinal!,
-      profesionalEspecialidad,
-      profesionalCentroIds,
-      esProfesionalExistente: true,
-    });
-    
-  } catch (error) {
-    console.error('Error al guardar profesional:', error);
-    const mensaje = error instanceof Error ? error.message : 'Error al procesar el formulario';
-    agregarErrorContextual('general', mensaje);
-  } finally {
-    setEnviando(false);
-  }
-};
-  
+  };
+
   const handleCancelar = () => {
     navigate('/');
   };
@@ -712,7 +672,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     return foto || AVATAR_DEFAULT;
   };
 
-  // 👈 NUEVO: Función para renderizar errores contextuales
   const renderizarErroresContextuales = (campo: string) => {
     const errores = erroresContextuales.filter(e => e.campo === campo);
     if (errores.length === 0) return null;
@@ -745,10 +704,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               <h2 className={styles.title}>Paso 2: Datos del Profesional</h2>
               <p className={styles.subtitle}>Cargá el profesional que atenderá en tu negocio</p>
               
-              {/* 👈 NUEVO: Error general */}
               {renderizarErroresContextuales('general')}
               
-              {/* Resumen de profesional cargado */}
               {profesionalPendiente && (
                 <div className={styles.tarjetaProfesionalResumen}>
                   <div className={styles.tarjetaProfesionalHeader}>
@@ -797,14 +754,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                 </div>
               )}
               
-              {/* Cartel de límite alcanzado */}
               {limiteAlcanzado && (
                 <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginBottom: '16px' }}>
                   ⚠️ Límite de profesionales alcanzado. Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.
                 </div>
               )}
               
-              {/* Formulario de carga - solo si no se alcanzó el límite */}
               {!limiteAlcanzado && (
                 <>
                   <fieldset className={styles.fieldset}>
@@ -992,7 +947,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       <div className={styles.helperText}>Cargando especialidades...</div>
                     ) : (
                       <>
-                        {/* Si NO hay especialidad seleccionada, mostrar el select */}
                         {!tieneEspecialidadSeleccionada ? (
                           <>
                             <div className={styles.formGroup}>
@@ -1036,7 +990,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                             </div>
                           </>
                         ) : (
-                          /* 👈 Si HAY especialidad seleccionada, mostrar el resumen */
                           <div className={styles.resumenEspecialidadSeleccionada}>
                             <div className={styles.resumenEspecialidadHeader}>
                               <div>
@@ -1061,7 +1014,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                           </div>
                         )}
                         
-                        {/* Modal de nueva especialidad */}
                         {mostrarModalNuevaEspecialidad && !esProfesionalExistente && (
                           <div className={styles.modalInline}>
                             <h4 className={styles.subtitle}>Nueva Especialidad</h4>
@@ -1149,7 +1101,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                 </>
               )}
               
-              {/* Botón Continuar - solo visible después de agregar */}
               {limiteAlcanzado && (
                 <div className={styles.buttonsContainer}>
                   <button
