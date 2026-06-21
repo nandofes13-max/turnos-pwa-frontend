@@ -1,9 +1,11 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CORREGIDA:
-// - Campos del profesional → solo lectura cuando existe
-// - Especialidad → SIEMPRE editable
-// - Relación profesional-especialidad: si existe, se usa; si no, se crea
+// VERSIÓN FINAL:
+// - Si el profesional existe → campos en solo lectura (sin badge)
+// - Si el profesional no existe → campos editables
+// - Especialidad SIEMPRE editable
+// - Resumen solo después de hacer clic en "Agregar"
+// - Manejo de errores contextuales con botón de cerrar
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -177,9 +179,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         whatsapp: '',
       }));
       setBuscandoProfesional(false);
-      if (profesionalPendiente?.esExistente) {
-        setProfesionalPendiente(null);
-      }
       return;
     }
     
@@ -197,31 +196,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             matricula: profesional.matricula || '',
             foto: profesional.foto || '',
             whatsapp: profesional.whatsapp_e164 || '',
-            // 👈 La especialidad NO se modifica, la elige el usuario
           }));
           
-          // 👈 Guardamos el profesional pendiente con flag de existente
-          // PERO conservamos la especialidad que ya tenía seleccionada (si la hay)
-          setProfesionalPendiente(prev => {
-            const especialidadActual = prev?.especialidadNombre || formData.especialidadSeleccionada || '';
-            const descripcionActual = prev?.especialidadDescripcionProfesional || formData.especialidadDescripcionProfesional || '';
-            
-            return {
-              documento: profesional.documento,
-              nombre: profesional.nombre || '',
-              email: profesional.email || '',
-              whatsapp: profesional.whatsapp_e164 || '',
-              genero: profesional.genero || '',
-              matricula: profesional.matricula || '',
-              foto: profesional.foto || '',
-              especialidadNombre: especialidadActual,
-              especialidadDescripcionProfesional: descripcionActual,
-              profesionalId: profesional.id,
-              esExistente: true,
-            };
-          });
+          // 👈 NO setear profesionalPendiente aquí (solo se setea al hacer clic en "Agregar")
+          // Solo guardamos el flag en un ref o estado para saber que existe
           
-          agregarErrorContextual('documento', '✅ Profesional existente. Los datos se cargaron en modo lectura.');
+          agregarErrorContextual('documento', '✅ Profesional encontrado. Completa los datos y presiona "Agregar".');
           limpiarErroresDelCampo('documento');
         } else {
           // 👈 El profesional NO EXISTE → modo edición
@@ -234,10 +214,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             foto: '',
             whatsapp: '',
           }));
-          
-          if (profesionalPendiente?.esExistente) {
-            setProfesionalPendiente(null);
-          }
           
           limpiarErroresDelCampo('documento');
         }
@@ -259,8 +235,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // 👈 Si el profesional existe, NO permitir cambios en campos del profesional
-    const esExistente = profesionalPendiente?.esExistente || false;
+    // 👈 Si el profesional existe (detectado por autocompletado), NO permitir cambios en campos del profesional
+    // Para saber si existe, verificamos si el campo nombre tiene datos y el documento está completo
+    const esExistente = formData.documento.length >= 6 && 
+                        formData.nombre !== '' && 
+                        formData.email !== '' && 
+                        formData.whatsapp !== '';
+    
     if (esExistente && ['nombre', 'email', 'whatsapp', 'genero', 'matricula', 'foto'].includes(name)) {
       return;
     }
@@ -279,34 +260,19 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         setNuevaEspecialidadDescripcion('');
         return;
       }
-      
-      // 👈 Cuando se selecciona una especialidad, actualizar profesionalPendiente
-      setProfesionalPendiente(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          especialidadNombre: value,
-        };
-      });
-    }
-    
-    if (name === 'especialidadDescripcionProfesional') {
-      // 👈 Cuando se escribe la descripción, actualizar profesionalPendiente
-      setProfesionalPendiente(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          especialidadDescripcionProfesional: value,
-        };
-      });
     }
     
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleWhatsappChange = (value: string) => {
-    // 👈 Si el profesional existe, no permitir cambios
-    if (profesionalPendiente?.esExistente) return;
+    // 👈 Si el profesional existe (detectado por autocompletado), no permitir cambios
+    const esExistente = formData.documento.length >= 6 && 
+                        formData.nombre !== '' && 
+                        formData.email !== '' && 
+                        formData.whatsapp !== '';
+    
+    if (esExistente) return;
     
     limpiarErroresDelCampo('whatsapp');
     
@@ -486,16 +452,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       especialidadDescripcionProfesional: descripcionEspecialidad,
     }));
     
-    // 👈 Actualizar profesionalPendiente con la nueva especialidad
-    setProfesionalPendiente(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        especialidadNombre: nombreEspecialidad,
-        especialidadDescripcionProfesional: descripcionEspecialidad,
-      };
-    });
-    
     setNuevaEspecialidadNombre('');
     setNuevaEspecialidadDescripcion('');
     
@@ -510,16 +466,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }));
     setMostrarModalNuevaEspecialidad(false);
     limpiarErroresDelCampo('especialidad');
-    
-    // 👈 Actualizar profesionalPendiente
-    setProfesionalPendiente(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        especialidadNombre: '',
-        especialidadDescripcionProfesional: '',
-      };
-    });
   };
 
   const handleAgregarProfesional = () => {
@@ -540,7 +486,24 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // Crear el profesional pendiente como NUEVO
+    // 👈 Verificar si el profesional existe (basado en autocompletado)
+    const esExistente = formData.documento.length >= 6 && 
+                        formData.nombre !== '' && 
+                        formData.email !== '' && 
+                        formData.whatsapp !== '';
+    
+    // Buscar el ID si existe
+    let profesionalId: number | undefined;
+    if (esExistente) {
+      // Buscar el profesional para obtener su ID
+      buscarProfesionalPorDocumento(formData.documento).then(prof => {
+        if (prof) {
+          profesionalId = prof.id;
+        }
+      });
+    }
+    
+    // Crear el profesional pendiente
     setProfesionalPendiente({
       documento: formData.documento,
       nombre: formData.nombre.toUpperCase(),
@@ -551,7 +514,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       foto: formData.foto,
       especialidadNombre: formData.especialidadSeleccionada,
       especialidadDescripcionProfesional: formData.especialidadDescripcionProfesional,
-      esExistente: false,
+      profesionalId: profesionalId,
+      esExistente: esExistente,
     });
     
     setFormData({
@@ -580,7 +544,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   // ============================================================
-  // handleContinuar - CORREGIDO
+  // handleContinuar
   // ============================================================
   const handleContinuar = async () => {
     if (!profesionalPendiente) {
@@ -588,10 +552,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // 👈 Validar que tenga especialidad
     if (!profesionalPendiente.especialidadNombre) {
       agregarErrorContextual('general', '⚠️ Debes seleccionar una especialidad antes de continuar');
-      setEnviando(false);
       return;
     }
     
@@ -761,7 +723,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const limiteAlcanzado = profesionalPendiente !== null;
   const formularioValido = isFormularioValido();
   const tieneEspecialidadSeleccionada = formData.especialidadSeleccionada.trim() !== '';
-  const esProfesionalExistente = profesionalPendiente?.esExistente || false;
+  
+  // 👈 Detectar si el profesional existe (para bloquear campos)
+  const esProfesionalExistente = formData.documento.length >= 6 && 
+                                  formData.nombre !== '' && 
+                                  formData.email !== '' && 
+                                  formData.whatsapp !== '';
 
   const obtenerFoto = (foto: string | undefined): string => {
     return foto || AVATAR_DEFAULT;
@@ -815,9 +782,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     <div className={styles.tarjetaProfesionalDatos}>
                       <div className={styles.tarjetaProfesionalNombre}>
                         {profesionalPendiente.nombre}
-                        {esProfesionalExistente && (
-                          <span className={styles.badgeExistente}>✅ Existente</span>
-                        )}
+                        {/* 👈 Badge eliminado */}
                       </div>
                       <div className={styles.tarjetaProfesionalInfo}>
                         📄 Documento: {profesionalPendiente.documento}
@@ -881,11 +846,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       {errors.documento && (
                         <span className={styles.errorText}>{errors.documento}</span>
                       )}
-                      {esProfesionalExistente && (
-                        <span className={styles.helperText} style={{ color: '#10b981' }}>
-                          ✅ Profesional existente - Los datos están en modo lectura
-                        </span>
-                      )}
+                      {/* 👈 Mensaje de "modo lectura" eliminado */}
                     </div>
                     
                     <div className={styles.formGroup}>
@@ -1053,7 +1014,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 value={formData.especialidadSeleccionada}
                                 onChange={handleChange}
                                 className={`${styles.select} ${errors.especialidad ? styles.inputError : ''}`}
-                                // 👈 IMPORTANTE: La especialidad SIEMPRE es editable
                               >
                                 <option value="">Seleccionar especialidad...</option>
                                 {opcionesEspecialidades()}
@@ -1076,7 +1036,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 className={styles.input}
                                 placeholder="Ej: Especialista en psicología infantil"
                                 rows={3}
-                                // 👈 IMPORTANTE: La descripción SIEMPRE es editable
                               />
                               <span className={styles.helperText}>
                                 Esta descripción se mostrará al cliente al momento de reservar el turno.
@@ -1100,7 +1059,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 className={styles.buttonEliminar}
                                 title="Eliminar especialidad"
                                 style={{ marginLeft: 'auto' }}
-                                // 👈 IMPORTANTE: El botón eliminar SIEMPRE está disponible
                               >
                                 ❌
                               </button>
@@ -1186,7 +1144,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     <button
                       type="button"
                       onClick={handleAgregarProfesional}
-                      disabled={enviando || limiteAlcanzado || !formularioValido || esProfesionalExistente}
+                      disabled={enviando || limiteAlcanzado || !formularioValido}
                       className={styles.buttonPrimary}
                     >
                       Agregar
