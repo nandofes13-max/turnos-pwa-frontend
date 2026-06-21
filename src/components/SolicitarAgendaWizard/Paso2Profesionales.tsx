@@ -1,11 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN CORREGIDA Y DEFINITIVA:
-// - Si el profesional existe → campos en solo lectura
-// - Si el profesional no existe → campos editables
+// VERSIÓN CORREGIDA:
+// - Campos del profesional → solo lectura cuando existe
+// - Especialidad → SIEMPRE editable
 // - Relación profesional-especialidad: si existe, se usa; si no, se crea
-// - Relación profesional-centro: se crea solo si no existe
-// - Manejo de errores contextuales con botón de cerrar
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -157,7 +155,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   }, [actividadId]);
 
   // ============================================================
-  // AUTO-COMPLETADO POR DOCUMENTO (con solo lectura)
+  // AUTO-COMPLETADO POR DOCUMENTO (solo campos del profesional)
   // ============================================================
   useEffect(() => {
     if (timeoutRef.current) {
@@ -179,7 +177,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         whatsapp: '',
       }));
       setBuscandoProfesional(false);
-      // Si el profesional pendiente era existente, lo limpiamos
       if (profesionalPendiente?.esExistente) {
         setProfesionalPendiente(null);
       }
@@ -191,7 +188,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       try {
         const profesional = await buscarProfesionalPorDocumento(documento);
         if (profesional) {
-          // 👈 El profesional EXISTE → modo solo lectura
+          // 👈 El profesional EXISTE → modo solo lectura en campos del profesional
           setFormData(prev => ({
             ...prev,
             nombre: profesional.nombre || '',
@@ -200,21 +197,28 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             matricula: profesional.matricula || '',
             foto: profesional.foto || '',
             whatsapp: profesional.whatsapp_e164 || '',
+            // 👈 La especialidad NO se modifica, la elige el usuario
           }));
           
           // 👈 Guardamos el profesional pendiente con flag de existente
-          setProfesionalPendiente({
-            documento: profesional.documento,
-            nombre: profesional.nombre || '',
-            email: profesional.email || '',
-            whatsapp: profesional.whatsapp_e164 || '',
-            genero: profesional.genero || '',
-            matricula: profesional.matricula || '',
-            foto: profesional.foto || '',
-            especialidadNombre: '',
-            especialidadDescripcionProfesional: '',
-            profesionalId: profesional.id,
-            esExistente: true, // 👈 CLAVE: marcamos como existente
+          // PERO conservamos la especialidad que ya tenía seleccionada (si la hay)
+          setProfesionalPendiente(prev => {
+            const especialidadActual = prev?.especialidadNombre || formData.especialidadSeleccionada || '';
+            const descripcionActual = prev?.especialidadDescripcionProfesional || formData.especialidadDescripcionProfesional || '';
+            
+            return {
+              documento: profesional.documento,
+              nombre: profesional.nombre || '',
+              email: profesional.email || '',
+              whatsapp: profesional.whatsapp_e164 || '',
+              genero: profesional.genero || '',
+              matricula: profesional.matricula || '',
+              foto: profesional.foto || '',
+              especialidadNombre: especialidadActual,
+              especialidadDescripcionProfesional: descripcionActual,
+              profesionalId: profesional.id,
+              esExistente: true,
+            };
           });
           
           agregarErrorContextual('documento', '✅ Profesional existente. Los datos se cargaron en modo lectura.');
@@ -231,7 +235,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             whatsapp: '',
           }));
           
-          // Si el profesional pendiente era existente, lo limpiamos
           if (profesionalPendiente?.esExistente) {
             setProfesionalPendiente(null);
           }
@@ -256,7 +259,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // 👈 Si el profesional existe, no permitir cambios en los campos bloqueados
+    // 👈 Si el profesional existe, NO permitir cambios en campos del profesional
     const esExistente = profesionalPendiente?.esExistente || false;
     if (esExistente && ['nombre', 'email', 'whatsapp', 'genero', 'matricula', 'foto'].includes(name)) {
       return;
@@ -276,6 +279,26 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         setNuevaEspecialidadDescripcion('');
         return;
       }
+      
+      // 👈 Cuando se selecciona una especialidad, actualizar profesionalPendiente
+      setProfesionalPendiente(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          especialidadNombre: value,
+        };
+      });
+    }
+    
+    if (name === 'especialidadDescripcionProfesional') {
+      // 👈 Cuando se escribe la descripción, actualizar profesionalPendiente
+      setProfesionalPendiente(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          especialidadDescripcionProfesional: value,
+        };
+      });
     }
     
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -454,11 +477,24 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     
     setMostrarModalNuevaEspecialidad(false);
     
+    const nombreEspecialidad = nuevaEspecialidadNombre;
+    const descripcionEspecialidad = nuevaEspecialidadDescripcion;
+    
     setFormData(prev => ({
       ...prev,
-      especialidadSeleccionada: nuevaEspecialidadNombre,
-      especialidadDescripcionProfesional: nuevaEspecialidadDescripcion,
+      especialidadSeleccionada: nombreEspecialidad,
+      especialidadDescripcionProfesional: descripcionEspecialidad,
     }));
+    
+    // 👈 Actualizar profesionalPendiente con la nueva especialidad
+    setProfesionalPendiente(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        especialidadNombre: nombreEspecialidad,
+        especialidadDescripcionProfesional: descripcionEspecialidad,
+      };
+    });
     
     setNuevaEspecialidadNombre('');
     setNuevaEspecialidadDescripcion('');
@@ -474,6 +510,16 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }));
     setMostrarModalNuevaEspecialidad(false);
     limpiarErroresDelCampo('especialidad');
+    
+    // 👈 Actualizar profesionalPendiente
+    setProfesionalPendiente(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        especialidadNombre: '',
+        especialidadDescripcionProfesional: '',
+      };
+    });
   };
 
   const handleAgregarProfesional = () => {
@@ -542,6 +588,13 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
+    // 👈 Validar que tenga especialidad
+    if (!profesionalPendiente.especialidadNombre) {
+      agregarErrorContextual('general', '⚠️ Debes seleccionar una especialidad antes de continuar');
+      setEnviando(false);
+      return;
+    }
+    
     setEnviando(true);
     setErroresContextuales([]);
     
@@ -597,7 +650,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       }
       
       // ============================================================
-      // 👈 Caso: Profesional EXISTENTE (no se crea, solo se usan sus datos)
+      // 👈 Caso: Profesional EXISTENTE
       // ============================================================
       
       // 👈 2. Buscar o crear la Especialidad
@@ -626,7 +679,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       // 👈 3. Crear relación profesional-especialidad SOLO SI NO EXISTE
       let profesionalEspecialidad;
       try {
-        // Primero verificamos si ya existe
         const relacionesExistentes = await fetch(
           `${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`
         ).then(res => res.json());
@@ -636,11 +688,9 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         );
         
         if (relacionExistente) {
-          // 👈 Ya existe → la usamos
           profesionalEspecialidad = relacionExistente;
           console.log(`ℹ️ Relación Profesional-Especialidad ya existe: ID ${profesionalEspecialidad.id}`);
         } else {
-          // 👈 No existe → la creamos
           profesionalEspecialidad = await createProfesionalEspecialidad({
             profesionalId: profesionalId,
             especialidadId: especialidadId,
@@ -650,7 +700,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         }
       } catch (error: any) {
         console.error('Error al manejar relación profesional-especialidad:', error);
-        // Si falla, intentamos obtener la relación existente una vez más
         const relacionesExistentes = await fetch(
           `${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`
         ).then(res => res.json());
@@ -824,7 +873,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                         onChange={handleChange}
                         className={`${styles.input} ${errors.documento ? styles.inputError : ''}`}
                         placeholder="Ej: 12345678"
-                        disabled={esProfesionalExistente}
                       />
                       {buscandoProfesional && (
                         <span className={styles.helperText}>Buscando profesional...</span>
@@ -1005,7 +1053,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 value={formData.especialidadSeleccionada}
                                 onChange={handleChange}
                                 className={`${styles.select} ${errors.especialidad ? styles.inputError : ''}`}
-                                disabled={esProfesionalExistente}
+                                // 👈 IMPORTANTE: La especialidad SIEMPRE es editable
                               >
                                 <option value="">Seleccionar especialidad...</option>
                                 {opcionesEspecialidades()}
@@ -1028,7 +1076,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 className={styles.input}
                                 placeholder="Ej: Especialista en psicología infantil"
                                 rows={3}
-                                disabled={esProfesionalExistente}
+                                // 👈 IMPORTANTE: La descripción SIEMPRE es editable
                               />
                               <span className={styles.helperText}>
                                 Esta descripción se mostrará al cliente al momento de reservar el turno.
@@ -1052,7 +1100,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                                 className={styles.buttonEliminar}
                                 title="Eliminar especialidad"
                                 style={{ marginLeft: 'auto' }}
-                                disabled={esProfesionalExistente}
+                                // 👈 IMPORTANTE: El botón eliminar SIEMPRE está disponible
                               >
                                 ❌
                               </button>
@@ -1060,7 +1108,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                           </div>
                         )}
                         
-                        {mostrarModalNuevaEspecialidad && !esProfesionalExistente && (
+                        {mostrarModalNuevaEspecialidad && (
                           <div className={styles.modalInline}>
                             <h4 className={styles.subtitle}>Nueva Especialidad</h4>
                             
@@ -1160,7 +1208,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                   <button
                     type="button"
                     onClick={handleContinuar}
-                    disabled={enviando}
+                    disabled={enviando || !profesionalPendiente?.especialidadNombre}
                     className={styles.buttonPrimary}
                   >
                     {enviando ? 'Guardando...' : 'Continuar al Paso 3'}
