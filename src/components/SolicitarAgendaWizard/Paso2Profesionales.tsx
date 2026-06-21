@@ -547,138 +547,144 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const handleContinuar = async () => {
-    if (!profesionalPendiente) {
-      agregarErrorContextual('general', 'No hay profesional cargado para continuar');
+  if (!profesionalPendiente) {
+    agregarErrorContextual('general', 'No hay profesional cargado para continuar');
+    return;
+  }
+  
+  setEnviando(true);
+  setErroresContextuales([]);
+  
+  try {
+    const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
+    if (!phoneData) {
+      throw new Error('El número de WhatsApp no es válido');
+    }
+    
+    let profesionalId: number;
+    let profesional: any;
+    let esProfesionalExistente = false;
+    
+    // 👈 1. Verificar si el profesional ya existe en la BD
+    const profesionalExistente = await buscarProfesionalPorDocumento(profesionalPendiente.documento);
+    
+    if (profesionalExistente) {
+      // 👈 El profesional YA EXISTE → usamos su ID y datos
+      profesionalId = profesionalExistente.id;
+      profesional = profesionalExistente;
+      esProfesionalExistente = true;
+      console.log(`✅ Usando profesional existente: ID ${profesionalId}`);
+    } else {
+      // 👈 El profesional es NUEVO → lo creamos usando la función centralizada
+      const profesionalData = {
+        documento: profesionalPendiente.documento,
+        nombre: profesionalPendiente.nombre,
+        email: profesionalPendiente.email,
+        country_code: phoneData.country_code,
+        national_number: phoneData.national_number,
+        genero: profesionalPendiente.genero,
+        matricula: profesionalPendiente.matricula || undefined,
+        foto: profesionalPendiente.foto || undefined,
+      };
+      
+      // Usamos la función centralizada de apiWizard que crea el profesional y las relaciones
+      const resultado = await registrarPaso2Profesional({
+        negocioId,
+        actividadId,
+        profesionalData,
+        especialidadNombre: profesionalPendiente.especialidadNombre,
+        especialidadDescripcion: profesionalPendiente.especialidadDescripcionProfesional,
+        // ⚠️ NO pasamos profesionalExistenteId, así que crea el profesional
+      });
+      
+      // Si llegamos aquí, todo salió bien
+      onSuccess({
+        ...resultado,
+        esProfesionalExistente: false,
+      });
+      
+      setEnviando(false);
       return;
     }
     
-    setEnviando(true);
-    setErroresContextuales([]);
+    // ============================================================
+    // 👈 A partir de aquí, SOLO para el caso de profesional EXISTENTE
+    // ============================================================
     
-    try {
-      const phoneData = parsePhoneE164(profesionalPendiente.whatsapp);
-      if (!phoneData) {
-        throw new Error('El número de WhatsApp no es válido');
-      }
-      
-      let profesionalId: number;
-      let esProfesionalExistente = false;
-      
-      // 👈 1. Verificar si el profesional ya existe en la BD
-      const profesionalExistente = await buscarProfesionalPorDocumento(profesionalPendiente.documento);
-      
-      if (profesionalExistente) {
-        // 👈 El profesional YA EXISTE → usamos su ID
-        profesionalId = profesionalExistente.id;
-        esProfesionalExistente = true;
-        console.log(`✅ Usando profesional existente: ID ${profesionalId}`);
-      } else {
-        // 👈 El profesional es NUEVO → lo creamos
-        const profesionalData = {
-          documento: profesionalPendiente.documento,
-          nombre: profesionalPendiente.nombre,
-          email: profesionalPendiente.email,
-          country_code: phoneData.country_code,
-          national_number: phoneData.national_number,
-          genero: profesionalPendiente.genero,
-          matricula: profesionalPendiente.matricula || undefined,
-          foto: profesionalPendiente.foto || undefined,
-        };
-        
-        // Usamos la función centralizada de apiWizard
-        const resultado = await registrarPaso2Profesional({
-          negocioId,
-          actividadId,
-          profesionalData,
-          especialidadNombre: profesionalPendiente.especialidadNombre,
-          especialidadDescripcion: profesionalPendiente.especialidadDescripcionProfesional,
-        });
-        
-        // Si llegamos aquí, todo salió bien
-        onSuccess({
-          ...resultado,
-          esProfesionalExistente: false,
-        });
-        
-        setEnviando(false);
-        return;
-      }
-      
-      // 👈 2. Si el profesional existe, solo creamos las relaciones
-      // Buscar o crear la especialidad
-      let especialidadId: number;
-      let especialidadNombre = profesionalPendiente.especialidadNombre;
-      
-      let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
-      
-      if (especialidadExistente) {
-        especialidadId = especialidadExistente.id;
-        console.log(`✅ Especialidad existente: ID ${especialidadId}`);
-      } else {
-        const nuevaEspecialidad = await createEspecialidad({
-          nombre: especialidadNombre.toUpperCase(),
-        });
-        especialidadId = nuevaEspecialidad.id;
-        console.log(`✅ Especialidad creada: ID ${especialidadId}`);
-        
-        await createActividadEspecialidad({
-          actividadId: actividadId,
-          especialidadId: especialidadId,
-        });
-        console.log(`✅ Relación Actividad-Especialidad creada`);
-      }
-      
-      // Crear relación profesional-especialidad (si no existe)
-      let profesionalEspecialidad;
-      try {
-        profesionalEspecialidad = await createProfesionalEspecialidad({
-          profesionalId: profesionalId,
-          especialidadId: especialidadId,
-          descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
-        });
-        console.log(`✅ Relación Profesional-Especialidad creada: ID ${profesionalEspecialidad.id}`);
-      } catch (error: any) {
-        if (error.message?.includes('duplicate') || error.message?.includes('ya existe')) {
-          console.log(`ℹ️ La relación Profesional-Especialidad ya existe`);
-          // Buscar la relación existente
-          const relaciones = await fetch(`${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`).then(res => res.json());
-          profesionalEspecialidad = relaciones.find((pe: any) => pe.especialidadId === especialidadId && !pe.fecha_baja);
-          if (!profesionalEspecialidad) {
-            throw new Error('No se pudo obtener la relación existente');
-          }
-        } else {
-          throw error;
-        }
-      }
-      
-      // 👈 3. Crear relaciones profesional-centro (usando función centralizada)
-      const profesionalCentroIds = await crearRelacionesProfesionalCentro(
-        profesionalId,
-        especialidadId,
-        negocioId
-      );
-      
-      // 👈 4. Obtener el profesional completo para el resultado
-      const profesional = profesionalExistente!;
-      const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
-      
-      onSuccess({
-        profesional,
-        especialidad: especialidadFinal!,
-        profesionalEspecialidad,
-        profesionalCentroIds,
-        esProfesionalExistente: true,
+    // 2. Buscar o crear la especialidad
+    let especialidadId: number;
+    let especialidadNombre = profesionalPendiente.especialidadNombre;
+    
+    let especialidadExistente = await buscarEspecialidadPorNombre(especialidadNombre);
+    
+    if (especialidadExistente) {
+      especialidadId = especialidadExistente.id;
+      console.log(`✅ Especialidad existente: ID ${especialidadId}`);
+    } else {
+      const nuevaEspecialidad = await createEspecialidad({
+        nombre: especialidadNombre.toUpperCase(),
       });
+      especialidadId = nuevaEspecialidad.id;
+      console.log(`✅ Especialidad creada: ID ${especialidadId}`);
       
-    } catch (error) {
-      console.error('Error al guardar profesional:', error);
-      const mensaje = error instanceof Error ? error.message : 'Error al procesar el formulario';
-      agregarErrorContextual('general', mensaje);
-    } finally {
-      setEnviando(false);
+      await createActividadEspecialidad({
+        actividadId: actividadId,
+        especialidadId: especialidadId,
+      });
+      console.log(`✅ Relación Actividad-Especialidad creada`);
     }
-  };
-
+    
+    // 3. Crear relación profesional-especialidad (si no existe)
+    let profesionalEspecialidad;
+    try {
+      profesionalEspecialidad = await createProfesionalEspecialidad({
+        profesionalId: profesionalId,
+        especialidadId: especialidadId,
+        descripcion: profesionalPendiente.especialidadDescripcionProfesional || null,
+      });
+      console.log(`✅ Relación Profesional-Especialidad creada: ID ${profesionalEspecialidad.id}`);
+    } catch (error: any) {
+      if (error.message?.includes('duplicate') || error.message?.includes('ya existe')) {
+        console.log(`ℹ️ La relación Profesional-Especialidad ya existe`);
+        // Buscar la relación existente
+        const relaciones = await fetch(`${API_BASE_URL}/profesional-especialidad/por-profesional/${profesionalId}`).then(res => res.json());
+        profesionalEspecialidad = relaciones.find((pe: any) => pe.especialidadId === especialidadId && !pe.fecha_baja);
+        if (!profesionalEspecialidad) {
+          throw new Error('No se pudo obtener la relación existente');
+        }
+      } else {
+        throw error;
+      }
+    }
+    
+    // 4. Crear relaciones profesional-centro (usando función centralizada)
+    const profesionalCentroIds = await crearRelacionesProfesionalCentro(
+      profesionalId,
+      especialidadId,
+      negocioId
+    );
+    
+    // 5. Obtener la especialidad final para el resultado
+    const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
+    
+    // 6. Pasar al Paso 3
+    onSuccess({
+      profesional: profesional, // ✅ Usamos el profesional existente
+      especialidad: especialidadFinal!,
+      profesionalEspecialidad,
+      profesionalCentroIds,
+      esProfesionalExistente: true,
+    });
+    
+  } catch (error) {
+    console.error('Error al guardar profesional:', error);
+    const mensaje = error instanceof Error ? error.message : 'Error al procesar el formulario';
+    agregarErrorContextual('general', mensaje);
+  } finally {
+    setEnviando(false);
+  }
+};
+  
   const handleCancelar = () => {
     navigate('/');
   };
