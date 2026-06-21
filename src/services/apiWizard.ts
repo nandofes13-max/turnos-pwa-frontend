@@ -2,6 +2,7 @@
 // Servicio para el wizard de solicitud de agenda gratis
 // VERSIÓN CON FUNCIONES PARA PASO 2:
 // - Profesionales, Especialidades, Actividad-Especialidad, Profesional-Especialidad
+// - Nueva función para crear relaciones profesional-centro
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
 
@@ -154,6 +155,20 @@ export interface ProfesionalEspecialidad {
   ultimoMovimiento?: string;
 }
 
+export interface ProfesionalCentro {
+  id: number;
+  profesionalId: number;
+  especialidadId: number;
+  centroId: number;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
 export interface Rol {
   id: number;
   nombre: string;
@@ -290,6 +305,12 @@ export interface CreateProfesionalEspecialidadDto {
   descripcion?: string;
 }
 
+export interface CreateProfesionalCentroDto {
+  profesionalId: number;
+  especialidadId: number;
+  centroId: number;
+}
+
 // ============================================================
 // FUNCIONES DE API
 // ============================================================
@@ -420,13 +441,11 @@ export async function createNegocioUsuarioRol(data: CreateNegocioUsuarioRolDto):
 
 // Obtener especialidades filtradas por actividad (usando el endpoint optimizado)
 export async function getEspecialidadesPorActividad(actividadId: number): Promise<Especialidad[]> {
-  // Este endpoint devuelve especialidades que tienen relación con la actividad
   const response = await fetch(`${API_URL}/actividad-especialidad/por-actividad/${actividadId}`);
   if (!response.ok) {
     throw new Error(`Error al obtener especialidades: ${response.statusText}`);
   }
   const data = await response.json();
-  // Extraer las especialidades de las relaciones
   return data.map((rel: any) => rel.especialidad);
 }
 
@@ -443,7 +462,6 @@ export async function buscarEspecialidadPorNombre(nombre: string): Promise<Espec
   return encontrada || null;
 }
 
-// 👈 AGREGAR AQUÍ LA NUEVA FUNCIÓN
 // Buscar profesional por documento (para auto-completado)
 export async function buscarProfesionalPorDocumento(documento: string): Promise<Profesional | null> {
   const response = await fetch(`${API_URL}/profesionales`);
@@ -519,6 +537,82 @@ export async function createProfesionalEspecialidad(data: CreateProfesionalEspec
   }
   
   return response.json();
+}
+
+// ============================================================
+// 🆕 FUNCIONES PARA PROFESIONAL-CENTRO
+// ============================================================
+
+// Crear una relación profesional-centro
+export async function createProfesionalCentro(data: CreateProfesionalCentroDto): Promise<ProfesionalCentro> {
+  const response = await fetch(`${API_URL}/profesional-centro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    // Si es error de duplicado (400), lo manejamos con un mensaje específico
+    if (response.status === 400 && error.message?.includes('ya tiene asignada')) {
+      throw new Error('DUPLICADO');
+    }
+    throw new Error(error.message || `Error al asignar profesional al centro: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Obtener centros activos de un negocio
+export async function getCentrosPorNegocio(negocioId: number): Promise<Centro[]> {
+  const response = await fetch(`${API_URL}/centros/negocio/${negocioId}`);
+  if (!response.ok) {
+    throw new Error(`Error al obtener centros: ${response.statusText}`);
+  }
+  const centros = await response.json();
+  // Ya vienen filtrados por fecha_baja = null desde el backend
+  return centros;
+}
+
+// Crear todas las relaciones profesional-centro para un negocio
+export async function crearRelacionesProfesionalCentro(
+  profesionalId: number,
+  especialidadId: number,
+  negocioId: number
+): Promise<number[]> {
+  // 1. Obtener los centros activos del negocio
+  const centros = await getCentrosPorNegocio(negocioId);
+  
+  if (centros.length === 0) {
+    console.warn('⚠️ El negocio no tiene centros activos');
+    return [];
+  }
+  
+  // 2. Crear relación para cada centro
+  const idsCreados: number[] = [];
+  
+  for (const centro of centros) {
+    try {
+      const resultado = await createProfesionalCentro({
+        profesionalId,
+        especialidadId,
+        centroId: centro.id,
+      });
+      idsCreados.push(resultado.id);
+      console.log(`✅ Relación Profesional-Centro creada: ID ${resultado.id} (centro: ${centro.nombre})`);
+    } catch (error: any) {
+      if (error.message === 'DUPLICADO') {
+        console.log(`ℹ️ Relación ya existente para centro ${centro.nombre}`);
+        // No interrumpimos el flujo, solo registramos
+      } else {
+        console.error(`❌ Error al crear relación para centro ${centro.id}:`, error);
+        // No interrumpimos el flujo
+      }
+    }
+  }
+  
+  console.log(`📊 Relaciones creadas: ${idsCreados.length}`);
+  return idsCreados;
 }
 
 // ============================================================
@@ -632,15 +726,16 @@ export async function registrarPaso1DatosBasicos(params: {
 }
 
 // ============================================================
-// FUNCIÓN PRINCIPAL DEL PASO 2
+// FUNCIÓN PRINCIPAL DEL PASO 2 (ACTUALIZADA)
 // ============================================================
 
 export interface Paso2Result {
   profesional: Profesional;
   especialidad: Especialidad;
   profesionalEspecialidad: ProfesionalEspecialidad;
-  actividadEspecialidad?: ActividadEspecialidad; // Solo si se creó especialidad nueva
-  profesionalCentroIds: number[]; // 👈 NUEVO: IDs de las relaciones profesional-centro creadas
+  actividadEspecialidad?: ActividadEspecialidad;
+  profesionalCentroIds: number[];
+  esProfesionalExistente?: boolean; // 👈 NUEVO: indica si el profesional ya existía
 }
 
 export async function registrarPaso2Profesional(params: {
@@ -649,10 +744,27 @@ export async function registrarPaso2Profesional(params: {
   profesionalData: CreateProfesionalDto;
   especialidadNombre: string;
   especialidadDescripcion?: string;
+  profesionalExistenteId?: number; // 👈 NUEVO: si el profesional ya existe, pasamos su ID
 }): Promise<Paso2Result> {
   
-  // 1. Crear profesional
-  const profesional = await createProfesional(params.profesionalData);
+  let profesional: Profesional;
+  let esProfesionalExistente = false;
+  
+  // 1. Crear profesional o usar el existente
+  if (params.profesionalExistenteId) {
+    // Si el profesional ya existe, lo buscamos (no lo creamos)
+    const profesionales = await fetch(`${API_URL}/profesionales`).then(res => res.json());
+    profesional = profesionales.find((p: Profesional) => p.id === params.profesionalExistenteId && !p.fecha_baja);
+    if (!profesional) {
+      throw new Error('El profesional existente no se encontró o está inactivo');
+    }
+    esProfesionalExistente = true;
+    console.log(`✅ Usando profesional existente: ID ${profesional.id}`);
+  } else {
+    // Si el profesional es nuevo, lo creamos
+    profesional = await createProfesional(params.profesionalData);
+    console.log(`✅ Profesional creado: ID ${profesional.id}`);
+  }
   
   // 2. Buscar si la especialidad ya existe
   let especialidad = await buscarEspecialidadPorNombre(params.especialidadNombre);
@@ -665,24 +777,51 @@ export async function registrarPaso2Profesional(params: {
       descripcion: params.especialidadDescripcion,
     });
     
-    // 4. Crear relación actividad-especialidad
     actividadEspecialidad = await createActividadEspecialidad({
       actividadId: params.actividadId,
       especialidadId: especialidad.id,
     });
+    console.log(`✅ Especialidad creada: ID ${especialidad.id}`);
+  } else {
+    console.log(`✅ Especialidad existente: ID ${especialidad.id}`);
   }
   
-  // 5. Crear relación profesional-especialidad
-  const profesionalEspecialidad = await createProfesionalEspecialidad({
-    profesionalId: profesional.id,
-    especialidadId: especialidad.id,
-    descripcion: null,
-  });
+  // 4. Crear relación profesional-especialidad (si no existe)
+  let profesionalEspecialidad: ProfesionalEspecialidad;
+  try {
+    profesionalEspecialidad = await createProfesionalEspecialidad({
+      profesionalId: profesional.id,
+      especialidadId: especialidad.id,
+      descripcion: params.especialidadDescripcion || null,
+    });
+    console.log(`✅ Relación Profesional-Especialidad creada: ID ${profesionalEspecialidad.id}`);
+  } catch (error: any) {
+    // Si la relación ya existe, la buscamos
+    if (error.message?.includes('duplicate') || error.message?.includes('ya existe')) {
+      console.log(`ℹ️ La relación Profesional-Especialidad ya existe, se reutilizará`);
+      const relaciones = await fetch(`${API_URL}/profesional-especialidad/por-profesional/${profesional.id}`).then(res => res.json());
+      profesionalEspecialidad = relaciones.find((pe: ProfesionalEspecialidad) => pe.especialidadId === especialidad.id && !pe.fecha_baja);
+      if (!profesionalEspecialidad) {
+        throw new Error('No se pudo obtener la relación existente');
+      }
+    } else {
+      throw error;
+    }
+  }
+  
+  // 5. Crear relaciones profesional-centro para cada centro del negocio
+  const profesionalCentroIds = await crearRelacionesProfesionalCentro(
+    profesional.id,
+    especialidad.id,
+    params.negocioId
+  );
   
   return {
     profesional,
     especialidad,
     profesionalEspecialidad,
     actividadEspecialidad,
+    profesionalCentroIds,
+    esProfesionalExistente,
   };
 }
