@@ -936,7 +936,6 @@
   background-color: #dc2626;
 }
 
-
 /* ============================================================
    RESPONSIVE
    ============================================================ */
@@ -1017,6 +1016,26 @@
   .centroAgendaItem {
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  /* Ajustes para el modal de confirmación en móvil */
+  .modalConfirmacion {
+    padding: 20px;
+    margin: 16px;
+  }
+
+  .modalConfirmacionTitulo {
+    font-size: 16px;
+  }
+
+  .modalConfirmacionBotones {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modalConfirmacionBotones .buttonSecondary,
+  .buttonDanger {
+    width: 100%;
   }
 }
 
