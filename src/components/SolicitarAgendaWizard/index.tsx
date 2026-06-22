@@ -3,6 +3,7 @@
 // VERSIÓN CON PASO 3 INTEGRADO (Agenda)
 // - Paso 3 reemplazado por componente Paso3Agenda
 // - Botón "Finalizar" se habilita cuando la agenda está guardada
+// - Muestra indicador "✅ Agenda guardada" en el resumen
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ export default function SolicitarAgendaWizard() {
   const [error, setError] = useState<string | null>(null);
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
   const [agendaGuardada, setAgendaGuardada] = useState(false);
+  const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
 
   const handlePaso1Success = (data: Paso1Result) => {
     setPaso1Data(data);
@@ -44,7 +46,6 @@ export default function SolicitarAgendaWizard() {
     setError(err);
   };
 
-  // 👈 NUEVO: Manejo del éxito del Paso 3 (agenda guardada)
   const handlePaso3Success = () => {
     setAgendaGuardada(true);
     setError(null);
@@ -55,7 +56,6 @@ export default function SolicitarAgendaWizard() {
     if (step === 2) {
       setStep(1);
     } else if (step === 3) {
-      // Si estamos en el Paso 3 y hay agenda guardada, no permitir volver
       if (agendaGuardada) {
         if (window.confirm('Ya has guardado la agenda. ¿Estás seguro que deseas volver? Perderás los cambios.')) {
           setStep(2);
@@ -72,7 +72,6 @@ export default function SolicitarAgendaWizard() {
     navigate('/');
   };
 
-  // 👈 NUEVO: Manejo del botón CANCELAR
   const handleCancelar = () => {
     setMostrarConfirmacionCancelar(true);
   };
@@ -84,6 +83,25 @@ export default function SolicitarAgendaWizard() {
 
   const cancelarCancelar = () => {
     setMostrarConfirmacionCancelar(false);
+  };
+
+  // 👈 NUEVO: Manejo del botón "Finalizar"
+  const handleFinalizar = () => {
+    setMostrarExitoFinal(true);
+  };
+
+  const cerrarExitoFinal = () => {
+    setMostrarExitoFinal(false);
+    navigate('/');
+  };
+
+  // Función para formatear domicilio (igual que en Paso 1)
+  const formatearDireccion = (centro: any): string => {
+    if (centro.es_virtual) {
+      return 'Virtual';
+    }
+    const calleCompleta = `${centro.street || ''} ${centro.street_number || ''}`.trim();
+    return `${calleCompleta}, ${centro.city || ''}, ${centro.country || ''}`;
   };
 
   // Renderizar paso actual
@@ -111,11 +129,15 @@ export default function SolicitarAgendaWizard() {
           />
         );
       case 3:
-        // 👈 NUEVO: Paso 3 con el componente de Agenda
         if (!paso1Data || !paso2Data) {
           setStep(1);
           return null;
         }
+        // Si la agenda ya está guardada, mostramos el resumen con el indicador
+        if (agendaGuardada) {
+          return renderResumenAgendaGuardada();
+        }
+        // Si no está guardada, mostramos el componente de configuración
         return (
           <Paso3Agenda
             paso1Data={paso1Data}
@@ -129,27 +151,90 @@ export default function SolicitarAgendaWizard() {
     }
   };
 
-  // 👈 NUEVO: Renderizar el botón "Finalizar" en el Paso 3
-  // Este botón se muestra en el Paso 3 después de guardar la agenda
-  const renderFinalizar = () => {
-    if (step !== 3) return null;
+  // 👈 NUEVO: Resumen del Paso 3 con agenda guardada
+  const renderResumenAgendaGuardada = () => {
+    const relacionesCreadas = paso2Data?.profesionalCentroIds?.length || 0;
+    const profesionalNombre = paso2Data?.profesional?.nombre || 'Profesional';
+    const especialidadNombre = paso2Data?.especialidad?.nombre || 'Especialidad';
+    const nombreNegocio = paso1Data?.negocio?.nombre || 'Negocio';
 
     return (
-      <div className={styles.buttonsContainer} style={{ marginTop: '16px' }}>
-        <button
-          className={styles.buttonSecondary}
-          onClick={handleCancelar}
-        >
-          CANCELAR
-        </button>
-        <button
-          className={styles.buttonPrimary}
-          onClick={handleVolverInicio}
-          disabled={!agendaGuardada}
-          style={{ opacity: agendaGuardada ? 1 : 0.5 }}
-        >
-          {agendaGuardada ? '✅ Finalizar' : '🔒 Guarda la agenda para finalizar'}
-        </button>
+      <div className={styles['wizard-container-page']}>
+        <div className={styles['wizard-left']}>
+          <div className={styles['wizard-left-content']}>
+            <div className={styles['wizard-card']}>
+              <h2 className={styles.title}>Paso 3: Configurar Agenda</h2>
+
+              {/* Indicador de agenda guardada */}
+              <div className={styles.agendaGuardadaIndicator}>
+                <span className={styles.agendaGuardadaIcon}>✅</span>
+                <span className={styles.agendaGuardadaTexto}>Agenda guardada correctamente</span>
+              </div>
+
+              {/* Resumen de lo que se creó */}
+              <div className={styles.resumenPaso2}>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>🏢 Negocio:</span>
+                  <span className={styles.resumenValor}>{nombreNegocio}</span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>👤 Profesional:</span>
+                  <span className={styles.resumenValor}>{profesionalNombre}</span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>📋 Especialidad:</span>
+                  <span className={styles.resumenValor}>{especialidadNombre}</span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>🏢 Centros asignados:</span>
+                  <span className={styles.resumenValor}>{relacionesCreadas} centros</span>
+                </div>
+              </div>
+
+              {/* Lista de centros con indicador de agenda */}
+              <div className={styles.centrosAgendaLista}>
+                {paso2Data?.profesionalCentroIds?.map((id, index) => {
+                  const centro = paso1Data?.centros?.[index] || null;
+                  const direccion = centro ? formatearDireccion(centro) : 'Centro sin dirección';
+
+                  return (
+                    <div key={id} className={styles.centroAgendaItem}>
+                      <span className={styles.centroAgendaNumero}>#{index + 1}</span>
+                      <span className={styles.centroAgendaId}>{direccion}</span>
+                      <span className={styles.agendaGuardadaBadge}>✅ Agenda configurada</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Botones de acción */}
+              <div className={styles.buttonsContainer}>
+                <button
+                  className={styles.buttonSecondary}
+                  onClick={handleCancelar}
+                >
+                  CANCELAR
+                </button>
+                <button
+                  className={styles.buttonPrimary}
+                  onClick={handleFinalizar}
+                >
+                  ✅ Finalizar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles['wizard-right']}>
+          <div className={styles['wizard-right-content']}>
+            <img
+              src="/1000133565.png"
+              alt="PWA Turnos"
+              className={styles['wizard-logo-desktop']}
+              onClick={() => navigate('/')}
+            />
+          </div>
+        </div>
       </div>
     );
   };
@@ -157,10 +242,7 @@ export default function SolicitarAgendaWizard() {
   return (
     <>
       {renderStep()}
-      
-      {/* 👈 NUEVO: Botones de acción para el Paso 3 */}
-      {step === 3 && renderFinalizar()}
-      
+
       {/* Modal de confirmación para CANCELAR */}
       {mostrarConfirmacionCancelar && (
         <div className={styles.modalConfirmacionOverlay} onClick={cancelarCancelar}>
@@ -180,7 +262,40 @@ export default function SolicitarAgendaWizard() {
           </div>
         </div>
       )}
-      
+
+      {/* 👈 NUEVO: Modal de éxito final */}
+      {mostrarExitoFinal && (
+        <div className={styles.modalConfirmacionOverlay} onClick={cerrarExitoFinal}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalConfirmacionTitulo}>✅ ¡Formulario completado con éxito!</h3>
+            <p className={styles.modalConfirmacionMensaje}>
+              Tu negocio ya está configurado. Compartí estos enlaces para empezar a recibir turnos:
+            </p>
+            <div style={{ marginBottom: '16px', textAlign: 'left' }}>
+              <p style={{ fontSize: '14px', marginBottom: '8px' }}>
+                <strong>📢 Link Público (para redes sociales):</strong>
+                <br />
+                <span style={{ color: '#3b82f6', wordBreak: 'break-all' }}>
+                  {`${window.location.origin}/negocio/${paso1Data?.negocio?.url || ''}`}
+                </span>
+              </p>
+              <p style={{ fontSize: '14px', marginBottom: '8px' }}>
+                <strong>⚙️ Link de Gestión (para administrar):</strong>
+                <br />
+                <span style={{ color: '#3b82f6', wordBreak: 'break-all' }}>
+                  {`${window.location.origin}/turnos`}
+                </span>
+              </p>
+            </div>
+            <div className={styles.modalConfirmacionBotones}>
+              <button className={styles.buttonPrimary} onClick={cerrarExitoFinal}>
+                Ir al inicio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className={styles['mensaje-error']} style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
           {error}
