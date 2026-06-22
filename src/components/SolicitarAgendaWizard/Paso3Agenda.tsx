@@ -1,6 +1,6 @@
 // src/components/SolicitarAgendaWizard/Paso3Agenda.tsx
 // Paso 3 del Wizard: Configurar Agenda para un centro específico
-// - Recibe centroId como prop para configurar la agenda de ese centro
+// - Recibe centroId y profesionalCentroId como props
 // - Mensajes de éxito/error con auto-cierre (5 segundos)
 // - Conversión de días IDÉNTICA a AgendaDisponibilidad.tsx
 // - Validación en cascada (igual que AgendaDisponibilidad.tsx)
@@ -13,9 +13,10 @@ import styles from './wizard.module.css';
 interface Paso3AgendaProps {
   paso1Data: Paso1Result;
   paso2Data: Paso2Result;
-  centroId: number; // 👈 NUEVO: centro específico para configurar
+  centroId: number;
+  profesionalCentroId: number; // 👈 NUEVO: ID específico de la relación profesional-centro
   onBack: () => void;
-  onSuccess: (centroId: number) => void; // 👈 NUEVO: devuelve el centroId configurado
+  onSuccess: (centroId: number) => void;
 }
 
 interface BloqueLocal {
@@ -46,14 +47,14 @@ const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'S�
 
 // Convertir índice del frontend (0=Lunes) a valor de BD (0=Domingo)
 const uiToBdDay = (uiDay: number): number => {
-  if (uiDay === 6) return 0;  // Domingo → 0
-  return uiDay + 1;           // Lunes → 1, Martes → 2, ...
+  if (uiDay === 6) return 0;
+  return uiDay + 1;
 };
 
 // Convertir valor de BD (0=Domingo) a índice del frontend (0=Lunes)
 const bdToUiDay = (bdDay: number): number => {
-  if (bdDay === 0) return 6;  // Domingo → 6
-  return bdDay - 1;           // Lunes → 0, Martes → 1, ...
+  if (bdDay === 0) return 6;
+  return bdDay - 1;
 };
 
 // ============================================================
@@ -127,7 +128,7 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
-// Función para formatear domicilio (igual que en Paso 1)
+// Función para formatear domicilio
 const formatearDireccion = (centro: any): string => {
   if (!centro) return 'Sin domicilio';
   if (centro.es_virtual) {
@@ -159,6 +160,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   paso1Data,
   paso2Data,
   centroId,
+  profesionalCentroId, // 👈 NUEVO: recibimos el ID específico
   onBack,
   onSuccess,
 }) => {
@@ -179,9 +181,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const [opcionesHora, setOpcionesHora] = useState<string[]>([]);
   const [duracionValida, setDuracionValida] = useState(false);
   const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
-
-  // Obtener el profesionalCentroId
-  const profesionalCentroId = paso2Data?.profesionalCentroIds?.[0] || 0;
 
   // Obtener el centro específico para este ID
   const centro = paso1Data?.centros?.find(c => c.id === centroId);
@@ -282,7 +281,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
       return false;
     }
 
-    // 👈 CONVERSIÓN DE DÍA: usar uiToBdDay para comparar con bloques existentes
     const nuevoDiaBD = uiToBdDay(nuevoDiaUI);
     const bloqueSolapado = bloques.find(bloque => {
       const mismoDia = bloque.diaSemana === nuevoDiaBD;
@@ -299,7 +297,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
       return false;
     }
 
-    // Verificar duplicado exacto
     const duplicado = bloques.find(bloque => {
       return (
         bloque.diaSemana === nuevoDiaBD &&
@@ -343,7 +340,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
     setBloques(prev => [...prev, nuevoBloque]);
 
-    // Resetear campos
     setNuevoDiaUI(null);
     setNuevoDesde('');
     setNuevoHasta('');
@@ -384,7 +380,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
     try {
       const payload = bloques.map(bloque => ({
-        profesionalCentroId: profesionalCentroId,
+        profesionalCentroId: profesionalCentroId, // 👈 Usamos el ID específico
         diaSemana: bloque.diaSemana,
         horaDesde: bloque.horaDesde,
         horaHasta: bloque.horaHasta,
@@ -400,7 +396,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
       agregarMensaje('exito', `✅ Agenda guardada correctamente (${bloques.length} bloques)`);
 
-      // 👈 Después de guardar, volver al resumen con el centroId configurado
       setTimeout(() => {
         onSuccess(centroId);
       }, 1500);
@@ -417,7 +412,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     setMostrarConfirmacionGuardar(false);
   };
 
-  // Cancelar con doble confirmación
   const handleCancelar = () => {
     if (bloques.length > 0) {
       setMostrarConfirmacionCancelar(true);
@@ -440,7 +434,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const especialidad = paso2Data?.especialidad;
   const profesional = paso2Data?.profesional;
 
-  // Renderizar mensajes (con auto-cierre)
+  // Renderizar mensajes (con auto-cierre) - AHORA DENTRO DEL FORMULARIO
   const renderizarMensajes = () => {
     if (mensajes.length === 0) return null;
 
@@ -476,9 +470,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               Configurando agenda para: <strong>{centro?.codigo} - {centro?.nombre}</strong>
             </p>
 
-            {/* Mensajes con auto-cierre */}
-            {renderizarMensajes()}
-
             {/* Contexto del negocio */}
             <div className={styles.resumenPaso2}>
               <div className={styles.resumenItem}>
@@ -509,9 +500,12 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               </div>
             </div>
 
-            {/* Formulario de alta */}
+            {/* Formulario de alta - CON MENSAJES DENTRO */}
             <div className={styles.agendaFormSection}>
               <h3 className={styles.agendaFormTitle}>Agregar Bloque Horario</h3>
+
+              {/* 👈 MENSAJES COLOCADOS AQUÍ (dentro del formulario) */}
+              {renderizarMensajes()}
 
               <div className={styles.agendaFormRow}>
                 <div className={styles.agendaFormField}>
