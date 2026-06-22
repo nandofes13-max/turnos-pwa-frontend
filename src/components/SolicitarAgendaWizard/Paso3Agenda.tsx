@@ -6,6 +6,7 @@
 // - Guardado mediante POST /agenda-disponibilidad/guardar-lote
 // - Mensajes de éxito/error consistentes con el formulario
 // - Mensaje BLOQUEANTE: el usuario debe cerrarlo para continuar
+// - Conversión de días IDÉNTICA a AgendaDisponibilidad.tsx
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -40,6 +41,26 @@ interface Mensaje {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+// ============================================================
+// FUNCIONES DE CONVERSIÓN DE DÍAS (IDÉNTICAS A AgendaDisponibilidad.tsx)
+// ============================================================
+
+// Convertir índice del frontend (0=Lunes) a valor de BD (0=Domingo)
+const uiToBdDay = (uiDay: number): number => {
+  if (uiDay === 6) return 0;  // Domingo → 0
+  return uiDay + 1;           // Lunes → 1, Martes → 2, ...
+};
+
+// Convertir valor de BD (0=Domingo) a índice del frontend (0=Lunes)
+const bdToUiDay = (bdDay: number): number => {
+  if (bdDay === 0) return 6;  // Domingo → 6
+  return bdDay - 1;           // Lunes → 0, Martes → 1, ...
+};
+
+// ============================================================
+// FUNCIONES DE HORARIOS (IDÉNTICAS A AgendaDisponibilidad.tsx)
+// ============================================================
 
 const normalizarHora = (hora: string): string => {
   if (!hora) return hora;
@@ -261,8 +282,8 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
       return false;
     }
 
-    // Verificar solapamiento con bloques existentes
-    const nuevoDiaBD = nuevoDiaUI;
+    // 👈 CONVERSIÓN DE DÍA: usar uiToBdDay para comparar con bloques existentes
+    const nuevoDiaBD = uiToBdDay(nuevoDiaUI);
     const bloqueSolapado = bloques.find(bloque => {
       const mismoDia = bloque.diaSemana === nuevoDiaBD;
       if (!mismoDia) return false;
@@ -306,15 +327,16 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     if (!validarHorario()) return;
 
     const duracionFinal = obtenerDuracionFinal();
-    const diaBD = nuevoDiaUI!;
-    const nombreDia = DIAS_COMPLETO[diaBD];
+    // 👈 CONVERSIÓN DE DÍA: usar uiToBdDay para guardar en BD
+    const diaBD = uiToBdDay(nuevoDiaUI!);
+    const nombreDia = DIAS_COMPLETO[nuevoDiaUI!];
     const fechaActual = new Date().toISOString().split('T')[0];
 
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
 
     const nuevoBloque: BloqueLocal = {
       id: Date.now(),
-      diaSemana: diaBD,
+      diaSemana: diaBD, // Guardamos el valor convertido para BD
       horaDesde: normalizarHora(nuevoDesde),
       horaHasta: normalizarHora(nuevoHasta),
       duracionTurno: duracionFinal,
@@ -371,7 +393,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     try {
       const payload = bloques.map(bloque => ({
         profesionalCentroId: profesionalCentroId,
-        diaSemana: bloque.diaSemana,
+        diaSemana: bloque.diaSemana, // Ya está en formato BD (0=Domingo)
         horaDesde: bloque.horaDesde,
         horaHasta: bloque.horaHasta,
         duracionTurno: bloque.duracionTurno,
@@ -386,9 +408,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
       
       agregarMensaje('exito', `✅ Agenda guardada correctamente (${bloques.length} bloques)`);
       
-      // Volver al resumen del Paso 3 después de cerrar el mensaje
-      // El usuario debe cerrar el mensaje para continuar
-      
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
       agregarMensaje('error', `❌ ${err.message || 'Error al guardar la agenda'}`);
@@ -397,10 +416,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     }
   };
 
-  // 👈 Función para cerrar mensaje y luego ejecutar acción
+  // Función para cerrar mensaje y luego ejecutar acción
   const cerrarMensajeYVolver = () => {
     if (mensajes.length > 0 && mensajes[0].tipo === 'exito' && mensajes[0].texto.includes('Agenda guardada')) {
-      // Si el mensaje es de éxito de guardado, volver al resumen
       eliminarMensaje(mensajes[0].id);
       if (onSuccess) {
         onSuccess();
@@ -408,7 +426,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
         onBack();
       }
     } else {
-      // Si es otro tipo de mensaje, solo cerrarlo
       eliminarMensaje(mensajes[0].id);
     }
   };
@@ -442,7 +459,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const especialidad = paso2Data?.especialidad;
   const profesional = paso2Data?.profesional;
 
-  // Renderizar mensajes (bloqueantes)
+  // Renderizar mensajes (bloqueantes) - COLOCADOS ENCIMA DEL FORMULARIO
   const renderizarMensajes = () => {
     if (mensajes.length === 0) return null;
 
@@ -473,9 +490,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
         <div className={styles['wizard-left-content']}>
           <div className={styles['wizard-card']}>
             <h2 className={styles.title}>Configurar Agenda</h2>
-
-            {/* Mensajes bloqueantes */}
-            {renderizarMensajes()}
 
             {/* Contexto del negocio */}
             <div className={styles.resumenPaso2}>
@@ -510,6 +524,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
             {/* Formulario de alta */}
             <div className={styles.agendaFormSection}>
               <h3 className={styles.agendaFormTitle}>Agregar Bloque Horario</h3>
+
+              {/* 👈 Mensajes COLOCADOS AQUÍ (encima de los campos) */}
+              {renderizarMensajes()}
 
               <div className={styles.agendaFormRow}>
                 <div className={styles.agendaFormField}>
@@ -614,7 +631,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               <div className={styles.agendaBloquesLista}>
                 <h3 className={styles.agendaBloquesTitle}>Bloques agregados ({bloques.length})</h3>
                 {bloques.map((bloque, idx) => {
-                  const nombreDia = DIAS_COMPLETO[bloque.diaSemana];
+                  // 👈 CONVERSIÓN DE DÍA: usar bdToUiDay para mostrar el día correcto
+                  const diaUI = bdToUiDay(bloque.diaSemana);
+                  const nombreDia = DIAS_COMPLETO[diaUI];
                   const estaExpandido = bloque.expandido;
 
                   return (
@@ -723,7 +742,10 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               Se guardarán {bloques.length} bloque(s) en la agenda.
               {bloques.length > 0 && (
                 <span style={{ display: 'block', marginTop: '8px', fontSize: '13px', color: '#6b7280' }}>
-                  {bloques.map(b => `${DIAS_COMPLETO[b.diaSemana]} (${b.horaDesde}-${b.horaHasta})`).join(', ')}
+                  {bloques.map(b => {
+                    const diaUI = bdToUiDay(b.diaSemana);
+                    return `${DIAS_COMPLETO[diaUI]} (${b.horaDesde}-${b.horaHasta})`;
+                  }).join(', ')}
                 </span>
               )}
             </p>
