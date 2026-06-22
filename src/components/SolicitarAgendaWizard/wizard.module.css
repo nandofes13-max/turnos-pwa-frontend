@@ -937,6 +937,171 @@
 }
 
 /* ============================================================
+   NUEVOS ESTILOS PARA EL PASO 3 (Agenda - Componente)
+   ============================================================ */
+
+/* Sección del formulario de agenda */
+.agendaFormSection {
+  margin-top: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.agendaFormTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.agendaFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.agendaFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agendaFormLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.agendaFormInput {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.agendaFormInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.agendaFormInput:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.buttonAgregarBloque {
+  background-color: #10b981;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  height: 40px;
+}
+
+.buttonAgregarBloque:hover {
+  background-color: #059669;
+}
+
+.buttonAgregarBloque:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Lista de bloques */
+.agendaBloquesLista {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.agendaBloquesTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.agendaBloqueItem {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.agendaBloqueItem:hover {
+  border-color: #cbd5e1;
+}
+
+.agendaBloqueHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.agendaBloqueInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  flex-wrap: wrap;
+}
+
+.agendaBloqueNumero {
+  font-weight: 700;
+  color: #3b82f6;
+  background-color: #dbeafe;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.agendaBloqueAcciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Horarios expandibles */
+.agendaHorariosContainer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.agendaHorariosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 6px;
+}
+
+.agendaHorarioSlot {
+  padding: 4px 8px;
+  background-color: #f1f5f9;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 
@@ -1037,6 +1202,34 @@
   .buttonDanger {
     width: 100%;
   }
+
+  /* Ajustes para el formulario de agenda en móvil */
+  .agendaFormRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .agendaFormField:last-child {
+    grid-column: span 2;
+  }
+
+  .buttonAgregarBloque {
+    width: 100%;
+  }
+
+  .agendaBloqueHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .agendaBloqueAcciones {
+    justify-content: flex-end;
+  }
+
+  .agendaHorariosGrid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
@@ -1086,5 +1279,27 @@
 
   .centroAgendaNumero {
     align-self: center;
+  }
+
+  /* Ajustes para el formulario de agenda en móvil pequeño */
+  .agendaFormRow {
+    grid-template-columns: 1fr;
+  }
+
+  .agendaFormField:last-child {
+    grid-column: span 1;
+  }
+
+  .agendaBloqueInfo {
+    font-size: 13px;
+  }
+
+  .agendaHorariosGrid {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+  }
+
+  .agendaHorarioSlot {
+    font-size: 11px;
+    padding: 3px 6px;
   }
 }
