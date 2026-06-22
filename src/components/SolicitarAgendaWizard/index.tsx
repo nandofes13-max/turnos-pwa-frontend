@@ -1,6 +1,11 @@
 // src/components/SolicitarAgendaWizard/index.tsx
 // Wizard principal - Sin overlay, layout consistente con Inicio
-// VERSIÓN CON PASO 2 INTEGRADO Y PASO 3 PREPARADO PARA RECIBIR IDs DE RELACIONES
+// VERSIÓN MODIFICADA:
+// - Agregado nombre del negocio en el resumen del Paso 3
+// - Muestra domicilio del centro en lugar de "Relación ID"
+// - Botón "Finalizar" deshabilitado (hasta implementar agenda)
+// - Botón "Volver al Paso 2" → "CANCELAR" con doble aviso
+// - Eliminado logo en cabecera móvil del Paso 3
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +22,7 @@ export default function SolicitarAgendaWizard() {
   const [paso1Data, setPaso1Data] = useState<Paso1Result | null>(null);
   const [paso2Data, setPaso2Data] = useState<Paso2Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
 
   const handlePaso1Success = (data: Paso1Result) => {
     setPaso1Data(data);
@@ -52,6 +58,35 @@ export default function SolicitarAgendaWizard() {
     navigate('/');
   };
 
+  // 👈 NUEVO: Manejo del botón CANCELAR
+  const handleCancelar = () => {
+    setMostrarConfirmacionCancelar(true);
+  };
+
+  const confirmarCancelar = () => {
+    setMostrarConfirmacionCancelar(false);
+    navigate('/');
+  };
+
+  const cancelarCancelar = () => {
+    setMostrarConfirmacionCancelar(false);
+  };
+
+  // 👈 NUEVO: Función para formatear domicilio (igual que en Paso 1)
+  const formatearDireccion = (centro: any): string => {
+    if (centro.es_virtual) {
+      return 'Virtual';
+    }
+    const calleCompleta = `${centro.street || ''} ${centro.street_number || ''}`.trim();
+    return `${calleCompleta}, ${centro.city || ''}, ${centro.country || ''}`;
+  };
+
+  // 👈 NUEVO: Obtener centro por ID
+  const obtenerCentroPorId = (centroId: number) => {
+    if (!paso1Data?.centros) return null;
+    return paso1Data.centros.find(c => c.id === centroId);
+  };
+
   // Renderizar paso actual
   const renderStep = () => {
     switch (step) {
@@ -80,27 +115,25 @@ export default function SolicitarAgendaWizard() {
         );
       case 3:
         // Paso 3: Configurar Agenda
-        // Ahora recibimos profesionalCentroIds desde paso2Data
         const relacionesCreadas = paso2Data?.profesionalCentroIds?.length || 0;
         const profesionalNombre = paso2Data?.profesional?.nombre || 'Profesional';
         const especialidadNombre = paso2Data?.especialidad?.nombre || 'Especialidad';
+        const nombreNegocio = paso1Data?.negocio?.nombre || 'Negocio';
         
         return (
           <div className={styles['wizard-container-page']}>
             <div className={styles['wizard-left']}>
               <div className={styles['wizard-left-content']}>
-                <div className={styles['wizard-logo-mobile']}>
-                  <img 
-                    src="/logo-pwa-turnos.svg" 
-                    alt="PWA Turnos" 
-                    className={styles['wizard-logo-mobile-img']}
-                  />
-                </div>
+                {/* 👈 LOGO ELIMINADO: ya no se muestra en móviles */}
                 <div className={styles['wizard-card']}>
                   <h2 className={styles.title}>Paso 3: Configurar Agenda</h2>
                   
                   {/* Resumen de lo que se creó en el Paso 2 */}
                   <div className={styles.resumenPaso2}>
+                    <div className={styles.resumenItem}>
+                      <span className={styles.resumenLabel}>🏢 Negocio:</span>
+                      <span className={styles.resumenValor}>{nombreNegocio}</span>
+                    </div>
                     <div className={styles.resumenItem}>
                       <span className={styles.resumenLabel}>👤 Profesional:</span>
                       <span className={styles.resumenValor}>{profesionalNombre}</span>
@@ -121,15 +154,24 @@ export default function SolicitarAgendaWizard() {
                         Configurá los días y horarios de atención para cada centro.
                       </p>
                       <div className={styles.centrosAgendaLista}>
-                        {paso2Data?.profesionalCentroIds?.map((id, index) => (
-                          <div key={id} className={styles.centroAgendaItem}>
-                            <span className={styles.centroAgendaNumero}>#{index + 1}</span>
-                            <span className={styles.centroAgendaId}>Relación ID: {id}</span>
-                            <button className={styles.buttonSmall}>
-                              Configurar Agenda
-                            </button>
-                          </div>
-                        ))}
+                        {paso2Data?.profesionalCentroIds?.map((id, index) => {
+                          // 👈 Obtener el centro correspondiente a esta relación
+                          // Nota: necesitamos mapear profesionalCentroId → centroId
+                          // Por ahora, usamos el índice para buscar en los centros
+                          // En la implementación final, deberíamos tener un mapa
+                          const centro = paso1Data?.centros?.[index] || null;
+                          const direccion = centro ? formatearDireccion(centro) : 'Centro sin dirección';
+                          
+                          return (
+                            <div key={id} className={styles.centroAgendaItem}>
+                              <span className={styles.centroAgendaNumero}>#{index + 1}</span>
+                              <span className={styles.centroAgendaId}>{direccion}</span>
+                              <button className={styles.buttonSmall}>
+                                Configurar Agenda
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
@@ -141,10 +183,17 @@ export default function SolicitarAgendaWizard() {
                   )}
                   
                   <div className={styles.buttonsContainer}>
-                    <button className={styles.buttonSecondary} onClick={handleVolver}>
-                      Volver al Paso 2
+                    <button 
+                      className={styles.buttonSecondary} 
+                      onClick={handleCancelar}  // 👈 CAMBIADO: ahora llama a handleCancelar
+                    >
+                      CANCELAR
                     </button>
-                    <button className={styles.buttonPrimary} onClick={handleVolverInicio}>
+                    <button 
+                      className={styles.buttonPrimary} 
+                      onClick={handleVolverInicio}
+                      disabled={true}  // 👈 DESHABILITADO hasta tener agenda
+                    >
                       Finalizar
                     </button>
                   </div>
@@ -171,6 +220,27 @@ export default function SolicitarAgendaWizard() {
   return (
     <>
       {renderStep()}
+      
+      {/* 👈 NUEVO: Modal de confirmación para CANCELAR */}
+      {mostrarConfirmacionCancelar && (
+        <div className={styles.modalConfirmacionOverlay} onClick={cancelarCancelar}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalConfirmacionTitulo}>¿Está seguro que desea cancelar?</h3>
+            <p className={styles.modalConfirmacionMensaje}>
+              Perderá toda la información guardada hasta el momento.
+            </p>
+            <div className={styles.modalConfirmacionBotones}>
+              <button className={styles.buttonSecondary} onClick={cancelarCancelar}>
+                Seguir editando
+              </button>
+              <button className={styles.buttonDanger} onClick={confirmarCancelar}>
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {error && (
         <div className={styles['mensaje-error']} style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
           {error}
