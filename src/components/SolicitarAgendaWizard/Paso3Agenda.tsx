@@ -4,10 +4,12 @@
 // - Validación en cascada (igual que AgendaDisponibilidad.tsx)
 // - Lista de bloques con expansión para ver horarios
 // - Guardado mediante POST /agenda-disponibilidad/guardar-lote
+// - Mensajes de éxito/error consistentes con el formulario
+// - Mensaje BLOQUEANTE: el usuario debe cerrarlo para continuar
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Paso1Result, Paso2Result } from '../../services/apiWizard';
+import { Paso1Result, Paso2Result, guardarAgenda } from '../../services/apiWizard';
 import styles from './wizard.module.css';
 
 interface Paso3AgendaProps {
@@ -15,20 +17,6 @@ interface Paso3AgendaProps {
   paso2Data: Paso2Result;
   onBack: () => void;
   onSuccess?: () => void;
-}
-
-interface BloqueHorario {
-  id?: number;
-  profesionalCentroId: number;
-  diaSemana: number;
-  horaDesde: string;
-  horaHasta: string;
-  duracionTurno: number;
-  bufferMinutos: number;
-  fechaDesde: string;
-  fechaHasta: string | null;
-  fecha_baja?: string | null;
-  timezone?: string;
 }
 
 interface BloqueLocal {
@@ -42,6 +30,12 @@ interface BloqueLocal {
   horarios: string[];
   timezone: string;
   expandido: boolean;
+}
+
+interface Mensaje {
+  id: string;
+  tipo: 'exito' | 'error';
+  texto: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -114,6 +108,16 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
+// Función para formatear domicilio (igual que en Paso 1)
+const formatearDireccion = (centro: any): string => {
+  if (!centro) return 'Sin domicilio';
+  if (centro.es_virtual) {
+    return 'Virtual';
+  }
+  const calleCompleta = `${centro.street || ''} ${centro.street_number || ''}`.trim();
+  return `${calleCompleta}, ${centro.city || ''}, ${centro.country || ''}`;
+};
+
 const formatearTimezone = (tz: string | undefined): string => {
   if (!tz) return 'No definida';
   const parts = tz.split('/');
@@ -125,6 +129,13 @@ const formatearTimezone = (tz: string | undefined): string => {
   return `${city} - ${tz}`;
 };
 
+// Generador de ID único para mensajes
+let mensajeIdCounter = 0;
+const generarIdMensaje = () => {
+  mensajeIdCounter += 1;
+  return `msg-${Date.now()}-${mensajeIdCounter}`;
+};
+
 const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   paso1Data,
   paso2Data,
@@ -134,8 +145,10 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const navigate = useNavigate();
   const [guardando, setGuardando] = useState(false);
   const [bloques, setBloques] = useState<BloqueLocal[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
+  const [mensajeActivo, setMensajeActivo] = useState(false);
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
+  const [mostrarConfirmacionGuardar, setMostrarConfirmacionGuardar] = useState(false);
 
   // Campos del formulario
   const [nuevoDiaUI, setNuevoDiaUI] = useState<number | null>(null);
@@ -151,8 +164,25 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   // Obtener el profesionalCentroId
   const profesionalCentroId = paso2Data?.profesionalCentroIds?.[0] || 0;
 
-  // Obtener el timezone del centro
-  const timezone = paso1Data?.centros?.[0]?.timezone || 'America/Argentina/Buenos_Aires';
+  // Obtener el centro
+  const centro = paso1Data?.centros?.[0];
+
+  // Función para agregar mensaje (bloqueante)
+  const agregarMensaje = (tipo: 'exito' | 'error', texto: string) => {
+    const id = generarIdMensaje();
+    setMensajes([{ id, tipo, texto }]);
+    setMensajeActivo(true);
+  };
+
+  const eliminarMensaje = (id: string) => {
+    setMensajes(prev => prev.filter(m => m.id !== id));
+    setMensajeActivo(false);
+  };
+
+  const limpiarMensajes = () => {
+    setMensajes([]);
+    setMensajeActivo(false);
+  };
 
   // Efecto para generar opciones de hora cuando cambia la duración
   useEffect(() => {
@@ -195,22 +225,24 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   };
 
   const validarHorario = (): boolean => {
+    limpiarMensajes();
+
     if (nuevoDiaUI === null) {
-      setErrorMessage('Seleccione un día');
+      agregarMensaje('error', '⚠️ Seleccione un día');
       return false;
     }
     if (!nuevoDesde || !nuevoHasta) {
-      setErrorMessage('Complete los horarios');
+      agregarMensaje('error', '⚠️ Complete los horarios');
       return false;
     }
     if (nuevoDesde >= nuevoHasta) {
-      setErrorMessage('La hora "Desde" debe ser menor a la hora "Hasta"');
+      agregarMensaje('error', '⚠️ La hora "Desde" debe ser menor a la hora "Hasta"');
       return false;
     }
 
     const duracionFinal = obtenerDuracionFinal();
     if (!duracionFinal || duracionFinal <= 0) {
-      setErrorMessage('La duración del turno debe ser mayor a 0');
+      agregarMensaje('error', '⚠️ La duración del turno debe ser mayor a 0');
       return false;
     }
 
@@ -218,14 +250,13 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     const [hastaH, hastaM] = nuevoHasta.split(':').map(Number);
     const minutosTotales = (hastaH * 60 + hastaM) - (desdeH * 60 + desdeM);
     if (minutosTotales < duracionFinal) {
-      setErrorMessage(`El rango horario es menor a la duración del turno (${duracionFinal} min)`);
+      agregarMensaje('error', `⚠️ El rango horario es menor a la duración del turno (${duracionFinal} min)`);
       return false;
     }
 
-    // Verificar que la duración divida exactamente el rango
     if (minutosTotales % duracionFinal !== 0) {
-      setErrorMessage(
-        `La duración del turno (${duracionFinal} min) no divide exactamente el rango horario de ${minutosTotales} minutos.`
+      agregarMensaje('error',
+        `⚠️ La duración del turno (${duracionFinal} min) no divide exactamente el rango horario de ${minutosTotales} minutos.`
       );
       return false;
     }
@@ -241,7 +272,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
     if (bloqueSolapado) {
       const nombreDia = DIAS_COMPLETO[nuevoDiaUI];
-      setErrorMessage(
+      agregarMensaje('error',
         `❌ SOLAPAMIENTO: Ya existe un bloque para ${nombreDia} con horario ${bloqueSolapado.horaDesde} a ${bloqueSolapado.horaHasta}`
       );
       return false;
@@ -259,15 +290,19 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
     if (duplicado) {
       const nombreDia = DIAS_COMPLETO[nuevoDiaUI];
-      setErrorMessage(`❌ Ya existe un bloque para ${nombreDia} con el mismo horario y duración.`);
+      agregarMensaje('error', `❌ Ya existe un bloque para ${nombreDia} con el mismo horario y duración.`);
       return false;
     }
 
-    setErrorMessage(null);
     return true;
   };
 
   const agregarBloque = () => {
+    // Si hay un mensaje activo, no permitir agregar otro bloque
+    if (mensajeActivo) {
+      return;
+    }
+
     if (!validarHorario()) return;
 
     const duracionFinal = obtenerDuracionFinal();
@@ -286,7 +321,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
       fechaDesde: fechaActual,
       fechaHasta: null,
       horarios: horarios,
-      timezone: timezone,
+      timezone: centro?.timezone || 'America/Argentina/Buenos_Aires',
       expandido: false,
     };
 
@@ -299,9 +334,8 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     setNuevaDuracion(0);
     setMostrarOtraDuracion(false);
     setOtraDuracion('');
-    setErrorMessage(null);
 
-    alert(`✅ Bloque agregado correctamente para ${nombreDia}`);
+    agregarMensaje('exito', `✅ Bloque agregado para ${nombreDia}`);
   };
 
   const toggleExpandirBloque = (id: number) => {
@@ -315,22 +349,27 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const eliminarBloque = (id: number) => {
     if (!window.confirm('¿Está seguro de eliminar este bloque?')) return;
     setBloques(prev => prev.filter(bloque => bloque.id !== id));
+    agregarMensaje('exito', '✅ Bloque eliminado');
   };
 
-  const guardarAgenda = async () => {
+  // Guardar agenda con doble confirmación
+  const handleGuardar = () => {
+    if (mensajeActivo) return;
+    
     if (bloques.length === 0) {
-      alert('⚠️ Debe agregar al menos un bloque horario antes de guardar.');
+      agregarMensaje('error', '⚠️ Debe agregar al menos un bloque horario antes de guardar.');
       return;
     }
+    setMostrarConfirmacionGuardar(true);
+  };
 
-    if (!window.confirm(`¿Está seguro de guardar ${bloques.length} bloque(s) en la agenda?`)) return;
-
+  const confirmarGuardar = async () => {
+    setMostrarConfirmacionGuardar(false);
     setGuardando(true);
-    setErrorMessage(null);
+    limpiarMensajes();
 
-    // Preparar payload para el backend
-    const payload = {
-      bloques: bloques.map(bloque => ({
+    try {
+      const payload = bloques.map(bloque => ({
         profesionalCentroId: profesionalCentroId,
         diaSemana: bloque.diaSemana,
         horaDesde: bloque.horaDesde,
@@ -341,47 +380,47 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
         fechaHasta: bloque.fechaHasta,
         fecha_baja: null,
         timezone: bloque.timezone,
-      })),
-    };
+      }));
 
-    console.log('📦 Enviando lote de bloques:', payload);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/agenda-disponibilidad/guardar-lote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        let errorMessageText = '';
-        try {
-          const errorData = await response.json();
-          errorMessageText = errorData.message || response.statusText;
-        } catch (e) {
-          errorMessageText = response.statusText || `Error ${response.status}`;
-        }
-        throw new Error(errorMessageText);
-      }
-
-      alert('✅ Agenda guardada correctamente');
-
-      // Volver al resumen del Paso 3
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        onBack();
-      }
+      await guardarAgenda(payload, profesionalCentroId);
+      
+      agregarMensaje('exito', `✅ Agenda guardada correctamente (${bloques.length} bloques)`);
+      
+      // Volver al resumen del Paso 3 después de cerrar el mensaje
+      // El usuario debe cerrar el mensaje para continuar
+      
     } catch (err: any) {
       console.error('Error guardando agenda:', err);
-      setErrorMessage(err.message || 'Error al guardar la agenda');
-      alert(`❌ ${err.message || 'Error al guardar la agenda'}`);
+      agregarMensaje('error', `❌ ${err.message || 'Error al guardar la agenda'}`);
     } finally {
       setGuardando(false);
     }
   };
 
+  // 👈 Función para cerrar mensaje y luego ejecutar acción
+  const cerrarMensajeYVolver = () => {
+    if (mensajes.length > 0 && mensajes[0].tipo === 'exito' && mensajes[0].texto.includes('Agenda guardada')) {
+      // Si el mensaje es de éxito de guardado, volver al resumen
+      eliminarMensaje(mensajes[0].id);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onBack();
+      }
+    } else {
+      // Si es otro tipo de mensaje, solo cerrarlo
+      eliminarMensaje(mensajes[0].id);
+    }
+  };
+
+  const cancelarGuardar = () => {
+    setMostrarConfirmacionGuardar(false);
+  };
+
+  // Cancelar con doble confirmación
   const handleCancelar = () => {
+    if (mensajeActivo) return;
+    
     if (bloques.length > 0) {
       setMostrarConfirmacionCancelar(true);
     } else {
@@ -402,7 +441,31 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const negocio = paso1Data?.negocio;
   const especialidad = paso2Data?.especialidad;
   const profesional = paso2Data?.profesional;
-  const centro = paso1Data?.centros?.[0];
+
+  // Renderizar mensajes (bloqueantes)
+  const renderizarMensajes = () => {
+    if (mensajes.length === 0) return null;
+
+    const msg = mensajes[0];
+    const esExito = msg.tipo === 'exito';
+    const esGuardadoExitoso = esExito && msg.texto.includes('Agenda guardada');
+
+    return (
+      <div className={styles.mensajesContainer}>
+        <div className={esExito ? styles.mensajeExito : styles.mensajeError}>
+          <span>{msg.texto}</span>
+          <button
+            type="button"
+            onClick={esGuardadoExitoso ? cerrarMensajeYVolver : () => eliminarMensaje(msg.id)}
+            className={styles.mensajeCerrar}
+            aria-label="Cerrar mensaje"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={styles['wizard-container-page']}>
@@ -410,6 +473,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
         <div className={styles['wizard-left-content']}>
           <div className={styles['wizard-card']}>
             <h2 className={styles.title}>Configurar Agenda</h2>
+
+            {/* Mensajes bloqueantes */}
+            {renderizarMensajes()}
 
             {/* Contexto del negocio */}
             <div className={styles.resumenPaso2}>
@@ -432,22 +498,18 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               <div className={styles.resumenItem}>
                 <span className={styles.resumenLabel}>🏥 Centro:</span>
                 <span className={styles.resumenValor}>
-                  {centro?.codigo} - {centro?.nombre} - {centro?.formatted_address || 'Sin domicilio'}
+                  {centro?.codigo} - {formatearDireccion(centro)}
                 </span>
               </div>
               <div className={styles.resumenItem}>
                 <span className={styles.resumenLabel}>🕒 Zona horaria:</span>
-                <span className={styles.resumenValor}>{formatearTimezone(timezone)}</span>
+                <span className={styles.resumenValor}>{formatearTimezone(centro?.timezone)}</span>
               </div>
             </div>
 
             {/* Formulario de alta */}
             <div className={styles.agendaFormSection}>
               <h3 className={styles.agendaFormTitle}>Agregar Bloque Horario</h3>
-
-              {errorMessage && (
-                <div className={styles.mensajeError}>{errorMessage}</div>
-              )}
 
               <div className={styles.agendaFormRow}>
                 <div className={styles.agendaFormField}>
@@ -456,6 +518,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                     value={nuevoDiaUI !== null ? nuevoDiaUI : ''}
                     onChange={(e) => setNuevoDiaUI(parseInt(e.target.value))}
                     className={styles.agendaFormInput}
+                    disabled={mensajeActivo || guardando}
                   >
                     <option value="" disabled>Seleccionar día...</option>
                     {DIAS_COMPLETO.map((dia, idx) => (
@@ -479,6 +542,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                       }
                     }}
                     className={styles.agendaFormInput}
+                    disabled={mensajeActivo || guardando}
                   >
                     <option value={0} disabled>Seleccionar duración...</option>
                     <option value={10}>10 minutos</option>
@@ -496,6 +560,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                       onChange={(e) => setOtraDuracion(e.target.value)}
                       className={styles.agendaFormInput}
                       style={{ marginTop: '4px' }}
+                      disabled={mensajeActivo || guardando}
                     />
                   )}
                 </div>
@@ -506,7 +571,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                     value={nuevoDesde || ''}
                     onChange={(e) => setNuevoDesde(e.target.value)}
                     className={styles.agendaFormInput}
-                    disabled={!duracionValida}
+                    disabled={!duracionValida || mensajeActivo || guardando}
                   >
                     <option value="" disabled>Seleccionar hora...</option>
                     {opcionesHora.map(hora => (
@@ -521,7 +586,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                     value={nuevoHasta || ''}
                     onChange={(e) => setNuevoHasta(e.target.value)}
                     className={styles.agendaFormInput}
-                    disabled={!duracionValida || !desdeSeleccionado}
+                    disabled={!duracionValida || !desdeSeleccionado || mensajeActivo || guardando}
                   >
                     <option value="" disabled>Seleccionar hora...</option>
                     {desdeSeleccionado && nuevoDesde && duracionValida && (
@@ -536,8 +601,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                   <button
                     onClick={agregarBloque}
                     className={styles.buttonAgregarBloque}
+                    disabled={mensajeActivo || guardando}
                   >
-                    ➕ Agregar
+                    Agregar
                   </button>
                 </div>
               </div>
@@ -565,6 +631,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                           <button
                             onClick={() => toggleExpandirBloque(bloque.id)}
                             className={styles.buttonSmall}
+                            disabled={mensajeActivo || guardando}
                           >
                             {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
                           </button>
@@ -572,6 +639,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                             onClick={() => eliminarBloque(bloque.id)}
                             className={styles.buttonEliminar}
                             title="Eliminar bloque"
+                            disabled={mensajeActivo || guardando}
                           >
                             ✖
                           </button>
@@ -599,14 +667,14 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               <button
                 className={styles.buttonSecondary}
                 onClick={handleCancelar}
-                disabled={guardando}
+                disabled={mensajeActivo || guardando}
               >
-                CANCELAR
+                Cancelar
               </button>
               <button
                 className={styles.buttonPrimary}
-                onClick={guardarAgenda}
-                disabled={guardando || bloques.length === 0}
+                onClick={handleGuardar}
+                disabled={guardando || bloques.length === 0 || mensajeActivo}
               >
                 {guardando ? 'Guardando...' : 'Guardar Agenda'}
               </button>
@@ -640,6 +708,31 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               </button>
               <button className={styles.buttonDanger} onClick={confirmarCancelar}>
                 Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para guardar */}
+      {mostrarConfirmacionGuardar && (
+        <div className={styles.modalConfirmacionOverlay} onClick={cancelarGuardar}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalConfirmacionTitulo}>¿Guardar la agenda?</h3>
+            <p className={styles.modalConfirmacionMensaje}>
+              Se guardarán {bloques.length} bloque(s) en la agenda.
+              {bloques.length > 0 && (
+                <span style={{ display: 'block', marginTop: '8px', fontSize: '13px', color: '#6b7280' }}>
+                  {bloques.map(b => `${DIAS_COMPLETO[b.diaSemana]} (${b.horaDesde}-${b.horaHasta})`).join(', ')}
+                </span>
+              )}
+            </p>
+            <div className={styles.modalConfirmacionBotones}>
+              <button className={styles.buttonSecondary} onClick={cancelarGuardar}>
+                Cancelar
+              </button>
+              <button className={styles.buttonPrimary} onClick={confirmarGuardar}>
+                Guardar
               </button>
             </div>
           </div>
