@@ -522,15 +522,15 @@
   text-align: center;
 }
 
-/* Mensaje de éxito */
 .mensajeExito {
   background-color: #f0fdf4;
   border: 1px solid #86efac;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   margin-top: 16px;
   text-align: center;
   color: #166534;
+  font-size: 14px;
 }
 
 .mensajeExito p {
@@ -539,6 +539,73 @@
 
 .mensajeExito p:last-child {
   margin-bottom: 0;
+}
+
+/* ============================================================
+   MENSAJES CON AUTO-CIERRE
+   ============================================================ */
+
+.mensajesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mensajeExito,
+.mensajeError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+  margin-bottom: 0;
+}
+
+.mensajeExito {
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.mensajeError {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.mensajeExito span,
+.mensajeError span {
+  flex: 1;
+}
+
+.mensajeCerrar {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  font-weight: 700;
+  transition: transform 0.2s;
+  color: inherit;
+}
+
+.mensajeCerrar:hover {
+  transform: scale(1.2);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ============================================================
@@ -944,7 +1011,7 @@
 .agendaFormSection {
   margin-top: 16px;
   margin-bottom: 24px;
-  padding: 16px;
+  padding: 20px;
   background-color: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
@@ -960,7 +1027,7 @@
 .agendaFormRow {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr auto;
-  gap: 12px;
+  gap: 16px;
   align-items: end;
 }
 
@@ -968,6 +1035,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .agendaFormLabel {
@@ -984,6 +1052,7 @@
   background-color: white;
   transition: border-color 0.2s;
   width: 100%;
+  min-height: 40px;
 }
 
 .agendaFormInput:focus {
@@ -1008,10 +1077,11 @@
   cursor: pointer;
   transition: background-color 0.2s;
   white-space: nowrap;
-  height: 40px;
+  min-height: 40px;
+  width: 100%;
 }
 
-.buttonAgregarBloque:hover {
+.buttonAgregarBloque:hover:not(:disabled) {
   background-color: #059669;
 }
 
@@ -1241,7 +1311,7 @@
   /* Ajustes para el formulario de agenda en móvil */
   .agendaFormRow {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
   }
 
   .agendaFormField:last-child {
