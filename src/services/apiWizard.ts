@@ -3,6 +3,7 @@
 // VERSIÓN CON FUNCIONES PARA PASO 2:
 // - Profesionales, Especialidades, Actividad-Especialidad, Profesional-Especialidad
 // - Nueva función para crear relaciones profesional-centro
+// - NUEVAS FUNCIONES PARA AGENDA-DISPONIBILIDAD
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://turnos-api-backend.onrender.com';
 
@@ -824,4 +825,125 @@ export async function registrarPaso2Profesional(params: {
     profesionalCentroIds,
     esProfesionalExistente,
   };
+}
+
+// ============================================================
+// 🆕 FUNCIONES PARA AGENDA-DISPONIBILIDAD
+// ============================================================
+
+export interface BloqueAgendaDto {
+  id?: number;
+  profesionalCentroId: number;
+  diaSemana: number;
+  horaDesde: string;
+  horaHasta: string;
+  duracionTurno: number;
+  bufferMinutos?: number;
+  fechaDesde: string;
+  fechaHasta: string | null;
+  fecha_baja?: string | null;
+  timezone?: string;
+}
+
+export interface GuardarAgendaDto {
+  bloques: BloqueAgendaDto[];
+}
+
+export interface AgendaDisponibilidad {
+  id: number;
+  profesionalCentroId: number;
+  diaSemana: number;
+  horaDesde: string;
+  horaHasta: string;
+  duracionTurno: number;
+  bufferMinutos: number;
+  timezone: string;
+  fechaDesde: string;
+  fechaHasta: string | null;
+  fecha_alta: string;
+  usuario_alta: string;
+  fecha_modificacion: string | null;
+  usuario_modificacion: string | null;
+  fecha_baja: string | null;
+  usuario_baja: string | null;
+  ultimoMovimiento?: string;
+}
+
+/**
+ * Guarda un lote de bloques de agenda en el backend
+ * @param bloques - Array de bloques a guardar
+ * @param profesionalCentroId - ID de la relación profesional-centro
+ * @returns Promise con el mensaje de éxito
+ */
+export async function guardarAgenda(
+  bloques: BloqueAgendaDto[],
+  profesionalCentroId: number
+): Promise<{ message: string }> {
+  // Asegurar que todos los bloques tengan el profesionalCentroId correcto
+  const bloquesConId = bloques.map(bloque => ({
+    ...bloque,
+    profesionalCentroId: profesionalCentroId,
+    bufferMinutos: bloque.bufferMinutos || 0,
+  }));
+
+  const payload: GuardarAgendaDto = {
+    bloques: bloquesConId,
+  };
+
+  console.log('📦 Enviando lote de bloques:', payload);
+
+  const response = await fetch(`${API_URL}/agenda-disponibilidad/guardar-lote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    let errorMessage = '';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || response.statusText;
+    } catch (e) {
+      errorMessage = response.statusText || `Error ${response.status}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
+/**
+ * Obtiene los bloques de agenda para una relación profesional-centro
+ * @param profesionalCentroId - ID de la relación profesional-centro
+ * @returns Promise con array de bloques
+ */
+export async function getAgendaPorProfesionalCentro(
+  profesionalCentroId: number
+): Promise<AgendaDisponibilidad[]> {
+  const response = await fetch(
+    `${API_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener agenda: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Elimina (soft delete) un bloque de agenda
+ * @param agendaId - ID del bloque a eliminar
+ * @returns Promise<void>
+ */
+export async function eliminarBloqueAgenda(agendaId: number): Promise<void> {
+  const response = await fetch(`${API_URL}/agenda-disponibilidad/${agendaId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Error al eliminar el bloque: ${response.statusText}`);
+  }
 }
