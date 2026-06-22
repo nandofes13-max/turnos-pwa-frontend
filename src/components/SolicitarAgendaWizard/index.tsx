@@ -1,9 +1,10 @@
 // src/components/SolicitarAgendaWizard/index.tsx
 // Wizard principal - Sin overlay, layout consistente con Inicio
-// VERSIÓN CON PASO 3 INTEGRADO (Agenda)
-// - Paso 3 reemplazado por componente Paso3Agenda
-// - Botón "Finalizar" se habilita cuando la agenda está guardada
-// - Muestra indicador "✅ Agenda guardada" en el resumen
+// VERSIÓN CON RESUMEN DE CENTROS Y CONFIGURACIÓN POR CENTRO
+// - Paso 3: resumen de todos los centros con botones "Configurar Agenda"
+// - Al hacer clic, se abre la configuración para ese centro específico
+// - Indicador "✅ Agenda configurada" cuando ya está guardada
+// - Botón "Finalizar" habilitado cuando TODOS los centros tienen agenda
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,16 +15,25 @@ import { Paso1Result, Paso2Result } from '../../services/apiWizard';
 import styles from './wizard.module.css';
 
 type WizardStep = 1 | 2 | 3;
+type SubStep = 'resumen' | 'configurar';
 
 export default function SolicitarAgendaWizard() {
   const navigate = useNavigate();
   const [step, setStep] = useState<WizardStep>(1);
+  const [subStep, setSubStep] = useState<SubStep>('resumen');
   const [paso1Data, setPaso1Data] = useState<Paso1Result | null>(null);
   const [paso2Data, setPaso2Data] = useState<Paso2Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
-  const [agendaGuardada, setAgendaGuardada] = useState(false);
+  const [agendasConfiguradas, setAgendasConfiguradas] = useState<Set<number>>(new Set());
+  const [centroSeleccionado, setCentroSeleccionado] = useState<number | null>(null);
   const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
+
+  // Obtener los IDs de los centros
+  const centrosIds = paso1Data?.centros?.map(c => c.id) || [];
+
+  // Verificar si todos los centros tienen agenda configurada
+  const todosLosCentrosConfigurados = centrosIds.length > 0 && centrosIds.every(id => agendasConfiguradas.has(id));
 
   const handlePaso1Success = (data: Paso1Result) => {
     setPaso1Data(data);
@@ -38,6 +48,7 @@ export default function SolicitarAgendaWizard() {
   const handlePaso2Success = (data: Paso2Result) => {
     setPaso2Data(data);
     setStep(3);
+    setSubStep('resumen');
     setError(null);
     console.log('✅ Relaciones profesional-centro creadas:', data.profesionalCentroIds?.length || 0);
   };
@@ -46,20 +57,30 @@ export default function SolicitarAgendaWizard() {
     setError(err);
   };
 
-  const handlePaso3Success = () => {
-    setAgendaGuardada(true);
+  const handlePaso3Success = (centroId: number) => {
+    // Marcar el centro como configurado
+    setAgendasConfiguradas(prev => new Set(prev).add(centroId));
+    setSubStep('resumen');
+    setCentroSeleccionado(null);
     setError(null);
-    console.log('✅ Agenda guardada correctamente');
+    console.log(`✅ Agenda configurada para centro ${centroId}`);
   };
 
   const handleVolver = () => {
     if (step === 2) {
       setStep(1);
     } else if (step === 3) {
-      if (agendaGuardada) {
-        if (window.confirm('Ya has guardado la agenda. ¿Estás seguro que deseas volver? Perderás los cambios.')) {
+      if (subStep === 'configurar') {
+        // Volver al resumen desde la configuración
+        setSubStep('resumen');
+        setCentroSeleccionado(null);
+        return;
+      }
+      // Si estamos en el resumen y hay agendas configuradas
+      if (agendasConfiguradas.size > 0) {
+        if (window.confirm('Ya has configurado algunas agendas. ¿Estás seguro que deseas volver? Perderás los cambios.')) {
           setStep(2);
-          setAgendaGuardada(false);
+          setAgendasConfiguradas(new Set());
         }
         return;
       }
@@ -85,7 +106,6 @@ export default function SolicitarAgendaWizard() {
     setMostrarConfirmacionCancelar(false);
   };
 
-  // 👈 NUEVO: Manejo del botón "Finalizar"
   const handleFinalizar = () => {
     setMostrarExitoFinal(true);
   };
@@ -95,8 +115,14 @@ export default function SolicitarAgendaWizard() {
     navigate('/');
   };
 
+  const handleConfigurarAgenda = (centroId: number) => {
+    setCentroSeleccionado(centroId);
+    setSubStep('configurar');
+  };
+
   // Función para formatear domicilio (igual que en Paso 1)
   const formatearDireccion = (centro: any): string => {
+    if (!centro) return 'Sin domicilio';
     if (centro.es_virtual) {
       return 'Virtual';
     }
@@ -133,27 +159,32 @@ export default function SolicitarAgendaWizard() {
           setStep(1);
           return null;
         }
-        // Si la agenda ya está guardada, mostramos el resumen con el indicador
-        if (agendaGuardada) {
-          return renderResumenAgendaGuardada();
+
+        // Sub-paso: Configurar agenda para un centro específico
+        if (subStep === 'configurar' && centroSeleccionado !== null) {
+          return (
+            <Paso3Agenda
+              paso1Data={paso1Data}
+              paso2Data={paso2Data}
+              centroId={centroSeleccionado}
+              onBack={() => {
+                setSubStep('resumen');
+                setCentroSeleccionado(null);
+              }}
+              onSuccess={handlePaso3Success}
+            />
+          );
         }
-        // Si no está guardada, mostramos el componente de configuración
-        return (
-          <Paso3Agenda
-            paso1Data={paso1Data}
-            paso2Data={paso2Data}
-            onBack={handleVolver}
-            onSuccess={handlePaso3Success}
-          />
-        );
+
+        // Sub-paso: Resumen de centros
+        return renderResumenCentros();
       default:
         return null;
     }
   };
 
-  // 👈 NUEVO: Resumen del Paso 3 con agenda guardada
-  const renderResumenAgendaGuardada = () => {
-    const relacionesCreadas = paso2Data?.profesionalCentroIds?.length || 0;
+  // 👈 NUEVO: Resumen de centros con botones "Configurar Agenda"
+  const renderResumenCentros = () => {
     const profesionalNombre = paso2Data?.profesional?.nombre || 'Profesional';
     const especialidadNombre = paso2Data?.especialidad?.nombre || 'Especialidad';
     const nombreNegocio = paso1Data?.negocio?.nombre || 'Negocio';
@@ -165,13 +196,7 @@ export default function SolicitarAgendaWizard() {
             <div className={styles['wizard-card']}>
               <h2 className={styles.title}>Paso 3: Configurar Agenda</h2>
 
-              {/* Indicador de agenda guardada */}
-              <div className={styles.agendaGuardadaIndicator}>
-                <span className={styles.agendaGuardadaIcon}>✅</span>
-                <span className={styles.agendaGuardadaTexto}>Agenda guardada correctamente</span>
-              </div>
-
-              {/* Resumen de lo que se creó */}
+              {/* Resumen del negocio */}
               <div className={styles.resumenPaso2}>
                 <div className={styles.resumenItem}>
                   <span className={styles.resumenLabel}>🏢 Negocio:</span>
@@ -186,22 +211,36 @@ export default function SolicitarAgendaWizard() {
                   <span className={styles.resumenValor}>{especialidadNombre}</span>
                 </div>
                 <div className={styles.resumenItem}>
-                  <span className={styles.resumenLabel}>🏢 Centros asignados:</span>
-                  <span className={styles.resumenValor}>{relacionesCreadas} centros</span>
+                  <span className={styles.resumenLabel}>🏢 Centros:</span>
+                  <span className={styles.resumenValor}>
+                    {centrosIds.length} centros
+                    {todosLosCentrosConfigurados && ' ✅ Todos configurados'}
+                  </span>
                 </div>
               </div>
 
-              {/* Lista de centros con indicador de agenda */}
+              {/* Lista de centros con botones */}
               <div className={styles.centrosAgendaLista}>
-                {paso2Data?.profesionalCentroIds?.map((id, index) => {
-                  const centro = paso1Data?.centros?.[index] || null;
-                  const direccion = centro ? formatearDireccion(centro) : 'Centro sin dirección';
+                {paso1Data?.centros?.map((centro, index) => {
+                  const estaConfigurado = agendasConfiguradas.has(centro.id);
+                  const direccion = formatearDireccion(centro);
 
                   return (
-                    <div key={id} className={styles.centroAgendaItem}>
+                    <div key={centro.id} className={styles.centroAgendaItem}>
                       <span className={styles.centroAgendaNumero}>#{index + 1}</span>
-                      <span className={styles.centroAgendaId}>{direccion}</span>
-                      <span className={styles.agendaGuardadaBadge}>✅ Agenda configurada</span>
+                      <span className={styles.centroAgendaId}>
+                        {centro.codigo} - {direccion}
+                      </span>
+                      {estaConfigurado ? (
+                        <span className={styles.agendaGuardadaBadge}>✅ Agenda configurada</span>
+                      ) : (
+                        <button
+                          className={styles.buttonSmall}
+                          onClick={() => handleConfigurarAgenda(centro.id)}
+                        >
+                          Configurar Agenda
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -218,8 +257,10 @@ export default function SolicitarAgendaWizard() {
                 <button
                   className={styles.buttonPrimary}
                   onClick={handleFinalizar}
+                  disabled={!todosLosCentrosConfigurados}
+                  style={{ opacity: todosLosCentrosConfigurados ? 1 : 0.5 }}
                 >
-                  ✅ Finalizar
+                  {todosLosCentrosConfigurados ? '✅ Finalizar' : 'Configura todas las agendas para finalizar'}
                 </button>
               </div>
             </div>
@@ -263,7 +304,7 @@ export default function SolicitarAgendaWizard() {
         </div>
       )}
 
-      {/* 👈 NUEVO: Modal de éxito final */}
+      {/* Modal de éxito final */}
       {mostrarExitoFinal && (
         <div className={styles.modalConfirmacionOverlay} onClick={cerrarExitoFinal}>
           <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
