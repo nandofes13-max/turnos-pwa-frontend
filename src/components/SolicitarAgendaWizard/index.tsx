@@ -27,6 +27,7 @@ export default function SolicitarAgendaWizard() {
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
   const [agendasConfiguradas, setAgendasConfiguradas] = useState<Set<number>>(new Set());
   const [centroSeleccionado, setCentroSeleccionado] = useState<number | null>(null);
+  const [profesionalCentroSeleccionado, setProfesionalCentroSeleccionado] = useState<number | null>(null); // 👈 NUEVO
   const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
 
   // Obtener los IDs de los centros
@@ -62,6 +63,7 @@ export default function SolicitarAgendaWizard() {
     setAgendasConfiguradas(prev => new Set(prev).add(centroId));
     setSubStep('resumen');
     setCentroSeleccionado(null);
+    setProfesionalCentroSeleccionado(null);
     setError(null);
     console.log(`✅ Agenda configurada para centro ${centroId}`);
   };
@@ -74,6 +76,7 @@ export default function SolicitarAgendaWizard() {
         // Volver al resumen desde la configuración
         setSubStep('resumen');
         setCentroSeleccionado(null);
+        setProfesionalCentroSeleccionado(null);
         return;
       }
       // Si estamos en el resumen y hay agendas configuradas
@@ -115,8 +118,23 @@ export default function SolicitarAgendaWizard() {
     navigate('/');
   };
 
+  // 👈 NUEVO: Manejo de configuración de agenda para un centro específico
   const handleConfigurarAgenda = (centroId: number) => {
+    // Encontrar el índice del centro en el array
+    const index = paso1Data?.centros?.findIndex(c => c.id === centroId) ?? -1;
+    if (index === -1) {
+      console.error('Centro no encontrado');
+      return;
+    }
+    // Obtener el profesionalCentroId correspondiente
+    const profesionalCentroId = paso2Data?.profesionalCentroIds?.[index] ?? 0;
+    if (profesionalCentroId === 0) {
+      console.error('No se encontró profesionalCentroId para el centro', centroId);
+      return;
+    }
+    
     setCentroSeleccionado(centroId);
+    setProfesionalCentroSeleccionado(profesionalCentroId);
     setSubStep('configurar');
   };
 
@@ -161,15 +179,17 @@ export default function SolicitarAgendaWizard() {
         }
 
         // Sub-paso: Configurar agenda para un centro específico
-        if (subStep === 'configurar' && centroSeleccionado !== null) {
+        if (subStep === 'configurar' && centroSeleccionado !== null && profesionalCentroSeleccionado !== null) {
           return (
             <Paso3Agenda
               paso1Data={paso1Data}
               paso2Data={paso2Data}
               centroId={centroSeleccionado}
+              profesionalCentroId={profesionalCentroSeleccionado} // 👈 NUEVO
               onBack={() => {
                 setSubStep('resumen');
                 setCentroSeleccionado(null);
+                setProfesionalCentroSeleccionado(null);
               }}
               onSuccess={handlePaso3Success}
             />
@@ -183,7 +203,7 @@ export default function SolicitarAgendaWizard() {
     }
   };
 
-  // 👈 NUEVO: Resumen de centros con botones "Configurar Agenda"
+  // Resumen de centros con botones "Configurar Agenda"
   const renderResumenCentros = () => {
     const profesionalNombre = paso2Data?.profesional?.nombre || 'Profesional';
     const especialidadNombre = paso2Data?.especialidad?.nombre || 'Especialidad';
