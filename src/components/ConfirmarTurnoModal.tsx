@@ -19,8 +19,8 @@ interface DatosSlot {
   centroId: number;
   profesionalCentroId: number;
   especialidadId: number;
-  negocioId?: number;      // Se obtiene del centro
-  negocioUrl?: string;     // URL del negocio (para volver al inicio)
+  negocioId?: number;
+  negocioUrl?: string;
 }
 
 interface DatosUsuario {
@@ -272,7 +272,7 @@ export default function ConfirmarTurnoModal({
 
   // ============================================================
   // VISTA 2: Validar y mostrar confirmación
-  // 👈 MODIFICADO: Validación con zona horaria del centro
+  // 👈 MODIFICADO: Validación con UTC para evitar problemas de zona horaria
   // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
@@ -292,21 +292,17 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // 👈 Obtener la zona horaria del centro (viene del backend, es la verdad)
-    const timezone = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
-
-    // 👈 1. Fecha/hora del turno (YA está en la zona horaria del centro) - NO SE TOCA
+    // 👈 1. Fecha/hora del turno en UTC (usando Date.UTC)
+    // La fecha/hora del turno viene del backend en la zona horaria del centro
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
-    const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
+    const fechaHoraTurnoUTC = Date.UTC(year, month - 1, day, hour, minute);
 
-    // 👈 2. Fecha/hora actual del navegador convertida a la zona horaria del centro
-    const ahoraLocal = new Date();
-    const ahoraEnZonaStr = ahoraLocal.toLocaleString('en-US', { timeZone: timezone });
-    const ahoraEnZona = new Date(ahoraEnZonaStr);
+    // 👈 2. Fecha/hora actual en UTC
+    const ahoraUTC = Date.now();
 
-    // 👈 3. Comparar: turno (en zona centro) vs ahora (convertido a zona centro)
-    if (fechaHoraTurno <= ahoraEnZona) {
+    // 👈 3. Comparar en UTC
+    if (fechaHoraTurnoUTC <= ahoraUTC) {
       setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
       return;
     }
