@@ -1,11 +1,9 @@
 // src/components/SolicitarAgendaWizard/Paso2Profesionales.tsx
 // Paso 2 del Wizard: Cargar Profesional + Especialidad
-// VERSIÓN FINAL:
-// - Si el profesional existe → campos en solo lectura (sin badge)
-// - Si el profesional no existe → campos editables
-// - Especialidad SIEMPRE editable
-// - Resumen solo después de hacer clic en "Agregar"
-// - Manejo de errores contextuales con botón de cerrar
+// VERSIÓN CORREGIDA:
+// - Eliminado botón "Volver"
+// - Campos deshabilitados SOLO cuando el profesional existe (autocompletado)
+// - Doble confirmación para "Cancelar" (SIEMPRE)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -97,6 +95,10 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const documentoInputRef = useRef<HTMLInputElement>(null);
   
   const [erroresContextuales, setErroresContextuales] = useState<ErrorContextual[]>([]);
+  // 👈 NUEVO: flag para saber si el profesional fue encontrado en la BD
+  const [profesionalEncontrado, setProfesionalEncontrado] = useState(false);
+  // 👈 NUEVO: estado para el modal de confirmación de cancelar
+  const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     documento: '',
@@ -179,6 +181,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         whatsapp: '',
       }));
       setBuscandoProfesional(false);
+      // 👈 Reiniciar flag cuando se borra el DNI
+      setProfesionalEncontrado(false);
       return;
     }
     
@@ -198,8 +202,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             whatsapp: profesional.whatsapp_e164 || '',
           }));
           
-          // 👈 NO setear profesionalPendiente aquí (solo se setea al hacer clic en "Agregar")
-          // Solo guardamos el flag en un ref o estado para saber que existe
+          // 👈 Marcar como encontrado
+          setProfesionalEncontrado(true);
           
           agregarErrorContextual('documento', '✅ Profesional encontrado. Completa los datos y presiona "Agregar".');
           limpiarErroresDelCampo('documento');
@@ -215,11 +219,15 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
             whatsapp: '',
           }));
           
+          // 👈 Marcar como NO encontrado
+          setProfesionalEncontrado(false);
+          
           limpiarErroresDelCampo('documento');
         }
       } catch (error) {
         console.error('Error buscando profesional:', error);
         agregarErrorContextual('documento', 'Error al buscar el profesional');
+        setProfesionalEncontrado(false);
       } finally {
         setBuscandoProfesional(false);
       }
@@ -235,14 +243,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // 👈 Si el profesional existe (detectado por autocompletado), NO permitir cambios en campos del profesional
-    // Para saber si existe, verificamos si el campo nombre tiene datos y el documento está completo
-    const esExistente = formData.documento.length >= 6 && 
-                        formData.nombre !== '' && 
-                        formData.email !== '' && 
-                        formData.whatsapp !== '';
-    
-    if (esExistente && ['nombre', 'email', 'whatsapp', 'genero', 'matricula', 'foto'].includes(name)) {
+    // 👈 Si el profesional fue encontrado en la BD, NO permitir cambios
+    if (profesionalEncontrado && ['nombre', 'email', 'whatsapp', 'genero', 'matricula', 'foto'].includes(name)) {
       return;
     }
     
@@ -266,13 +268,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   };
 
   const handleWhatsappChange = (value: string) => {
-    // 👈 Si el profesional existe (detectado por autocompletado), no permitir cambios
-    const esExistente = formData.documento.length >= 6 && 
-                        formData.nombre !== '' && 
-                        formData.email !== '' && 
-                        formData.whatsapp !== '';
-    
-    if (esExistente) return;
+    // 👈 Si el profesional fue encontrado, no permitir cambios
+    if (profesionalEncontrado) return;
     
     limpiarErroresDelCampo('whatsapp');
     
@@ -486,16 +483,12 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       return;
     }
     
-    // 👈 Verificar si el profesional existe (basado en autocompletado)
-    const esExistente = formData.documento.length >= 6 && 
-                        formData.nombre !== '' && 
-                        formData.email !== '' && 
-                        formData.whatsapp !== '';
+    // 👈 Verificar si el profesional existe (basado en el flag profesionalEncontrado)
+    const esExistente = profesionalEncontrado;
     
     // Buscar el ID si existe
     let profesionalId: number | undefined;
     if (esExistente) {
-      // Buscar el profesional para obtener su ID
       buscarProfesionalPorDocumento(formData.documento).then(prof => {
         if (prof) {
           profesionalId = prof.id;
@@ -531,11 +524,14 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     });
     setErrors({});
     setErroresContextuales([]);
+    // 👈 Resetear flag profesionalEncontrado
+    setProfesionalEncontrado(false);
   };
 
   const handleEliminarProfesional = () => {
     setProfesionalPendiente(null);
     setErroresContextuales([]);
+    setProfesionalEncontrado(false);
     setTimeout(() => {
       if (documentoInputRef.current) {
         documentoInputRef.current.focus();
@@ -576,13 +572,11 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       const profesionalExistente = await buscarProfesionalPorDocumento(profesionalPendiente.documento);
       
       if (profesionalExistente) {
-        // 👈 El profesional YA EXISTE → usamos su ID y datos
         profesionalId = profesionalExistente.id;
         profesional = profesionalExistente;
         esProfesionalExistente = true;
         console.log(`✅ Usando profesional existente: ID ${profesionalId}`);
       } else {
-        // 👈 El profesional es NUEVO → lo creamos
         const profesionalData = {
           documento: profesionalPendiente.documento,
           nombre: profesionalPendiente.nombre,
@@ -615,7 +609,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
       // 👈 Caso: Profesional EXISTENTE
       // ============================================================
       
-      // 👈 2. Buscar o crear la Especialidad
       let especialidadId: number;
       let especialidadNombre = profesionalPendiente.especialidadNombre;
       
@@ -638,7 +631,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         console.log(`✅ Relación Actividad-Especialidad creada`);
       }
       
-      // 👈 3. Crear relación profesional-especialidad SOLO SI NO EXISTE
       let profesionalEspecialidad;
       try {
         const relacionesExistentes = await fetch(
@@ -674,17 +666,14 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
         console.log(`ℹ️ Usando relación existente: ID ${profesionalEspecialidad.id}`);
       }
       
-      // 👈 4. Crear relaciones profesional-centro (ya maneja duplicados)
       const profesionalCentroIds = await crearRelacionesProfesionalCentro(
         profesionalId,
         especialidadId,
         negocioId
       );
       
-      // 👈 5. Obtener la especialidad final
       const especialidadFinal = especialidadExistente || await buscarEspecialidadPorNombre(especialidadNombre);
       
-      // 👈 6. Pasar al Paso 3
       onSuccess({
         profesional: profesional,
         especialidad: especialidadFinal!,
@@ -702,8 +691,20 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
     }
   };
 
+  // ============================================================
+  // 👈 NUEVO: handleCancelar con doble confirmación
+  // ============================================================
   const handleCancelar = () => {
+    setMostrarConfirmacionCancelar(true);
+  };
+
+  const confirmarCancelar = () => {
+    setMostrarConfirmacionCancelar(false);
     navigate('/');
+  };
+
+  const cancelarCancelar = () => {
+    setMostrarConfirmacionCancelar(false);
   };
 
   const opcionesEspecialidades = () => {
@@ -724,11 +725,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const formularioValido = isFormularioValido();
   const tieneEspecialidadSeleccionada = formData.especialidadSeleccionada.trim() !== '';
   
-  // 👈 Detectar si el profesional existe (para bloquear campos)
-  const esProfesionalExistente = formData.documento.length >= 6 && 
-                                  formData.nombre !== '' && 
-                                  formData.email !== '' && 
-                                  formData.whatsapp !== '';
+  // 👈 Usamos profesionalEncontrado en lugar de la condición anterior
+  const esProfesionalExistente = profesionalEncontrado;
 
   const obtenerFoto = (foto: string | undefined): string => {
     return foto || AVATAR_DEFAULT;
@@ -782,7 +780,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     <div className={styles.tarjetaProfesionalDatos}>
                       <div className={styles.tarjetaProfesionalNombre}>
                         {profesionalPendiente.nombre}
-                        {/* 👈 Badge eliminado */}
                       </div>
                       <div className={styles.tarjetaProfesionalInfo}>
                         📄 Documento: {profesionalPendiente.documento}
@@ -846,7 +843,6 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                       {errors.documento && (
                         <span className={styles.errorText}>{errors.documento}</span>
                       )}
-                      {/* 👈 Mensaje de "modo lectura" eliminado */}
                     </div>
                     
                     <div className={styles.formGroup}>
@@ -1131,16 +1127,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
                     >
                       Cancelar
                     </button>
-                    {onBack && (
-                      <button
-                        type="button"
-                        onClick={onBack}
-                        className={styles.buttonSecondary}
-                        disabled={enviando}
-                      >
-                        Volver
-                      </button>
-                    )}
+                    {/* 👈 Botón "Volver" ELIMINADO */}
                     <button
                       type="button"
                       onClick={handleAgregarProfesional}
@@ -1188,6 +1175,28 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
           />
         </div>
       </div>
+
+      {/* 👈 NUEVO: Modal de confirmación para Cancelar */}
+      {mostrarConfirmacionCancelar && (
+        <div className={styles.modalConfirmacionOverlay} onClick={cancelarCancelar}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalConfirmacionTitulo}>¿Está seguro que desea cancelar?</h3>
+            <p className={styles.modalConfirmacionMensaje}>
+              Los datos del negocio ya fueron guardados en el Paso 1.
+              <br />
+              Perderá todo el progreso realizado en el Paso 2.
+            </p>
+            <div className={styles.modalConfirmacionBotones}>
+              <button className={styles.buttonSecondary} onClick={cancelarCancelar}>
+                Seguir editando
+              </button>
+              <button className={styles.buttonDanger} onClick={confirmarCancelar}>
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
