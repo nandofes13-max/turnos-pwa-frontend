@@ -271,8 +271,8 @@ export default function ConfirmarTurnoModal({
   };
 
   // ============================================================
-  // VISTA 2: Validar y mostrar confirmación
-  // 👈 MODIFICADO: Validación con UTC para evitar problemas de zona horaria
+  // VISTA 2: Validar y mostrar confirmación (CON LOGS)
+  // 👈 MODIFICADO: Agregados logs para depuración de zona horaria
   // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
@@ -292,16 +292,35 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // 👈 1. Fecha/hora del turno en UTC (usando Date.UTC)
-    // La fecha/hora del turno viene del backend en la zona horaria del centro
+    // 👈 Obtener la zona horaria del centro
+    const timezone = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
+
+    // 👈 1. Fecha/hora del turno (viene del backend en la zona horaria del centro)
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
+    
+    // Crear la fecha/hora del turno en UTC
     const fechaHoraTurnoUTC = Date.UTC(year, month - 1, day, hour, minute);
+    const fechaHoraTurnoDate = new Date(fechaHoraTurnoUTC);
 
     // 👈 2. Fecha/hora actual en UTC
     const ahoraUTC = Date.now();
+    const ahoraDate = new Date(ahoraUTC);
 
-    // 👈 3. Comparar en UTC
+    // 👈 3. LOGS para depuración
+    console.log('========== VALIDACIÓN DE TURNO ==========');
+    console.log('📍 Zona horaria del centro:', timezone);
+    console.log('📅 Turno (backend):', datosSlot.fecha, datosSlot.hora);
+    console.log('🕒 Turno en UTC:', fechaHoraTurnoDate.toISOString());
+    console.log('🕒 Ahora en UTC:', ahoraDate.toISOString());
+    console.log('🔢 Turno UTC (timestamp):', fechaHoraTurnoUTC);
+    console.log('🔢 Ahora UTC (timestamp):', ahoraUTC);
+    console.log('📊 Diferencia (ms):', fechaHoraTurnoUTC - ahoraUTC);
+    console.log('📊 Diferencia (minutos):', Math.round((fechaHoraTurnoUTC - ahoraUTC) / 60000));
+    console.log('✅ ¿Turno futuro?', fechaHoraTurnoUTC > ahoraUTC);
+    console.log('==========================================');
+
+    // 👈 4. Comparar en UTC
     if (fechaHoraTurnoUTC <= ahoraUTC) {
       setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
       return;
