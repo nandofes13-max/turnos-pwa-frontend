@@ -4,6 +4,7 @@
 // - Mensajes de éxito/error con auto-cierre (5 segundos)
 // - Conversión de días IDÉNTICA a AgendaDisponibilidad.tsx
 // - Validación en cascada (igual que AgendaDisponibilidad.tsx)
+// - VERSIÓN OPTIMIZADA PARA MÓVIL: sin títulos redundantes
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +15,7 @@ interface Paso3AgendaProps {
   paso1Data: Paso1Result;
   paso2Data: Paso2Result;
   centroId: number;
-  profesionalCentroId: number; // 👈 NUEVO: ID específico de la relación profesional-centro
+  profesionalCentroId: number;
   onBack: () => void;
   onSuccess: (centroId: number) => void;
 }
@@ -45,13 +46,11 @@ const DIAS_COMPLETO = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'S�
 // FUNCIONES DE CONVERSIÓN DE DÍAS (IDÉNTICAS A AgendaDisponibilidad.tsx)
 // ============================================================
 
-// Convertir índice del frontend (0=Lunes) a valor de BD (0=Domingo)
 const uiToBdDay = (uiDay: number): number => {
   if (uiDay === 6) return 0;
   return uiDay + 1;
 };
 
-// Convertir valor de BD (0=Domingo) a índice del frontend (0=Lunes)
 const bdToUiDay = (bdDay: number): number => {
   if (bdDay === 0) return 6;
   return bdDay - 1;
@@ -128,7 +127,6 @@ const generarOpcionesHasta = (desde: string, duracion: number): string[] => {
   return opciones;
 };
 
-// Función para formatear domicilio
 const formatearDireccion = (centro: any): string => {
   if (!centro) return 'Sin domicilio';
   if (centro.es_virtual) {
@@ -149,7 +147,6 @@ const formatearTimezone = (tz: string | undefined): string => {
   return `${city} - ${tz}`;
 };
 
-// Generador de ID único para mensajes
 let mensajeIdCounter = 0;
 const generarIdMensaje = () => {
   mensajeIdCounter += 1;
@@ -160,7 +157,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   paso1Data,
   paso2Data,
   centroId,
-  profesionalCentroId, // 👈 NUEVO: recibimos el ID específico
+  profesionalCentroId,
   onBack,
   onSuccess,
 }) => {
@@ -171,7 +168,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
   const [mostrarConfirmacionGuardar, setMostrarConfirmacionGuardar] = useState(false);
 
-  // Campos del formulario
   const [nuevoDiaUI, setNuevoDiaUI] = useState<number | null>(null);
   const [nuevoDesde, setNuevoDesde] = useState('');
   const [nuevoHasta, setNuevoHasta] = useState('');
@@ -182,15 +178,12 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   const [duracionValida, setDuracionValida] = useState(false);
   const [desdeSeleccionado, setDesdeSeleccionado] = useState(false);
 
-  // Obtener el centro específico para este ID
   const centro = paso1Data?.centros?.find(c => c.id === centroId);
 
-  // Función para agregar mensaje (con auto-cierre de 5 segundos)
   const agregarMensaje = (tipo: 'exito' | 'error', texto: string) => {
     const id = generarIdMensaje();
     setMensajes(prev => [...prev, { id, tipo, texto }]);
 
-    // Auto-cierre después de 5 segundos
     setTimeout(() => {
       eliminarMensaje(id);
     }, 5000);
@@ -204,7 +197,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     setMensajes([]);
   };
 
-  // Efecto para generar opciones de hora cuando cambia la duración
   useEffect(() => {
     let duracion = nuevaDuracion;
     if (mostrarOtraDuracion && otraDuracion) {
@@ -225,7 +217,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     }
   }, [nuevaDuracion, otraDuracion, mostrarOtraDuracion]);
 
-  // Efecto para validar Desde cuando cambia
   useEffect(() => {
     if (duracionValida) {
       setDesdeSeleccionado(!!nuevoDesde && nuevoDesde !== '');
@@ -364,7 +355,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     agregarMensaje('exito', '✅ Bloque eliminado');
   };
 
-  // Guardar agenda con doble confirmación
   const handleGuardar = () => {
     if (bloques.length === 0) {
       agregarMensaje('error', '⚠️ Debe agregar al menos un bloque horario antes de guardar.');
@@ -380,7 +370,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
     try {
       const payload = bloques.map(bloque => ({
-        profesionalCentroId: profesionalCentroId, // 👈 Usamos el ID específico
+        profesionalCentroId: profesionalCentroId,
         diaSemana: bloque.diaSemana,
         horaDesde: bloque.horaDesde,
         horaHasta: bloque.horaHasta,
@@ -429,12 +419,10 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
     setMostrarConfirmacionCancelar(false);
   };
 
-  // Obtener datos para el contexto
   const negocio = paso1Data?.negocio;
   const especialidad = paso2Data?.especialidad;
   const profesional = paso2Data?.profesional;
 
-  // Renderizar mensajes (con auto-cierre) - AHORA DENTRO DEL FORMULARIO
   const renderizarMensajes = () => {
     if (mensajes.length === 0) return null;
 
@@ -502,9 +490,8 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
 
             {/* Formulario de alta - CON MENSAJES DENTRO */}
             <div className={styles.agendaFormSection}>
-              <h3 className={styles.agendaFormTitle}>Agregar Bloque Horario</h3>
+              {/* 👈 TÍTULO ELIMINADO: "Agregar Bloque Horario" */}
 
-              {/* 👈 MENSAJES COLOCADOS AQUÍ (dentro del formulario) */}
               {renderizarMensajes()}
 
               <div className={styles.agendaFormRow}>
@@ -524,7 +511,8 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                 </div>
 
                 <div className={styles.agendaFormField}>
-                  <label className={styles.agendaFormLabel}>Duración (min)</label>
+                  {/* 👈 CAMBIADO: "Duración (min)" → "Duración" */}
+                  <label className={styles.agendaFormLabel}>Duración</label>
                   <select
                     value={nuevaDuracion}
                     onChange={(e) => {
@@ -605,10 +593,9 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               </div>
             </div>
 
-            {/* Lista de bloques */}
+            {/* 👈 LISTA DE BLOQUES: TÍTULO ELIMINADO */}
             {bloques.length > 0 && (
               <div className={styles.agendaBloquesLista}>
-                <h3 className={styles.agendaBloquesTitle}>Bloques agregados ({bloques.length})</h3>
                 {bloques.map((bloque, idx) => {
                   const diaUI = bdToUiDay(bloque.diaSemana);
                   const nombreDia = DIAS_COMPLETO[diaUI];
