@@ -1042,6 +1042,7 @@
   font-size: 13px;
   font-weight: 500;
   color: #475569;
+  text-align: center;
 }
 
 .agendaFormInput {
@@ -1274,6 +1275,11 @@
   .buttonsContainerInline {
     flex-direction: row;
     justify-content: center;
+  }
+
+  /* 👈 OCULTAR CONTEXTO (resumen) EN MÓVIL */
+  .resumenPaso2 {
+    display: none;
   }
 
   /* Ajustes para el Paso 3 en móvil */
