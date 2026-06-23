@@ -4,7 +4,7 @@
 // - Mensajes de éxito/error con auto-cierre (5 segundos)
 // - Conversión de días IDÉNTICA a AgendaDisponibilidad.tsx
 // - Validación en cascada (igual que AgendaDisponibilidad.tsx)
-// - VERSIÓN OPTIMIZADA PARA MÓVIL: sin títulos redundantes
+// - VERSIÓN OPTIMIZADA PARA MÓVIL: oculta el resumen en pantallas pequeñas
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -153,6 +153,21 @@ const generarIdMensaje = () => {
   return `msg-${Date.now()}-${mensajeIdCounter}`;
 };
 
+// 👈 HOOK PARA DETECTAR MÓVIL
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isMobile;
+};
+
 const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   paso1Data,
   paso2Data,
@@ -162,6 +177,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
   onSuccess,
 }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [guardando, setGuardando] = useState(false);
   const [bloques, setBloques] = useState<BloqueLocal[]>([]);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
@@ -458,40 +474,40 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               Configurando agenda para: <strong>{centro?.codigo} - {centro?.nombre}</strong>
             </p>
 
-            {/* Contexto del negocio */}
-            <div className={styles.resumenPaso2}>
-              <div className={styles.resumenItem}>
-                <span className={styles.resumenLabel}>🏢 Negocio:</span>
-                <span className={styles.resumenValor}>
-                  {negocio?.nombre} ({negocio?.url})
-                </span>
+            {/* 👈 Contexto del negocio: solo se muestra en desktop (no en móvil) */}
+            {!isMobile && (
+              <div className={styles.resumenPaso2}>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>🏢 Negocio:</span>
+                  <span className={styles.resumenValor}>
+                    {negocio?.nombre} ({negocio?.url})
+                  </span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>📋 Especialidad:</span>
+                  <span className={styles.resumenValor}>{especialidad?.nombre}</span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>👤 Profesional:</span>
+                  <span className={styles.resumenValor}>
+                    {profesional?.nombre} (DNI: {profesional?.documento})
+                  </span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>🏥 Centro:</span>
+                  <span className={styles.resumenValor}>
+                    {centro?.codigo} - {formatearDireccion(centro)}
+                  </span>
+                </div>
+                <div className={styles.resumenItem}>
+                  <span className={styles.resumenLabel}>🕒 Zona horaria:</span>
+                  <span className={styles.resumenValor}>{formatearTimezone(centro?.timezone)}</span>
+                </div>
               </div>
-              <div className={styles.resumenItem}>
-                <span className={styles.resumenLabel}>📋 Especialidad:</span>
-                <span className={styles.resumenValor}>{especialidad?.nombre}</span>
-              </div>
-              <div className={styles.resumenItem}>
-                <span className={styles.resumenLabel}>👤 Profesional:</span>
-                <span className={styles.resumenValor}>
-                  {profesional?.nombre} (DNI: {profesional?.documento})
-                </span>
-              </div>
-              <div className={styles.resumenItem}>
-                <span className={styles.resumenLabel}>🏥 Centro:</span>
-                <span className={styles.resumenValor}>
-                  {centro?.codigo} - {formatearDireccion(centro)}
-                </span>
-              </div>
-              <div className={styles.resumenItem}>
-                <span className={styles.resumenLabel}>🕒 Zona horaria:</span>
-                <span className={styles.resumenValor}>{formatearTimezone(centro?.timezone)}</span>
-              </div>
-            </div>
+            )}
 
             {/* Formulario de alta - CON MENSAJES DENTRO */}
             <div className={styles.agendaFormSection}>
-              {/* 👈 TÍTULO ELIMINADO: "Agregar Bloque Horario" */}
-
               {renderizarMensajes()}
 
               <div className={styles.agendaFormRow}>
@@ -511,7 +527,6 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
                 </div>
 
                 <div className={styles.agendaFormField}>
-                  {/* 👈 CAMBIADO: "Duración (min)" → "Duración" */}
                   <label className={styles.agendaFormLabel}>Duración</label>
                   <select
                     value={nuevaDuracion}
@@ -593,7 +608,7 @@ const Paso3Agenda: React.FC<Paso3AgendaProps> = ({
               </div>
             </div>
 
-            {/* 👈 LISTA DE BLOQUES: TÍTULO ELIMINADO */}
+            {/* Lista de bloques */}
             {bloques.length > 0 && (
               <div className={styles.agendaBloquesLista}>
                 {bloques.map((bloque, idx) => {
