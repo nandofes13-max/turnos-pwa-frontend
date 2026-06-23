@@ -272,7 +272,7 @@ export default function ConfirmarTurnoModal({
 
   // ============================================================
   // VISTA 2: Validar y mostrar confirmación
-  // 👈 MODIFICADO: Conversión a UTC para validación
+  // 👈 MODIFICADO: Comparación en la zona horaria del turno
   // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
@@ -292,39 +292,31 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // 👈 1. Fecha/hora del turno (viene del backend en la zona horaria del centro)
+    // 👈 1. Zona horaria del centro (la del turno)
+    const timezone = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
+
+    // 👈 2. Turno en la zona horaria del centro (NO se toca)
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
+    const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
 
-    // 👈 2. Crear la fecha/hora del turno en UTC usando Date.UTC
-    // NOTA: Date.UTC asume que los valores están en UTC.
-    // La hora del turno está en la zona horaria del centro, por lo que debemos convertirla.
-    // En lugar de calcular el offset manualmente, usamos el método más simple:
-    // Creamos un objeto Date con la fecha/hora del turno en la zona horaria local
-    // y luego lo convertimos a UTC.
-    const fechaHoraTurnoLocal = new Date(year, month - 1, day, hour, minute);
-    const fechaHoraTurnoUTC = Date.UTC(
-      fechaHoraTurnoLocal.getUTCFullYear(),
-      fechaHoraTurnoLocal.getUTCMonth(),
-      fechaHoraTurnoLocal.getUTCDate(),
-      fechaHoraTurnoLocal.getUTCHours(),
-      fechaHoraTurnoLocal.getUTCMinutes()
-    );
+    // 👈 3. Ahora: convertir a la zona horaria del centro
+    const ahoraLocal = new Date();
+    const ahoraEnZonaStr = ahoraLocal.toLocaleString('en-US', { timeZone: timezone });
+    const ahoraEnZona = new Date(ahoraEnZonaStr);
 
-    // 👈 3. Fecha/hora actual en UTC
-    const ahoraUTC = Date.now();
-
-    // 👈 4. Logs para depuración (opcional, se pueden eliminar después de verificar)
-    console.log('========== VALIDACIÓN DE TURNO (UTC) ==========');
+    // 👈 4. Logs para depuración
+    console.log('========== VALIDACIÓN DE TURNO ==========');
+    console.log('📍 Zona horaria del centro:', timezone);
     console.log('📅 Turno (backend):', datosSlot.fecha, datosSlot.hora);
-    console.log('🕒 Turno en UTC:', new Date(fechaHoraTurnoUTC).toISOString());
-    console.log('🕒 Ahora en UTC:', new Date(ahoraUTC).toISOString());
-    console.log('📊 Diferencia (minutos):', Math.round((fechaHoraTurnoUTC - ahoraUTC) / 60000));
-    console.log('✅ ¿Turno futuro?', fechaHoraTurnoUTC > ahoraUTC);
+    console.log('🕒 Turno en zona centro:', fechaHoraTurno.toISOString());
+    console.log('🕒 Ahora en zona centro:', ahoraEnZona.toISOString());
+    console.log('📊 Diferencia (minutos):', Math.round((fechaHoraTurno.getTime() - ahoraEnZona.getTime()) / 60000));
+    console.log('✅ ¿Turno futuro?', fechaHoraTurno.getTime() > ahoraEnZona.getTime());
     console.log('==========================================');
 
-    // 👈 5. Comparar en UTC
-    if (fechaHoraTurnoUTC <= ahoraUTC) {
+    // 👈 5. Comparar: ambas en la zona horaria del centro
+    if (fechaHoraTurno.getTime() <= ahoraEnZona.getTime()) {
       setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
       return;
     }
