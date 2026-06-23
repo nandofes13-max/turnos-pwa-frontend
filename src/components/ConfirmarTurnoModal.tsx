@@ -55,26 +55,6 @@ const validarWhatsApp = (whatsapp: string | undefined): boolean => {
 };
 
 // ============================================================
-// FUNCIÓN PARA NORMALIZAR ZONA HORARIA (SOLO FRONTEND)
-// ============================================================
-
-const normalizarTimezone = (tz: string): string => {
-  // Si ya es formato IANA (ej: "America/Chicago"), devolverlo tal cual
-  if (tz.includes('/')) return tz;
-  
-  // Si es formato legible (ej: "Chicago (America)"), convertirlo
-  const match = tz.match(/(.+)\s*\((.+)\)/);
-  if (match) {
-    const city = match[1].trim().replace(/\s/g, '_');
-    const region = match[2].trim();
-    return `${region}/${city}`;
-  }
-  
-  // Fallback
-  return 'America/Argentina/Buenos_Aires';
-};
-
-// ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
 
@@ -102,6 +82,9 @@ export default function ConfirmarTurnoModal({
   
   // Estado para negocioId (obtenido del centro)
   const [negocioId, setNegocioId] = useState<number | null>(null);
+
+  // 👈 NUEVO: Estado para la zona horaria obtenida directamente del centro
+  const [timezone, setTimezone] = useState<string>('America/Argentina/Buenos_Aires');
 
   // Estado para controlar si el botón está habilitado
   const [formularioValido, setFormularioValido] = useState(false);
@@ -180,21 +163,25 @@ export default function ConfirmarTurnoModal({
     return `${diaSemana} ${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
   };
 
-  // Obtener negocioId desde el centro al abrir el modal
+  // Obtener negocioId y timezone desde el centro al abrir el modal
   useEffect(() => {
     if (isOpen && datosSlot.centroId && !negocioId) {
-      const obtenerNegocioId = async () => {
+      const obtenerDatosCentro = async () => {
         try {
           const response = await fetch(`${API_BASE_URL}/centros/${datosSlot.centroId}`);
           if (response.ok) {
             const centro = await response.json();
             setNegocioId(centro.negocioId);
+            // 👈 Usar la zona horaria tal cual viene de la tabla centro
+            setTimezone(centro.timezone || 'America/Argentina/Buenos_Aires');
+            console.log('📍 Zona horaria obtenida de la tabla centro:', centro.timezone);
           }
         } catch (error) {
           console.error('Error fetching centro:', error);
+          setTimezone('America/Argentina/Buenos_Aires');
         }
       };
-      obtenerNegocioId();
+      obtenerDatosCentro();
     }
   }, [isOpen, datosSlot.centroId, negocioId]);
 
@@ -210,6 +197,7 @@ export default function ConfirmarTurnoModal({
         setFormularioValido(false);
         setMostrarConfirmacionReserva(false);
         setConfirmacionPendiente(null);
+        setTimezone('America/Argentina/Buenos_Aires');
       }, 300);
     }
   }, [isOpen]);
@@ -292,8 +280,7 @@ export default function ConfirmarTurnoModal({
 
   // ============================================================
   // VISTA 2: Validar y mostrar confirmación
-  // 👈 MODIFICADO: Comparación en la zona horaria del turno
-  // 👈 CON NORMALIZACIÓN DE ZONA HORARIA
+  // 👈 MODIFICADO: Usa la zona horaria obtenida directamente de la tabla centro
   // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
@@ -313,9 +300,8 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // 👈 1. Normalizar la zona horaria del centro
-    const timezoneRaw = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
-    const timezone = normalizarTimezone(timezoneRaw);
+    // 👈 1. Usar la zona horaria obtenida directamente de la tabla centro
+    const timezoneFinal = timezone || 'America/Argentina/Buenos_Aires';
 
     // 👈 2. Turno en la zona horaria del centro (NO se toca)
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
@@ -324,12 +310,12 @@ export default function ConfirmarTurnoModal({
 
     // 👈 3. Ahora: convertir a la zona horaria del centro
     const ahoraLocal = new Date();
-    const ahoraEnZonaStr = ahoraLocal.toLocaleString('en-US', { timeZone: timezone });
+    const ahoraEnZonaStr = ahoraLocal.toLocaleString('en-US', { timeZone: timezoneFinal });
     const ahoraEnZona = new Date(ahoraEnZonaStr);
 
     // 👈 4. Logs para depuración
     console.log('========== VALIDACIÓN DE TURNO ==========');
-    console.log('📍 Zona horaria del centro (normalizada):', timezone);
+    console.log('📍 Zona horaria del centro (desde tabla centro):', timezoneFinal);
     console.log('📅 Turno (backend):', datosSlot.fecha, datosSlot.hora);
     console.log('🕒 Turno en zona centro:', fechaHoraTurno.toISOString());
     console.log('🕒 Ahora en zona centro:', ahoraEnZona.toISOString());
