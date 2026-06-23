@@ -4,7 +4,8 @@
 // - Paso 3: resumen de todos los centros con botones "Configurar Agenda"
 // - Al hacer clic, se abre la configuración para ese centro específico
 // - Indicador "✅ Agenda configurada" cuando ya está guardada
-// - Botón "Finalizar" habilitado cuando TODOS los centros tienen agenda
+// - Botón "Finalizar" habilitado cuando AL MENOS UNA agenda está configurada
+// - Advertencia si faltan centros por configurar
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -27,14 +28,22 @@ export default function SolicitarAgendaWizard() {
   const [mostrarConfirmacionCancelar, setMostrarConfirmacionCancelar] = useState(false);
   const [agendasConfiguradas, setAgendasConfiguradas] = useState<Set<number>>(new Set());
   const [centroSeleccionado, setCentroSeleccionado] = useState<number | null>(null);
-  const [profesionalCentroSeleccionado, setProfesionalCentroSeleccionado] = useState<number | null>(null); // 👈 NUEVO
+  const [profesionalCentroSeleccionado, setProfesionalCentroSeleccionado] = useState<number | null>(null);
   const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
+  // 👈 NUEVO: estado para el modal de advertencia de finalización
+  const [mostrarAdvertenciaFinalizar, setMostrarAdvertenciaFinalizar] = useState(false);
 
   // Obtener los IDs de los centros
   const centrosIds = paso1Data?.centros?.map(c => c.id) || [];
 
-  // Verificar si todos los centros tienen agenda configurada
+  // Verificar si TODOS los centros tienen agenda configurada
   const todosLosCentrosConfigurados = centrosIds.length > 0 && centrosIds.every(id => agendasConfiguradas.has(id));
+
+  // 👈 NUEVO: Verificar si AL MENOS UN centro tiene agenda configurada
+  const alMenosUnaAgendaConfigurada = agendasConfiguradas.size > 0;
+
+  // 👈 NUEVO: Calcular cuántos centros faltan configurar
+  const centrosFaltantes = centrosIds.filter(id => !agendasConfiguradas.has(id));
 
   const handlePaso1Success = (data: Paso1Result) => {
     setPaso1Data(data);
@@ -59,7 +68,6 @@ export default function SolicitarAgendaWizard() {
   };
 
   const handlePaso3Success = (centroId: number) => {
-    // Marcar el centro como configurado
     setAgendasConfiguradas(prev => new Set(prev).add(centroId));
     setSubStep('resumen');
     setCentroSeleccionado(null);
@@ -73,13 +81,11 @@ export default function SolicitarAgendaWizard() {
       setStep(1);
     } else if (step === 3) {
       if (subStep === 'configurar') {
-        // Volver al resumen desde la configuración
         setSubStep('resumen');
         setCentroSeleccionado(null);
         setProfesionalCentroSeleccionado(null);
         return;
       }
-      // Si estamos en el resumen y hay agendas configuradas
       if (agendasConfiguradas.size > 0) {
         if (window.confirm('Ya has configurado algunas agendas. ¿Estás seguro que deseas volver? Perderás los cambios.')) {
           setStep(2);
@@ -109,8 +115,24 @@ export default function SolicitarAgendaWizard() {
     setMostrarConfirmacionCancelar(false);
   };
 
+  // 👈 NUEVO: Manejo del botón "Finalizar" con advertencia
   const handleFinalizar = () => {
+    if (!todosLosCentrosConfigurados) {
+      // Si faltan centros, mostrar advertencia
+      setMostrarAdvertenciaFinalizar(true);
+    } else {
+      // Si todos están configurados, ir directamente al éxito
+      setMostrarExitoFinal(true);
+    }
+  };
+
+  const confirmarFinalizar = () => {
+    setMostrarAdvertenciaFinalizar(false);
     setMostrarExitoFinal(true);
+  };
+
+  const cancelarFinalizar = () => {
+    setMostrarAdvertenciaFinalizar(false);
   };
 
   const cerrarExitoFinal = () => {
@@ -118,15 +140,12 @@ export default function SolicitarAgendaWizard() {
     navigate('/');
   };
 
-  // 👈 NUEVO: Manejo de configuración de agenda para un centro específico
   const handleConfigurarAgenda = (centroId: number) => {
-    // Encontrar el índice del centro en el array
     const index = paso1Data?.centros?.findIndex(c => c.id === centroId) ?? -1;
     if (index === -1) {
       console.error('Centro no encontrado');
       return;
     }
-    // Obtener el profesionalCentroId correspondiente
     const profesionalCentroId = paso2Data?.profesionalCentroIds?.[index] ?? 0;
     if (profesionalCentroId === 0) {
       console.error('No se encontró profesionalCentroId para el centro', centroId);
@@ -138,7 +157,6 @@ export default function SolicitarAgendaWizard() {
     setSubStep('configurar');
   };
 
-  // Función para formatear domicilio (igual que en Paso 1)
   const formatearDireccion = (centro: any): string => {
     if (!centro) return 'Sin domicilio';
     if (centro.es_virtual) {
@@ -178,14 +196,13 @@ export default function SolicitarAgendaWizard() {
           return null;
         }
 
-        // Sub-paso: Configurar agenda para un centro específico
         if (subStep === 'configurar' && centroSeleccionado !== null && profesionalCentroSeleccionado !== null) {
           return (
             <Paso3Agenda
               paso1Data={paso1Data}
               paso2Data={paso2Data}
               centroId={centroSeleccionado}
-              profesionalCentroId={profesionalCentroSeleccionado} // 👈 NUEVO
+              profesionalCentroId={profesionalCentroSeleccionado}
               onBack={() => {
                 setSubStep('resumen');
                 setCentroSeleccionado(null);
@@ -196,7 +213,6 @@ export default function SolicitarAgendaWizard() {
           );
         }
 
-        // Sub-paso: Resumen de centros
         return renderResumenCentros();
       default:
         return null;
@@ -216,7 +232,6 @@ export default function SolicitarAgendaWizard() {
             <div className={styles['wizard-card']}>
               <h2 className={styles.title}>Paso 3: Configurar Agenda</h2>
 
-              {/* Resumen del negocio */}
               <div className={styles.resumenPaso2}>
                 <div className={styles.resumenItem}>
                   <span className={styles.resumenLabel}>🏢 Negocio:</span>
@@ -235,11 +250,11 @@ export default function SolicitarAgendaWizard() {
                   <span className={styles.resumenValor}>
                     {centrosIds.length} centros
                     {todosLosCentrosConfigurados && ' ✅ Todos configurados'}
+                    {!todosLosCentrosConfigurados && alMenosUnaAgendaConfigurada && ` (${agendasConfiguradas.size} configurados)`}
                   </span>
                 </div>
               </div>
 
-              {/* Lista de centros con botones */}
               <div className={styles.centrosAgendaLista}>
                 {paso1Data?.centros?.map((centro, index) => {
                   const estaConfigurado = agendasConfiguradas.has(centro.id);
@@ -266,7 +281,6 @@ export default function SolicitarAgendaWizard() {
                 })}
               </div>
 
-              {/* Botones de acción */}
               <div className={styles.buttonsContainer}>
                 <button
                   className={styles.buttonSecondary}
@@ -274,13 +288,14 @@ export default function SolicitarAgendaWizard() {
                 >
                   CANCELAR
                 </button>
+                {/* 👈 BOTÓN FINALIZAR MODIFICADO */}
                 <button
                   className={styles.buttonPrimary}
                   onClick={handleFinalizar}
-                  disabled={!todosLosCentrosConfigurados}
-                  style={{ opacity: todosLosCentrosConfigurados ? 1 : 0.5 }}
+                  disabled={!alMenosUnaAgendaConfigurada}
+                  style={{ opacity: alMenosUnaAgendaConfigurada ? 1 : 0.5 }}
                 >
-                  {todosLosCentrosConfigurados ? '✅ Finalizar' : 'Configura todas las agendas para finalizar'}
+                  Finalizar
                 </button>
               </div>
             </div>
@@ -324,7 +339,42 @@ export default function SolicitarAgendaWizard() {
         </div>
       )}
 
-      {/* Modal de éxito final */}
+      {/* 👈 NUEVO: Modal de advertencia para finalizar */}
+      {mostrarAdvertenciaFinalizar && (
+        <div className={styles.modalConfirmacionOverlay} onClick={cancelarFinalizar}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalConfirmacionTitulo}>⚠️ Faltan configurar agendas</h3>
+            <p className={styles.modalConfirmacionMensaje}>
+              {centrosFaltantes.length > 0 && (
+                <>
+                  Faltan configurar agendas para {centrosFaltantes.length} centro(s).
+                  <br />
+                  <br />
+                  <strong>Centros pendientes:</strong>
+                  <br />
+                  {centrosFaltantes.map(id => {
+                    const centro = paso1Data?.centros?.find(c => c.id === id);
+                    return centro ? `• ${centro.codigo} - ${centro.nombre}` : null;
+                  }).filter(Boolean).join('\n')}
+                  <br />
+                  <br />
+                  ¿Está seguro que desea finalizar? No podrá volver atrás para cargar las agendas faltantes.
+                </>
+              )}
+            </p>
+            <div className={styles.modalConfirmacionBotones}>
+              <button className={styles.buttonSecondary} onClick={cancelarFinalizar}>
+                Seguir configurando
+              </button>
+              <button className={styles.buttonDanger} onClick={confirmarFinalizar}>
+                Sí, finalizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito final - CON URLs CLICKEABLES */}
       {mostrarExitoFinal && (
         <div className={styles.modalConfirmacionOverlay} onClick={cerrarExitoFinal}>
           <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
@@ -336,16 +386,26 @@ export default function SolicitarAgendaWizard() {
               <p style={{ fontSize: '14px', marginBottom: '8px' }}>
                 <strong>📢 Link Público (para redes sociales):</strong>
                 <br />
-                <span style={{ color: '#3b82f6', wordBreak: 'break-all' }}>
+                <a
+                  href={`${window.location.origin}/negocio/${paso1Data?.negocio?.url || ''}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#3b82f6', wordBreak: 'break-all', textDecoration: 'underline' }}
+                >
                   {`${window.location.origin}/negocio/${paso1Data?.negocio?.url || ''}`}
-                </span>
+                </a>
               </p>
               <p style={{ fontSize: '14px', marginBottom: '8px' }}>
                 <strong>⚙️ Link de Gestión (para administrar):</strong>
                 <br />
-                <span style={{ color: '#3b82f6', wordBreak: 'break-all' }}>
+                <a
+                  href={`${window.location.origin}/turnos`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#3b82f6', wordBreak: 'break-all', textDecoration: 'underline' }}
+                >
                   {`${window.location.origin}/turnos`}
-                </span>
+                </a>
               </p>
             </div>
             <div className={styles.modalConfirmacionBotones}>
