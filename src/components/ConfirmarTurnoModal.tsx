@@ -55,6 +55,26 @@ const validarWhatsApp = (whatsapp: string | undefined): boolean => {
 };
 
 // ============================================================
+// FUNCIÓN PARA NORMALIZAR ZONA HORARIA (SOLO FRONTEND)
+// ============================================================
+
+const normalizarTimezone = (tz: string): string => {
+  // Si ya es formato IANA (ej: "America/Chicago"), devolverlo tal cual
+  if (tz.includes('/')) return tz;
+  
+  // Si es formato legible (ej: "Chicago (America)"), convertirlo
+  const match = tz.match(/(.+)\s*\((.+)\)/);
+  if (match) {
+    const city = match[1].trim().replace(/\s/g, '_');
+    const region = match[2].trim();
+    return `${region}/${city}`;
+  }
+  
+  // Fallback
+  return 'America/Argentina/Buenos_Aires';
+};
+
+// ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
 
@@ -273,6 +293,7 @@ export default function ConfirmarTurnoModal({
   // ============================================================
   // VISTA 2: Validar y mostrar confirmación
   // 👈 MODIFICADO: Comparación en la zona horaria del turno
+  // 👈 CON NORMALIZACIÓN DE ZONA HORARIA
   // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
@@ -292,8 +313,9 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
-    // 👈 1. Zona horaria del centro (la del turno)
-    const timezone = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
+    // 👈 1. Normalizar la zona horaria del centro
+    const timezoneRaw = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
+    const timezone = normalizarTimezone(timezoneRaw);
 
     // 👈 2. Turno en la zona horaria del centro (NO se toca)
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
@@ -307,7 +329,7 @@ export default function ConfirmarTurnoModal({
 
     // 👈 4. Logs para depuración
     console.log('========== VALIDACIÓN DE TURNO ==========');
-    console.log('📍 Zona horaria del centro:', timezone);
+    console.log('📍 Zona horaria del centro (normalizada):', timezone);
     console.log('📅 Turno (backend):', datosSlot.fecha, datosSlot.hora);
     console.log('🕒 Turno en zona centro:', fechaHoraTurno.toISOString());
     console.log('🕒 Ahora en zona centro:', ahoraEnZona.toISOString());
