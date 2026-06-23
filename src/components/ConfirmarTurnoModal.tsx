@@ -270,7 +270,10 @@ export default function ConfirmarTurnoModal({
     }
   };
 
+  // ============================================================
   // VISTA 2: Validar y mostrar confirmación
+  // 👈 MODIFICADO: Validación con zona horaria del centro
+  // ============================================================
   const handleConfirmarVista2 = async () => {
     if (!validarEmail(datosUsuario.email)) {
       setError('Ingresá un email válido');
@@ -289,12 +292,21 @@ export default function ConfirmarTurnoModal({
       return;
     }
 
+    // 👈 Obtener la zona horaria del centro (viene del backend, es la verdad)
+    const timezone = datosSlot.zonaHoraria || 'America/Argentina/Buenos_Aires';
+
+    // 👈 1. Fecha/hora del turno (YA está en la zona horaria del centro) - NO SE TOCA
     const [year, month, day] = datosSlot.fecha.split('-').map(Number);
     const [hour, minute] = datosSlot.hora.split(':').map(Number);
     const fechaHoraTurno = new Date(year, month - 1, day, hour, minute);
-    const ahora = new Date();
-    
-    if (fechaHoraTurno <= ahora) {
+
+    // 👈 2. Fecha/hora actual del navegador convertida a la zona horaria del centro
+    const ahoraLocal = new Date();
+    const ahoraEnZonaStr = ahoraLocal.toLocaleString('en-US', { timeZone: timezone });
+    const ahoraEnZona = new Date(ahoraEnZonaStr);
+
+    // 👈 3. Comparar: turno (en zona centro) vs ahora (convertido a zona centro)
+    if (fechaHoraTurno <= ahoraEnZona) {
       setError('No se puede reservar un turno en un horario que ya pasó. Seleccioná una fecha y hora futura.');
       return;
     }
