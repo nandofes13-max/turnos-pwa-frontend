@@ -1277,11 +1277,6 @@
     justify-content: center;
   }
 
-  /* 👈 OCULTAR CONTEXTO (resumen) EN MÓVIL */
-  .resumenPaso2 {
-    display: none;
-  }
-
   /* Ajustes para el Paso 3 en móvil */
   .resumenItem {
     flex-direction: column;
