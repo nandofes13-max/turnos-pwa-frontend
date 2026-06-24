@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom'; // 👈 NUEVO
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
 
@@ -15,8 +16,8 @@ interface Turno {
   precioReserva: number | string;
   moneda: string;
   timezone?: string;
-  emailEnviado?: boolean;  // ✅ NUEVO
-  videollamadaUrl?: string; // ✅ NUEVO
+  emailEnviado?: boolean;
+  videollamadaUrl?: string;
   usuario: {
     id: number;
     nombre: string;
@@ -124,6 +125,10 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
 };
 
 export default function Turnos() {
+  // 👈 NUEVO: Leer parámetros de la URL
+  const [searchParams] = useSearchParams();
+  const negocioIdFromUrl = searchParams.get('negocioId');
+
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
@@ -149,13 +154,16 @@ export default function Turnos() {
     return `${year}-${month}-${day}`;
   };
   
+  // 👈 NUEVO: Estado para saber si el negocio viene de la URL (fijo)
+  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromUrl || '');
+
   const [filtros, setFiltros] = useState<Filtros>({
     desde: obtenerFechaActual(),
     hasta: obtenerFechaActual(),
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: '',
+    negocioId: negocioIdFromUrl || '', // 👈 NUEVO: usar el negocioId de la URL si existe
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -167,6 +175,17 @@ export default function Turnos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
   const filtrosBusquedaHabilitados = true;
+
+  // 👈 NUEVO: Efecto para cargar datos iniciales cuando hay negocioId fijo
+  useEffect(() => {
+    if (negocioIdFijo) {
+      // Cargar actividades del negocio
+      cargarActividadesPorNegocio(parseInt(negocioIdFijo));
+      // Cargar estados de turno y pago del negocio
+      fetchEstadosTurno();
+      fetchEstadosPago();
+    }
+  }, [negocioIdFijo]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -208,6 +227,10 @@ export default function Turnos() {
           fetchNegocios(),
           fetchActividades(),
         ]);
+        // Si hay negocioId fijo, cargar sus filtros
+        if (negocioIdFijo) {
+          await cargarActividadesPorNegocio(parseInt(negocioIdFijo));
+        }
         await fetchEstadosTurno();
         await fetchEstadosPago();
       } finally {
@@ -338,7 +361,8 @@ export default function Turnos() {
 
   const fetchEstadosTurno = async () => {
     try {
-      const res = await fetch(`${ESTADOS_TURNO_URL}/negocio/${filtros.negocioId || 6}`);
+      const negocioId = filtros.negocioId || negocioIdFijo || '6';
+      const res = await fetch(`${ESTADOS_TURNO_URL}/negocio/${negocioId}`);
       const data = await res.json();
       setEstadosTurno(data.filter((e: any) => !e.fecha_baja));
     } catch (err) {
@@ -348,7 +372,8 @@ export default function Turnos() {
 
   const fetchEstadosPago = async () => {
     try {
-      const res = await fetch(`${ESTADOS_PAGO_URL}/negocio/${filtros.negocioId || 6}`);
+      const negocioId = filtros.negocioId || negocioIdFijo || '6';
+      const res = await fetch(`${ESTADOS_PAGO_URL}/negocio/${negocioId}`);
       const data = await res.json();
       setEstadosPago(data.filter((e: any) => !e.fecha_baja));
     } catch (err) {
@@ -420,13 +445,14 @@ export default function Turnos() {
   };
 
   const limpiarFiltros = () => {
+    // Si hay un negocioId fijo, mantenerlo
     setFiltros({
       desde: obtenerFechaActual(),
       hasta: obtenerFechaActual(),
       profesionalId: '',
       especialidadId: '',
       actividadId: '',
-      negocioId: '',
+      negocioId: negocioIdFijo || '', // 👈 NUEVO: mantener el negocioId fijo si existe
       centroId: '',
       canalOrigen: '',
       asistio: '',
@@ -544,10 +570,18 @@ export default function Turnos() {
       <div className={turnosStyles.filtrosDesktop}>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🏢 Negocio</label>
-          <select value={filtros.negocioId} onChange={(e) => handleFiltroChange('negocioId', e.target.value)} className={turnosStyles.filtroInput}>
+          <select 
+            value={filtros.negocioId} 
+            onChange={(e) => handleFiltroChange('negocioId', e.target.value)} 
+            className={turnosStyles.filtroInput}
+            disabled={!!negocioIdFijo} // 👈 NUEVO: deshabilitar si viene de la URL
+          >
             <option value="">Seleccionar...</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
+          {negocioIdFijo && (
+            <span className="text-xs text-green-600 ml-1">🔒 Fijo</span>
+          )}
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
@@ -840,7 +874,6 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Especialidad</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.especialidad?.nombre || '-'}</p></div>
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Centro</span><p className="tm-modal-detalle-valor">{selectedTurno.profesionalCentro?.centro?.nombre || '-'}</p></div>
             
-            {/* ✅ NUEVO: Videollamada (solo si existe) */}
             {selectedTurno.videollamadaUrl && (
               <div className="tm-modal-detalle-campo">
                 <span className="tm-modal-detalle-label">🔗 Videollamada</span>
@@ -864,7 +897,6 @@ export default function Turnos() {
             <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Asistencia</span><p className="tm-modal-detalle-valor">{selectedTurno.asistio ? 'Sí' : 'No'}</p></div>
             {selectedTurno.canalOrigen && <div className="tm-modal-detalle-campo"><span className="tm-modal-detalle-label">Canal Origen</span><p className="tm-modal-detalle-valor">{selectedTurno.canalOrigen}</p></div>}
             
-            {/* ✅ NUEVO: Email enviado */}
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">📧 Email enviado</span>
               <p className="tm-modal-detalle-valor">
