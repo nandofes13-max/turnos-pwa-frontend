@@ -20,6 +20,7 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
+import RedireccionTurnos from './components/RedireccionTurnos'; // 👈 NUEVO
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import './App.css';
@@ -43,6 +44,9 @@ function App() {
         <Route path="/negocio/:url/actividad/:actividadId/especialidad" element={<Especialidad />} />
         <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
         <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
+        
+        {/* 👈 NUEVA RUTA: Gestión de turnos por URL única */}
+        <Route path="/gestion/turnos/:slug" element={<RedireccionTurnos />} />
         
         {/* ============================================================ */}
         {/* RUTAS PARA DEMO (compatibilidad hacia atrás) */}
