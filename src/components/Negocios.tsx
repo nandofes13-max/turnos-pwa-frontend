@@ -10,6 +10,7 @@ interface Negocio {
   id: number;
   nombre: string;
   url: string;
+  urlGestion?: string; // 👈 NUEVO: URL de gestión de turnos
   // Campos de domicilio (ahora directos)
   street?: string;
   street_number?: string;
@@ -25,7 +26,7 @@ interface Negocio {
   whatsapp_e164?: string;
   country_code?: number;
   national_number?: string;
-  timezone?: string;  // ← AGREGADO
+  timezone?: string;
   ultimoMovimiento?: string;
   fecha_alta?: string;
   usuario_alta?: string;
@@ -45,29 +46,25 @@ export default function Negocios() {
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'reactivate' | null>(null);
   const [formData, setFormData] = useState({ 
     nombre: '',
-    domicilio: null as any, // Para el mapa (sigue siendo objeto)
+    domicilio: null as any,
   });
   
-  // Estado para el teléfono (formato E164)
   const [phoneValue, setPhoneValue] = useState<string>();
   
   const [confirmDelete, setConfirmDelete] = useState<Negocio | null>(null);
   const [confirmReactivar, setConfirmReactivar] = useState<Negocio | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Estados para filtros
   const [filtroTipoMovimiento, setFiltroTipoMovimiento] = useState<string[]>([]);
   const [filtroNombre, setFiltroNombre] = useState('');
   const [filtroUrl, setFiltroUrl] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   
-  // Estados para filtros expandidos
   const [filtroExpandido, setFiltroExpandido] = useState({
     movimiento: false
   });
 
-  // Estados para paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
@@ -143,7 +140,6 @@ export default function Negocios() {
     setPaginaActual(1);
   };
 
-  // ===== FUNCIONES CRUD =====
   const handleAgregar = () => {
     setFormData({ 
       nombre: '', 
@@ -155,7 +151,6 @@ export default function Negocios() {
   };
 
   const handleEditar = (negocio: Negocio) => {
-    // Convertir los campos sueltos a un objeto domicilio para el mapa
     const domicilioObj = negocio.street ? {
       street: negocio.street,
       street_number: negocio.street_number,
@@ -198,7 +193,6 @@ export default function Negocios() {
     }
   };
 
-  // Función para formatear dirección concatenada (usa campos directos)
   const formatearDireccion = (n: Negocio): string => {
     const partes = [
       n.street,
@@ -211,7 +205,6 @@ export default function Negocios() {
     return partes.join(' ') || n.formatted_address || '';
   };
 
-  // Función para parsear E164 a country_code y national_number
   const parsePhoneE164 = (phone: string | undefined) => {
     if (!phone) return { country_code: null, national_number: '' };
     
@@ -363,6 +356,7 @@ export default function Negocios() {
           longitude: confirmReactivar.longitude,
           formatted_address: confirmReactivar.formatted_address,
           timezone: confirmReactivar.timezone,
+          urlGestion: confirmReactivar.urlGestion, // 👈 NUEVO: mantener URL de gestión
           fecha_baja: null,
           usuario_baja: null
         }),
@@ -389,7 +383,6 @@ export default function Negocios() {
     <div className="tm-page">
       <h1 className="tm-titulo">Gestión de Negocios</h1>
 
-      {/* Filtros */}
       <div className="tm-filtros">
         <div className="tm-filtros-fila">
           <div className="tm-filtro-campo tm-filtro-nombre">
@@ -488,7 +481,6 @@ export default function Negocios() {
         </div>
       </div>
 
-      {/* Tabla de Negocios */}
       {loading ? (
         <div className="tm-loading">
           <div className="tm-loading-spinner"></div>
@@ -509,18 +501,18 @@ export default function Negocios() {
             </div>
           </div>
 
-          {/* TABLA */}
           <div className="tm-tabla-centrado">
             <table className="tm-tabla">
               <thead>
                 <tr>
                   <th className="tm-col-nombre">NOMBRE</th>
                   <th className="tm-col-url">URL</th>
+                  <th className="tm-col-url-gestion">URL GESTIÓN</th>
                   <th className="tm-col-whatsapp">WHATSAPP</th>
                   <th className="tm-col-domicilio">DOMICILIO</th>
                   <th>ACCIONES</th>
                 </tr>
-                </thead>
+              </thead>
               <tbody>
                 {negociosPaginados.map((n) => (
                   <tr key={n.id} className={n.fecha_baja ? 'tm-fila-inactiva' : ''}>
@@ -537,6 +529,20 @@ export default function Negocios() {
                       >
                         {n.url}
                       </a>
+                    </td>
+                    <td>
+                      {n.urlGestion ? (
+                        <a 
+                          href={`/gestion/turnos/${n.urlGestion}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="tm-url-link font-medium text-green-600"
+                        >
+                          {n.urlGestion}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
                     </td>
                     <td>{n.whatsapp_e164 || '-'}</td>
                     <td>
@@ -567,7 +573,7 @@ export default function Negocios() {
                 ))}
                 {negociosPaginados.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="tm-fila-vacia">
+                    <td colSpan={6} className="tm-fila-vacia">
                       No hay negocios que coincidan
                     </td>
                   </tr>
@@ -576,7 +582,6 @@ export default function Negocios() {
             </table>
           </div>
 
-          {/* CARDS MÓVIL */}
           <div className="tm-cards">
             {negociosPaginados.map((n) => (
               <div key={`card-${n.id}`} className={`tm-card-item ${n.fecha_baja ? 'inactiva' : ''}`}>
@@ -594,6 +599,19 @@ export default function Negocios() {
                     {n.url}
                   </a>
                 </div>
+                {n.urlGestion && (
+                  <div className="tm-card-url-gestion">
+                    <span className="text-xs text-gray-500">Gestión: </span>
+                    <a 
+                      href={`/gestion/turnos/${n.urlGestion}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="tm-url-link text-green-600"
+                    >
+                      {n.urlGestion}
+                    </a>
+                  </div>
+                )}
                 {n.whatsapp_e164 && <div className="tm-card-whatsapp">{n.whatsapp_e164}</div>}
                 {n.street && (
                   <div className="tm-card-domicilio text-xs">
@@ -621,7 +639,6 @@ export default function Negocios() {
             ))}
           </div>
           
-          {/* PAGINACIÓN */}
           {negociosFiltrados.length > 0 && (
             <div className="tm-paginacion">
               <button onClick={() => irAPagina(paginaActual - 1)} disabled={paginaActual === 1} className="tm-paginacion-btn">←</button>
@@ -657,7 +674,6 @@ export default function Negocios() {
               />
             </div>
 
-            {/* WHATSAPP */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
@@ -671,7 +687,6 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
-            {/* DOMICILIO CON MAPA */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Domicilio *</label>
               <MapaSelector
@@ -708,7 +723,6 @@ export default function Negocios() {
               />
             </div>
 
-            {/* WHATSAPP */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">WhatsApp *</label>
               <PhoneInput
@@ -722,7 +736,6 @@ export default function Negocios() {
               <small className="tm-ayuda-texto">Seleccioná país e ingresá tu número</small>
             </div>
 
-            {/* ZONA HORARIA (solo lectura) */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Zona Horaria</label>
               <input
@@ -736,7 +749,6 @@ export default function Negocios() {
               </p>
             </div>
 
-            {/* DOMICILIO ACTUAL (solo lectura) */}
             {selectedNegocio.street && (
               <div className="tm-modal-campo">
                 <label className="tm-modal-label">Domicilio actual</label>
@@ -752,7 +764,6 @@ export default function Negocios() {
               </div>
             )}
 
-            {/* MAPA PARA CAMBIAR DOMICILIO */}
             <div className="tm-modal-campo">
               <label className="tm-modal-label">Buscar nueva dirección</label>
               <MapaSelector
@@ -791,8 +802,34 @@ export default function Negocios() {
               <p className="tm-modal-detalle-valor">{selectedNegocio.nombre}</p>
             </div>
             <div className="tm-modal-detalle-campo">
-              <span className="tm-modal-detalle-label">URL</span>
-              <p className="tm-modal-detalle-valor">{selectedNegocio.url}</p>
+              <span className="tm-modal-detalle-label">URL Pública</span>
+              <p className="tm-modal-detalle-valor">
+                <a 
+                  href={`/negocio/${selectedNegocio.url}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  {selectedNegocio.url}
+                </a>
+              </p>
+            </div>
+            <div className="tm-modal-detalle-campo">
+              <span className="tm-modal-detalle-label">URL Gestión</span>
+              <p className="tm-modal-detalle-valor">
+                {selectedNegocio.urlGestion ? (
+                  <a 
+                    href={`/gestion/turnos/${selectedNegocio.urlGestion}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-green-600 underline"
+                  >
+                    {selectedNegocio.urlGestion}
+                  </a>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </p>
             </div>
             <div className="tm-modal-detalle-campo">
               <span className="tm-modal-detalle-label">WhatsApp</span>
@@ -829,7 +866,6 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR BAJA */}
       {confirmDelete && (
         <div className="tm-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
@@ -851,7 +887,6 @@ export default function Negocios() {
         </div>
       )}
 
-      {/* MODAL CONFIRMAR REACTIVAR */}
       {confirmReactivar && (
         <div className="tm-modal-overlay" onClick={() => setConfirmReactivar(null)}>
           <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
