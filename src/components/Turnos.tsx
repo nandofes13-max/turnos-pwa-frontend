@@ -579,9 +579,7 @@ export default function Turnos() {
             <option value="">Seleccionar...</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
-          {negocioIdFijo && (
-            <span className="text-xs text-green-600 ml-1">🔒 Fijo</span>
-          )}
+         
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
