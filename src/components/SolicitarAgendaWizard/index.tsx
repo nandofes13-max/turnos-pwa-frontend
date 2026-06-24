@@ -404,7 +404,7 @@ export default function SolicitarAgendaWizard() {
                   rel="noopener noreferrer"
                   style={{ color: '#3b82f6', wordBreak: 'break-all', textDecoration: 'underline' }}
                 >
-                  {`${window.location.origin}/turnos`}
+                  {`${window.location.origin}/gestion/turnos/${paso1Data?.negocio?.urlGestion || ''}`}
                 </a>
               </p>
             </div>
