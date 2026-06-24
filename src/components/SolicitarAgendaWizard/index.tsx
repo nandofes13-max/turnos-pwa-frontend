@@ -399,7 +399,7 @@ export default function SolicitarAgendaWizard() {
                 <strong>⚙️ Link de Gestión (para administrar):</strong>
                 <br />
                 <a
-                  href={`${window.location.origin}/turnos`}
+                 href={`${window.location.origin}/gestion/turnos/${paso1Data?.negocio?.urlGestion || ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#3b82f6', wordBreak: 'break-all', textDecoration: 'underline' }}
