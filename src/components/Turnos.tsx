@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom'; // 👈 CAMBIADO: useLocation en lugar de useSearchParams
+import { useLocation } from 'react-router-dom';
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
 
@@ -57,6 +57,10 @@ interface Filtros {
 interface Actividad {
   id: number;
   nombre: string;
+}
+
+interface TurnosProps {
+  negocioIdFijo?: string; // 👈 NUEVA PROP: ID del negocio fijo (desde RedireccionTurnos)
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -124,10 +128,13 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
   }
 };
 
-export default function Turnos() {
-  // 👈 CAMBIADO: Leer el negocioId del estado de React Router (no de la URL)
+export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps) {
+  // 👈 Leer el negocioId de la prop o del estado de la navegación
   const location = useLocation();
   const negocioIdFromState = location.state?.negocioId || null;
+
+  // 👈 Usar la prop si existe, o el estado de la navegación
+  const negocioIdInicial = negocioIdFijoProp || negocioIdFromState || '';
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
@@ -154,8 +161,8 @@ export default function Turnos() {
     return `${year}-${month}-${day}`;
   };
   
-  // 👈 CAMBIADO: Usar negocioIdFromState en lugar de negocioIdFromUrl
-  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromState || '');
+  // 👈 Usar negocioIdInicial como valor inicial del filtro fijo
+  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdInicial);
 
   const [filtros, setFiltros] = useState<Filtros>({
     desde: obtenerFechaActual(),
@@ -163,7 +170,7 @@ export default function Turnos() {
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: negocioIdFromState || '', // 👈 CAMBIADO: usar el ID del estado
+    negocioId: negocioIdInicial,
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -174,7 +181,6 @@ export default function Turnos() {
   
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
-  const filtrosBusquedaHabilitados = true;
 
   // Efecto para cargar datos iniciales cuando hay negocioId fijo
   useEffect(() => {
