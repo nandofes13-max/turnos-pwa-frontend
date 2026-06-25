@@ -40,8 +40,8 @@ export default function RedireccionTurnos() {
 
         if (negocio) {
           console.log('✅ Negocio encontrado para gestión:', negocio.id, negocio.nombre);
-          // 👈 3. Redirigir a la pantalla de turnos con el negocioId
-          navigate(`/turnos?negocioId=${negocio.id}`);
+          // 👈 3. Redirigir a la pantalla de turnos con el negocioId en el ESTADO (no en la URL)
+          navigate('/turnos', { state: { negocioId: negocio.id } });
         } else {
           console.warn('⚠️ No se encontró negocio con URL de gestión:', slug);
           setError('Negocio no encontrado. Verificá que la URL de gestión sea correcta.');
