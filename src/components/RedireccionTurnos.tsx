@@ -1,16 +1,18 @@
 // src/components/RedireccionTurnos.tsx
-// Componente para redirigir a la gestión de turnos de un negocio específico
+// Componente para mostrar la gestión de turnos de un negocio específico
 // Ruta: /gestion/turnos/:slug
 // Ejemplo: /gestion/turnos/gestion-turnos-a7f3k9
+// 👈 AHORA RENDERIZA Turnos DIRECTAMENTE (sin redirigir)
 
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import Turnos from './Turnos';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function RedireccionTurnos() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
+  const [negocioId, setNegocioId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -25,7 +27,6 @@ export default function RedireccionTurnos() {
       try {
         console.log('🔍 Buscando negocio con URL de gestión:', slug);
 
-        // 👈 1. Obtener todos los negocios y buscar por urlGestion
         const response = await fetch(`${API_BASE_URL}/negocios`);
         
         if (!response.ok) {
@@ -35,13 +36,11 @@ export default function RedireccionTurnos() {
         const negocios = await response.json();
         console.log('📋 Negocios encontrados:', negocios.length);
 
-        // 👈 2. Buscar el negocio que tenga urlGestion igual al slug
         const negocio = negocios.find((n: any) => n.urlGestion === slug && !n.fecha_baja);
 
         if (negocio) {
           console.log('✅ Negocio encontrado para gestión:', negocio.id, negocio.nombre);
-          // 👈 3. Redirigir a la pantalla de turnos con el negocioId en el ESTADO (no en la URL)
-          navigate('/turnos', { state: { negocioId: negocio.id } });
+          setNegocioId(negocio.id);
         } else {
           console.warn('⚠️ No se encontró negocio con URL de gestión:', slug);
           setError('Negocio no encontrado. Verificá que la URL de gestión sea correcta.');
@@ -55,7 +54,7 @@ export default function RedireccionTurnos() {
     };
 
     obtenerNegocioPorUrlGestion();
-  }, [slug, navigate]);
+  }, [slug]);
 
   if (cargando) {
     return (
@@ -87,7 +86,7 @@ export default function RedireccionTurnos() {
         <h2 style={{ color: '#dc2626', marginBottom: '12px' }}>❌ Error</h2>
         <p style={{ color: '#4b5563', maxWidth: '400px', marginBottom: '20px' }}>{error}</p>
         <button 
-          onClick={() => navigate('/')}
+          onClick={() => window.location.href = '/'}
           style={{
             padding: '10px 24px',
             backgroundColor: '#3b82f6',
@@ -103,6 +102,11 @@ export default function RedireccionTurnos() {
         </button>
       </div>
     );
+  }
+
+  // 👈 Si tenemos el negocioId, renderizamos Turnos directamente en la misma URL
+  if (negocioId) {
+    return <Turnos negocioIdFijo={negocioId.toString()} />;
   }
 
   return null;
