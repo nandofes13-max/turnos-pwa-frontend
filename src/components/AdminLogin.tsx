@@ -8,7 +8,7 @@ import Turnos from './Turnos';
 import styles from '../styles/AdminLogin.module.css';
 
 const ADMIN_USER = 'admin';
-const ADMIN_PASSWORD = 'admin123'; // ⚠️ Cambiar por una contraseña segura
+const ADMIN_PASSWORD = 'Poli1377!!'; // ⚠️ Cambiar por una contraseña segura
 
 export default function AdminLogin() {
   const [usuario, setUsuario] = useState('');
