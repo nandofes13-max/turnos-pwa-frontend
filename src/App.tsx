@@ -20,9 +20,11 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
-import RedireccionTurnos from './components/RedireccionTurnos'; // 👈 NUEVO
+import RedireccionTurnos from './components/RedireccionTurnos';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
+// 👈 NUEVO: Importar AdminLogin
+import AdminLogin from './components/AdminLogin';
 import './App.css';
 
 function App() {
@@ -45,8 +47,15 @@ function App() {
         <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro" element={<Centro />} />
         <Route path="/negocio/:url/actividad/:actividadId/especialidad/:especialidadId/centro/:centroId/agenda" element={<Agenda />} />
         
-        {/* 👈 NUEVA RUTA: Gestión de turnos por URL única */}
+        {/* ============================================================ */}
+        {/* RUTA PARA GESTIÓN DE TURNOS (DUEÑOS DE NEGOCIO) */}
+        {/* ============================================================ */}
         <Route path="/gestion/turnos/:slug" element={<RedireccionTurnos />} />
+        
+        {/* ============================================================ */}
+        {/* RUTA PARA ADMINISTRACIÓN DE TURNOS (CON LOGIN) */}
+        {/* ============================================================ */}
+        <Route path="/admin/turnos" element={<AdminLogin />} />
         
         {/* ============================================================ */}
         {/* RUTAS PARA DEMO (compatibilidad hacia atrás) */}
@@ -73,7 +82,9 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
-        <Route path="/turnos" element={<Turnos />} />
+        
+        {/* 👈 CAMBIADO: /turnos ahora es /admin/turnos con login */}
+        {/* La ruta /turnos ya no está disponible directamente */}
       </Routes>
     </BrowserRouter>
   );
