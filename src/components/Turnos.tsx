@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom'; // 👈 NUEVO
+import { useLocation } from 'react-router-dom'; // 👈 CAMBIADO: useLocation en lugar de useSearchParams
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
 
@@ -125,9 +125,9 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
 };
 
 export default function Turnos() {
-  // 👈 NUEVO: Leer parámetros de la URL
-  const [searchParams] = useSearchParams();
-  const negocioIdFromUrl = searchParams.get('negocioId');
+  // 👈 CAMBIADO: Leer el negocioId del estado de React Router (no de la URL)
+  const location = useLocation();
+  const negocioIdFromState = location.state?.negocioId || null;
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
@@ -154,8 +154,8 @@ export default function Turnos() {
     return `${year}-${month}-${day}`;
   };
   
-  // 👈 NUEVO: Estado para saber si el negocio viene de la URL (fijo)
-  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromUrl || '');
+  // 👈 CAMBIADO: Usar negocioIdFromState en lugar de negocioIdFromUrl
+  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromState || '');
 
   const [filtros, setFiltros] = useState<Filtros>({
     desde: obtenerFechaActual(),
@@ -163,7 +163,7 @@ export default function Turnos() {
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: negocioIdFromUrl || '', // 👈 NUEVO: usar el negocioId de la URL si existe
+    negocioId: negocioIdFromState || '', // 👈 CAMBIADO: usar el ID del estado
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -176,12 +176,10 @@ export default function Turnos() {
   const [itemsPorPagina] = useState(10);
   const filtrosBusquedaHabilitados = true;
 
-  // 👈 NUEVO: Efecto para cargar datos iniciales cuando hay negocioId fijo
+  // Efecto para cargar datos iniciales cuando hay negocioId fijo
   useEffect(() => {
     if (negocioIdFijo) {
-      // Cargar actividades del negocio
       cargarActividadesPorNegocio(parseInt(negocioIdFijo));
-      // Cargar estados de turno y pago del negocio
       fetchEstadosTurno();
       fetchEstadosPago();
     }
@@ -227,7 +225,6 @@ export default function Turnos() {
           fetchNegocios(),
           fetchActividades(),
         ]);
-        // Si hay negocioId fijo, cargar sus filtros
         if (negocioIdFijo) {
           await cargarActividadesPorNegocio(parseInt(negocioIdFijo));
         }
@@ -445,14 +442,13 @@ export default function Turnos() {
   };
 
   const limpiarFiltros = () => {
-    // Si hay un negocioId fijo, mantenerlo
     setFiltros({
       desde: obtenerFechaActual(),
       hasta: obtenerFechaActual(),
       profesionalId: '',
       especialidadId: '',
       actividadId: '',
-      negocioId: negocioIdFijo || '', // 👈 NUEVO: mantener el negocioId fijo si existe
+      negocioId: negocioIdFijo || '',
       centroId: '',
       canalOrigen: '',
       asistio: '',
@@ -574,12 +570,11 @@ export default function Turnos() {
             value={filtros.negocioId} 
             onChange={(e) => handleFiltroChange('negocioId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!!negocioIdFijo} // 👈 NUEVO: deshabilitar si viene de la URL
+            disabled={!!negocioIdFijo}
           >
             <option value="">Seleccionar...</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
-         
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
