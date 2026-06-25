@@ -6,6 +6,7 @@
 // - Indicador "✅ Agenda configurada" cuando ya está guardada
 // - Botón "Finalizar" habilitado cuando AL MENOS UNA agenda está configurada
 // - Advertencia si faltan centros por configurar
+// - Envío de email de bienvenida al finalizar
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +18,8 @@ import styles from './wizard.module.css';
 
 type WizardStep = 1 | 2 | 3;
 type SubStep = 'resumen' | 'configurar';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function SolicitarAgendaWizard() {
   const navigate = useNavigate();
@@ -30,19 +33,13 @@ export default function SolicitarAgendaWizard() {
   const [centroSeleccionado, setCentroSeleccionado] = useState<number | null>(null);
   const [profesionalCentroSeleccionado, setProfesionalCentroSeleccionado] = useState<number | null>(null);
   const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
-  // 👈 NUEVO: estado para el modal de advertencia de finalización
   const [mostrarAdvertenciaFinalizar, setMostrarAdvertenciaFinalizar] = useState(false);
+  // 👈 NUEVO: Estado para controlar el envío del email
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
 
-  // Obtener los IDs de los centros
   const centrosIds = paso1Data?.centros?.map(c => c.id) || [];
-
-  // Verificar si TODOS los centros tienen agenda configurada
   const todosLosCentrosConfigurados = centrosIds.length > 0 && centrosIds.every(id => agendasConfiguradas.has(id));
-
-  // 👈 NUEVO: Verificar si AL MENOS UN centro tiene agenda configurada
   const alMenosUnaAgendaConfigurada = agendasConfiguradas.size > 0;
-
-  // 👈 NUEVO: Calcular cuántos centros faltan configurar
   const centrosFaltantes = centrosIds.filter(id => !agendasConfiguradas.has(id));
 
   const handlePaso1Success = (data: Paso1Result) => {
@@ -115,20 +112,61 @@ export default function SolicitarAgendaWizard() {
     setMostrarConfirmacionCancelar(false);
   };
 
-  // 👈 NUEVO: Manejo del botón "Finalizar" con advertencia
-  const handleFinalizar = () => {
-    if (!todosLosCentrosConfigurados) {
-      // Si faltan centros, mostrar advertencia
-      setMostrarAdvertenciaFinalizar(true);
-    } else {
-      // Si todos están configurados, ir directamente al éxito
-      setMostrarExitoFinal(true);
+  // 👈 NUEVO: Enviar email de bienvenida
+  const enviarEmailBienvenida = async () => {
+    if (!paso1Data?.negocio || !paso1Data?.usuario) {
+      console.warn('⚠️ No se puede enviar email: faltan datos del negocio o usuario');
+      return;
+    }
+
+    setEnviandoEmail(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/bienvenida-negocio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: paso1Data.usuario.email,
+          nombreNegocio: paso1Data.negocio.nombre,
+          urlPublica: `${window.location.origin}/negocio/${paso1Data.negocio.url}`,
+          urlGestion: `${window.location.origin}/gestion/turnos/${paso1Data.negocio.urlGestion}`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Error enviando email de bienvenida:', data);
+        // No mostramos error al usuario, solo log
+      } else {
+        console.log('✅ Email de bienvenida enviado correctamente');
+      }
+    } catch (error) {
+      console.error('❌ Error en el envío del email de bienvenida:', error);
+      // No interrumpimos el flujo del usuario
+    } finally {
+      setEnviandoEmail(false);
     }
   };
 
-  const confirmarFinalizar = () => {
+  // 👈 NUEVO: Manejo del botón "Finalizar" con advertencia y envío de email
+  const handleFinalizar = async () => {
+    if (!todosLosCentrosConfigurados) {
+      setMostrarAdvertenciaFinalizar(true);
+    } else {
+      // Si todos están configurados, mostrar éxito y enviar email
+      setMostrarExitoFinal(true);
+      await enviarEmailBienvenida();
+    }
+  };
+
+  const confirmarFinalizar = async () => {
     setMostrarAdvertenciaFinalizar(false);
     setMostrarExitoFinal(true);
+    // Enviar email después de confirmar
+    await enviarEmailBienvenida();
   };
 
   const cancelarFinalizar = () => {
@@ -288,14 +326,13 @@ export default function SolicitarAgendaWizard() {
                 >
                   CANCELAR
                 </button>
-                {/* 👈 BOTÓN FINALIZAR MODIFICADO */}
                 <button
                   className={styles.buttonPrimary}
                   onClick={handleFinalizar}
-                  disabled={!alMenosUnaAgendaConfigurada}
-                  style={{ opacity: alMenosUnaAgendaConfigurada ? 1 : 0.5 }}
+                  disabled={!alMenosUnaAgendaConfigurada || enviandoEmail}
+                  style={{ opacity: alMenosUnaAgendaConfigurada && !enviandoEmail ? 1 : 0.5 }}
                 >
-                  Finalizar
+                  {enviandoEmail ? 'Enviando correo...' : 'Finalizar'}
                 </button>
               </div>
             </div>
@@ -339,7 +376,7 @@ export default function SolicitarAgendaWizard() {
         </div>
       )}
 
-      {/* 👈 NUEVO: Modal de advertencia para finalizar */}
+      {/* Modal de advertencia para finalizar */}
       {mostrarAdvertenciaFinalizar && (
         <div className={styles.modalConfirmacionOverlay} onClick={cancelarFinalizar}>
           <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
@@ -399,7 +436,7 @@ export default function SolicitarAgendaWizard() {
                 <strong>⚙️ Link de Gestión (para administrar):</strong>
                 <br />
                 <a
-                 href={`${window.location.origin}/gestion/turnos/${paso1Data?.negocio?.urlGestion || ''}`}
+                  href={`${window.location.origin}/gestion/turnos/${paso1Data?.negocio?.urlGestion || ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#3b82f6', wordBreak: 'break-all', textDecoration: 'underline' }}
