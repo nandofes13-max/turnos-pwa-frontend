@@ -36,6 +36,22 @@ export default function Inicio() {
     navigate('/solicitar-agenda');
   };
 
+  // 👈 NUEVO: Redirigir a la página de ayuda (modal)
+  const handleAyuda = () => {
+    // Por ahora, mostrar un mensaje. Luego implementaremos el modal de ayuda.
+    alert('Funcionalidad en desarrollo: Ayuda');
+  };
+
+  // 👈 NUEVO: Redirigir a Términos y Condiciones
+  const handleTerminos = () => {
+    navigate('/terminos');
+  };
+
+  // 👈 NUEVO: Redirigir a Política de Privacidad
+  const handlePoliticas = () => {
+    navigate('/privacidad');
+  };
+
   const preguntasFrecuentes = [
     {
       pregunta: '¿Qué es PWA Turnos?',
@@ -108,8 +124,33 @@ export default function Inicio() {
               </div>
             </div>
 
-            {/* 👈 Footer ELIMINADO: ahora es global */}
-
+            {/* Footer */}
+            <div className={styles['inicio-footer']}>
+              <button 
+                onClick={handleAyuda} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                ¿Necesitas Ayuda?
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Términos y Condiciones
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Políticas de Privacidad
+              </button>
+              <div className={styles['inicio-version']}>
+                v.0.10
+              </div>
+            </div>
           </div>
         </div>
       </div>
