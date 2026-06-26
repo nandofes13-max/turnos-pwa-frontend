@@ -1,8 +1,19 @@
 // src/components/Terminos.tsx
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Terminos() {
   const navigate = useNavigate();
+
+  // 👈 Forzar scroll al inicio al cargar la página
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleVolver = () => {
+    navigate('/'); // 👈 Volver al inicio
+    window.scrollTo(0, 0); // 👈 Asegurar scroll al inicio
+  };
 
   return (
     <div className="tm-page" style={{ maxWidth: '800px', margin: '0 auto', padding: '1.5rem' }}>
@@ -76,8 +87,8 @@ export default function Terminos() {
       </div>
 
       <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-        <button onClick={() => navigate(-1)} className="tm-btn-secundario" style={{ padding: '0.4rem 1.5rem', fontSize: '0.9rem' }}>
-          Volver
+        <button onClick={handleVolver} className="tm-btn-secundario" style={{ padding: '0.4rem 1.5rem', fontSize: '0.9rem' }}>
+          Volver al inicio
         </button>
       </div>
     </div>
