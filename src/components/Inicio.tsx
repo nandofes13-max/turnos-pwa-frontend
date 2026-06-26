@@ -33,20 +33,23 @@ export default function Inicio() {
   };
 
   const handleSolicitarAgenda = () => {
-    // Redirigir al wizard de solicitud de agenda gratis
     navigate('/solicitar-agenda');
   };
 
+  // 👈 NUEVO: Redirigir a la página de ayuda (modal)
   const handleAyuda = () => {
-    alert('Funcionalidad demo: Ayuda');
+    // Por ahora, mostrar un mensaje. Luego implementaremos el modal de ayuda.
+    alert('Funcionalidad en desarrollo: Ayuda');
   };
 
+  // 👈 NUEVO: Redirigir a Términos y Condiciones
   const handleTerminos = () => {
-    alert('Funcionalidad demo: Términos y Condiciones');
+    navigate('/terminos');
   };
 
+  // 👈 NUEVO: Redirigir a Política de Privacidad
   const handlePoliticas = () => {
-    alert('Funcionalidad demo: Políticas de Privacidad');
+    navigate('/privacidad');
   };
 
   const preguntasFrecuentes = [
@@ -123,15 +126,27 @@ export default function Inicio() {
 
             {/* Footer */}
             <div className={styles['inicio-footer']}>
-              <a onClick={handleAyuda} className={styles['inicio-footer-link']}>
+              <button 
+                onClick={handleAyuda} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 ¿Necesitas Ayuda?
-              </a>
-              <a onClick={handleTerminos} className={styles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Términos y Condiciones
-              </a>
-              <a onClick={handlePoliticas} className={styles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={styles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Políticas de Privacidad
-              </a>
+              </button>
               <div className={styles['inicio-version']}>
                 v.0.10
               </div>
