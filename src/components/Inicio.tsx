@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import styles from '../styles/Inicio.module.css';
+import SolicitarServicioModal from './SolicitarServicioModal'; // 👈 NUEVO
 
 // Componente de acordeón para preguntas frecuentes
 const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string }) => {
@@ -27,6 +28,7 @@ const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string 
 
 export default function Inicio() {
   const navigate = useNavigate();
+  const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false); // 👈 NUEVO
 
   const handleDemo = () => {
     navigate('/actividad');
@@ -36,10 +38,9 @@ export default function Inicio() {
     navigate('/solicitar-agenda');
   };
 
-  // 👈 NUEVO: Redirigir a la página de ayuda (modal)
+  // 👈 NUEVO: Abre el modal de ayuda
   const handleAyuda = () => {
-    // Por ahora, mostrar un mensaje. Luego implementaremos el modal de ayuda.
-    alert('Funcionalidad en desarrollo: Ayuda');
+    setModalAyudaAbierto(true);
   };
 
   // 👈 NUEVO: Redirigir a Términos y Condiciones
@@ -168,6 +169,8 @@ export default function Inicio() {
         </div>
       </div>
 
+      {/* 👈 NUEVO: Modal de ayuda */}
+      <SolicitarServicioModal isOpen={modalAyudaAbierto} onClose={() => setModalAyudaAbierto(false)} />
     </div>
   );
 }
