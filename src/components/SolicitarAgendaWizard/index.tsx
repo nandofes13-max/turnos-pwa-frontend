@@ -6,9 +6,9 @@
 // - Indicador "✅ Agenda configurada" cuando ya está guardada
 // - Botón "Finalizar" habilitado cuando AL MENOS UNA agenda está configurada
 // - Advertencia si faltan centros por configurar
-// - Envío de email de bienvenida al finalizar
+// - Modal de Términos y Condiciones con scroll obligatorio al finalizar
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Paso1DatosBasicos from './Paso1DatosBasicos';
 import Paso2Profesionales from './Paso2Profesionales';
@@ -34,8 +34,13 @@ export default function SolicitarAgendaWizard() {
   const [profesionalCentroSeleccionado, setProfesionalCentroSeleccionado] = useState<number | null>(null);
   const [mostrarExitoFinal, setMostrarExitoFinal] = useState(false);
   const [mostrarAdvertenciaFinalizar, setMostrarAdvertenciaFinalizar] = useState(false);
-  // 👈 NUEVO: Estado para controlar el envío del email
   const [enviandoEmail, setEnviandoEmail] = useState(false);
+  
+  // 👈 NUEVO: Estado para el modal de Términos y Condiciones
+  const [mostrarModalTerminos, setMostrarModalTerminos] = useState(false);
+  const [terminosAceptados, setTerminosAceptados] = useState(false);
+  const [terminosScrollAlFinal, setTerminosScrollAlFinal] = useState(false);
+  const terminosContainerRef = useRef<HTMLDivElement>(null);
 
   const centrosIds = paso1Data?.centros?.map(c => c.id) || [];
   const todosLosCentrosConfigurados = centrosIds.length > 0 && centrosIds.every(id => agendasConfiguradas.has(id));
@@ -112,7 +117,46 @@ export default function SolicitarAgendaWizard() {
     setMostrarConfirmacionCancelar(false);
   };
 
-  // 👈 NUEVO: Enviar email de bienvenida
+  // 👈 NUEVO: Manejo del scroll en el modal de términos
+  const handleScrollTerminos = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
+    const scrollHeight = target.scrollHeight;
+    const clientHeight = target.clientHeight;
+    const scrolledToEnd = scrollTop + clientHeight >= scrollHeight - 10;
+    
+    setTerminosScrollAlFinal(scrolledToEnd);
+  };
+
+  // 👈 NUEVO: Abrir el modal de términos
+  const abrirModalTerminos = () => {
+    setTerminosScrollAlFinal(false);
+    setTerminosAceptados(false);
+    setMostrarModalTerminos(true);
+    // Resetear scroll al abrir el modal
+    setTimeout(() => {
+      if (terminosContainerRef.current) {
+        terminosContainerRef.current.scrollTop = 0;
+      }
+    }, 100);
+  };
+
+  // 👈 NUEVO: Aceptar términos y continuar
+  const aceptarTerminos = () => {
+    setTerminosAceptados(true);
+    setMostrarModalTerminos(false);
+    // Continuar con el proceso de finalización
+    ejecutarFinalizacion();
+  };
+
+  // 👈 NUEVO: Ejecutar la finalización (después de aceptar términos)
+  const ejecutarFinalizacion = async () => {
+    // Mostrar éxito y enviar email
+    setMostrarExitoFinal(true);
+    await enviarEmailBienvenida();
+  };
+
+  // Enviar email de bienvenida
   const enviarEmailBienvenida = async () => {
     if (!paso1Data?.negocio || !paso1Data?.usuario) {
       console.warn('⚠️ No se puede enviar email: faltan datos del negocio o usuario');
@@ -139,34 +183,30 @@ export default function SolicitarAgendaWizard() {
 
       if (!response.ok) {
         console.error('❌ Error enviando email de bienvenida:', data);
-        // No mostramos error al usuario, solo log
       } else {
         console.log('✅ Email de bienvenida enviado correctamente');
       }
     } catch (error) {
       console.error('❌ Error en el envío del email de bienvenida:', error);
-      // No interrumpimos el flujo del usuario
     } finally {
       setEnviandoEmail(false);
     }
   };
 
-  // 👈 NUEVO: Manejo del botón "Finalizar" con advertencia y envío de email
-  const handleFinalizar = async () => {
+  // 👈 NUEVO: Manejo del botón "Finalizar" - abre modal de términos
+  const handleFinalizar = () => {
     if (!todosLosCentrosConfigurados) {
       setMostrarAdvertenciaFinalizar(true);
     } else {
-      // Si todos están configurados, mostrar éxito y enviar email
-      setMostrarExitoFinal(true);
-      await enviarEmailBienvenida();
+      // Si todos los centros están configurados, abrir modal de términos
+      abrirModalTerminos();
     }
   };
 
-  const confirmarFinalizar = async () => {
+  const confirmarFinalizar = () => {
     setMostrarAdvertenciaFinalizar(false);
-    setMostrarExitoFinal(true);
-    // Enviar email después de confirmar
-    await enviarEmailBienvenida();
+    // Al confirmar la advertencia, abrir modal de términos
+    abrirModalTerminos();
   };
 
   const cancelarFinalizar = () => {
@@ -376,7 +416,7 @@ export default function SolicitarAgendaWizard() {
         </div>
       )}
 
-      {/* Modal de advertencia para finalizar */}
+      {/* Modal de advertencia para finalizar (faltan agendas) */}
       {mostrarAdvertenciaFinalizar && (
         <div className={styles.modalConfirmacionOverlay} onClick={cancelarFinalizar}>
           <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
@@ -411,7 +451,92 @@ export default function SolicitarAgendaWizard() {
         </div>
       )}
 
-      {/* Modal de éxito final - CON URLs CLICKEABLES */}
+      {/* 👈 NUEVO: Modal de Términos y Condiciones con scroll obligatorio */}
+      {mostrarModalTerminos && (
+        <div className={styles.modalConfirmacionOverlay} onClick={() => {}}>
+          <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <h3 className={styles.modalConfirmacionTitulo}>📜 Términos y Condiciones</h3>
+            <p className={styles.modalConfirmacionMensaje} style={{ fontSize: '14px', color: '#6b7280' }}>
+              Por favor, lee los términos y condiciones antes de continuar.
+              <br />
+              <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                {terminosScrollAlFinal ? '✅ Has llegado al final del documento' : '📄 Desplázate hasta el final para continuar'}
+              </span>
+            </p>
+            
+            {/* Contenedor con scroll */}
+            <div 
+              ref={terminosContainerRef}
+              onScroll={handleScrollTerminos}
+              style={{ 
+                maxHeight: '350px', 
+                overflowY: 'auto',
+                padding: '16px',
+                marginBottom: '16px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                backgroundColor: '#f8fafc',
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: '#374151'
+              }}
+            >
+              <p><strong>Última actualización:</strong> Junio de 2026</p>
+              <p>Bienvenido a <strong>PWA - Turnos</strong>.</p>
+              <p>Al registrarte o utilizar esta plataforma aceptas los presentes Términos y Condiciones.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>1. Objeto del servicio</h4>
+              <p>PWA - Turnos es una plataforma que permite a profesionales, comercios y organizaciones administrar agendas y gestionar reservas de turnos realizadas por sus clientes.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>2. Uso de la plataforma</h4>
+              <p>El usuario se compromete a utilizar la plataforma de manera responsable, respetando la legislación vigente y los derechos de terceros.</p>
+              <p>No está permitido utilizar el servicio para actividades ilícitas, fraudulentas o que puedan perjudicar a otros usuarios o al funcionamiento de la plataforma.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>3. Responsabilidad del usuario</h4>
+              <p>Cada usuario es responsable de la información que registra y mantiene dentro de su cuenta, así como de la confidencialidad de sus credenciales de acceso.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>4. Responsabilidad del servicio</h4>
+              <p>PWA - Turnos actúa únicamente como una herramienta tecnológica para la gestión de turnos.</p>
+              <p>La plataforma no presta servicios médicos, veterinarios, estéticos, deportivos, profesionales ni comerciales, y no participa en la relación entre el profesional o negocio y sus clientes.</p>
+              <p>Cada profesional o negocio es el único responsable de los servicios que ofrece y de la información publicada.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>5. Disponibilidad</h4>
+              <p>Se realizan esfuerzos para mantener el servicio disponible de forma continua. Sin embargo, pueden producirse interrupciones por tareas de mantenimiento, actualizaciones, fallas técnicas o causas ajenas al control de la plataforma.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>6. Propiedad intelectual</h4>
+              <p>El software, diseño, logotipos, código fuente, textos e identidad visual de PWA - Turnos son propiedad de sus titulares y no podrán copiarse, modificarse o distribuirse sin autorización.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>7. Modificaciones</h4>
+              <p>Estos Términos y Condiciones podrán actualizarse cuando resulte necesario. Las modificaciones entrarán en vigencia desde su publicación en la plataforma.</p>
+              
+              <h4 style={{ marginTop: '16px', marginBottom: '4px' }}>8. Contacto</h4>
+              <p>Para consultas relacionadas con estos términos podrás comunicarte mediante los canales de contacto disponibles dentro de la aplicación.</p>
+              
+              <div style={{ height: '20px' }} />
+              <p style={{ color: '#10b981', fontWeight: 'bold' }}>✅ Fin del documento</p>
+            </div>
+            
+            <div className={styles.modalConfirmacionBotones}>
+              <button 
+                className={styles.buttonSecondary} 
+                onClick={() => setMostrarModalTerminos(false)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={styles.buttonPrimary} 
+                onClick={aceptarTerminos}
+                disabled={!terminosScrollAlFinal}
+                style={{ opacity: terminosScrollAlFinal ? 1 : 0.5 }}
+              >
+                {terminosScrollAlFinal ? '✅ Aceptar' : '📄 Lee hasta el final'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito final */}
       {mostrarExitoFinal && (
         <div className={styles.modalConfirmacionOverlay} onClick={cerrarExitoFinal}>
           <div className={styles.modalConfirmacion} onClick={(e) => e.stopPropagation()}>
