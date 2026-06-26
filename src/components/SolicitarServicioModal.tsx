@@ -137,23 +137,24 @@ export default function SolicitarServicioModal({ isOpen, onClose }: SolicitarSer
       <div className={styles['modal-content']}>
         <button className={styles['modal-close']} onClick={handleClose}>✕</button>
         
+        {/* 👈 TÍTULO MODIFICADO */}
         <h2 className={styles['modal-titulo']}>
-          {exito ? '✅ ¡Solicitud enviada!' : 'Solicitar actividad / servicio'}
+          {exito ? '✅ ¡Solicitud enviada!' : '¿Necesitas Ayuda?'}
         </h2>
 
         {!exito ? (
           <form onSubmit={handleSubmit}>
             <div className={styles['formulario-datos']}>
-              {/* ✅ Campo destacado - PRIMERO */}
+              {/* 👈 CAMPO DESTACADO MODIFICADO */}
               <div className={`${styles['campo-formulario']} ${styles['campo-destacado']}`}>
                 <label className={styles['campo-label-destacado']}>
-                  📝 ¿Qué actividad/servicio necesitas? *
+                  📝 ¿En qué podemos Ayudarte? *
                 </label>
                 <textarea
                   className={styles['campo-textarea-destacado']}
                   value={formData.mensaje}
                   onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
-                  placeholder="Ej: Clases de Pilates, Tatuajes, Centro de Estética, etc."
+                  placeholder="Ej: Quiero solicitar mi actividad-servicio, quiero agregar más de un profesional, necesito agregar otro centro, etc."
                   rows={4}
                   disabled={cargando}
                   required
