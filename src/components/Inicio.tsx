@@ -148,7 +148,7 @@ export default function Inicio() {
                 Políticas de Privacidad
               </button>
               <div className={styles['inicio-version']}>
-                v.0.10
+                v.1.00
               </div>
             </div>
           </div>
