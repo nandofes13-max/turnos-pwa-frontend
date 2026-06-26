@@ -23,8 +23,10 @@ import RedireccionNegocio from './components/RedireccionNegocio';
 import RedireccionTurnos from './components/RedireccionTurnos';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
-// 👈 NUEVO: Importar AdminLogin
 import AdminLogin from './components/AdminLogin';
+// 👈 NUEVO: Importar Terminos y Privacidad
+import Terminos from './components/Terminos';
+import Privacidad from './components/Privacidad';
 import './App.css';
 
 function App() {
@@ -58,6 +60,12 @@ function App() {
         <Route path="/admin/turnos" element={<AdminLogin />} />
         
         {/* ============================================================ */}
+        {/* RUTAS LEGALES */}
+        {/* ============================================================ */}
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/privacidad" element={<Privacidad />} />
+        
+        {/* ============================================================ */}
         {/* RUTAS PARA DEMO (compatibilidad hacia atrás) */}
         {/* ============================================================ */}
         <Route path="/actividad" element={<Actividad />} />
@@ -82,9 +90,6 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
-        
-        {/* 👈 CAMBIADO: /turnos ahora es /admin/turnos con login */}
-        {/* La ruta /turnos ya no está disponible directamente */}
       </Routes>
     </BrowserRouter>
   );
