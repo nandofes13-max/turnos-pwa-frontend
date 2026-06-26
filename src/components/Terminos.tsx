@@ -25,7 +25,7 @@ export default function Terminos() {
               Términos y Condiciones de Uso
             </h1>
             
-            <div style={{ lineHeight: '1.6', color: '#374151', fontSize: '0.9rem' }}>
+            <div style={{ lineHeight: '1.6', color: '#374151', fontSize: '0.9rem', textAlign: 'justify' }}>
               <p><strong>Última actualización:</strong> Junio de 2026</p>
               
               <p>Bienvenido a <strong>PWA - Turnos</strong>.</p>
