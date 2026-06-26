@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Breadcrumb from './Breadcrumb';
+import SolicitarServicioModal from './SolicitarServicioModal'; // 👈 NUEVO
 import styles from '../styles/Especialidad.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -17,16 +18,13 @@ interface EspecialidadType {
 export default function Especialidad() {
   const navigate = useNavigate();
   const location = useLocation();
-  // ✅ Leer negocioUrl de los parámetros de la ruta (para rutas como /negocio/:url/actividad/:actividadId/especialidad)
   const { actividadId, negocioUrl: negocioUrlParam } = useParams<{ actividadId: string; negocioUrl: string }>();
   
-  // Leer query params
   const queryParams = new URLSearchParams(location.search);
   const negocioIdFromQuery = queryParams.get('negocioId');
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
   const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // Prioridad: state > query params > parámetros de ruta > valores por defecto
   const { 
     actividadNombre, 
     negocioId: negocioIdFromState, 
@@ -41,7 +39,6 @@ export default function Especialidad() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  // ✅ Prioridad: parámetro de ruta > queryParams > state
   const negocioUrl = negocioUrlParam || negocioUrlFromQuery || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const esNegocioReal = !!negocioUrl && negocioUrl !== '';
@@ -50,6 +47,7 @@ export default function Especialidad() {
   const [filtradas, setFiltradas] = useState<EspecialidadType[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
+  const [modalAbierto, setModalAbierto] = useState(false); // 👈 NUEVO
 
   const handleEspecialidadSeleccionada = (especialidad: EspecialidadType) => {
     navigate(`/actividad/${actividadId}/especialidad/${especialidad.id}/centro?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl || ''}`, {
@@ -61,6 +59,19 @@ export default function Especialidad() {
         negocioUrl: negocioUrl
       }
     });
+  };
+
+  // 👈 NUEVO: Funciones para el footer
+  const handleAyuda = () => {
+    setModalAbierto(true);
+  };
+
+  const handleTerminos = () => {
+    navigate('/terminos');
+  };
+
+  const handlePoliticas = () => {
+    navigate('/privacidad');
   };
 
   useEffect(() => {
@@ -113,7 +124,6 @@ export default function Especialidad() {
     }
   }, [busqueda, especialidades]);
 
-  // Definir los items del breadcrumb según si hay negocio o no
   const breadcrumbItems = [];
   
   if (esNegocioReal && negocioUrl) {
@@ -144,7 +154,6 @@ export default function Especialidad() {
       <div className={inicioStyles['inicio-left']}>
         <div className={inicioStyles['inicio-left-content']}>
           
-          {/* Logo móvil - redirige al home del negocio si existe */}
           <div className={inicioStyles['inicio-logo-mobile']}>
             <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
               <img 
@@ -197,25 +206,35 @@ export default function Especialidad() {
               </div>
             )}
 
+            {/* 👈 FOOTER MODIFICADO */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
+              <button 
+                onClick={handleAyuda} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 ¿Necesitas Ayuda?
-              </a>
-              <a onClick={() => alert('Términos')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Términos y Condiciones
-              </a>
-              <a onClick={() => alert('Políticas')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Políticas de Privacidad
-              </a>
-              <div className={inicioStyles['inicio-version']}>
-                v.0.10
-              </div>
+              </button>
+              <div className={inicioStyles['inicio-version']}>v.1.00</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Columna derecha - Logo (solo desktop) - redirige al home del negocio si existe */}
       <div className={inicioStyles['inicio-right']}>
         <div className={inicioStyles['inicio-right-content']}>
           <a href={esNegocioReal && negocioUrl ? `/negocio/${negocioUrl}` : '/'}>
@@ -227,6 +246,9 @@ export default function Especialidad() {
           </a>
         </div>
       </div>
+
+      {/* 👈 NUEVO: Modal de ayuda */}
+      <SolicitarServicioModal isOpen={modalAbierto} onClose={() => setModalAbierto(false)} />
     </div>
   );
 }
