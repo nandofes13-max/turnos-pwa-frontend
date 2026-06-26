@@ -4,6 +4,7 @@ import Breadcrumb from './Breadcrumb';
 import CarruselDias from './CarruselDias';
 import TarjetaProfesional from './TarjetaProfesional';
 import ConfirmarTurnoModal from './ConfirmarTurnoModal';
+import SolicitarServicioModal from './SolicitarServicioModal';
 import styles from '../styles/Agenda.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -48,13 +49,11 @@ export default function Agenda() {
   }>();
   const location = useLocation();
   
-  // Leer query params
   const queryParams = new URLSearchParams(location.search);
   const negocioIdFromQuery = queryParams.get('negocioId');
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
   const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // Prioridad: state > query params > parámetros de ruta > valores por defecto
   const { 
     actividadNombre, 
     especialidadNombre, 
@@ -73,7 +72,6 @@ export default function Agenda() {
 
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  // Prioridad: query params > parámetro de ruta > state
   const negocioUrl = negocioUrlFromQuery || negocioUrlParam || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const especialidadNombreFinal = especialidadNombre || 'Especialidad';
@@ -88,10 +86,24 @@ export default function Agenda() {
   const [centroTimezone, setCentroTimezone] = useState<string>('');
   
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false);
   const [slotSeleccionado, setSlotSeleccionado] = useState<{
     profesional: ProfesionalSlots;
     hora: string;
   } | null>(null);
+
+  // 👈 Funciones para el footer
+  const handleAyuda = () => {
+    setModalAyudaAbierto(true);
+  };
+
+  const handleTerminos = () => {
+    navigate('/terminos');
+  };
+
+  const handlePoliticas = () => {
+    navigate('/privacidad');
+  };
 
   useEffect(() => {
     const cargarCentro = async () => {
@@ -218,7 +230,6 @@ export default function Agenda() {
     setSlotSeleccionado(null);
   };
 
-  // Definir breadcrumb según si hay negocio o no
   const breadcrumbItems = [];
   
   if (esNegocioReal && negocioUrl) {
@@ -322,17 +333,30 @@ export default function Agenda() {
               />
             )}
 
+            {/* 👈 FOOTER MODIFICADO */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
+              <button 
+                onClick={handleAyuda} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 ¿Necesitas Ayuda?
-              </a>
-              <a onClick={() => alert('Términos')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Términos y Condiciones
-              </a>
-              <a onClick={() => alert('Políticas')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Políticas de Privacidad
-              </a>
-              <div className={inicioStyles['inicio-version']}>v.0.10</div>
+              </button>
+              <div className={inicioStyles['inicio-version']}>v.1.00</div>
             </div>
           </div>
         </div>
@@ -349,6 +373,9 @@ export default function Agenda() {
           </a>
         </div>
       </div>
+
+      {/* 👈 NUEVO: Modal de ayuda */}
+      <SolicitarServicioModal isOpen={modalAyudaAbierto} onClose={() => setModalAyudaAbierto(false)} />
     </div>
   );
 }
