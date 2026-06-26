@@ -94,7 +94,7 @@ export default function Terminos() {
 
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
               <button onClick={handleVolver} className="tm-btn-secundario" style={{ padding: '0.4rem 1.5rem', fontSize: '0.9rem' }}>
-                Volver al inicio
+                Volver
               </button>
             </div>
           </div>
