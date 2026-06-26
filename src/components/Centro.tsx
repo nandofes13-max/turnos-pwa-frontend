@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Breadcrumb from './Breadcrumb';
+import SolicitarServicioModal from './SolicitarServicioModal'; // 👈 NUEVO
 import styles from '../styles/Centro.module.css';
 import inicioStyles from '../styles/Inicio.module.css';
 
@@ -30,13 +31,11 @@ export default function Centro() {
   }>();
   const location = useLocation();
   
-  // Leer query params
   const queryParams = new URLSearchParams(location.search);
   const negocioIdFromQuery = queryParams.get('negocioId');
   const negocioNombreFromQuery = queryParams.get('negocioNombre');
   const negocioUrlFromQuery = queryParams.get('negocioUrl');
   
-  // Prioridad: state > query params > parámetros de ruta > valores por defecto
   const { 
     actividadNombre, 
     especialidadNombre,
@@ -53,7 +52,6 @@ export default function Centro() {
   
   const negocioId = negocioIdFromState || negocioIdFromQuery || 6;
   const negocioNombre = negocioNombreFromState || negocioNombreFromQuery || 'DEMO';
-  // Prioridad: query params > parámetro de ruta > state
   const negocioUrl = negocioUrlFromQuery || negocioUrlParam || negocioUrlFromState || null;
   const actividadNombreFinal = actividadNombre || 'Actividad';
   const especialidadNombreFinal = especialidadNombre || 'Especialidad';
@@ -65,6 +63,7 @@ export default function Centro() {
   const [loading, setLoading] = useState(true);
   const [modalCentro, setModalCentro] = useState<CentroType | null>(null);
   const [cargandoDireccion, setCargandoDireccion] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false); // 👈 NUEVO
 
   const formatearDireccion = (centro: CentroType): string => {
     if (centro.es_virtual) return 'Centro virtual';
@@ -81,6 +80,19 @@ export default function Centro() {
     }
     
     return centro.formatted_address || 'Dirección no disponible';
+  };
+
+  // 👈 NUEVO: Funciones para el footer
+  const handleAyuda = () => {
+    setModalAbierto(true);
+  };
+
+  const handleTerminos = () => {
+    navigate('/terminos');
+  };
+
+  const handlePoliticas = () => {
+    navigate('/privacidad');
   };
 
   const obtenerCentroCompleto = async (centroId: number): Promise<Partial<CentroType>> => {
@@ -122,13 +134,11 @@ export default function Centro() {
     });
   };
 
-  // Definir breadcrumb según si hay negocio o no
   const breadcrumbItems = [];
   
   if (esNegocioReal && negocioUrl) {
     breadcrumbItems.push({ label: negocioNombre, path: `/negocio/${negocioUrl}` });
     breadcrumbItems.push({ label: 'Actividad', path: `/negocio/${negocioUrl}/actividad` });
-    // ✅ Pasar negocioNombre en la URL para que Especialidad lo reciba
     breadcrumbItems.push({ 
       label: 'Especialidad', 
       path: `/negocio/${negocioUrl}/actividad/${actividadId}/especialidad?negocioId=${negocioId}&negocioNombre=${encodeURIComponent(negocioNombre)}&negocioUrl=${negocioUrl}`
@@ -267,19 +277,30 @@ export default function Centro() {
               </div>
             )}
 
+            {/* 👈 FOOTER MODIFICADO */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={() => alert('Ayuda')} className={inicioStyles['inicio-footer-link']}>
+              <button 
+                onClick={handleAyuda} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 ¿Necesitas Ayuda?
-              </a>
-              <a onClick={() => alert('Términos')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Términos y Condiciones
-              </a>
-              <a onClick={() => alert('Políticas')} className={inicioStyles['inicio-footer-link']}>
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 Políticas de Privacidad
-              </a>
-              <div className={inicioStyles['inicio-version']}>
-                v.0.10
-              </div>
+              </button>
+              <div className={inicioStyles['inicio-version']}>v.1.00</div>
             </div>
           </div>
         </div>
@@ -341,6 +362,9 @@ export default function Centro() {
           </div>
         </div>
       )}
+
+      {/* 👈 NUEVO: Modal de ayuda */}
+      <SolicitarServicioModal isOpen={modalAbierto} onClose={() => setModalAbierto(false)} />
     </div>
   );
 }
