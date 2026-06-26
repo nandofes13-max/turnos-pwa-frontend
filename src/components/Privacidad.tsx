@@ -11,7 +11,7 @@ export default function Privacidad() {
   }, []);
 
   const handleVolver = () => {
-    navigate('/');
+    navigate(-1);
     window.scrollTo(0, 0);
   };
 
