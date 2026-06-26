@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaHeartbeat, 
   FaCrown, 
@@ -96,11 +95,20 @@ export default function Actividad() {
     cargarActividades();
   }, []);
 
-  const handleAyuda = () => alert('Funcionalidad demo: Ayuda');
-  const handleTerminos = () => alert('Funcionalidad demo: Términos y Condiciones');
-  const handlePoliticas = () => alert('Funcionalidad demo: Políticas de Privacidad');
+  // 👈 NUEVO: Funciones para el footer
+  const handleAyuda = () => {
+    setModalAbierto(true);
+  };
 
-  // ✅ Manejar clic en el botón especial
+  const handleTerminos = () => {
+    navigate('/terminos');
+  };
+
+  const handlePoliticas = () => {
+    navigate('/privacidad');
+  };
+
+  // ✅ Manejar clic en el botón especial de solicitar servicio
   const handleSolicitarServicio = () => {
     setModalAbierto(true);
   };
@@ -173,11 +181,30 @@ export default function Actividad() {
               })}
             </div>
 
+            {/* 👈 FOOTER MODIFICADO */}
             <div className={inicioStyles['inicio-footer']}>
-              <a onClick={handleAyuda} className={inicioStyles['inicio-footer-link']}>¿Necesitas Ayuda?</a>
-              <a onClick={handleTerminos} className={inicioStyles['inicio-footer-link']}>Términos y Condiciones</a>
-              <a onClick={handlePoliticas} className={inicioStyles['inicio-footer-link']}>Políticas de Privacidad</a>
-              <div className={inicioStyles['inicio-version']}>v.0.10</div>
+              <button 
+                onClick={handleAyuda} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                ¿Necesitas Ayuda?
+              </button>
+              <button 
+                onClick={handleTerminos} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Términos y Condiciones
+              </button>
+              <button 
+                onClick={handlePoliticas} 
+                className={inicioStyles['inicio-footer-link']}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Políticas de Privacidad
+              </button>
+              <div className={inicioStyles['inicio-version']}>v.1.00</div>
             </div>
           </div>
         </div>
