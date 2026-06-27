@@ -60,7 +60,7 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Cómo empiezo a usarlo?',
-      respuesta: 'Solicitá tu agenda gratis en https://turnos-pwa-frontend.onrender.com/solicitar-agenda. Solo necesitas crear tu cuenta, configurar tu negocio, servicios y horarios. En menos de 20 minutos ya podés recibir reservas online.'
+      respuesta: 'Solicitá tu agenda gratis. Solo necesitas crear tu cuenta, configurar tu negocio, servicios y horarios. En menos de 20 minutos ya podés recibir reservas online.'
     },
     {
       pregunta: '¿Cuánto cuesta?',
