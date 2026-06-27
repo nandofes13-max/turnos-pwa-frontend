@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import styles from '../styles/Inicio.module.css';
-import SolicitarServicioModal from './SolicitarServicioModal'; // 👈 NUEVO
+import SolicitarServicioModal from './SolicitarServicioModal';
 
 // Componente de acordeón para preguntas frecuentes
 const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string }) => {
@@ -28,7 +28,7 @@ const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string 
 
 export default function Inicio() {
   const navigate = useNavigate();
-  const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false); // 👈 NUEVO
+  const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false);
 
   const handleDemo = () => {
     navigate('/actividad');
@@ -38,17 +38,14 @@ export default function Inicio() {
     navigate('/solicitar-agenda');
   };
 
-  // 👈 NUEVO: Abre el modal de ayuda
   const handleAyuda = () => {
     setModalAyudaAbierto(true);
   };
 
-  // 👈 NUEVO: Redirigir a Términos y Condiciones
   const handleTerminos = () => {
     navigate('/terminos');
   };
 
-  // 👈 NUEVO: Redirigir a Política de Privacidad
   const handlePoliticas = () => {
     navigate('/privacidad');
   };
@@ -71,13 +68,27 @@ export default function Inicio() {
       respuesta: 'No, todo es configurable desde un panel administrativo simple e intuitivo. No necesitas conocimientos técnicos.'
     },
     {
-      pregunta: '¿Qué servicios ofrecen??',
-      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. Gestión de Turnos Online => Obtené tu link de Gestión. Notificación del turno por email => tanto para vos como para tu cliente..'
-    }
-
-     {
+      pregunta: '¿Qué servicios ofrecen?',
+      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. Gestión de Turnos Online => Obtené tu link de Gestión. Notificación del turno por email => tanto para vos como para tu cliente.'
+    },
+    {
       pregunta: '¿Por qué es GRATIS?',
-      respuesta: 'Nuestro modelo de negocios se basa en la brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
+      respuesta: 'Nuestro modelo de negocios se basa en brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
+    },
+    // 👇 NUEVAS PREGUNTAS AGREGADAS
+    {
+      pregunta: '¿Cómo hago para tener más profesionales-agendas, centros, etc.?',
+      respuesta: 'En el caso de que tu organización necesite más profesionales-agendas, centros, etc., solicitalos en la ayuda y si está dentro de nuestras posibilidades de brindar el servicio gratis lo haremos, caso contrario se realizará cotización de los insumos - recursos que requiera la implementación.'
+    },
+    {
+      pregunta: '¿Tienen pensado agregar más funcionalidades?',
+      respuesta: `Próximas Funcionalidades en desarrollo y evaluando si podemos ofrecerlas GRATIS:
+• Configuración días no laborables (Gratis)
+• Recordatorios por mail (Gratis)
+• Pago de Reservas (Gratis)
+• Descuentos por días o por código
+• Historial de turnos
+• Recordatorios por what'sapp (en evaluación)`
     }
   ];
 
@@ -174,7 +185,7 @@ export default function Inicio() {
         </div>
       </div>
 
-      {/* 👈 NUEVO: Modal de ayuda */}
+      {/* Modal de ayuda */}
       <SolicitarServicioModal isOpen={modalAyudaAbierto} onClose={() => setModalAyudaAbierto(false)} />
     </div>
   );
