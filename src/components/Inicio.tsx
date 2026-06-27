@@ -64,15 +64,20 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Cuánto cuesta?',
-      respuesta: 'Tenemos un plan gratuito sin límite de turnos. Para negocios que necesiten más funcionalidades, hay planes pagos desde $6.900 por mes. Sin comisiones por turno reservado.'
+      respuesta: 'El sistema está diseñado como una herramienta 100% GRATIS para profesionales independientes o micropymes.'
     },
     {
       pregunta: '¿Necesito saber programación?',
       respuesta: 'No, todo es configurable desde un panel administrativo simple e intuitivo. No necesitas conocimientos técnicos.'
     },
     {
-      pregunta: '¿Puedo tener varios profesionales?',
-      respuesta: 'Sí, cada profesional puede tener su propia agenda con accesos independientes. Vos tenés el control total.'
+      pregunta: '¿Qué servicios ofrecen??',
+      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. Gestión de Turnos Online => Obtené tu link de Gestión. Notificación del turno por email => tanto para vos como para tu cliente..'
+    }
+
+     {
+      pregunta: '¿Por qué es GRATIS?',
+      respuesta: 'Nuestro modelo de negocios se basa en la brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
     }
   ];
 
