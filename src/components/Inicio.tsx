@@ -71,6 +71,12 @@ export default function Inicio() {
       pregunta: '¿Qué servicios ofrecen?',
       respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. Gestión de Turnos Online => Obtené tu link de Gestión. Notificación del turno por email => tanto para vos como para tu cliente.'
     },
+
+    {
+      pregunta: '¿Soy Profesional de la salud, puedo brindar el servicio de Teleconsulta??',
+      respuesta: 'Sí, nuestras agendas pueden configurarse para brindar turnos en cualquier parte del mundo respetando los horarios de los turnos según su "Zona-Horaria".'
+    },
+    
     {
       pregunta: '¿Por qué es GRATIS?',
       respuesta: 'Nuestro modelo de negocios se basa en brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
