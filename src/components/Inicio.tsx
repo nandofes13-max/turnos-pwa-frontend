@@ -82,13 +82,13 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Tienen pensado agregar más funcionalidades?',
-      respuesta: `Próximas Funcionalidades en desarrollo y evaluando si podemos ofrecerlas GRATIS:
-• Configuración días no laborables (Gratis)
-• Recordatorios por mail (Gratis)
-• Pago de Reservas (Gratis)
+      respuesta: `Próximas Funcionalidades en desarrollo:
+• Configuración días no laborables
+• Recordatorios por mail 
+• Pago de Reservas
 • Descuentos por días o por código
 • Historial de turnos
-• Recordatorios por what'sapp (en evaluación)`
+• Recordatorios por what'sApp`
     }
   ];
 
