@@ -83,7 +83,7 @@ export default function Inicio() {
     },
 
      {
-      pregunta: 'Cuando ingreso me aparece "Cargando actividades" o "Cargando actividades" ¿Por qué la demora?',
+      pregunta: 'Cuando ingreso me aparece "Cargando actividades ... " o "Cargando agenda ... " ¿Por qué la demora?',
       respuesta: 'Como PWA-Turnos utiliza infraestructura gratuita, el servidor puede entrar en reposo cuando no hay actividad. La primera conexión puede tardar unos segundos mientras se reactiva. Después de eso, la aplicación funciona con normalidad.'
     },
     // 👇 NUEVAS PREGUNTAS AGREGADAS
