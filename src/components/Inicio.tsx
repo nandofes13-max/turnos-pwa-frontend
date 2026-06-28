@@ -99,7 +99,7 @@ export default function Inicio() {
 • Pago de Reservas
 • Descuentos por días o por código
 • Historial de turnos
-• Recordatorios por what'sApp`
+• Recordatorios por WhatsApp`
     }
   ];
 
