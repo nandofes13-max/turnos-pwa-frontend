@@ -89,7 +89,7 @@ export default function Inicio() {
     // 👇 NUEVAS PREGUNTAS AGREGADAS
     {
       pregunta: '¿Cómo hago para tener más profesionales-agendas, centros, etc.?',
-      respuesta: 'En el caso de que tu organización necesite más profesionales-agendas, centros, etc., solicitalos en la ayuda y si está dentro de nuestras posibilidades de brindar el servicio gratis lo haremos, caso contrario se realizará cotización de los insumos - recursos que requiera la implementación.'
+      respuesta: 'Si tu organización necesita agregar más profesionales, centros o funcionalidades, escribinos desde la sección Ayuda. Analizaremos tu caso y te ofreceremos la mejor alternativa según tus necesidades.'
     },
     {
       pregunta: '¿Tienen pensado agregar más funcionalidades?',
