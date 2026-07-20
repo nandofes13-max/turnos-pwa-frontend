@@ -530,7 +530,8 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
                 
                 {limiteAlcanzado && !mostrarFormularioCarga && !mostrarMensajeExito && (
                   <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginTop: '16px' }}>
-                    ⚠️ Límite de centros físicos alcanzado. Si necesita más, comuníquese con la ayuda.
+                    ¿Necesitás agregar más?
+                    Escribinos desde Ayuda y te ayudamos a ampliar tu cuenta.
                   </div>
                 )}
                 
