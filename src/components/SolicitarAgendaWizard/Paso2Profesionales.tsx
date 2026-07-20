@@ -813,7 +813,8 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
               
               {limiteAlcanzado && (
                 <div className={styles.direccionConfirmada} style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', color: '#92400e', marginBottom: '16px' }}>
-                  ⚠️ Límite de profesionales alcanzado. Solo se permite un profesional por negocio. Si necesita más, comuníquese con la ayuda.
+                  ¿Necesitás agregar más?
+                  Escribinos desde Ayuda y te ayudamos a ampliar tu cuenta.
                 </div>
               )}
               
