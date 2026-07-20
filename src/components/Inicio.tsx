@@ -69,7 +69,23 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Qué servicios ofrecen?',
-      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. Gestión de Turnos Online => Obtené tu link de Gestión. Notificación del turno por email => tanto para vos como para tu cliente.'
+      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. 
+
+Gestión de Turnos Online => Obtené tu link de Gestión. 
+
+Notificación del turno por email => tanto para vos como para tu cliente.
+
+Plan Gratuito
+
+✅ 1 profesional
+
+✅ 2 centros físicos
+
+✅ 1 centro virtual
+
+✅ Turnos ilimitados
+
+✅ Agenda online 24x7'
     },
 
     {
