@@ -69,36 +69,26 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Qué servicios ofrecen?',
-      respuesta: 'Agenda Online 24/7 => Obtené tu link para redes sociales. 
-
-Gestión de Turnos Online => Obtené tu link de Gestión. 
-
+      respuesta: `Agenda Online 24/7 => Obtené tu link para redes sociales.
+Gestión de Turnos Online => Obtené tu link de Gestión.
 Notificación del turno por email => tanto para vos como para tu cliente.
 
 Plan Gratuito
-
 ✅ 1 profesional
-
 ✅ 2 centros físicos
-
 ✅ 1 centro virtual
-
 ✅ Turnos ilimitados
-
-✅ Agenda online 24x7'
+✅ Agenda online 24x7`
     },
-
     {
       pregunta: '¿Soy Profesional de la salud, puedo brindar el servicio de Teleconsulta?',
       respuesta: 'Sí, nuestras agendas pueden configurarse para brindar turnos en cualquier parte del mundo respetando los horarios de los turnos según su "Zona-Horaria".'
     },
-    
     {
       pregunta: '¿Por qué es GRATIS?',
       respuesta: 'Nuestro modelo de negocios se basa en brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
     },
-
-     {
+    {
       pregunta: 'Cuando ingreso me aparece "Cargando actividades ... " o "Cargando agenda ... " ¿Por qué la demora?',
       respuesta: 'Como PWA-Turnos utiliza infraestructura gratuita, el servidor puede entrar en reposo cuando no hay actividad. La primera conexión puede tardar unos segundos mientras se reactiva. Después de eso, la aplicación funciona con normalidad.'
     },
@@ -111,7 +101,7 @@ Plan Gratuito
       pregunta: '¿Tienen pensado agregar más funcionalidades?',
       respuesta: `Próximas Funcionalidades en desarrollo:
 • Configuración días no laborables
-• Recordatorios por mail 
+• Recordatorios por mail
 • Pago de Reservas
 • Descuentos por días o por código
 • Historial de turnos
