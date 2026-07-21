@@ -115,7 +115,7 @@ export default function Inicio() {
 
           <div className={styles['inicio-card']}>
             <h1 className={styles['inicio-titulo']}>Te damos la Bienvenida</h1>
-            <p className={styles['inicio-subtitulo']}> Gestioná tus turnos de manera simple y eficiente</p>
+            <p className={styles['inicio-subtitulo']}>Gestioná tus turnos de manera simple y eficiente</p>
 
             {/* Botones */}
             <div className={styles['inicio-botones']}>
@@ -136,6 +136,58 @@ export default function Inicio() {
               </button>
             </div>
 
+            {/* 👈 NUEVO: Badges pequeños */}
+            <div className={styles['inicio-badges']}>
+              <span className={styles['inicio-badge']}>✅ Sin tarjeta de crédito</span>
+              <span className={styles['inicio-badge']}>📱 Sin instalar aplicaciones</span>
+              <span className={styles['inicio-badge']}>⚡ Lista en menos de 20 minutos</span>
+            </div>
+
+            {/* 👈 NUEVO: Frase destacada */}
+            <p className={styles['inicio-frase-destacada']}>
+              Agenda online GRATIS para profesionales independientes y pequeños negocios.
+            </p>
+
+            {/* 👈 NUEVO: Sección de BENEFICIOS */}
+            <div className={styles['inicio-beneficios']}>
+              <h2 className={styles['inicio-beneficios-titulo']}>BENEFICIOS</h2>
+              
+              <div className={styles['inicio-beneficio-item']}>
+                <span className={styles['inicio-beneficio-icono']}>🕒</span>
+                <div>
+                  <h3 className={styles['inicio-beneficio-titulo']}>Tus clientes reservan las 24 horas</h3>
+                  <p className={styles['inicio-beneficio-descripcion']}>
+                    Aunque tu negocio esté cerrado, tus clientes pueden seguir reservando turnos desde cualquier dispositivo.
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles['inicio-beneficio-item']}>
+                <span className={styles['inicio-beneficio-icono']}>📱</span>
+                <div>
+                  <h3 className={styles['inicio-beneficio-titulo']}>Funciona desde cualquier celular</h3>
+                  <p className={styles['inicio-beneficio-descripcion']}>
+                    No necesitan descargar aplicaciones. Solo compartís tu enlace y empezás a recibir reservas.
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles['inicio-beneficio-item']}>
+                <span className={styles['inicio-beneficio-icono']}>⚡</span>
+                <div>
+                  <h3 className={styles['inicio-beneficio-titulo']}>Configuración rápida</h3>
+                  <p className={styles['inicio-beneficio-descripcion']}>
+                    En menos de 20 minutos podés tener configurado tu negocio y comenzar a recibir reservas online.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 👈 NUEVO: Frase final de beneficios */}
+            <p className={styles['inicio-frase-final']}>
+              Tus clientes reservan turnos. Vos dedicás tu tiempo a trabajar.
+            </p>
+
             {/* Preguntas Frecuentes */}
             <div className={styles['faq-section']}>
               <h2 className={styles['faq-titulo']}>Preguntas Frecuentes</h2>
@@ -144,6 +196,22 @@ export default function Inicio() {
                   <FaqItem key={index} pregunta={item.pregunta} respuesta={item.respuesta} />
                 ))}
               </div>
+            </div>
+
+            {/* 👈 NUEVO: Última llamada a la acción */}
+            <div className={styles['inicio-cta-final']}>
+              <h2 className={styles['inicio-cta-titulo']}>¿Listo para empezar?</h2>
+              <p className={styles['inicio-cta-descripcion']}>
+                Miles de profesionales todavía gestionan sus turnos por WhatsApp.<br />
+                Con PWA-Turnos, tus clientes pueden reservar online cuando quieran.
+              </p>
+              <button 
+                onClick={handleSolicitarAgenda}
+                className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
+                style={{ marginTop: '16px' }}
+              >
+                🚀 Creá tu agenda GRATIS
+              </button>
             </div>
 
             {/* Footer */}
