@@ -203,7 +203,7 @@ export default function Inicio() {
             <div className={styles['inicio-cta-final']}>
               <h2 className={styles['inicio-cta-titulo']}>¿Listo para empezar?</h2>
               <p className={styles['inicio-cta-descripcion']}>
-                Miles de profesionales todavía gestionan sus turnos por WhatsApp.<br />
+                Todavía muchos profesionales gestionan sus turnos por WhatsApp.<br />
                 Con PWA-Turnos, tus clientes pueden reservar online cuando quieran.
               </p>
               <button 
