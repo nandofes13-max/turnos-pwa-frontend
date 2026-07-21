@@ -471,3 +471,47 @@
     font-size: 1.2rem;
   }
 }
+
+/* ============================================================
+   ESTILOS PARA LA IMAGEN ENTRE BENEFICIOS Y FAQ
+   ============================================================ */
+
+.inicio-imagen-container {
+  margin: 2.5rem 0 2rem 0;
+  text-align: center;
+}
+
+.inicio-imagen-titulo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.inicio-imagen {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.inicio-imagen-texto {
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-align: center;
+  margin-top: 0.75rem;
+  font-weight: 400;
+}
+
+/* Responsive para la imagen */
+@media (max-width: 640px) {
+  .inicio-imagen {
+    border-radius: 8px;
+  }
+  
+  .inicio-imagen-texto {
+    font-size: 0.8rem;
+  }
+}
