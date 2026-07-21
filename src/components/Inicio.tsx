@@ -115,10 +115,8 @@ export default function Inicio() {
           </div>
 
           <div className={styles['inicio-card']}>
-            {/* 👈 NUEVO TÍTULO */}
             <h1 className={styles['inicio-titulo']}>¿Todavía gestionás turnos por WhatsApp?</h1>
             
-            {/* 👈 NUEVO SUBTÍTULO */}
             <p className={styles['inicio-subtitulo']}>
               Tus clientes reservan turnos. Vos dedicás tu tiempo a trabajar.
               <br />
@@ -127,7 +125,6 @@ export default function Inicio() {
 
             {/* Botones */}
             <div className={styles['inicio-botones']}>
-              {/* 1. Demo */}
               <button 
                 onClick={handleDemo}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
@@ -135,7 +132,6 @@ export default function Inicio() {
                ▶ Ver PWA-Turnos en acción (1 min)
               </button>
 
-              {/* 2. Solicitar Agenda Gratis */}
               <button 
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
@@ -150,8 +146,6 @@ export default function Inicio() {
               <span className={styles['inicio-badge']}>📱 Sin instalar aplicaciones</span>
               <span className={styles['inicio-badge']}>⚡ Lista en pocos minutos</span>
             </div>
-
-            {/* 👈 FRASE ELIMINADA */}
 
             {/* Sección de BENEFICIOS */}
             <div className={styles['inicio-beneficios']}>
@@ -188,7 +182,24 @@ export default function Inicio() {
               </div>
             </div>
 
-         
+            {/* 👈 IMAGEN AGREGADA AQUÍ (después de beneficios, antes de FAQ) */}
+            <div className={styles['inicio-imagen-container']}>
+              <h3 className={styles['inicio-imagen-titulo']}>
+                Reservar un turno es así de simple.
+              </h3>
+              
+              <img 
+                src="/agenda.png" 
+                alt="Compartí tu enlace y empezá a recibir reservas como ésta" 
+                className={styles['inicio-imagen']}
+                loading="lazy"
+              />
+              
+              <p className={styles['inicio-imagen-texto']}>
+                Compartí tu enlace y empezá a recibir reservas como ésta.
+              </p>
+            </div>
+
             {/* Preguntas Frecuentes */}
             <div className={styles['faq-section']}>
               <h2 className={styles['faq-titulo']}>Preguntas Frecuentes</h2>
