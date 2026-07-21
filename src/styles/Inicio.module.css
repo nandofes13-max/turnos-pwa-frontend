@@ -325,3 +325,150 @@
     font-size: 1rem;
   }
 }
+
+/* ============================================================
+   NUEVOS ESTILOS PARA BADGES, BENEFICIOS Y CTA
+   Basados en el diseño de Empreturnos
+   ============================================================ */
+
+/* ----- BADGES (pequeños debajo de los botones) ----- */
+.inicio-badges {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.inicio-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #4b5563;
+  background-color: transparent;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ----- FRASE DESTACADA (debajo de badges) ----- */
+.inicio-frase-destacada {
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-align: center;
+  margin-top: 0.25rem;
+  margin-bottom: 2rem;
+  font-weight: 400;
+}
+
+/* ----- SECCIÓN DE BENEFICIOS ----- */
+.inicio-beneficios {
+  margin: 2.5rem 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.inicio-beneficios-titulo {
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.inicio-beneficio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.8rem;
+}
+
+.inicio-beneficio-icono {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.inicio-beneficio-titulo {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.2rem;
+}
+
+.inicio-beneficio-descripcion {
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ----- FRASE FINAL (después de beneficios) ----- */
+.inicio-frase-final {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #1f2937;
+  text-align: center;
+  margin: 2.5rem 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ----- ÚLTIMA LLAMADA A LA ACCIÓN (CTA FINAL) ----- */
+.inicio-cta-final {
+  text-align: center;
+  background-color: #f9fafb;
+  padding: 2rem 1.5rem;
+  border-radius: 12px;
+  margin: 2.5rem 0;
+}
+
+.inicio-cta-titulo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.8rem;
+}
+
+.inicio-cta-descripcion {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 0rem;
+}
+
+.inicio-cta-final .inicio-btn-solicitar {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inicio-cta-final .inicio-btn-solicitar:hover {
+  background-color: #2563eb;
+}
+
+/* ----- RESPONSIVE PARA LOS NUEVOS ELEMENTOS ----- */
+@media (max-width: 640px) {
+  .inicio-badges {
+    gap: 0.5rem;
+  }
+  .inicio-badge {
+    font-size: 0.7rem;
+  }
+  .inicio-beneficio-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .inicio-cta-titulo {
+    font-size: 1.2rem;
+  }
+}
