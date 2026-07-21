@@ -439,8 +439,9 @@
   margin-bottom: 0rem;
 }
 
+/* 👈 ESTA REGLA SE ELIMINÓ PARA QUE HEREDE EL COLOR VERDE DE .inicio-btn-solicitar */
 .inicio-cta-final .inicio-btn-solicitar {
-  background-color: #3b82f6;
+  /* background-color: #3b82f6;  ← ELIMINADO: ahora hereda el verde de .inicio-btn-solicitar */
   color: white;
   border: none;
   padding: 0.75rem 2rem;
@@ -451,9 +452,7 @@
   transition: background-color 0.2s;
 }
 
-.inicio-cta-final .inicio-btn-solicitar:hover {
-  background-color: #2563eb;
-}
+/* El hover ya está definido en .inicio-btn-solicitar:hover, no es necesario repetirlo */
 
 /* ----- RESPONSIVE PARA LOS NUEVOS ELEMENTOS ----- */
 @media (max-width: 640px) {
