@@ -188,11 +188,7 @@ export default function Inicio() {
               </div>
             </div>
 
-            {/* Frase final de beneficios */}
-            <p className={styles['inicio-frase-final']}>
-              Tus clientes reservan turnos. Vos dedicás tu tiempo a trabajar.
-            </p>
-
+         
             {/* Preguntas Frecuentes */}
             <div className={styles['faq-section']}>
               <h2 className={styles['faq-titulo']}>Preguntas Frecuentes</h2>
