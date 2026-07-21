@@ -35,7 +35,7 @@ export default function Inicio() {
   };
 
   const handleSolicitarAgenda = () => {
-    window.scrollTo(0, 0); // 👈 FORZAR SCROLL AL INICIO
+    window.scrollTo(0, 0);
     navigate('/solicitar-agenda');
   };
 
@@ -115,8 +115,15 @@ export default function Inicio() {
           </div>
 
           <div className={styles['inicio-card']}>
-            <h1 className={styles['inicio-titulo']}>Te damos la Bienvenida</h1>
-            <p className={styles['inicio-subtitulo']}>Gestioná tus turnos de manera simple y eficiente</p>
+            {/* 👈 NUEVO TÍTULO */}
+            <h1 className={styles['inicio-titulo']}>¿Todavía gestionás turnos por WhatsApp?</h1>
+            
+            {/* 👈 NUEVO SUBTÍTULO */}
+            <p className={styles['inicio-subtitulo']}>
+              Tus clientes reservan turnos. Vos dedicás tu tiempo a trabajar.
+              <br />
+              Creá tu agenda en pocos minutos, compartí tu enlace y empezá a recibir reservas las 24 horas, desde cualquier dispositivo.
+            </p>
 
             {/* Botones */}
             <div className={styles['inicio-botones']}>
@@ -144,10 +151,7 @@ export default function Inicio() {
               <span className={styles['inicio-badge']}>⚡ Lista en menos de 20 minutos</span>
             </div>
 
-            {/* Frase destacada */}
-            <p className={styles['inicio-frase-destacada']}>
-              Agenda online GRATIS para profesionales independientes y pequeños negocios.
-            </p>
+            {/* 👈 FRASE ELIMINADA */}
 
             {/* Sección de BENEFICIOS */}
             <div className={styles['inicio-beneficios']}>
