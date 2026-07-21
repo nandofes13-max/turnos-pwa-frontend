@@ -111,6 +111,7 @@ export default function SolicitarAgendaWizard() {
   const confirmarCancelar = () => {
     setMostrarConfirmacionCancelar(false);
     navigate('/');
+    window.scrollTo(0, 0); // 👈 AGREGAR ESTA LÍNEA
   };
 
   const cancelarCancelar = () => {
