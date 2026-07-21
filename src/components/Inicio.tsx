@@ -52,60 +52,48 @@ export default function Inicio() {
 
   const preguntasFrecuentes = [
     {
-      pregunta: '¿Qué es PWA Turnos?',
-      respuesta: 'Es un sistema de gestión de turnos online que permite a tus clientes reservar turnos 24/7 desde cualquier dispositivo, sin necesidad de descargar una app.'
-    },
-    {
-      pregunta: '¿Cómo empiezo a usarlo?',
-      respuesta: 'Solicitá tu agenda gratis. Solo necesitas crear tu cuenta, configurar tu negocio, servicios y horarios. En menos de 20 minutos ya podés recibir reservas online.'
+      pregunta: '¿Qué es PWA-Turnos?',
+      respuesta: 'PWA-Turnos es una agenda online que permite a tus clientes reservar turnos las 24 horas, desde cualquier celular, tablet o computadora, sin necesidad de descargar una aplicación.\n\nVos administrás todo desde un panel simple e intuitivo, mientras que tus clientes pueden reservar cuando quieran, incluso fuera de tu horario de atención.\n\n>>> Tus clientes reservan. Vos dedicás tu tiempo a trabajar.'
     },
     {
       pregunta: '¿Cuánto cuesta?',
-      respuesta: 'El sistema está diseñado como una herramienta 100% GRATIS para profesionales independientes o micropymes.'
+      respuesta: 'PWA-Turnos es 100% GRATIS para profesionales independientes y pequeños negocios.\n\nPodés comenzar a utilizarla sin costo y sin límite de tiempo dentro de las características incluidas en el Plan Gratuito.'
     },
     {
-      pregunta: '¿Necesito saber programación?',
-      respuesta: 'No, todo es configurable desde un panel administrativo simple e intuitivo. No necesitas conocimientos técnicos.'
+      pregunta: '¿Cómo empiezo a usarlo?',
+      respuesta: 'Creá tu cuenta gratuita, configurá tu negocio, los servicios que ofrecés y tus horarios.\nEn menos de 20 minutos ya podés comenzar a recibir reservas online.'
     },
     {
-      pregunta: '¿Qué servicios ofrecen?',
-      respuesta: `Agenda Online 24/7 => Obtené tu link para redes sociales.
-Gestión de Turnos Online => Obtené tu link de Gestión.
-Notificación del turno por email => tanto para vos como para tu cliente.
-
-Plan Gratuito
-✅ 1 profesional
-✅ 2 centros físicos
-✅ 1 centro virtual
-✅ Turnos ilimitados
-✅ Agenda online 24x7`
+      pregunta: '¿Qué servicios ofrece PWA-Turnos?',
+      respuesta: `• Agenda Online 24/7\n  Obtené un enlace para compartir en redes sociales, WhatsApp o tu sitio web.\n\n• Gestión de Turnos\n  Administrá toda tu agenda desde un panel simple.\n\n• Notificaciones por Email\n  Vos y tu cliente reciben una confirmación automática de cada reserva.\n\nPLAN GRATUITO\n\n✓ 1 profesional\n✓ 2 centros físicos\n✓ 1 centro virtual\n✓ Turnos ilimitados\n✓ Agenda online disponible las 24 horas`
     },
     {
-      pregunta: '¿Soy Profesional de la salud, puedo brindar el servicio de Teleconsulta?',
-      respuesta: 'Sí, nuestras agendas pueden configurarse para brindar turnos en cualquier parte del mundo respetando los horarios de los turnos según su "Zona-Horaria".'
+      pregunta: '¿Necesito instalar una aplicación?',
+      respuesta: 'No. Ni vos ni tus clientes necesitan instalar nada. Todo funciona desde el navegador.'
     },
     {
-      pregunta: '¿Por qué es GRATIS?',
-      respuesta: 'Nuestro modelo de negocios se basa en brindar soluciones Gratis para profesionales independientes o micropymes, como contrapartida, obtenemos el testeo de la herramienta, promoción del "boca a boca" de nuestros servicios para futuros clientes de mayor volumen y capacidad de pago.'
+      pregunta: '¿Necesito conocimientos técnicos?',
+      respuesta: 'No. Todo se configura desde un panel simple e intuitivo.'
     },
     {
-      pregunta: 'Cuando ingreso me aparece "Cargando actividades ... " o "Cargando agenda ... " ¿Por qué la demora?',
-      respuesta: 'Como PWA-Turnos utiliza infraestructura gratuita, el servidor puede entrar en reposo cuando no hay actividad. La primera conexión puede tardar unos segundos mientras se reactiva. Después de eso, la aplicación funciona con normalidad.'
+      pregunta: '¿Qué tipos de negocios pueden utilizar PWA-Turnos?',
+      respuesta: `PWA-Turnos está pensado para cualquier actividad que trabaje con turnos, por ejemplo:\n\n💈 Barberías\n✂️ Peluquerías\n💆 Centros de estética\n🐾 Veterinarias\n🩺 Consultorios médicos\n🧠 Psicólogos\n🦷 Odontólogos\n💪 Kinesiólogos\n🥗 Nutricionistas\n💆‍♂️ Masajistas\n🎨 Estudios de tatuajes\n⚽ Canchas de fútbol\n🏓 Canchas de pádel\n📌 Y muchas otras actividades.`
     },
-    // 👇 NUEVAS PREGUNTAS AGREGADAS
     {
-      pregunta: '¿Cómo hago para tener más profesionales-agendas, centros, etc.?',
-      respuesta: 'Si tu organización necesita agregar más profesionales, centros o funcionalidades, escribinos desde la sección Ayuda. Analizaremos tu caso y te ofreceremos la mejor alternativa según tus necesidades.'
+      pregunta: '¿Puedo brindar teleconsultas?',
+      respuesta: 'Sí. Podés configurar agendas virtuales y atender respetando automáticamente la zona horaria.'
+    },
+    {
+      pregunta: '¿Cómo agrego más profesionales, centros o funcionalidades?',
+      respuesta: 'Si tu organización necesita ampliar su cuenta, escribinos desde Ayuda. Analizaremos tu caso y te ofreceremos la mejor alternativa según tus necesidades.'
+    },
+    {
+      pregunta: '¿Por qué PWA-Turnos es GRATIS?',
+      respuesta: 'Queremos que profesionales independientes y pequeños negocios puedan acceder a una agenda online moderna sin realizar una inversión inicial.\n\nLas sugerencias de nuestros usuarios nos ayudan a seguir mejorando la plataforma y desarrollar nuevas soluciones para organizaciones con necesidades más avanzadas.'
     },
     {
       pregunta: '¿Tienen pensado agregar más funcionalidades?',
-      respuesta: `Próximas Funcionalidades en desarrollo:
-• Configuración días no laborables
-• Recordatorios por mail
-• Pago de Reservas
-• Descuentos por días o por código
-• Historial de turnos
-• Recordatorios por WhatsApp`
+      respuesta: `Sí. Estamos mejorando PWA-Turnos continuamente.\n\nPróximamente:\n📅 Configuración de días no laborables\n📧 Recordatorios por Email\n📱 Recordatorios por WhatsApp\n💳 Pago online de reservas\n🎁 Promociones y descuentos\n📊 Historial de turnos\n🛠️ Nuevas herramientas de administración`
     }
   ];
 
