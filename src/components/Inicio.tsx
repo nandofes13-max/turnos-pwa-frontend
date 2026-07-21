@@ -54,7 +54,7 @@ export default function Inicio() {
   const preguntasFrecuentes = [
     {
       pregunta: '¿Qué es PWA-Turnos?',
-      respuesta: 'PWA-Turnos es una agenda online que permite a tus clientes reservar turnos las 24 horas, desde cualquier celular, tablet o computadora, sin necesidad de descargar una aplicación.\n\nVos administrás todo desde un panel simple e intuitivo, mientras que tus clientes pueden reservar cuando quieran, incluso fuera de tu horario de atención.\n\n>>> Tus clientes reservan. Vos dedicás tu tiempo a trabajar.'
+      respuesta: 'PWA-Turnos es una agenda online que permite a tus clientes reservar turnos las 24 horas, desde cualquier dispositivo, sin necesidad de descargar una aplicación.\n\nVos administrás todo desde un panel simple e intuitivo, mientras que tus clientes pueden reservar cuando quieran, incluso fuera de tu horario de atención.\n\n'
     },
     {
       pregunta: '¿Cuánto cuesta?',
@@ -132,7 +132,7 @@ export default function Inicio() {
                 onClick={handleDemo}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
               >
-                ▶ Ver PWA-Turnos en acción
+               ▶ Ver PWA-Turnos en acción (1 min)
               </button>
 
               {/* 2. Solicitar Agenda Gratis */}
@@ -170,7 +170,7 @@ export default function Inicio() {
               <div className={styles['inicio-beneficio-item']}>
                 <span className={styles['inicio-beneficio-icono']}>📱</span>
                 <div>
-                  <h3 className={styles['inicio-beneficio-titulo']}>Funciona desde cualquier celular</h3>
+                  <h3 className={styles['inicio-beneficio-titulo']}>Funciona desde cualquier dispositivo</h3>
                   <p className={styles['inicio-beneficio-descripcion']}>
                     No necesitan descargar aplicaciones. Solo compartís tu enlace y empezás a recibir reservas.
                   </p>
@@ -202,10 +202,6 @@ export default function Inicio() {
             {/* Última llamada a la acción */}
             <div className={styles['inicio-cta-final']}>
               <h2 className={styles['inicio-cta-titulo']}>¿Listo para empezar?</h2>
-              <p className={styles['inicio-cta-descripcion']}>
-                Todavía muchos profesionales gestionan sus turnos por WhatsApp.<br />
-                Con PWA-Turnos, tus clientes pueden reservar online cuando quieran.
-              </p>
               <button 
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
