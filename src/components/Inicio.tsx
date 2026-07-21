@@ -202,6 +202,7 @@ export default function Inicio() {
             {/* Última llamada a la acción */}
             <div className={styles['inicio-cta-final']}>
               <h2 className={styles['inicio-cta-titulo']}>¿Listo para empezar?</h2>
+              <p className={styles['inicio-cta-titulo']}>Creá tu agenda GRATIS y empezá a recibir reservas online hoy mismo.</p>
               <button 
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
