@@ -35,6 +35,7 @@ export default function Inicio() {
   };
 
   const handleSolicitarAgenda = () => {
+    window.scrollTo(0, 0); // 👈 FORZAR SCROLL AL INICIO
     navigate('/solicitar-agenda');
   };
 
