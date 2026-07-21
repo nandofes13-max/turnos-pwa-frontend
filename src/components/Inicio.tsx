@@ -124,7 +124,7 @@ export default function Inicio() {
                 onClick={handleDemo}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
               >
-                DEMO GRATIS
+                ▶ Ver cómo reservan mis clientes
               </button>
 
               {/* 2. Solicitar Agenda Gratis */}
@@ -132,7 +132,7 @@ export default function Inicio() {
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
               >
-                SOLICITAR AGENDA GRATIS
+                🚀 Crear mi agenda GRATIS
               </button>
             </div>
 
