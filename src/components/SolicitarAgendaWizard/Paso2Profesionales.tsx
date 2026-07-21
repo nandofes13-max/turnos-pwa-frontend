@@ -701,6 +701,7 @@ const Paso2Profesionales: React.FC<Paso2ProfesionalesProps> = ({
   const confirmarCancelar = () => {
     setMostrarConfirmacionCancelar(false);
     navigate('/');
+    window.scrollTo(0, 0); // 👈 AGREGAR ESTA LÍNEA
   };
 
   const cancelarCancelar = () => {
