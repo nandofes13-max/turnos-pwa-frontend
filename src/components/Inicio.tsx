@@ -132,23 +132,23 @@ export default function Inicio() {
                 onClick={handleSolicitarAgenda}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-solicitar']}`}
               >
-                🚀 Crear mi agenda GRATIS
+                🚀 Creá tu agenda GRATIS
               </button>
             </div>
 
-            {/* 👈 NUEVO: Badges pequeños */}
+            {/* Badges pequeños */}
             <div className={styles['inicio-badges']}>
               <span className={styles['inicio-badge']}>✅ Sin tarjeta de crédito</span>
               <span className={styles['inicio-badge']}>📱 Sin instalar aplicaciones</span>
               <span className={styles['inicio-badge']}>⚡ Lista en menos de 20 minutos</span>
             </div>
 
-            {/* 👈 NUEVO: Frase destacada */}
+            {/* Frase destacada */}
             <p className={styles['inicio-frase-destacada']}>
               Agenda online GRATIS para profesionales independientes y pequeños negocios.
             </p>
 
-            {/* 👈 NUEVO: Sección de BENEFICIOS */}
+            {/* Sección de BENEFICIOS */}
             <div className={styles['inicio-beneficios']}>
               <h2 className={styles['inicio-beneficios-titulo']}>BENEFICIOS</h2>
               
@@ -183,7 +183,7 @@ export default function Inicio() {
               </div>
             </div>
 
-            {/* 👈 NUEVO: Frase final de beneficios */}
+            {/* Frase final de beneficios */}
             <p className={styles['inicio-frase-final']}>
               Tus clientes reservan turnos. Vos dedicás tu tiempo a trabajar.
             </p>
@@ -198,7 +198,7 @@ export default function Inicio() {
               </div>
             </div>
 
-            {/* 👈 NUEVO: Última llamada a la acción */}
+            {/* Última llamada a la acción */}
             <div className={styles['inicio-cta-final']}>
               <h2 className={styles['inicio-cta-titulo']}>¿Listo para empezar?</h2>
               <p className={styles['inicio-cta-descripcion']}>
