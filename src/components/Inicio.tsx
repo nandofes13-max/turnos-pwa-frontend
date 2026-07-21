@@ -62,7 +62,7 @@ export default function Inicio() {
     },
     {
       pregunta: '¿Cómo empiezo a usarlo?',
-      respuesta: 'Creá tu cuenta gratuita, configurá tu negocio, los servicios que ofrecés y tus horarios.\nEn menos de 20 minutos ya podés comenzar a recibir reservas online.'
+      respuesta: 'Creá tu cuenta gratuita, configurá tu negocio, los servicios que ofrecés y tus horarios.\nEn pocos minutos ya podés comenzar a recibir reservas online.'
     },
     {
       pregunta: '¿Qué servicios ofrece PWA-Turnos?',
@@ -182,7 +182,7 @@ export default function Inicio() {
                 <div>
                   <h3 className={styles['inicio-beneficio-titulo']}>Configuración rápida</h3>
                   <p className={styles['inicio-beneficio-descripcion']}>
-                    En menos de 20 minutos podés tener configurado tu negocio y comenzar a recibir reservas online.
+                    En pocos minutos podés tener configurado tu negocio y comenzar a recibir reservas online.
                   </p>
                 </div>
               </div>
