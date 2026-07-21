@@ -319,7 +319,10 @@ const Paso1DatosBasicos: React.FC<Paso1DatosBasicosProps> = ({ onSuccess, onErro
     }
   };
 
-  const handleCancelar = () => navigate('/');
+const handleCancelar = () => {
+  navigate('/');
+  window.scrollTo(0, 0);
+};
 
   const validarFormulario = (): boolean => {
     const newErrors: ValidationErrors = {};
