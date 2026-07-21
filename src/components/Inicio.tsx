@@ -114,8 +114,8 @@ export default function Inicio() {
           </div>
 
           <div className={styles['inicio-card']}>
-            <h1 className={styles['inicio-titulo']}>Te damos la Bienvenida.</h1>
-            <p className={styles['inicio-subtitulo']}>Agenda online GRATIS para profesionales independientes y pequeños negocios.</p>
+            <h1 className={styles['inicio-titulo']}>Te damos la Bienvenida</h1>
+            <p className={styles['inicio-subtitulo']}> Gestioná tus turnos de manera simple y eficiente</p>
 
             {/* Botones */}
             <div className={styles['inicio-botones']}>
