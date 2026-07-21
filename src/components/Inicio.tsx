@@ -125,7 +125,7 @@ export default function Inicio() {
                 onClick={handleDemo}
                 className={`${styles['inicio-btn']} ${styles['inicio-btn-demo']}`}
               >
-                ▶ Ver cómo reservan mis clientes
+                ▶ Ver PWA-Turnos en acción
               </button>
 
               {/* 2. Solicitar Agenda Gratis */}
