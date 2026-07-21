@@ -148,7 +148,7 @@ export default function Inicio() {
             <div className={styles['inicio-badges']}>
               <span className={styles['inicio-badge']}>✅ Sin tarjeta de crédito</span>
               <span className={styles['inicio-badge']}>📱 Sin instalar aplicaciones</span>
-              <span className={styles['inicio-badge']}>⚡ Lista en menos de 20 minutos</span>
+              <span className={styles['inicio-badge']}>⚡ Lista en pocos minutos</span>
             </div>
 
             {/* 👈 FRASE ELIMINADA */}
