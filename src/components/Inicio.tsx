@@ -190,13 +190,13 @@ export default function Inicio() {
               
               <img 
                 src="/agenda.png" 
-                alt="Compartí tu enlace y empezá a recibir reservas como ésta" 
+                alt="Compartí tu enlace y dejá que tus clientes reserven cuando quieran." 
                 className={styles['inicio-imagen']}
                 loading="lazy"
               />
               
               <p className={styles['inicio-imagen-texto']}>
-                Compartí tu enlace y empezá a recibir reservas como ésta.
+                Compartí tu enlace y dejá que tus clientes reserven cuando quieran.
               </p>
             </div>
 
