@@ -27,7 +27,7 @@ interface BloqueHorario {
   fechaHasta: string | null;
   horarios: string[];
   fecha_baja?: string | null;
-  timezone?: string;
+  timezone?: string;  // 🔹 AGREGADO
 }
 
 interface SlotBackend {
@@ -233,22 +233,9 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
-      // 🔍 LOG 1: Ver qué devuelve el backend
-      console.log('📦 DATA AGENDAS (RAW):', JSON.stringify(dataAgendas, null, 2));
-      console.log('📦 Cantidad de bloques en dataAgendas:', dataAgendas.length);
-      
       const bloquesCargados: BloqueHorario[] = [];
       
       for (const ag of dataAgendas) {
-        // 🔍 LOG 2: Ver cada bloque individual
-        console.log(`🔄 Procesando bloque ID ${ag.id}:`, {
-          diaSemana: ag.diaSemana,
-          horaDesde: ag.horaDesde,
-          horaHasta: ag.horaHasta,
-          fecha_baja: ag.fecha_baja,
-          activo: !ag.fecha_baja
-        });
-        
         let horarios: string[] = [];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.id);
         
@@ -268,30 +255,11 @@ export default function AgendaDisponibilidad() {
           fechaHasta: ag.fechaHasta,
           horarios: horarios,
           fecha_baja: ag.fecha_baja,
-          timezone: ag.timezone,
+          timezone: ag.timezone,  // 🔹 AGREGADO: guardar timezone del backend
         });
       }
       
-      // 🔍 LOG 3: Ver todos los bloques cargados
-      console.log('📊 BLOQUES CARGADOS (antes de filtrar):', bloquesCargados.length);
-      console.log('📊 Detalle de bloques cargados:', bloquesCargados.map(b => ({
-        id: b.id,
-        dia: b.diaSemana,
-        horario: `${b.horaDesde} a ${b.horaHasta}`,
-        activo: !b.fecha_baja
-      })));
-      
-      const bloquesActivos = bloquesCargados.filter(bloque => !bloque.fecha_baja);
-      console.log('📊 BLOQUES ACTIVOS (después de filtrar):', bloquesActivos.length);
-      console.log('📊 Detalle de bloques activos:', bloquesActivos.map(b => ({
-        id: b.id,
-        dia: b.diaSemana,
-        horario: `${b.horaDesde} a ${b.horaHasta}`
-      })));
-      
-      const bloquesOrdenados = ordenarBloques(bloquesActivos);
-      console.log('📊 BLOQUES ORDENADOS (final):', bloquesOrdenados.length);
-      
+      const bloquesOrdenados = ordenarBloques(bloquesCargados);
       setBloques(bloquesOrdenados);
     } catch (err) {
       console.error('Error cargando datos:', err);
@@ -421,6 +389,7 @@ export default function AgendaDisponibilidad() {
     
     const horarios = generarHorariosLocal(nuevoDesde, nuevoHasta, duracionFinal);
     
+    // 🔹 Usar el timezone del centro para el nuevo bloque
     const timezoneDelCentro = relacion?.centro.timezone || 'America/Argentina/Buenos_Aires';
     
     const nuevoBloque: BloqueHorario = {
@@ -432,7 +401,7 @@ export default function AgendaDisponibilidad() {
       fechaHasta: fechaHastaFinal,
       horarios: horarios,
       fecha_baja: null,
-      timezone: timezoneDelCentro,
+      timezone: timezoneDelCentro,  // 🔹 AGREGADO
     };
     
     const nuevosBloques = ordenarBloques([...bloques, nuevoBloque]);
@@ -544,7 +513,7 @@ export default function AgendaDisponibilidad() {
         fechaDesde: bloque.fechaDesde,
         fechaHasta: bloque.fechaHasta,
         fecha_baja: bloque.fecha_baja,
-        timezone: bloque.timezone,
+        timezone: bloque.timezone,  // 🔹 AGREGADO: enviar timezone al backend
         diasHabilitados: bloque.diasHabilitados
       }))
     };
@@ -603,23 +572,6 @@ export default function AgendaDisponibilidad() {
       </div>
     );
   }
-
-  // 🔹 AGRUPAR BLOQUES POR DÍA (solo activos)
-  const bloquesPorDia = bloques.reduce((acc, bloque) => {
-    const dia = bloque.diaSemana;
-    if (!acc[dia]) acc[dia] = [];
-    acc[dia].push(bloque);
-    return acc;
-  }, {} as Record<number, BloqueHorario[]>);
-
-  // 🔹 ORDENAR DÍAS (Lunes a Domingo)
-  const diasOrdenados = Object.keys(bloquesPorDia)
-    .map(Number)
-    .sort((a, b) => {
-      const aOrder = a === 0 ? 7 : a;
-      const bOrder = b === 0 ? 7 : b;
-      return aOrder - bOrder;
-    });
 
   return (
     <div className="tm-page">
@@ -750,121 +702,94 @@ export default function AgendaDisponibilidad() {
         </div>
       </div>
 
-      {/* 🔹 RENDERIZAR BLOQUES AGRUPADOS POR DÍA */}
-      {diasOrdenados.length === 0 ? (
-        <div className="agenda-sin-bloques">
-          <p>No hay bloques configurados para este profesional.</p>
-        </div>
-      ) : (
-        diasOrdenados.map((dia) => {
-          const bloquesDelDia = bloquesPorDia[dia];
-          const diaUI = bdToUiDay(dia);
-          const nombreDia = DIAS_COMPLETO[diaUI];
+      {bloques.map((bloque, idx) => {
+        const estaActivo = !bloque.fecha_baja;
+        const estaExpandido = bloquesExpandidos[idx];
+        const diaUI = bdToUiDay(bloque.diaSemana);
+        const nombreDia = DIAS_COMPLETO[diaUI];
+        
+        const formatVigencia = () => {
+          const fechaDesdeDate = new Date(bloque.fechaDesde);
+          const fechaDesdeFormateada = fechaDesdeDate.toLocaleString('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }).replace(',', '');
           
-          return (
-            <div key={dia} className="agenda-dia-grupo">
-              <h3 className="agenda-dia-titulo">{nombreDia}</h3>
-              {bloquesDelDia.map((bloque, idx) => {
-                const estaActivo = !bloque.fecha_baja;
-                const estaExpandido = bloquesExpandidos[bloque.id || idx] || false;
-                
-                const formatVigencia = () => {
-                  const fechaDesdeDate = new Date(bloque.fechaDesde);
-                  const fechaDesdeFormateada = fechaDesdeDate.toLocaleString('es-AR', {
-                    timeZone: 'America/Argentina/Buenos_Aires',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                  }).replace(',', '');
-                  
-                  if (bloque.fecha_baja) {
-                    const fechaBajaDate = new Date(bloque.fecha_baja);
-                    const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
-                      timeZone: 'America/Argentina/Buenos_Aires',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false
-                    }).replace(',', '');
-                    return `Desde ${fechaDesdeFormateada} hs Hasta ${fechaBajaFormateada} hs`;
-                  } else {
-                    return `Desde ${fechaDesdeFormateada} hs indefinida`;
-                  }
-                };
-                
-                return (
-                  <div key={`${dia}-${bloque.id || idx}`} className="agenda-bloque">
-                    <div className="agenda-bloque-header">
-                      <div className="agenda-bloque-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <span>
-                          <strong>{bloque.horaDesde} a {bloque.horaHasta}</strong> | 
-                          <strong> Duración:</strong> {bloque.duracionTurno} min | 
-                          <strong> Vigencia:</strong> {formatVigencia()}
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#666' }}>
-                          ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          onClick={() => {
-                            const key = bloque.id || idx;
-                            setBloquesExpandidos(prev => ({
-                              ...prev,
-                              [key]: !prev[key]
-                            }));
-                          }} 
-                          className="tm-btn-secundario" 
-                          style={{ padding: '4px 12px' }}
-                        >
-                          {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            const realIndex = bloques.findIndex(b => b.id === bloque.id);
-                            if (realIndex !== -1) {
-                              toggleActivarBloque(realIndex);
-                            }
-                          }} 
-                          className={estaActivo ? 'tm-btn-estado-activo' : 'tm-btn-estado-inactivo'}
-                          title={estaActivo ? 'Haga click para desactivar este bloque' : 'Haga click para activar este bloque'}
-                        >
-                          {estaActivo ? 'Activo' : 'Inactivo'}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {estaExpandido && (
-                      <div className="agenda-grilla">
-                        <div className="agenda-dia-columna">
-                          <div className="agenda-horarios">
-                            {bloque.horarios.map((horario, horarioIdx) => (
-                              <div 
-                                key={horarioIdx} 
-                                className={`agenda-horario-texto ${!estaActivo ? 'inactivo' : ''}`}
-                                title={!estaActivo ? 'Bloque inactivo' : 'Horario disponible'}
-                              >
-                                {horario} {!estaActivo && '🔒'}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          if (bloque.fecha_baja) {
+            const fechaBajaDate = new Date(bloque.fecha_baja);
+            const fechaBajaFormateada = fechaBajaDate.toLocaleString('es-AR', {
+              timeZone: 'America/Argentina/Buenos_Aires',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            }).replace(',', '');
+            return `Desde ${fechaDesdeFormateada} hs Hasta ${fechaBajaFormateada} hs`;
+          } else {
+            return `Desde ${fechaDesdeFormateada} hs indefinida`;
+          }
+        };
+        
+        return (
+          <div key={idx} className="agenda-bloque">
+            <div className="agenda-bloque-header">
+              <div className="agenda-bloque-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span>
+                  <strong>{nombreDia}:</strong> {bloque.horaDesde} a {bloque.horaHasta} | 
+                  <strong> Duración:</strong> {bloque.duracionTurno} min | 
+                  <strong> Vigencia:</strong> {formatVigencia()}
+                </span>
+                <span style={{ fontSize: '12px', color: '#666' }}>
+  ID: {bloque.id || 'nuevo'} | Estado: {estaActivo ? 'ACTIVO' : 'INACTIVO'}
+</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => toggleExpandirBloque(idx)} 
+                  className="tm-btn-secundario" 
+                  style={{ padding: '4px 12px' }}
+                >
+                  {estaExpandido ? '▲ Ocultar Horarios' : '▼ Ver Horarios'}
+                </button>
+                <button 
+                  onClick={() => toggleActivarBloque(idx)} 
+                  className={estaActivo ? 'tm-btn-estado-activo' : 'tm-btn-estado-inactivo'}
+                  title={estaActivo ? 'Haga click para desactivar este bloque' : 'Haga click para activar este bloque'}
+                >
+                  {estaActivo ? 'Activo' : 'Inactivo'}
+                </button>
+              </div>
             </div>
-          );
-        })
-      )}
+            
+            {estaExpandido && (
+              <div className="agenda-grilla">
+                <div className="agenda-dia-columna">
+                  <div className="agenda-horarios">
+                    {bloque.horarios.map((horario, horarioIdx) => (
+                      <div 
+                        key={horarioIdx} 
+                        className={`agenda-horario-texto ${!estaActivo ? 'inactivo' : ''}`}
+                        title={!estaActivo ? 'Bloque inactivo' : 'Horario disponible'}
+                      >
+                        {horario} {!estaActivo && '🔒'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       <div className="agenda-acciones">
         <button onClick={guardarAgenda} className="tm-btn-primario" disabled={guardando}>
