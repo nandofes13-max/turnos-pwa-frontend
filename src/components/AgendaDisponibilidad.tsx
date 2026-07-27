@@ -233,9 +233,22 @@ export default function AgendaDisponibilidad() {
       const resAgendas = await fetch(`${API_BASE_URL}/agenda-disponibilidad/por-profesional-centro/${profesionalCentroId}`);
       const dataAgendas = await resAgendas.json();
       
+      // 🔍 LOG 1: Ver qué devuelve el backend
+      console.log('📦 DATA AGENDAS (RAW):', JSON.stringify(dataAgendas, null, 2));
+      console.log('📦 Cantidad de bloques en dataAgendas:', dataAgendas.length);
+      
       const bloquesCargados: BloqueHorario[] = [];
       
       for (const ag of dataAgendas) {
+        // 🔍 LOG 2: Ver cada bloque individual
+        console.log(`🔄 Procesando bloque ID ${ag.id}:`, {
+          diaSemana: ag.diaSemana,
+          horaDesde: ag.horaDesde,
+          horaHasta: ag.horaHasta,
+          fecha_baja: ag.fecha_baja,
+          activo: !ag.fecha_baja
+        });
+        
         let horarios: string[] = [];
         const slots = await cargarSlotsDesdeBackend(parseInt(profesionalCentroId!), ag.id);
         
@@ -259,11 +272,26 @@ export default function AgendaDisponibilidad() {
         });
       }
       
-      // 🔹 FILTRAR SOLO BLOQUES ACTIVOS
+      // 🔍 LOG 3: Ver todos los bloques cargados
+      console.log('📊 BLOQUES CARGADOS (antes de filtrar):', bloquesCargados.length);
+      console.log('📊 Detalle de bloques cargados:', bloquesCargados.map(b => ({
+        id: b.id,
+        dia: b.diaSemana,
+        horario: `${b.horaDesde} a ${b.horaHasta}`,
+        activo: !b.fecha_baja
+      })));
+      
       const bloquesActivos = bloquesCargados.filter(bloque => !bloque.fecha_baja);
-      console.log(`📊 Bloques totales: ${bloquesCargados.length}, Bloques activos: ${bloquesActivos.length}`);
+      console.log('📊 BLOQUES ACTIVOS (después de filtrar):', bloquesActivos.length);
+      console.log('📊 Detalle de bloques activos:', bloquesActivos.map(b => ({
+        id: b.id,
+        dia: b.diaSemana,
+        horario: `${b.horaDesde} a ${b.horaHasta}`
+      })));
       
       const bloquesOrdenados = ordenarBloques(bloquesActivos);
+      console.log('📊 BLOQUES ORDENADOS (final):', bloquesOrdenados.length);
+      
       setBloques(bloquesOrdenados);
     } catch (err) {
       console.error('Error cargando datos:', err);
@@ -738,7 +766,7 @@ export default function AgendaDisponibilidad() {
               <h3 className="agenda-dia-titulo">{nombreDia}</h3>
               {bloquesDelDia.map((bloque, idx) => {
                 const estaActivo = !bloque.fecha_baja;
-                const estaExpandido = bloquesExpandidos[idx] || false;
+                const estaExpandido = bloquesExpandidos[bloque.id || idx] || false;
                 
                 const formatVigencia = () => {
                   const fechaDesdeDate = new Date(bloque.fechaDesde);
@@ -787,7 +815,6 @@ export default function AgendaDisponibilidad() {
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button 
                           onClick={() => {
-                            // Usar el id del bloque como key para expandir
                             const key = bloque.id || idx;
                             setBloquesExpandidos(prev => ({
                               ...prev,
@@ -801,7 +828,6 @@ export default function AgendaDisponibilidad() {
                         </button>
                         <button 
                           onClick={() => {
-                            // Encontrar el índice real del bloque en el array original
                             const realIndex = bloques.findIndex(b => b.id === bloque.id);
                             if (realIndex !== -1) {
                               toggleActivarBloque(realIndex);
