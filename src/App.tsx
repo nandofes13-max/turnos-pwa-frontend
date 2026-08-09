@@ -21,11 +21,11 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
-import RedireccionTurnos from './components/RedireccionTurnos';
+// 👈 ELIMINAR import RedireccionTurnos from './components/RedireccionTurnos';
+import GestionLayout from './components/GestionLayout'; // 👈 NUEVO
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import AdminLogin from './components/AdminLogin';
-// 👈 IMPORTAR WhatsAppConfig
 import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
@@ -54,10 +54,11 @@ function App() {
         {/* ============================================================ */}
         {/* RUTA PARA GESTIÓN DE TURNOS (DUEÑOS DE NEGOCIO) */}
         {/* ============================================================ */}
-        <Route path="/gestion/turnos/:slug" element={<RedireccionTurnos />} />
-        
-        {/* 👈 NUEVA RUTA: Configuración de WhatsApp */}
-        <Route path="/gestion/turnos/:slug/whatsapp" element={<WhatsAppConfig />} />
+        {/* 👈 NUEVA ESTRUCTURA CON LAYOUT */}
+        <Route path="/gestion/turnos/:slug" element={<GestionLayout />}>
+          <Route index element={<Turnos />} />
+          <Route path="whatsapp" element={<WhatsAppConfig />} />
+        </Route>
         
         {/* ============================================================ */}
         {/* RUTA PARA ADMINISTRACIÓN DE TURNOS (CON LOGIN) */}
