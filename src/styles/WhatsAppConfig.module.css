@@ -9,10 +9,10 @@
 
 .header {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .backButton {
@@ -35,6 +35,13 @@
   font-weight: 700;
   color: #1f2937;
   margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+  font-weight: 500;
 }
 
 .card {
@@ -70,7 +77,35 @@
 }
 
 .instructions ol li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.greenApiButton {
+  display: inline-block;
+  margin: 4px 0;
+  padding: 8px 16px;
+  background-color: #25D366;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.greenApiButton:hover {
+  background-color: #1ebe5c;
+  text-decoration: none;
+}
+
+.greenApiUrl {
+  font-size: 12px;
+  color: #6b7280;
+  word-break: break-all;
+  display: block;
+  margin-top: 2px;
 }
 
 .link {
@@ -285,5 +320,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
+  }
+
+  .greenApiButton {
+    width: 100%;
+    text-align: center;
   }
 }
