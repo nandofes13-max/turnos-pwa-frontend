@@ -178,7 +178,7 @@ export default function WhatsAppConfig() {
               <span className={styles.greenApiUrl}>https://console.green-api.com/auth</span>
             </li>
             <li>Crea una instancia en el plan <strong>Developer</strong>.</li>
-            <li>Copia el <strong>ID de Instancia</strong> y el <strong>Token de API</strong>.</li>
+            <li>Copia el <strong>IdInstance</strong> y el <strong>ApiTokenInstance</strong>.</li>
             <li>Pega los datos en los campos de abajo.</li>
           </ol>
           <p className={styles.help}>
@@ -198,34 +198,34 @@ export default function WhatsAppConfig() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <label htmlFor="instanceId" className={styles.label}>
-              🔑 ID de Instancia <span className={styles.required}>*</span>
+              🔑 IdInstance <span className={styles.required}>*</span>
             </label>
             <input
               id="instanceId"
               type="text"
               value={instanceId}
               onChange={(e) => setInstanceId(e.target.value)}
-              placeholder="Ej: 1101819818"
+              placeholder="Ej: 7103852203"
               className={styles.input}
               required
             />
-            <span className={styles.hint}>Obtenido de GREEN API</span>
+            <span className={styles.hint}>Copiado del panel de GREEN API</span>
           </div>
 
           <div className={styles.formGroup}>
             <label htmlFor="apiToken" className={styles.label}>
-              🔑 API Token <span className={styles.required}>*</span>
+              🔑 ApiTokenInstance <span className={styles.required}>*</span>
             </label>
             <input
               id="apiToken"
               type="text"
               value={apiToken}
               onChange={(e) => setApiToken(e.target.value)}
-              placeholder="Token generado por GREEN API"
+              placeholder="Ej: efd9a6ec41cd4c45a092d16a4"
               className={styles.input}
               required
             />
-            <span className={styles.hint}>Obtenido de GREEN API</span>
+            <span className={styles.hint}>Copiado del panel de GREEN API</span>
           </div>
 
           {message && (
