@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNegocioContext } from '../../context/NegocioContext';
-import styles from '../../styles/WhatsAppConfig.module.css'; // 👈 RUTA CORREGIDA
+import styles from '../../styles/WhatsAppConfig.module.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -154,6 +154,8 @@ export default function WhatsAppConfig() {
           ← Volver a Turnos
         </button>
         <h1 className={styles.title}>🔔 Configurar Notificaciones por WhatsApp</h1>
+        {/* 👈 SUBTÍTULO CON EL NOMBRE DEL NEGOCIO */}
+        <p className={styles.subtitle}>📍 Negocio: {nombre}</p>
       </div>
 
       <div className={styles.card}>
@@ -161,16 +163,19 @@ export default function WhatsAppConfig() {
           <h4>📝 Instrucciones:</h4>
           <ol>
             <li>
-              Regístrate en{' '}
+              Regístrate o inicia sesión en GREEN API Console:
+              <br />
+              {/* 👈 BOTÓN + URL VISIBLE */}
               <a
-                href="https://console.green-api.com/register"
+                href="https://console.green-api.com/auth"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.link}
+                className={styles.greenApiButton}
               >
-                GREEN API
-              </a>{' '}
-              (es gratuito).
+                🌐 Abrir GREEN API Console
+              </a>
+              <br />
+              <span className={styles.greenApiUrl}>https://console.green-api.com/auth</span>
             </li>
             <li>Crea una instancia en el plan <strong>Developer</strong>.</li>
             <li>Copia el <strong>ID de Instancia</strong> y el <strong>Token de API</strong>.</li>
