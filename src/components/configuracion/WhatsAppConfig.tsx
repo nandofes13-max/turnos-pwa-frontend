@@ -163,7 +163,7 @@ export default function WhatsAppConfig() {
           <h4>📝 Instrucciones:</h4>
           <ol>
             <li>
-              Regístrate o inicia sesión en GREEN API Console:
+              Regístrate o inicia sesión en GREEN API Console (es gratuito):
               <br />
               {/* 👈 BOTÓN + URL VISIBLE */}
               <a
@@ -183,8 +183,14 @@ export default function WhatsAppConfig() {
           </ol>
           <p className={styles.help}>
             📌 ¿Necesitas ayuda?{' '}
-            <a href="/ayuda/whatsapp" target="_blank" className={styles.link}>
-              Ver guía paso a paso con imágenes
+            {/* 👈 ENLACE AL VIDEO TUTORIAL */}
+            <a
+              href="https://www.youtube.com/watch?v=FW--xWr-9Nw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.link}
+            >
+              Ver video tutorial paso a paso
             </a>
           </p>
         </div>
