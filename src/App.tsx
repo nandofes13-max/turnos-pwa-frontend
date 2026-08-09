@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Inicio from './components/Inicio';
 import Actividad from './components/Actividad';
@@ -24,7 +25,8 @@ import RedireccionTurnos from './components/RedireccionTurnos';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import AdminLogin from './components/AdminLogin';
-// 👈 NUEVO: Importar Terminos y Privacidad
+// 👈 IMPORTAR WhatsAppConfig
+import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
 import './App.css';
@@ -53,6 +55,9 @@ function App() {
         {/* RUTA PARA GESTIÓN DE TURNOS (DUEÑOS DE NEGOCIO) */}
         {/* ============================================================ */}
         <Route path="/gestion/turnos/:slug" element={<RedireccionTurnos />} />
+        
+        {/* 👈 NUEVA RUTA: Configuración de WhatsApp */}
+        <Route path="/gestion/turnos/:slug/whatsapp" element={<WhatsAppConfig />} />
         
         {/* ============================================================ */}
         {/* RUTA PARA ADMINISTRACIÓN DE TURNOS (CON LOGIN) */}
