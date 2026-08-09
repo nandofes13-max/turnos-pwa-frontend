@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNegocioContext } from '../../context/NegocioContext';
-import styles from './WhatsAppConfig.module.css';
+import styles from '../../styles/WhatsAppConfig.module.css'; // 👈 RUTA CORREGIDA
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
