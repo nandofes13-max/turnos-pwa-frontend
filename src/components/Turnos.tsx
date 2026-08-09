@@ -1,7 +1,9 @@
+// src/components/Turnos.tsx
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
+import { useNegocioContext } from '../context/NegocioContext'; // 👈 IMPORTAR CONTEXTO
 
 interface Turno {
   id: number;
@@ -59,9 +61,10 @@ interface Actividad {
   nombre: string;
 }
 
-interface TurnosProps {
-  negocioIdFijo?: string; // 👈 NUEVA PROP: ID del negocio fijo (desde RedireccionTurnos)
-}
+// ❌ ELIMINAR TurnosProps - ya no es necesario
+// interface TurnosProps {
+//   negocioIdFijo?: string;
+// }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const TURNOS_URL = `${API_BASE_URL}/turnos`;
@@ -128,13 +131,15 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
   }
 };
 
-export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps) {
-  // 👈 Leer el negocioId de la prop o del estado de la navegación
+// ❌ ELIMINAR la prop negocioIdFijo
+export default function Turnos() {
+  // 👈 OBTENER DATOS DEL CONTEXTO
+  const { negocioId: negocioIdFromContext, slug } = useNegocioContext();
+  
   const location = useLocation();
-  const negocioIdFromState = location.state?.negocioId || null;
-
-  // 👈 Usar la prop si existe, o el estado de la navegación
-  const negocioIdInicial = negocioIdFijoProp || negocioIdFromState || '';
+  
+  // 👈 Usar el ID del contexto como valor inicial del filtro fijo
+  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromContext.toString());
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
@@ -160,9 +165,6 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
     const day = String(hoy.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  
-  // 👈 Usar negocioIdInicial como valor inicial del filtro fijo
-  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdInicial);
 
   const [filtros, setFiltros] = useState<Filtros>({
     desde: obtenerFechaActual(),
@@ -170,7 +172,7 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: negocioIdInicial,
+    negocioId: negocioIdFromContext.toString(),
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -561,7 +563,28 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
 
   return (
     <div className="tm-page">
-      <h1 className="tm-titulo">Gestión de Turnos</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h1 className="tm-titulo" style={{ marginBottom: 0 }}>Gestión de Turnos</h1>
+        {/* 👈 BOTÓN DE NOTIFICACIONES */}
+        <button
+          onClick={() => window.location.href = `/gestion/turnos/${slug}/whatsapp`}
+          style={{
+            backgroundColor: '#25D366',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span>🔔</span> Notificaciones por WhatsApp
+        </button>
+      </div>
 
       {cargandoFiltros && (
         <div className="tm-loading-filtros" style={{ textAlign: 'center', padding: '8px', backgroundColor: '#f0f0f0', borderRadius: '8px', marginBottom: '12px' }}>
