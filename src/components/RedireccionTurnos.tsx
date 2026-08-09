@@ -2,17 +2,18 @@
 // Componente para mostrar la gestión de turnos de un negocio específico
 // Ruta: /gestion/turnos/:slug
 // Ejemplo: /gestion/turnos/gestion-turnos-a7f3k9
-// 👈 AHORA RENDERIZA Turnos DIRECTAMENTE (sin redirigir)
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Turnos from './Turnos';
+import { NegocioProvider } from '../context/NegocioContext'; // 👈 IMPORTAR EL CONTEXTO
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function RedireccionTurnos() {
   const { slug } = useParams<{ slug: string }>();
   const [negocioId, setNegocioId] = useState<number | null>(null);
+  const [negocioNombre, setNegocioNombre] = useState<string | null>(null); // 👈 NUEVO: guardar nombre
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -41,6 +42,7 @@ export default function RedireccionTurnos() {
         if (negocio) {
           console.log('✅ Negocio encontrado para gestión:', negocio.id, negocio.nombre);
           setNegocioId(negocio.id);
+          setNegocioNombre(negocio.nombre); // 👈 GUARDAR NOMBRE
         } else {
           console.warn('⚠️ No se encontró negocio con URL de gestión:', slug);
           setError('Negocio no encontrado. Verificá que la URL de gestión sea correcta.');
@@ -104,9 +106,13 @@ export default function RedireccionTurnos() {
     );
   }
 
-  // 👈 Si tenemos el negocioId, renderizamos Turnos directamente en la misma URL
-  if (negocioId) {
-    return <Turnos negocioIdFijo={negocioId.toString()} />;
+  // 👈 Si tenemos el negocioId, renderizamos Turnos dentro del contexto
+  if (negocioId && slug && negocioNombre) {
+    return (
+      <NegocioProvider negocioId={negocioId} slug={slug} nombre={negocioNombre}>
+        <Turnos />
+      </NegocioProvider>
+    );
   }
 
   return null;
