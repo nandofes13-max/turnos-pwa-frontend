@@ -27,7 +27,7 @@ export default function WhatsAppConfig() {
   const [configuracionActual, setConfiguracionActual] = useState<ConfiguracionWhatsApp | null>(null);
   const [cargandoConfig, setCargandoConfig] = useState(true);
 
-  // 👈 PRECARGAR NÚMERO DE WHATSAPP DEL NEGOCIO
+  // Precargar número de WhatsApp del negocio
   useEffect(() => {
     const cargarNumeroWhatsApp = async () => {
       try {
@@ -46,7 +46,7 @@ export default function WhatsAppConfig() {
     cargarNumeroWhatsApp();
   }, [negocioId]);
 
-  // Cargar configuración existente al montar el componente
+  // Cargar configuración existente
   useEffect(() => {
     const cargarConfiguracion = async () => {
       try {
@@ -70,7 +70,6 @@ export default function WhatsAppConfig() {
     setLoading(true);
     setMessage(null);
 
-    // Validación básica
     if (!phoneNumber.trim()) {
       setMessage({ type: 'error', text: '❌ Por favor, ingresá un número de WhatsApp válido.' });
       setLoading(false);
@@ -78,7 +77,6 @@ export default function WhatsAppConfig() {
     }
 
     try {
-      // PASO 1: Guardar configuración (solo el número)
       const saveResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +90,6 @@ export default function WhatsAppConfig() {
         throw new Error(errorData.message || 'Error al guardar la configuración');
       }
 
-      // PASO 2: Validar conexión (el backend usa la instancia asignada)
       const validateResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,13 +101,11 @@ export default function WhatsAppConfig() {
         throw new Error(validateData.message || 'No se pudo validar la conexión con WhatsApp');
       }
 
-      // PASO 3: Enviar mensaje de prueba (automático)
       const testResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
-      // Recargar configuración actualizada
       const configResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/config`);
       if (configResponse.ok) {
         const configData = await configResponse.json();
@@ -138,11 +133,45 @@ export default function WhatsAppConfig() {
     }
   };
 
+  // 👈 NUEVO: Desactivar WhatsApp
+  const handleDesactivar = async () => {
+    if (!window.confirm('¿Estás seguro de que quieres desactivar las notificaciones por WhatsApp?')) {
+      return;
+    }
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/config`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al desactivar la configuración');
+      }
+
+      setConfiguracionActual(null);
+      setMessage({
+        type: 'success',
+        text: '✅ Notificaciones por WhatsApp desactivadas correctamente.',
+      });
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: `❌ ${error.message || 'Error al desactivar WhatsApp.'}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     navigate(`/gestion/turnos/${slug}`);
   };
 
-  // Formatear fecha para mostrar
   const formatearFecha = (fechaStr?: string | null) => {
     if (!fechaStr) return 'No realizada';
     const fecha = new Date(fechaStr);
@@ -154,6 +183,8 @@ export default function WhatsAppConfig() {
       minute: '2-digit',
     });
   };
+
+  const estaActivo = configuracionActual && configuracionActual.activo;
 
   return (
     <div className={styles.container}>
@@ -169,15 +200,9 @@ export default function WhatsAppConfig() {
         <div className={styles.instructions}>
           <h4>📝 Instrucciones:</h4>
           <ol>
-            <li>
-              Ingresá el número de WhatsApp donde quieras recibir las notificaciones.
-            </li>
-            <li>
-              El número debe estar registrado en WhatsApp.
-            </li>
-            <li>
-              Presioná "Activar Notificaciones" para validar y enviar un mensaje de prueba.
-            </li>
+            <li>Ingresá el número de WhatsApp donde quieras recibir las notificaciones.</li>
+            <li>El número debe estar registrado en WhatsApp.</li>
+            <li>Presioná "Activar Notificaciones" para validar y enviar un mensaje de prueba.</li>
           </ol>
         </div>
 
@@ -194,6 +219,7 @@ export default function WhatsAppConfig() {
               placeholder="Ej: 5491158332657"
               className={styles.input}
               required
+              disabled={estaActivo} // 👈 Deshabilitar si está activo
             />
             <span className={styles.hint}>Ej: 549 (código de país) + 11 (código de área) + número</span>
           </div>
@@ -205,9 +231,20 @@ export default function WhatsAppConfig() {
           )}
 
           <div className={styles.actions}>
-            <button type="submit" className={styles.primary} disabled={loading}>
-              {loading ? '⏳ Validando...' : '✅ Activar Notificaciones'}
-            </button>
+            {estaActivo ? (
+              <button
+                type="button"
+                onClick={handleDesactivar}
+                className={styles.danger}
+                disabled={loading}
+              >
+                {loading ? '⏳ Desactivando...' : '🔴 Desactivar Notificaciones'}
+              </button>
+            ) : (
+              <button type="submit" className={styles.primary} disabled={loading}>
+                {loading ? '⏳ Validando...' : '✅ Activar Notificaciones'}
+              </button>
+            )}
             <button type="button" className={styles.secondary} onClick={handleCancel}>
               ❌ Cancelar
             </button>
