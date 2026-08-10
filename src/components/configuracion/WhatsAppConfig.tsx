@@ -7,12 +7,11 @@ import styles from '../../styles/WhatsAppConfig.module.css';
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 interface ConfiguracionWhatsApp {
-  instanceId: string;
-  apiToken: string;
   phoneNumber?: string | null;
   activo: boolean;
   estado?: string;
   ultimaPrueba?: string | null;
+  instanciaId?: number;
 }
 
 export default function WhatsAppConfig() {
@@ -20,8 +19,7 @@ export default function WhatsAppConfig() {
   const navigate = useNavigate();
 
   // Estado del formulario
-  const [instanceId, setInstanceId] = useState('');
-  const [apiToken, setApiToken] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -37,9 +35,8 @@ export default function WhatsAppConfig() {
         if (response.ok) {
           const data = await response.json();
           setConfiguracionActual(data);
-          // Si existe configuración, precargar los campos
-          if (data.instanceId) setInstanceId(data.instanceId);
-          if (data.apiToken) setApiToken(data.apiToken);
+          // Si existe configuración, precargar el número
+          if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
         }
       } catch (error) {
         console.error('Error cargando configuración:', error);
@@ -56,22 +53,20 @@ export default function WhatsAppConfig() {
     setLoading(true);
     setMessage(null);
 
-    // Validaciones básicas
-    if (!instanceId.trim() || !apiToken.trim()) {
-      setMessage({ type: 'error', text: '❌ Por favor, completá todos los campos obligatorios.' });
+    // Validación básica
+    if (!phoneNumber.trim()) {
+      setMessage({ type: 'error', text: '❌ Por favor, ingresá un número de WhatsApp válido.' });
       setLoading(false);
       return;
     }
 
     try {
-      // PASO 1: Guardar configuración
+      // PASO 1: Guardar configuración (solo el número)
       const saveResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instanceId: instanceId.trim(),
-          apiToken: apiToken.trim(),
-          provider: 'greenapi',
+          phoneNumber: phoneNumber.trim(),
         }),
       });
 
@@ -80,9 +75,7 @@ export default function WhatsAppConfig() {
         throw new Error(errorData.message || 'Error al guardar la configuración');
       }
 
-      const saveData = await saveResponse.json();
-
-      // PASO 2: Validar conexión
+      // PASO 2: Validar conexión (el backend usa la instancia asignada)
       const validateResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,7 +84,7 @@ export default function WhatsAppConfig() {
       const validateData = await validateResponse.json();
 
       if (!validateResponse.ok || !validateData.success) {
-        throw new Error(validateData.message || 'No se pudo validar la conexión con GREEN API');
+        throw new Error(validateData.message || 'No se pudo validar la conexión con WhatsApp');
       }
 
       // PASO 3: Enviar mensaje de prueba (automático)
@@ -99,8 +92,6 @@ export default function WhatsAppConfig() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-
-      const testData = await testResponse.json();
 
       // Recargar configuración actualizada
       const configResponse = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/config`);
@@ -117,7 +108,7 @@ export default function WhatsAppConfig() {
       } else {
         setMessage({
           type: 'success',
-          text: '✅ Configuración guardada y validada, pero no se pudo enviar el mensaje de prueba. Verificá el número vinculado en GREEN API.',
+          text: '✅ Configuración guardada y validada, pero no se pudo enviar el mensaje de prueba. Verificá el número ingresado.',
         });
       }
     } catch (error: any) {
@@ -153,8 +144,7 @@ export default function WhatsAppConfig() {
         <button onClick={handleCancel} className={styles.backButton}>
           ← Volver a Turnos
         </button>
-        <h1 className={styles.title}>🔔 Configurar Notificaciones por WhatsApp</h1>
-        {/* 👈 SUBTÍTULO CON EL NOMBRE DEL NEGOCIO */}
+        <h1 className={styles.title}>🔔 Notificaciones por WhatsApp</h1>
         <p className={styles.subtitle}>📍 Negocio: {nombre}</p>
       </div>
 
@@ -163,69 +153,32 @@ export default function WhatsAppConfig() {
           <h4>📝 Instrucciones:</h4>
           <ol>
             <li>
-              Regístrate o inicia sesión en GREEN API Console (es gratuito):
-              <br />
-              {/* 👈 BOTÓN + URL VISIBLE */}
-              <a
-                href="https://console.green-api.com/auth"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.greenApiButton}
-              >
-                🌐 Abrir GREEN API Console
-              </a>
-              <br />
-              <span className={styles.greenApiUrl}>https://console.green-api.com/auth</span>
+              Ingresá el número de WhatsApp donde quieras recibir las notificaciones.
             </li>
-            <li>Crea una instancia en el plan <strong>Developer</strong>.</li>
-            <li>Copia el <strong>IdInstance</strong> y el <strong>ApiTokenInstance</strong>.</li>
-            <li>Pega los datos en los campos de abajo.</li>
+            <li>
+              El número debe estar registrado en WhatsApp.
+            </li>
+            <li>
+              Presioná "Activar Notificaciones" para validar y enviar un mensaje de prueba.
+            </li>
           </ol>
-          <p className={styles.help}>
-            📌 ¿Necesitas ayuda?{' '}
-            {/* 👈 ENLACE AL VIDEO TUTORIAL */}
-            <a
-              href="https://www.youtube.com/watch?v=FW--xWr-9Nw"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.link}
-            >
-              Ver video tutorial paso a paso
-            </a>
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
-            <label htmlFor="instanceId" className={styles.label}>
-              🔑 IdInstance <span className={styles.required}>*</span>
+            <label htmlFor="phoneNumber" className={styles.label}>
+              📱 Número de WhatsApp <span className={styles.required}>*</span>
             </label>
             <input
-              id="instanceId"
-              type="text"
-              value={instanceId}
-              onChange={(e) => setInstanceId(e.target.value)}
-              placeholder="Ej: 7103852203"
+              id="phoneNumber"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Ej: 5491158332657"
               className={styles.input}
               required
             />
-            <span className={styles.hint}>Copiado del panel de GREEN API</span>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="apiToken" className={styles.label}>
-              🔑 ApiTokenInstance <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="apiToken"
-              type="text"
-              value={apiToken}
-              onChange={(e) => setApiToken(e.target.value)}
-              placeholder="Ej: efd9a6ec41cd4c45a092d16a4"
-              className={styles.input}
-              required
-            />
-            <span className={styles.hint}>Copiado del panel de GREEN API</span>
+            <span className={styles.hint}>Ej: 549 (código de país) + 11 (código de área) + número</span>
           </div>
 
           {message && (
@@ -236,7 +189,7 @@ export default function WhatsAppConfig() {
 
           <div className={styles.actions}>
             <button type="submit" className={styles.primary} disabled={loading}>
-              {loading ? '⏳ Validando...' : '✅ Guardar y Activar'}
+              {loading ? '⏳ Validando...' : '✅ Activar Notificaciones'}
             </button>
             <button type="button" className={styles.secondary} onClick={handleCancel}>
               ❌ Cancelar
@@ -252,7 +205,7 @@ export default function WhatsAppConfig() {
           ) : configuracionActual && configuracionActual.activo ? (
             <div className={styles.statusActive}>
               <p className={styles.statusItem}>
-                <span className={styles.statusLabel}>📱 Número conectado:</span>
+                <span className={styles.statusLabel}>📱 Número configurado:</span>
                 <span className={styles.statusValue}>
                   {configuracionActual.phoneNumber || 'No disponible'}
                 </span>
