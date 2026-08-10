@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import '../styles/tablas-maestras.css';
 import turnosStyles from '../styles/Turnos.module.css';
-import { useNegocioContext } from '../context/NegocioContext'; // 👈 IMPORTAR CONTEXTO
+import { useNegocioContext } from '../context/NegocioContext';
 
 interface Turno {
   id: number;
@@ -61,10 +61,10 @@ interface Actividad {
   nombre: string;
 }
 
-// ❌ ELIMINAR TurnosProps - ya no es necesario
-// interface TurnosProps {
-//   negocioIdFijo?: string;
-// }
+// 👈 PROPS: negocioIdFijo puede ser null (todos los negocios), string (un negocio) o undefined (usar contexto)
+interface TurnosProps {
+  negocioIdFijo?: string | null;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const TURNOS_URL = `${API_BASE_URL}/turnos`;
@@ -131,15 +131,31 @@ const formatearImporte = (moneda: string, precio: number | string): string => {
   }
 };
 
-// ❌ ELIMINAR la prop negocioIdFijo
-export default function Turnos() {
-  // 👈 OBTENER DATOS DEL CONTEXTO
-  const { negocioId: negocioIdFromContext, slug } = useNegocioContext();
-  
-  const location = useLocation();
-  
-  // 👈 Usar el ID del contexto como valor inicial del filtro fijo
-  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdFromContext.toString());
+export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps = {}) {
+  // 👈 OBTENER DATOS DEL CONTEXTO (si existe)
+  let negocioIdFromContext: number | null = null;
+  let slug: string | null = null;
+  let contextError = false;
+
+  try {
+    const context = useNegocioContext();
+    negocioIdFromContext = context.negocioId;
+    slug = context.slug;
+  } catch (error) {
+    // Si no hay contexto, usamos la prop
+    contextError = true;
+  }
+
+  // 👈 DETERMINAR negocioId Fijo:
+  // - Si negocioIdFijoProp === null → mostrar TODOS los negocios
+  // - Si negocioIdFijoProp tiene valor → filtrar por ese negocio
+  // - Si no hay prop → usar el contexto
+  const esModoAdmin = negocioIdFijoProp === null;
+  const negocioIdParaFiltro = negocioIdFijoProp !== undefined && negocioIdFijoProp !== null
+    ? negocioIdFijoProp
+    : negocioIdFromContext?.toString() || '';
+
+  const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdParaFiltro);
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
@@ -172,7 +188,7 @@ export default function Turnos() {
     profesionalId: '',
     especialidadId: '',
     actividadId: '',
-    negocioId: negocioIdFromContext.toString(),
+    negocioId: negocioIdParaFiltro,
     centroId: '',
     canalOrigen: '',
     asistio: '',
@@ -186,12 +202,17 @@ export default function Turnos() {
 
   // Efecto para cargar datos iniciales cuando hay negocioId fijo
   useEffect(() => {
-    if (negocioIdFijo) {
+    if (negocioIdFijo && !esModoAdmin) {
       cargarActividadesPorNegocio(parseInt(negocioIdFijo));
       fetchEstadosTurno();
       fetchEstadosPago();
+    } else if (esModoAdmin) {
+      // En modo admin, cargar todas las actividades (sin filtrar por negocio)
+      setActividadesFiltradas(actividades);
+      fetchEstadosTurno();
+      fetchEstadosPago();
     }
-  }, [negocioIdFijo]);
+  }, [negocioIdFijo, esModoAdmin]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -233,8 +254,10 @@ export default function Turnos() {
           fetchNegocios(),
           fetchActividades(),
         ]);
-        if (negocioIdFijo) {
+        if (negocioIdFijo && !esModoAdmin) {
           await cargarActividadesPorNegocio(parseInt(negocioIdFijo));
+        } else if (esModoAdmin) {
+          setActividadesFiltradas(actividades);
         }
         await fetchEstadosTurno();
         await fetchEstadosPago();
@@ -250,19 +273,21 @@ export default function Turnos() {
   }, [filtros]);
 
   useEffect(() => {
-    if (filtros.negocioId) {
+    if (filtros.negocioId && !esModoAdmin) {
       cargarActividadesPorNegocio(parseInt(filtros.negocioId));
       setFiltros(prev => ({ ...prev, actividadId: '', especialidadId: '', centroId: '', profesionalId: '' }));
       setEspecialidadesFiltradas([]);
       setCentrosFiltrados([]);
       setProfesionalesFiltrados([]);
+    } else if (esModoAdmin) {
+      setActividadesFiltradas(actividades);
     } else {
       setActividadesFiltradas([]);
       setEspecialidadesFiltradas([]);
       setCentrosFiltrados([]);
       setProfesionalesFiltrados([]);
     }
-  }, [filtros.negocioId]);
+  }, [filtros.negocioId, esModoAdmin]);
 
   useEffect(() => {
     if (filtros.actividadId) {
@@ -456,7 +481,7 @@ export default function Turnos() {
       profesionalId: '',
       especialidadId: '',
       actividadId: '',
-      negocioId: negocioIdFijo || '',
+      negocioId: esModoAdmin ? '' : negocioIdFijo || '',
       centroId: '',
       canalOrigen: '',
       asistio: '',
@@ -561,29 +586,36 @@ export default function Turnos() {
 
   const irAPagina = (pagina: number) => setPaginaActual(Math.max(1, Math.min(pagina, totalPaginas)));
 
+  // 👈 Determinar si mostrar el botón de WhatsApp
+  const mostrarBotonWhatsApp = !esModoAdmin && slug;
+
   return (
     <div className="tm-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h1 className="tm-titulo" style={{ marginBottom: 0 }}>Gestión de Turnos</h1>
-        {/* 👈 BOTÓN DE NOTIFICACIONES */}
-        <button
-          onClick={() => window.location.href = `/gestion/turnos/${slug}/whatsapp`}
-          style={{
-            backgroundColor: '#25D366',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '10px 20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span>🔔</span> Notificaciones por WhatsApp
-        </button>
+        <h1 className="tm-titulo" style={{ marginBottom: 0 }}>
+          {esModoAdmin ? '📊 Todos los Turnos' : 'Gestión de Turnos'}
+        </h1>
+        {/* 👈 BOTÓN DE NOTIFICACIONES (solo si hay slug) */}
+        {mostrarBotonWhatsApp && (
+          <button
+            onClick={() => window.location.href = `/gestion/turnos/${slug}/whatsapp`}
+            style={{
+              backgroundColor: '#25D366',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>🔔</span> Notificaciones por WhatsApp
+          </button>
+        )}
       </div>
 
       {cargandoFiltros && (
@@ -599,15 +631,15 @@ export default function Turnos() {
             value={filtros.negocioId} 
             onChange={(e) => handleFiltroChange('negocioId', e.target.value)} 
             className={turnosStyles.filtroInput}
-            disabled={!!negocioIdFijo}
+            disabled={!!negocioIdFijo && !esModoAdmin}
           >
-            <option value="">Seleccionar...</option>
+            <option value="">{esModoAdmin ? 'Todos los negocios' : 'Seleccionar...'}</option>
             {negocios.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
         </div>
         <div className={turnosStyles.filtroCampo}>
           <label className={turnosStyles.filtroLabel}>🎯 Actividad</label>
-          <select value={filtros.actividadId} onChange={(e) => handleFiltroChange('actividadId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.negocioId}>
+          <select value={filtros.actividadId} onChange={(e) => handleFiltroChange('actividadId', e.target.value)} className={turnosStyles.filtroInput} disabled={!filtros.negocioId && !esModoAdmin}>
             <option value="">Seleccionar...</option>
             {actividadesFiltradas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
           </select>
