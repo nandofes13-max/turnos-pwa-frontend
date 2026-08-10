@@ -29,8 +29,8 @@ export default function AdminLogin() {
   };
 
   if (autenticado) {
-    // Si está autenticado, mostrar la pantalla de turnos
-    return <Turnos />;
+    // 👈 PASAR negocioIdFijo={null} para mostrar TODOS los turnos
+    return <Turnos negocioIdFijo={null} />;
   }
 
   return (
