@@ -22,11 +22,13 @@ import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
 // 👈 ELIMINAR import RedireccionTurnos from './components/RedireccionTurnos';
-import GestionLayout from './components/GestionLayout'; // 👈 NUEVO
+import GestionLayout from './components/GestionLayout';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import AdminLogin from './components/AdminLogin';
 import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
+// 👈 IMPORTAR InstanciasWhatsApp
+import InstanciasWhatsApp from './components/InstanciasWhatsApp';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
 import './App.css';
@@ -54,7 +56,6 @@ function App() {
         {/* ============================================================ */}
         {/* RUTA PARA GESTIÓN DE TURNOS (DUEÑOS DE NEGOCIO) */}
         {/* ============================================================ */}
-        {/* 👈 NUEVA ESTRUCTURA CON LAYOUT */}
         <Route path="/gestion/turnos/:slug" element={<GestionLayout />}>
           <Route index element={<Turnos />} />
           <Route path="whatsapp" element={<WhatsAppConfig />} />
@@ -96,6 +97,9 @@ function App() {
         <Route path="/centros" element={<Centros />} />
         <Route path="/profesional-centro" element={<ProfesionalCentro />} />
         <Route path="/agenda-disponibilidad/:profesionalCentroId" element={<AgendaDisponibilidad />} />
+        
+        {/* 👈 NUEVA RUTA: Gestión de Instancias WhatsApp */}
+        <Route path="/admin/instancias-whatsapp" element={<InstanciasWhatsApp />} />
       </Routes>
     </BrowserRouter>
   );
