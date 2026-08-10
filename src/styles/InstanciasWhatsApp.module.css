@@ -1,0 +1,127 @@
+/* src/styles/InstanciasWhatsApp.module.css */
+
+/* ===== ESTILOS PARA LA TABLA ===== */
+/* Se usa la misma estructura que tablas-maestras.css */
+/* Estos estilos son específicos para la pantalla de instancias */
+
+/* Ajustes para la columna de estado */
+.tm-col-estado {
+  min-width: 120px;
+}
+
+/* Badge de estado personalizado */
+.estado-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.estado-disponible {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.estado-no-disponible {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.estado-inactivo {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Estilos para la columna de negocios activos */
+.negocios-activos {
+  font-weight: 600;
+  text-align: center;
+}
+
+.negocios-activos-lleno {
+  color: #dc2626;
+}
+
+.negocios-activos-disponible {
+  color: #16a34a;
+}
+
+/* ===== MODAL ===== */
+/* Se usa la misma estructura que tablas-maestras.css */
+/* Estos estilos son específicos para el modal de instancias */
+
+.modal-instancia .tm-modal-campo {
+  margin-bottom: 16px;
+}
+
+.modal-instancia .tm-modal-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.modal-instancia .tm-modal-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.modal-instancia .tm-modal-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-instancia .tm-ayuda-texto {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
+}
+
+/* ===== CARD (VISTA MÓVIL) ===== */
+/* Se usa la misma estructura que tablas-maestras.css */
+
+.tm-card-instancia {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #1f2937;
+  background-color: #f9fafb;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.tm-card-whatsapp {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.tm-card-negocios {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.tm-card-estado {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .tm-col-estado {
+    min-width: auto;
+  }
+
+  .tm-card-instancia {
+    font-size: 0.75rem;
+  }
+}
