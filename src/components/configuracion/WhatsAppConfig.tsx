@@ -27,6 +27,25 @@ export default function WhatsAppConfig() {
   const [configuracionActual, setConfiguracionActual] = useState<ConfiguracionWhatsApp | null>(null);
   const [cargandoConfig, setCargandoConfig] = useState(true);
 
+  // 👈 PRECARGAR NÚMERO DE WHATSAPP DEL NEGOCIO
+  useEffect(() => {
+    const cargarNumeroWhatsApp = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/whatsapp/${negocioId}/phone`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.phoneNumber) {
+            setPhoneNumber(data.phoneNumber);
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando número de WhatsApp:', error);
+      }
+    };
+
+    cargarNumeroWhatsApp();
+  }, [negocioId]);
+
   // Cargar configuración existente al montar el componente
   useEffect(() => {
     const cargarConfiguracion = async () => {
@@ -35,8 +54,6 @@ export default function WhatsAppConfig() {
         if (response.ok) {
           const data = await response.json();
           setConfiguracionActual(data);
-          // Si existe configuración, precargar el número
-          if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
         }
       } catch (error) {
         console.error('Error cargando configuración:', error);
