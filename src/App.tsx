@@ -29,6 +29,8 @@ import AdminLogin from './components/AdminLogin';
 import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
 // 👈 IMPORTAR InstanciasWhatsApp
 import InstanciasWhatsApp from './components/InstanciasWhatsApp';
+// 👈 IMPORTAR WhatsAppAccesoGestion
+import WhatsAppAccesoGestion from './components/WhatsAppAccesoGestion';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
 import './App.css';
@@ -100,6 +102,9 @@ function App() {
         
         {/* 👈 NUEVA RUTA: Gestión de Instancias WhatsApp */}
         <Route path="/admin/instancias-whatsapp" element={<InstanciasWhatsApp />} />
+        
+        {/* 👈 NUEVA RUTA: Gestión de Acceso a WhatsApp */}
+        <Route path="/admin/whatsapp-acceso" element={<WhatsAppAccesoGestion />} />
       </Routes>
     </BrowserRouter>
   );
