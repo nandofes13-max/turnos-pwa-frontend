@@ -75,7 +75,7 @@ const ACTIVIDADES_URL = `${API_BASE_URL}/actividades`;
 const NEGOCIO_ACTIVIDADES_URL = `${API_BASE_URL}/negocio-actividades`;
 const ACTIVIDAD_ESPECIALIDAD_URL = `${API_BASE_URL}/actividad-especialidad`;
 const PROFESIONAL_CENTRO_URL = `${API_BASE_URL}/profesional-centro`;
-const WHATSAPP_ACCESO_URL = `${API_BASE_URL}/whatsapp`;
+const WHATSAPP_URL = `${API_BASE_URL}/whatsapp`;
 
 const DIAS_SEMANA = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
@@ -151,9 +151,14 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
 
   const [negocioIdFijo, setNegocioIdFijo] = useState<string>(negocioIdParaFiltro);
 
-  // 👈 ESTADO PARA EL ACCESO A WHATSAPP
-  const [accesoWhatsapp, setAccesoWhatsapp] = useState<boolean | null>(null);
-  const [cargandoAcceso, setCargandoAcceso] = useState(false);
+  // 👈 ESTADO PARA WHATSAPP
+  const [estadoWhatsApp, setEstadoWhatsApp] = useState<{
+    activo: boolean;
+    estado: string | null;
+    accesoWhatsapp: boolean;
+    phoneNumber: string | null;
+  } | null>(null);
+  const [cargandoEstadoWhatsApp, setCargandoEstadoWhatsApp] = useState(false);
   const [modalWhatsAppAbierto, setModalWhatsAppAbierto] = useState(false);
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -199,27 +204,57 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
-  // 👈 FUNCIÓN PARA VERIFICAR EL ACCESO A WHATSAPP
-  const verificarAccesoWhatsApp = async () => {
+  // 👈 FUNCIÓN PARA OBTENER EL ESTADO DE WHATSAPP
+  const obtenerEstadoWhatsApp = async () => {
     if (!slug || esModoAdmin) return;
     
-    setCargandoAcceso(true);
+    setCargandoEstadoWhatsApp(true);
     try {
       const negocioId = negocioIdFromContext || parseInt(negocioIdParaFiltro);
       if (!negocioId) return;
       
-      const response = await fetch(`${WHATSAPP_ACCESO_URL}/${negocioId}/acceso`);
+      const response = await fetch(`${WHATSAPP_URL}/${negocioId}/estado`);
       if (response.ok) {
         const data = await response.json();
-        setAccesoWhatsapp(data.acceso);
-      } else {
-        setAccesoWhatsapp(false);
+        setEstadoWhatsApp(data);
       }
     } catch (error) {
-      console.error('Error verificando acceso a WhatsApp:', error);
-      setAccesoWhatsapp(false);
+      console.error('Error obteniendo estado de WhatsApp:', error);
     } finally {
-      setCargandoAcceso(false);
+      setCargandoEstadoWhatsApp(false);
+    }
+  };
+
+  // 👈 FUNCIÓN PARA ACTIVAR/DESACTIVAR WHATSAPP
+  const handleToggleWhatsApp = async () => {
+    if (!slug || !negocioIdFromContext) return;
+
+    if (estadoWhatsApp?.activo) {
+      // Desactivar
+      if (!window.confirm('¿Estás seguro de que quieres desactivar las notificaciones por WhatsApp?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${WHATSAPP_URL}/${negocioIdFromContext}/config`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+          await obtenerEstadoWhatsApp(); // Recargar estado
+          alert('✅ Notificaciones por WhatsApp desactivadas correctamente.');
+        } else {
+          const error = await response.json();
+          alert(`❌ Error al desactivar: ${error.message || 'Error desconocido'}`);
+        }
+      } catch (error) {
+        console.error('Error desactivando WhatsApp:', error);
+        alert('❌ Error al desactivar WhatsApp. Intentá nuevamente.');
+      }
+    } else {
+      // Activar - redirigir a la pantalla de configuración
+      window.location.href = `/gestion/turnos/${slug}/whatsapp`;
     }
   };
 
@@ -228,16 +263,9 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
     setModalWhatsAppAbierto(true);
   };
 
-  // 👈 MANEJAR CLIC EN "Activar Notificaciones"
-  const handleActivarNotificaciones = () => {
-    if (slug) {
-      window.location.href = `/gestion/turnos/${slug}/whatsapp`;
-    }
-  };
-
-  // 👈 VERIFICAR ACCESO AL CARGAR EL COMPONENTE
+  // 👈 VERIFICAR ACCESO Y ESTADO AL CARGAR
   useEffect(() => {
-    verificarAccesoWhatsApp();
+    obtenerEstadoWhatsApp();
   }, [slug, negocioIdFromContext]);
 
   // Efecto para cargar datos iniciales cuando hay negocioId fijo
@@ -627,8 +655,9 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
 
   // 👈 DETERMINAR QUÉ MOSTRAR EN EL BOTÓN DE WHATSAPP
   const mostrarBotonWhatsApp = !esModoAdmin && slug;
-  const tieneAcceso = accesoWhatsapp === true;
-  const accesoDefinido = accesoWhatsapp !== null;
+  const tieneAcceso = estadoWhatsApp?.accesoWhatsapp || false;
+  const estaActivo = estadoWhatsApp?.activo || false;
+  const estadoDefinido = estadoWhatsApp !== null;
 
   return (
     <div className="tm-page">
@@ -636,37 +665,67 @@ export default function Turnos({ negocioIdFijo: negocioIdFijoProp }: TurnosProps
         <h1 className="tm-titulo" style={{ marginBottom: 0 }}>
           {esModoAdmin ? '📊 Todos los Turnos' : 'Gestión de Turnos'}
         </h1>
-        {/* 👈 BOTÓN DE WHATSAPP MODIFICADO */}
+        {/* 👈 BOTÓN DE WHATSAPP DINÁMICO */}
         {mostrarBotonWhatsApp && (
-          accesoDefinido ? (
+          estadoDefinido ? (
             tieneAcceso ? (
-              <button
-                onClick={handleActivarNotificaciones}
-                style={{
-                  backgroundColor: '#25D366',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 24 24" 
-                  width="20" 
-                  height="20" 
-                  fill="white"
+              estaActivo ? (
+                <button
+                  onClick={handleToggleWhatsApp}
+                  style={{
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
                 >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                </svg>
-                Activar Notificaciones
-              </button>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    width="20" 
+                    height="20" 
+                    fill="white"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  Desactivar Notificaciones
+                </button>
+              ) : (
+                <button
+                  onClick={handleToggleWhatsApp}
+                  style={{
+                    backgroundColor: '#25D366',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    width="20" 
+                    height="20" 
+                    fill="white"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  Activar Notificaciones
+                </button>
+              )
             ) : (
               <button
                 onClick={handleSolicitarNotificaciones}
