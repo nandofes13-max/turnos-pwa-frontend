@@ -1403,6 +1403,13 @@
   .agendaHorariosGrid {
     grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
   }
+
+  .agendaHorarioSlot {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+}
+
 /* ============================================================
    BOTÓN FLOTANTE DE WHATSAPP
    ============================================================ */
@@ -1456,10 +1463,5 @@
   .whatsapp-float svg {
     width: 24px;
     height: 24px;
-  }
-}
-  .agendaHorarioSlot {
-    font-size: 11px;
-    padding: 3px 6px;
   }
 }
