@@ -548,7 +548,16 @@
   transform: scale(0.95);
 }
 
-/* Responsive para el botón flotante */
+/* 👈 DESKTOP: Botón centrado en la línea divisoria */
+@media (min-width: 769px) {
+  .whatsapp-float {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Responsive para el botón flotante en móvil */
 @media (max-width: 640px) {
   .whatsapp-float {
     width: 50px;
