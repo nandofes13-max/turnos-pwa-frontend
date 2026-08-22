@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import styles from '../styles/Inicio.module.css';
 import SolicitarServicioModal from './SolicitarServicioModal';
+import BannerInstall from './InstallPrompt/BannerInstall';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 // Componente de acordeón para preguntas frecuentes
 const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string }) => {
@@ -30,6 +32,9 @@ const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string 
 export default function Inicio() {
   const navigate = useNavigate();
   const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false);
+  
+  // 👈 Hook para la instalación
+  const { isInstallable, isInstalled, installApp } = useInstallPrompt();
 
   const handleDemo = () => {
     navigate('/actividad');
@@ -247,6 +252,13 @@ export default function Inicio() {
                 🚀 Creá tu agenda GRATIS
               </button>
             </div>
+
+            {/* 👈 BANNER DE INSTALACIÓN (integrado en la página) */}
+            <BannerInstall
+              isVisible={isInstallable && !isInstalled}
+              onInstall={installApp}
+              isInstalled={isInstalled}
+            />
 
             {/* Footer con WhatsApp */}
             <div className={styles['inicio-footer']}>
