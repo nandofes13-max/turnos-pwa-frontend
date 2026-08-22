@@ -31,6 +31,8 @@ import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
 import InstanciasWhatsApp from './components/InstanciasWhatsApp';
 // 👈 IMPORTAR WhatsAppAccesoGestion
 import WhatsAppAccesoGestion from './components/WhatsAppAccesoGestion';
+// 👈 IMPORTAR InstallPrompt
+import InstallPrompt from './components/InstallPrompt';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
 import './App.css';
@@ -38,6 +40,9 @@ import './App.css';
 function App() {
   return (
     <BrowserRouter>
+      {/* 👈 AGREGAR InstallPrompt (disponible en todas las rutas) */}
+      <InstallPrompt />
+      
       <Routes>
         <Route path="/" element={<Inicio />} />
         
