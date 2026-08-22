@@ -1,7 +1,6 @@
 // src/hooks/useInstallPrompt.ts
 import { useState, useEffect, useCallback } from 'react';
 
-// Interfaz para el evento beforeinstallprompt
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -12,33 +11,39 @@ export function useInstallPrompt() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
-  // Manejar el evento beforeinstallprompt
   useEffect(() => {
+    // 👈 VERIFICAR SI YA ESTÁ INSTALADA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('📱 PWA ya instalada');
+      setIsInstalled(true);
+      setIsInstallable(false);
+      return;
+    }
+
+    // 👈 MANEJAR EL EVENTO beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevenir que el navegador muestre el prompt automáticamente
+      console.log('🔔 beforeinstallprompt capturado en el hook');
       e.preventDefault();
-      // Guardar el evento para usarlo después
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
-      console.log('🔔 PWA instalable detectada');
+      console.log('✅ isInstallable = true');
     };
 
-    // Manejar cuando la app ya está instalada
+    // 👈 MANEJAR LA INSTALACIÓN
     const handleAppInstalled = () => {
+      console.log('✅ PWA instalada correctamente');
       setIsInstalled(true);
       setDeferredPrompt(null);
       setIsInstallable(false);
-      console.log('✅ PWA instalada correctamente');
     };
 
+    // 👈 AGREGAR LISTENERS
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Verificar si ya está instalada (solo funciona en modo standalone)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      setIsInstallable(false);
-    }
+    // 👈 VERIFICAR SI EL EVENTO YA OCURRIÓ
+    // Forzar la verificación de instalabilidad
+    console.log('🔍 Escuchando evento beforeinstallprompt...');
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -46,19 +51,20 @@ export function useInstallPrompt() {
     };
   }, []);
 
-  // Función para mostrar el prompt de instalación
   const installApp = useCallback(async () => {
+    console.log('🔄 installApp llamado, deferredPrompt:', deferredPrompt);
+    
     if (!deferredPrompt) {
       console.warn('⚠️ No hay prompt de instalación disponible');
       return false;
     }
 
     try {
-      // Mostrar el prompt de instalación del navegador
+      console.log('📤 Mostrando prompt de instalación...');
       await deferredPrompt.prompt();
-      // Esperar la decisión del usuario
       const result = await deferredPrompt.userChoice;
       
+      console.log('📊 Resultado de la instalación:', result);
       if (result.outcome === 'accepted') {
         console.log('✅ Usuario aceptó la instalación');
         setIsInstallable(false);
@@ -71,13 +77,12 @@ export function useInstallPrompt() {
       console.error('❌ Error al mostrar el prompt de instalación:', error);
       return false;
     } finally {
-      // Limpiar el deferredPrompt después de usarlo
       setDeferredPrompt(null);
     }
   }, [deferredPrompt]);
 
-  // Función para cerrar/ocultar el banner
   const dismissBanner = useCallback(() => {
+    console.log('🔄 Banner descartado');
     setIsInstallable(false);
   }, []);
 
