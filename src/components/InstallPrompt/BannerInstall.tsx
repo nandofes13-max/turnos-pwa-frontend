@@ -12,7 +12,6 @@ export default function BannerInstall({
   onInstall, 
   isInstalled = false 
 }: BannerInstallProps) {
-  // Si el banner no debe mostrarse o ya está instalado, no renderizar
   if (!isVisible || isInstalled) {
     return null;
   }
@@ -22,27 +21,29 @@ export default function BannerInstall({
   };
 
   return (
-    <div className={styles['banner-container']}>
-      <div className={styles['banner-content']}>
-        <div className={styles['banner-icon']}>⚡</div>
-        <div className={styles['banner-text']}>
-          <p className={styles['banner-title']}>PWA-Turnos en tu pantalla de inicio</p>
-          <p className={styles['banner-description']}>
-            Recibí recordatorios de tus turnos y notificaciones al instante. 
-            Gestioná tu agenda con un solo toque desde la pantalla de inicio.
-          </p>
-          <ul className={styles['banner-benefits']}>
-            <li>✅ Sin descargas pesadas</li>
-            <li>✅ Siempre a mano</li>
-            <li>✅ Recordatorios y alertas en tiempo real</li>
-          </ul>
+    <div className={styles['banner-wrapper']}>
+      <div className={styles['banner-container']}>
+        <div className={styles['banner-content']}>
+          <div className={styles['banner-icon']}>⚡</div>
+          <div className={styles['banner-text']}>
+            <p className={styles['banner-title']}>PWA-Turnos en tu pantalla de inicio</p>
+            <p className={styles['banner-description']}>
+              Recibí recordatorios de tus turnos y notificaciones al instante. 
+              Gestioná tu agenda con un solo toque desde la pantalla de inicio.
+            </p>
+            <ul className={styles['banner-benefits']}>
+              <li>✅ Sin descargas pesadas</li>
+              <li>✅ Siempre a mano</li>
+              <li>✅ Recordatorios y alertas en tiempo real</li>
+            </ul>
+          </div>
+          <button 
+            className={styles['banner-install-btn']} 
+            onClick={handleInstall}
+          >
+            📲 Instalar PWA-Turnos
+          </button>
         </div>
-        <button 
-          className={styles['banner-install-btn']} 
-          onClick={handleInstall}
-        >
-          📲 Instalar PWA-Turnos
-        </button>
       </div>
     </div>
   );
