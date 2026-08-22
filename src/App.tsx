@@ -21,27 +21,22 @@ import AgendaDisponibilidad from './components/AgendaDisponibilidad';
 import Agenda from './components/Agenda';
 import Turnos from './components/Turnos';
 import RedireccionNegocio from './components/RedireccionNegocio';
-// 👈 ELIMINAR import RedireccionTurnos from './components/RedireccionTurnos';
 import GestionLayout from './components/GestionLayout';
 import ActividadPorNegocio from './components/ActividadPorNegocio';
 import SolicitarAgendaWizard from './components/SolicitarAgendaWizard';
 import AdminLogin from './components/AdminLogin';
 import WhatsAppConfig from './components/configuracion/WhatsAppConfig';
-// 👈 IMPORTAR InstanciasWhatsApp
 import InstanciasWhatsApp from './components/InstanciasWhatsApp';
-// 👈 IMPORTAR WhatsAppAccesoGestion
 import WhatsAppAccesoGestion from './components/WhatsAppAccesoGestion';
-// 👈 IMPORTAR InstallPrompt
-import InstallPrompt from './components/InstallPrompt';
 import Terminos from './components/Terminos';
 import Privacidad from './components/Privacidad';
+// 👈 ELIMINAR import InstallPrompt from './components/InstallPrompt';
 import './App.css';
 
 function App() {
   return (
     <BrowserRouter>
-      {/* 👈 AGREGAR InstallPrompt (disponible en todas las rutas) */}
-      <InstallPrompt />
+      {/* 👈 ELIMINAR <InstallPrompt /> */}
       
       <Routes>
         <Route path="/" element={<Inicio />} />
