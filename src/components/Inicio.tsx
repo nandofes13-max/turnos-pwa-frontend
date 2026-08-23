@@ -384,7 +384,6 @@ export default function Inicio() {
                   hour12: false
                 }).replace(',', '')}
               </div>
-              </div>
             </div>
           </div>
         </div>
