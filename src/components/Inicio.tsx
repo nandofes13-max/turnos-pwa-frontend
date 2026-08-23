@@ -374,7 +374,7 @@ export default function Inicio() {
               >
                 Políticas de Privacidad
               </button>
-                           <div className={styles['inicio-version']}>
+                                         <div className={styles['inicio-version']}>
                 v.{import.meta.env.VITE_APP_VERSION || '1.0.0'} - {new Date(import.meta.env.VITE_BUILD_TIME).toLocaleString('es-AR', {
                   year: 'numeric',
                   month: '2-digit',
@@ -382,7 +382,8 @@ export default function Inicio() {
                   hour: '2-digit',
                   minute: '2-digit',
                   hour12: false
-                })}
+                }).replace(',', '')}
+              </div>
               </div>
             </div>
           </div>
