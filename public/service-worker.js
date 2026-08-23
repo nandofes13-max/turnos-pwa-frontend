@@ -1,7 +1,7 @@
 // turnos-pwa-frontend/public/service-worker.js
 
 // Nombre del caché (actualizar cuando se actualice la app)
-const CACHE_NAME = 'pwa-turnos-v1';
+const CACHE_NAME = 'pwa-turnos-v2'; // ← Aumentamos a v2 para forzar actualización
 
 // Archivos a cachear para que funcionen sin conexión
 const urlsToCache = [
@@ -52,30 +52,43 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptar peticiones y servir desde caché si está disponible
+// Interceptar peticiones
+// ESTRATEGIA: Network First (Red primero, luego caché)
 self.addEventListener('fetch', (event) => {
+  // Solo interceptar peticiones GET
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // NO interceptar peticiones a la API
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Si está en caché, devolverlo
-        if (response) {
-          return response;
-        }
-        // Si no, ir a la red
-        return fetch(event.request)
-          .then((response) => {
-            // Clonar la respuesta para cachearla
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseClone);
-              });
-            return response;
-          })
-          .catch((error) => {
-            console.error('❌ Error en fetch:', error);
-            // Retornar una página de error offline si existe
-            return caches.match('/offline.html');
+        // Si la petición es exitosa, clonar y cachear
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        return response;
+      })
+      .catch(() => {
+        // Si falla la red, intentar desde caché
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Si no está en caché y no hay red, mostrar offline
+            if (event.request.mode === 'navigate') {
+              return caches.match('/offline.html');
+            }
+            // Para otros recursos, retornar error
+            throw new Error('Sin conexión');
           });
       })
   );
@@ -83,20 +96,24 @@ self.addEventListener('fetch', (event) => {
 
 // Manejar notificaciones push (para el futuro)
 self.addEventListener('push', (event) => {
-  const data = event.data.json();
-  const options = {
-    body: data.body || 'Nueva notificación',
-    icon: '/logo-pwa-turnos.svg',
-    badge: '/logo-pwa-turnos.svg',
-    vibrate: [200, 100, 200],
-    data: {
-      url: data.url || '/'
-    }
-  };
+  try {
+    const data = event.data ? event.data.json() : {};
+    const options = {
+      body: data.body || 'Nueva notificación',
+      icon: '/logo-pwa-turnos.svg',
+      badge: '/logo-pwa-turnos.svg',
+      vibrate: [200, 100, 200],
+      data: {
+        url: data.url || '/'
+      }
+    };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'PWA-Turnos', options)
-  );
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'PWA-Turnos', options)
+    );
+  } catch (error) {
+    console.error('❌ Error en notificación push:', error);
+  }
 });
 
 // Manejar clic en notificaciones
