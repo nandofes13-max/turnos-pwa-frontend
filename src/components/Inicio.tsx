@@ -1,9 +1,12 @@
 // src/components/Inicio.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import styles from '../styles/Inicio.module.css';
 import SolicitarServicioModal from './SolicitarServicioModal';
+import BannerInstall from './InstallPrompt/BannerInstall';
+import ModalInstall from './InstallPrompt/ModalInstall';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 // Componente de acordeón para preguntas frecuentes
 const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string }) => {
@@ -30,6 +33,26 @@ const FaqItem = ({ pregunta, respuesta }: { pregunta: string; respuesta: string 
 export default function Inicio() {
   const navigate = useNavigate();
   const [modalAyudaAbierto, setModalAyudaAbierto] = useState(false);
+  
+  // 👈 Hook para la instalación
+  const { isInstallable, isInstalled, installApp } = useInstallPrompt();
+  
+  // 👈 Estado para el modal de instalación
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasShownModal, setHasShownModal] = useState(false);
+
+  // 👈 Mostrar el modal automáticamente después de 3 segundos
+  useEffect(() => {
+    if (isInstallable && !isInstalled && !hasShownModal) {
+      const timer = setTimeout(() => {
+        console.log('⏰ Mostrando modal de instalación...');
+        setIsModalOpen(true);
+        setHasShownModal(true);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInstallable, isInstalled, hasShownModal]);
 
   const handleDemo = () => {
     navigate('/actividad');
@@ -55,6 +78,20 @@ export default function Inicio() {
   const handleWhatsApp = () => {
     const mensaje = encodeURIComponent('Hola, tengo una consulta sobre PWA-Turnos.');
     window.open(`https://wa.me/5491170602543?text=${mensaje}`, '_blank');
+  };
+
+  const handleCloseModal = () => {
+    console.log('🔚 Cerrando modal de instalación');
+    setIsModalOpen(false);
+  };
+
+  const handleInstall = async (): Promise<boolean> => {
+    console.log('🔄 Instalando...');
+    const success = await installApp();
+    if (success) {
+      setIsModalOpen(false);
+    }
+    return success;
   };
 
   const preguntasFrecuentes = [
@@ -107,6 +144,14 @@ export default function Inicio() {
   return (
     <div className={styles['inicio-container']}>
       
+      {/* 👈 MODAL DE INSTALACIÓN */}
+      <ModalInstall
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onInstall={handleInstall}
+        isInstalled={isInstalled}
+      />
+
       {/* 👈 BOTÓN FLOTANTE DE WHATSAPP */}
       <button
         onClick={handleWhatsApp}
@@ -247,6 +292,13 @@ export default function Inicio() {
                 🚀 Creá tu agenda GRATIS
               </button>
             </div>
+
+            {/* 👈 BANNER DE INSTALACIÓN (integrado en la página) */}
+            <BannerInstall
+              isVisible={isInstallable && !isInstalled && !isModalOpen}
+              onInstall={handleInstall}
+              isInstalled={isInstalled}
+            />
 
             {/* Footer con WhatsApp */}
             <div className={styles['inicio-footer']}>
