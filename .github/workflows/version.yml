@@ -8,17 +8,19 @@ on:
 jobs:
   update-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
       - name: Get commit message
         id: commit
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
+          COMMIT_MSG=$(git log -1 --pretty=%B | tr '\n' ' ' | head -c 200)
           echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "Commit message: $COMMIT_MSG"
       
@@ -45,13 +47,13 @@ jobs:
           PATCH=$(echo $CURRENT_VERSION | cut -d '.' -f3)
           
           # Detectar tipo de cambio
-          if echo "$COMMIT_MSG" | grep -q "^breaking:"; then
+          if echo "$COMMIT_MSG" | grep -q "breaking:"; then
             # MAJOR: cambio que rompe compatibilidad
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
             echo "Detected: MAJOR (breaking change)"
-          elif echo "$COMMIT_MSG" | grep -q "^fix:"; then
+          elif echo "$COMMIT_MSG" | grep -q "fix:"; then
             # PATCH: corrección de bug
             PATCH=$((PATCH + 1))
             echo "Detected: PATCH (bug fix)"
