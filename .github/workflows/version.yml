@@ -1,0 +1,92 @@
+name: Auto Version Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Get commit message
+        id: commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "Commit message: $COMMIT_MSG"
+      
+      - name: Read current version
+        id: current_version
+        run: |
+          if [ -f .env ]; then
+            CURRENT_VERSION=$(grep VITE_APP_VERSION .env | cut -d '=' -f2)
+          else
+            CURRENT_VERSION="1.0.0"
+          fi
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+      
+      - name: Calculate new version
+        id: new_version
+        run: |
+          COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.version }}"
+          
+          # Separar version en MAJOR.MINOR.PATCH
+          MAJOR=$(echo $CURRENT_VERSION | cut -d '.' -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d '.' -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d '.' -f3)
+          
+          # Detectar tipo de cambio
+          if echo "$COMMIT_MSG" | grep -q "^breaking:"; then
+            # MAJOR: cambio que rompe compatibilidad
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            echo "Detected: MAJOR (breaking change)"
+          elif echo "$COMMIT_MSG" | grep -q "^fix:"; then
+            # PATCH: corrección de bug
+            PATCH=$((PATCH + 1))
+            echo "Detected: PATCH (bug fix)"
+          else
+            # MINOR: nueva funcionalidad (por defecto)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            echo "Detected: MINOR (new feature)"
+          fi
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+      
+      - name: Update .env file
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.version }}"
+          
+          # Si el archivo .env existe, actualizar VITE_APP_VERSION
+          if [ -f .env ]; then
+            sed -i "s/VITE_APP_VERSION=.*/VITE_APP_VERSION=$NEW_VERSION/" .env
+          else
+            # Si no existe, crearlo
+            echo "VITE_API_URL=https://turnos-api-backend.onrender.com" > .env
+            echo "VITE_APP_VERSION=$NEW_VERSION" >> .env
+          fi
+          
+          echo "Updated .env to version $NEW_VERSION"
+      
+      - name: Commit updated version
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .env
+          git commit -m "chore: update version to ${{ steps.new_version.outputs.version }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
