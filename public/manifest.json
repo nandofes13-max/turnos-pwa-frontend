@@ -6,6 +6,9 @@
   "display": "standalone",
   "theme_color": "#0056b3",
   "background_color": "#ffffff",
+  "prefer_related_applications": false,
+  "targetSdkVersion": 36,
+  "android_package_name": "com.pwaturnos.app",
   "icons": [
     {
       "src": "/icon-192x192.png",
